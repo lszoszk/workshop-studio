@@ -1,0 +1,1 @@
+The page now includes a “Who recommends what” tab that visualises UPR recommendations to the participant’s country, shows the top 15 recommending states, their most frequent SDGs, and lets you drill down into each state’s recommendations.

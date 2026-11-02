@@ -1,0 +1,1 @@
+The page implements a full‑text search over the General Comments, with AND/OR/NOT and exact‑phrase support, committee and year filters, highlighted results, a copy‑citation button, and a bar chart of hits per committee. All logic runs offline using the preloaded `WORKSHOP_DATA` and `Chart.js`.

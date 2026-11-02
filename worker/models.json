@@ -1,0 +1,65 @@
+{
+ "default": "mistral",
+ "models": [
+  {
+   "key": "mistral",
+   "id": "mistralai/mistral-large-4-0",
+   "host": "mistral/eu",
+   "label": "Mistral Large 4",
+   "host_label": "Mistral",
+   "host_region": "EU",
+   "price_in": 0.77,
+   "price_out": 2.31,
+   "fallback": "glm-eu",
+   "reasoning": "high"
+  },
+  {
+   "key": "claude",
+   "id": "anthropic/claude-sonnet-5.5",
+   "host": "amazon-bedrock/us-east-1",
+   "label": "Claude Sonnet 5.5",
+   "host_label": "Amazon Bedrock",
+   "host_region": "US",
+   "price_in": 2.2,
+   "price_out": 11.0,
+   "fallback": "mistral",
+   "reasoning": "high"
+  },
+  {
+   "key": "glm-cn",
+   "id": "z-ai/glm-5.3",
+   "host": "z-ai",
+   "label": "GLM-5.3 (developer's service)",
+   "host_label": "Z.AI",
+   "host_region": "CN",
+   "price_in": 1.4,
+   "price_out": 4.4,
+   "fallback": "glm-eu",
+   "reasoning": "high"
+  },
+  {
+   "key": "glm-eu",
+   "id": "z-ai/glm-5.3",
+   "host": "mistral/nvfp4/eu",
+   "label": "GLM-5.3 (run in the EU)",
+   "host_label": "Mistral",
+   "host_region": "EU",
+   "price_in": 1.54,
+   "price_out": 4.84,
+   "fallback": "mistral",
+   "reasoning": "high"
+  },
+  {
+   "key": "fast",
+   "id": "deepseek/deepseek-v4.1-flash",
+   "host": null,
+   "label": "DeepSeek V4.1 Flash",
+   "host_label": "any ZDR host",
+   "host_region": null,
+   "price_in": 0.45,
+   "price_out": 1.8,
+   "fallback": "mistral",
+   "reasoning": null
+  }
+ ]
+}

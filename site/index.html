@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Workshop Studio</title>
+<meta name="robots" content="noindex, nofollow">
+<script src="gate.js"></script>
+<script>try { const t = localStorage.getItem('ws:theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<link rel="stylesheet" href="studio.css?v=2026-11-02k">
+</head>
+<body>
+<!-- a phone that scanned the badge's QR code gets this instead of the studio -->
+<div class="handoff" id="handoff" hidden>
+  <div class="handoff-card">
+    <span class="logo" aria-hidden="true"><i></i><i></i><i></i></span>
+    <h1>Open the studio on your laptop</h1>
+    <p>The studio needs a bigger screen. Your seat code:</p>
+    <div class="handoff-code" id="handoffCode">—</div>
+    <p>On your laptop, go to <b id="handoffUrl"></b> and enter the code. Or send yourself the link:</p>
+    <div class="row">
+      <a class="primary" id="handoffMail" href="#">Email me the link</a>
+      <button type="button" class="ghost" id="handoffCopy">Copy link</button>
+    </div>
+  </div>
+</div>
+
+<header class="top">
+  <div class="brand" id="brand">
+    <span class="logo" aria-hidden="true"><i></i><i></i><i></i></span>
+    <div>
+      <div class="name">Workshop Studio</div>
+      <div class="event" id="event"></div>
+    </div>
+  </div>
+  <div class="session" id="sessionSwitch" role="tablist" aria-label="Session">
+    <button type="button" role="tab" data-session="S7" aria-label="Session 7"><span class="sl">Session </span><span class="ss">S</span>7</button>
+    <button type="button" role="tab" data-session="S8" aria-label="Session 8"><span class="sl">Session </span><span class="ss">S</span>8</button>
+  </div>
+  <div class="top-mid">
+    <label class="chip country" id="countryChip" title="Your country: its UN recommendations and observations are the first file on your shelf. Pick another country to run the same app on its records.">
+      <select id="countrySelect" aria-label="Country"></select>
+      <span class="country-count" id="countryCount">—</span>
+    </label>
+    <label class="model-pick">
+      <span class="lbl">Model</span>
+      <select id="modelSelect" aria-label="Model"></select>
+    </label>
+    <span class="badge" id="modelBadge"></span>
+  </div>
+  <div class="top-right">
+    <a class="top-link" href="gallery/" target="_blank" title="The same requests, built by different models">Gallery</a>
+    <span class="route" id="routeBadge" title="How the studio reaches the model">connecting…</span>
+    <span class="budget" id="budget" hidden></span>
+  </div>
+</header>
+
+<main class="work">
+  <section class="chat" aria-label="Conversation">
+    <div class="log" id="log"></div>
+    <div class="suggest" id="suggest"></div>
+    <form class="composer" id="composer">
+      <div class="drop-hint" aria-hidden="true">Drop the file here</div>
+      <div class="continuing" id="continuing" hidden></div>
+      <div class="needs" id="needs" hidden></div>
+      <div class="attach" id="attach" hidden></div>
+      <button type="button" class="planmode" id="planModeBtn" aria-pressed="true" hidden title="Plan mode: the model looks at your data, asks you a few questions and writes a plan; you build from the plan">Plan mode</button>
+      <textarea id="input" rows="1" placeholder="Ask anything, or describe a tool you want"></textarea>
+      <div class="composer-row">
+        <button type="button" class="ghost small" id="addFileBtn" title="Your files: drag one into the chat, or pick it here">+ File</button>
+        <span class="hint" title="Enter sends your message; Shift+Enter starts a new line">Enter sends · Shift+Enter: new line</span>
+        <button type="button" class="ghost" id="stopBtn" hidden>Stop</button>
+        <button type="submit" class="primary send" id="sendBtn" disabled>Send</button>
+      </div>
+    </form>
+    <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" aria-label="Width of the conversation" tabindex="0" title="Drag to resize · double-click to reset"></div>
+  </section>
+
+  <section class="stage" aria-label="Your app">
+    <div class="toolbar" id="toolbar" hidden>
+      <div class="versions" id="versions" role="tablist" aria-label="Versions"></div>
+      <div class="seg view" role="tablist" aria-label="Show">
+        <button type="button" role="tab" id="viewApp" aria-selected="true">App</button>
+        <button type="button" role="tab" id="viewCode" aria-selected="false">Code</button>
+      </div>
+      <button class="tool" id="tabBtn" title="Open the app in a new tab, full screen. It follows the studio: a new version appears there too.">New tab ↗</button>
+      <span class="linkoff" id="linkOffPill" hidden>Model link cut</span>
+      <div class="tools">
+        <button class="tool" id="filesBtn" title="The files you can drag into the chat">Your files</button>
+        <button class="tool" id="downloadBtn" title="Save the app as one file that opens offline">Save as file</button>
+        <button class="tool" id="wallBtn" title="Show your app on the room's screen" hidden>Send to wall</button>
+        <div class="menu">
+          <button class="tool look" id="lookBtn" aria-haspopup="menu" aria-expanded="false">Look inside <span class="count" id="traceCount">0</span><span class="caret" aria-hidden="true"></span></button>
+          <div class="menu-panel" id="lookPanel" role="menu" hidden>
+            <button class="mi" role="menuitem" id="layersBtn" aria-pressed="false"><b>Layers</b><span>Colour what the model wrote and what the code computes</span></button>
+            <button class="mi" role="menuitem" id="run3Btn"><b>Run it three times</b><span>Does the app give the same numbers every time?</span></button>
+            <button class="mi" role="menuitem" id="ask3Btn" hidden><b>Ask the model directly</b><span>The same question, three times, without the data</span></button>
+            <button class="mi" role="menuitem" id="linkBtn" aria-pressed="true" hidden><b>Cut the model link</b><span>See what still works without a model</span></button>
+            <button class="mi" role="menuitem" id="traceBtn"><b>What left this laptop</b><span>Every request sent to a model, and what stayed here</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="viewport" id="viewport">
+      <div class="empty" id="empty">
+        <div class="shelf-head">
+          <h2>Your files</h2>
+          <p>Open one to see what is inside. To build on it, drag it into the chat on the left.</p>
+        </div>
+        <div class="shelf" id="shelf"></div>
+        <p class="shelf-note">A file in the chat gives your app the whole file, here in your browser. The model reads only a short description of it and three sample rows.</p>
+      </div>
+      <div class="codeview" id="codeView" hidden>
+        <p class="codeview-note">This is what the model wrote: <b>HTML</b> for the structure, <b>CSS</b> for the look and <b>JavaScript</b> for what the app does. Your browser reads it and draws the app you see under <b>App</b>.</p>
+        <pre id="codeText"></pre>
+      </div>
+      <div class="planview" id="planView" hidden>
+        <div class="plan-bar">
+          <div class="plan-name"><span class="plan-kicker" id="planKicker">Plan</span><h2 id="planTitle"></h2></div>
+          <button type="button" class="ghost" id="planBrief">Facilitator's brief</button>
+          <button type="button" class="ghost" id="planClose">Close</button>
+        </div>
+        <div class="plan-scroll">
+          <article class="plan-doc answer-md" id="planDoc" aria-label="The plan"></article>
+        </div>
+      </div>
+      <div class="building" id="building" hidden><span class="pulse"></span><span id="buildingText">Writing code…</span></div>
+      <div class="mind" id="mind" aria-live="off">
+        <div class="mind-head"><span class="pulse"></span><span id="mindTitle"></span><span class="mind-where" id="mindWhere"></span><span class="mind-time" id="mindTime"></span></div>
+        <div class="mind-text" id="mindText"></div>
+        <p class="mind-note" id="mindNote"></p>
+      </div>
+      <div class="offline-banner" id="offlineBanner" hidden>Model link cut. The app and its data keep working; only calls to a model fail.</div>
+      <div class="legend" id="legend" hidden>
+        <span><i class="sw model"></i>Written once by the model</span>
+        <span><i class="sw script"></i>Computed by the code from the data, the same every time</span>
+        <span><i class="sw ai"></i>Produced by a model while the app runs</span>
+      </div>
+      <div class="apperror" id="appError" hidden></div>
+      <aside class="drawer" id="drawer" hidden>
+        <div class="drawer-head"><h3 id="drawerTitle"></h3><button class="ghost icon" id="drawerClose" aria-label="Close">×</button></div>
+        <div class="drawer-body" id="drawerBody"></div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="foot" id="foot">
+  <span class="foot-who" id="footWho"></span>
+  <span class="foot-links" id="footLinks"></span>
+  <span class="foot-end">
+    <button type="button" class="linkish" id="takeHomeBtn">Take it further</button>
+    <button type="button" class="linkish" id="themeBtn" aria-pressed="false">Dark mode</button>
+  </span>
+</footer>
+
+<dialog id="seatDialog">
+  <form method="dialog" id="seatForm">
+    <h2>Enter your seat code</h2>
+    <p>It is printed on your badge, under the QR code.</p>
+    <input id="seatInput" autocomplete="off" maxlength="8" placeholder="e.g. K7Q2MA">
+    <p class="err" id="seatErr" hidden></p>
+    <div class="row">
+      <button value="skip" class="ghost" id="seatSkip">Continue without a model</button>
+      <button value="ok" class="primary" id="seatOk">Start</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="preview-doc.js?v=2026-11-02k"></script>
+<script src="studio.js?v=2026-11-02k"></script>
+</body>
+</html>

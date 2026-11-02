@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Your app · Workshop Studio</title>
+<meta name="robots" content="noindex, nofollow">
+<script src="gate.js"></script>
+<script>try { const t = localStorage.getItem('ws:theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<link rel="stylesheet" href="studio.css?v=2026-11-02k">
+<style>
+  /* The app in a tab of its own: the same sandbox as the studio's preview. Its requests to a
+     model still go through the studio that opened it, so the Trace keeps every one. */
+  body { overflow: hidden; }
+  .tabbar { height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 14px; background: var(--panel); border-bottom: 1px solid var(--line); font-size: 14px; }
+  .tabbar .logo { width: 22px; height: 22px; }
+  .tabbar .follows { margin-left: auto; color: var(--faint); font-size: 13px; }
+  .stage-tab { position: relative; height: calc(100% - 44px); }
+  #frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
+</style>
+</head>
+<body>
+<div class="tabbar"><span class="logo" aria-hidden="true"><i></i><i></i><i></i></span><b id="title">Waiting for the studio…</b><span class="follows">This tab follows the studio: a new version appears here too.</span></div>
+<div class="stage-tab">
+  <iframe id="frame" title="Your app" sandbox="allow-scripts allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox" allow="clipboard-write"></iframe>
+  <aside class="drawer wide" id="drawer" hidden>
+    <div class="drawer-head"><h3 id="drawerTitle"></h3><button class="ghost icon" id="drawerClose" aria-label="Close">×</button></div>
+    <div class="drawer-body" id="drawerBody"></div>
+  </aside>
+</div>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const studio = window.opener;
+  const frame = $('frame');
+  if (!studio) { $('title').textContent = 'Open this tab from the studio, with New tab above your app.'; return; }
+  const pdfOf = (symbol) => 'files/' + String(symbol).replace(/\//g, '_') + '.pdf';
+  let got = false;
+  window.addEventListener('message', (e) => {
+    const m = e.data || {};
+    if (typeof m.type !== 'string' || !m.type.startsWith('studio:')) return;
+    if (e.source === studio) {
+      if (m.type === 'studio:app-doc') {
+        got = true;
+        frame.srcdoc = m.doc;
+        $('title').textContent = m.title;
+        document.title = m.title + ' · Workshop Studio';
+      } else if (frame.contentWindow) {
+        frame.contentWindow.postMessage(m, '*');   // the studio's answers to the app's model requests
+      }
+    } else if (e.source === frame.contentWindow) {
+      if (m.type === 'studio:ask') studio.postMessage(m, '*');
+      else if (m.type === 'studio:open-source') {
+        const src = pdfOf(m.symbol) + '#page=' + (Number(m.page) || 1);
+        $('drawerTitle').textContent = m.symbol + ', page ' + (Number(m.page) || 1);
+        $('drawerBody').innerHTML = '';
+        const f = document.createElement('iframe');
+        f.className = 'pdf';
+        f.src = src;
+        f.title = m.symbol;
+        $('drawerBody').append(f);
+        $('drawer').hidden = false;
+      }
+    }
+  });
+  $('drawerClose').onclick = () => { $('drawer').hidden = true; };
+  // say hello until the studio answers with the app (it may be busy, or not yet listening)
+  (function hello(n) {
+    if (got || n > 20 || studio.closed) return;
+    studio.postMessage({ type: 'studio:tab-ready' }, '*');
+    setTimeout(() => hello(n + 1), 600);
+  })(0);
+})();
+</script>
+</body>
+</html>

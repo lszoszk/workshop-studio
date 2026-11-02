@@ -1,0 +1,174 @@
+I built a search tool over the General Comments with AND/OR/NOT and "exact phrase" queries, committee and year filters, highlighted matches, and a per-committee bar chart. Each result shows the full paragraph text unchanged, its symbol (linked to the document), the committee, the short title and a "Copy citation" button.
+
+```html
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>General Comments search</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#f6f8fa;color:#1c2733}
+main{max-width:1000px;margin:0 auto;padding:24px 20px 60px}
+h1{margin:0 0 4px;font-size:1.7rem}
+.desc{color:#4a5a6a;margin:0 0 18px}
+.card{background:#fff;border:1px solid #dbe2e9;border-radius:8px;padding:16px;margin-bottom:16px}
+input,select,button{font:inherit;padding:8px 10px;border:1px solid #b9c4cf;border-radius:6px;background:#fff}
+input[type=search]{width:100%}
+button{cursor:pointer}
+button.primary{background:#1f6fb2;color:#fff;border-color:#1f6fb2}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-top:12px}
+.row label{display:flex;flex-direction:column;font-size:.85rem;color:#4a5a6a;gap:3px}
+.note{font-size:.85rem;color:#5a6b7b;margin-top:8px}
+.res{border-top:1px solid #e5eaef;padding:14px 0}
+.res:first-child{border-top:0}
+.meta{font-size:.9rem;color:#4a5a6a}
+.meta b{color:#1c2733}
+.badge{display:inline-block;background:#e6f0f9;color:#1f6fb2;border-radius:4px;padding:0 7px;font-weight:600;font-size:.85rem}
+mark{background:#ffe58a;padding:0 1px}
+.txt{margin:6px 0;white-space:pre-wrap}
+.clip{max-height:4.6em;overflow:hidden}
+.acts{display:flex;gap:8px}
+.acts button{padding:3px 10px;font-size:.85rem}
+.err{color:#b3261e}
+</style></head><body><main>
+<h1>General Comments search</h1>
+<p class="desc" id="desc"></p>
+<div class="card">
+<input type="search" id="q" placeholder='e.g. torture AND "non-refoulement" NOT children'>
+<div class="row">
+<label>Committee<select id="com"></select></label>
+<label>From year<input type="number" id="y1" style="width:110px"></label>
+<label>To year<input type="number" id="y2" style="width:110px"></label>
+<button class="primary" id="go">Search</button>
+<button id="clr">Reset</button>
+</div>
+<div class="note"><b>How the search works:</b> words next to each other are treated as AND. Use <b>OR</b>, <b>NOT</b> (or a minus sign before a word), and "quotes" for exact phrases. Matching ignores upper/lower case. Use <b>( )</b> for grouping. Every paragraph is tested by code, nothing is estimated.</div>
+<div class="note err" id="err"></div>
+</div>
+<div class="card">
+<h2 style="margin:0 0 6px;font-size:1.15rem">Hits per committee</h2>
+<div style="height:240px"><canvas id="ch"></canvas></div>
+<div class="note"><b>How this is computed:</b> each bar counts the paragraphs matching the search and the year range, ignoring the committee filter so you can compare committees. The selected committee is shown in the darker colour.</div>
+</div>
+<div class="card">
+<div id="sum" style="font-weight:600"></div>
+<div id="out"></div>
+<div class="note" id="more"></div>
+</div>
+<script>
+const D=(window.WORKSHOP_DATA&&WORKSHOP_DATA.gc)||{};
+const R=Array.isArray(D.records)?D.records:[];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const coms=[...new Set(R.map(r=>r.committee).filter(Boolean))].sort();
+const yrs=R.map(r=>r.year).filter(y=>typeof y==="number");
+const ymin=yrs.length?Math.min(...yrs):"",ymax=yrs.length?Math.max(...yrs):"";
+$("desc").textContent=`Source: ${D.source||D.title||"UN treaty body General Comments"} · ${R.length} paragraphs · ${coms.length} committees · years ${ymin}–${ymax}`;
+$("com").innerHTML='<option value="">All committees</option>'+coms.map(c=>`<option>${esc(c)}</option>`).join("");
+$("y1").placeholder=ymin;$("y2").placeholder=ymax;
+
+// query parser
+function tokenize(s){
+  const t=[];const re=/"([^"]*)"|(\()|(\))|(-?[^\s()"]+)/g;let m;
+  while((m=re.exec(s))){
+    if(m[1]!==undefined){if(m[1].trim())t.push({t:"term",v:m[1].trim().toLowerCase()});}
+    else if(m[2])t.push({t:"("});
+    else if(m[3])t.push({t:")"});
+    else{
+      const w=m[4];
+      if(w==="AND"||w==="OR"||w==="NOT")t.push({t:w});
+      else if(w[0]==="-"&&w.length>1){t.push({t:"NOT"});t.push({t:"term",v:w.slice(1).toLowerCase()});}
+      else t.push({t:"term",v:w.toLowerCase()});
+    }
+  }
+  return t;
+}
+function parse(tokens){
+  let i=0;
+  function orE(){let l=andE();while(tokens[i]&&tokens[i].t==="OR"){i++;const r=andE();l={o:"or",a:l,b:r};}return l;}
+  function andE(){let l=notE();while(i<tokens.length&&tokens[i].t!=="OR"&&tokens[i].t!==")"){if(tokens[i].t==="AND")i++;const r=notE();l={o:"and",a:l,b:r};}return l;}
+  function notE(){if(tokens[i]&&tokens[i].t==="NOT"){i++;return {o:"not",a:notE()};}return prim();}
+  function prim(){
+    const k=tokens[i];
+    if(!k)throw new Error("The query ends unexpectedly.");
+    if(k.t==="("){i++;const e=orE();if(!tokens[i]||tokens[i].t!==")")throw new Error("Missing closing parenthesis.");i++;return e;}
+    if(k.t==="term"){i++;return {o:"term",v:k.v};}
+    throw new Error("Unexpected "+k.t+" in the query.");
+  }
+  if(!tokens.length)return null;
+  const e=orE();
+  if(i<tokens.length)throw new Error("Unbalanced parentheses.");
+  return e;
+}
+function ev(n,txt){
+  if(!n)return true;
+  switch(n.o){case "term":return txt.includes(n.v);case "and":return ev(n.a,txt)&&ev(n.b,txt);case "or":return ev(n.a,txt)||ev(n.b,txt);case "not":return !ev(n.a,txt);}
+}
+function terms(n,out){ // positive terms only, for highlighting
+  if(!n)return out;
+  if(n.o==="term")out.push(n.v);
+  else if(n.o==="not"){}
+  else{terms(n.a,out);terms(n.b,out);}
+  return out;
+}
+function hl(text,ts){
+  if(!ts.length)return esc(text);
+  const re=new RegExp(ts.sort((a,b)=>b.length-a.length).map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|"),"gi");
+  let o="",last=0,m;
+  while((m=re.exec(text))){if(!m[0]){re.lastIndex++;continue;}o+=esc(text.slice(last,m.index))+"<mark>"+esc(m[0])+"</mark>";last=m.index+m[0].length;}
+  return o+esc(text.slice(last));
+}
+let chart,shown=50,matches=[];
+function run(){
+  $("err").textContent="";shown=50;
+  let ast=null;
+  try{ast=parse(tokenize($("q").value));}catch(e){$("err").textContent="Query problem: "+e.message;ast=null;$("out").innerHTML="";$("sum").textContent="";return;}
+  const y1=parseInt($("y1").value),y2=parseInt($("y2").value),com=$("com").value;
+  const base=R.filter(r=>{
+    if(!isNaN(y1)&&!(r.year>=y1))return false;
+    if(!isNaN(y2)&&!(r.year<=y2))return false;
+    return ev(ast,String(r.text||"").toLowerCase());
+  });
+  matches=base.filter(r=>!com||r.committee===com);
+  matches.sort((a,b)=>(a.committee||"").localeCompare(b.committee||"")||(a.year-b.year)||String(a.symbol).localeCompare(String(b.symbol))||(a.paragraph-b.paragraph));
+  const cnt={};base.forEach(r=>{const c=r.committee||"(none)";cnt[c]=(cnt[c]||0)+1;});
+  const labs=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]);
+  if(chart)chart.destroy();
+  chart=new Chart($("ch"),{type:"bar",data:{labels:labs,datasets:[{data:labs.map(l=>cnt[l]),backgroundColor:labs.map(l=>com&&l===com?"#0f4573":"#1f6fb2aa")}]},
+    options:{maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0},title:{display:true,text:"Matching paragraphs"}}}}});
+  $("ch").setAttribute("aria-label","Hits per committee");
+  const parts=[`${matches.length} of ${R.length} paragraphs match`];
+  if($("q").value.trim())parts.push("query: "+$("q").value.trim());
+  if(com)parts.push("committee: "+com);
+  if(!isNaN(y1)||!isNaN(y2))parts.push(`years: ${isNaN(y1)?ymin:y1}–${isNaN(y2)?ymax:y2}`);
+  $("sum").textContent=parts.join(" · ");
+  render(terms(ast,[]));
+}
+function render(ts){
+  const list=matches.slice(0,shown);
+  if(!list.length){$("out").innerHTML='<p>No paragraphs match. Try fewer words, OR, or widen the years.</p>';$("more").innerHTML="";return;}
+  $("out").innerHTML=list.map((r,i)=>{
+    const url=r.doc_url?`<a href="${esc(r.doc_url)}" target="_blank" rel="noopener">${esc(r.symbol)}</a>`:esc(r.symbol);
+    return `<div class="res" data-i="${i}"><div class="meta"><span class="badge">${esc(r.committee)}</span> <b>${esc(r.short_title||r.title)}</b> · ${esc(r.year)}<br>${url}, para. ${esc(r.paragraph)}</div>
+    <div class="txt clip">${hl(String(r.text||""),ts.slice())}</div>
+    <div class="acts"><button data-a="x">Show full paragraph</button><button data-a="c">Copy citation</button></div></div>`;
+  }).join("");
+  $("more").innerHTML=matches.length>shown?`Showing ${shown} of ${matches.length}. <button id="mb">Show 50 more</button>`:`Showing all ${matches.length}.`;
+  if($("mb"))$("mb").onclick=()=>{shown+=50;render(ts);};
+}
+$("out").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  const row=b.closest(".res"),r=matches[+row.dataset.i];
+  if(b.dataset.a==="x"){const t=row.querySelector(".txt");const c=t.classList.toggle("clip");b.textContent=c?"Show full paragraph":"Collapse";}
+  if(b.dataset.a==="c"){
+    const s=`${r.symbol}, para. ${r.paragraph}`;
+    const done=()=>{b.textContent="Copied: "+s;setTimeout(()=>b.textContent="Copy citation",2000);};
+    const fb=()=>{const t=document.createElement("textarea");t.value=s;document.body.appendChild(t);t.select();try{document.execCommand("copy");}catch(_){}t.remove();done();};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(s).then(done,fb);else fb();
+  }
+});
+$("go").onclick=run;$("q").onkeydown=e=>{if(e.key==="Enter")run();};
+["com","y1","y2"].forEach(id=>$(id).onchange=run);
+$("clr").onclick=()=>{$("q").value="";$("com").value="";$("y1").value="";$("y2").value="";run();};
+run();
+</script></main></body></html>
+```

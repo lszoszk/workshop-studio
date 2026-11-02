@@ -1,0 +1,30 @@
+[
+ {
+  "model": "mistral",
+  "label": "Mistral Large 4 · France · Mistral (EU)",
+  "prompt": "s8-1-verbatim",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "search_box": true,
+   "button_matches": true,
+   "source_matches": true,
+   "text_contains_after_search": true
+  },
+  "passed": 8,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 434,
+  "seconds": 76.7,
+  "first_token": 40.0,
+  "first_thought": 1.6,
+  "reasoning_chars": 18437,
+  "prompt_tokens": 8530,
+  "completion_tokens": 9274,
+  "cost": 0.022136576,
+  "provider": "Mistral"
+ }
+]

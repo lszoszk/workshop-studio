@@ -1,0 +1,1 @@
+I added a “Check 10 at random” feature that lets you sample 10 records, mark each SDG as right/wrong/arguable, see the agreement rate, view examples, download the results as CSV, and draw a new sample.

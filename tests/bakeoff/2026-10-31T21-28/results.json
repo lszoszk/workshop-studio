@@ -1,0 +1,158 @@
+[
+ {
+  "model": "gptoss",
+  "label": "gpt-oss-20b · USA, open weights · laptop-size, 4-bit · CoreWeave",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "chart": false,
+   "table_min_rows": false,
+   "text_contains": false,
+   "controls_min": false,
+   "links_to": false
+  },
+  "passed": 0,
+  "total": 8,
+  "errors": [
+   "no html in reply"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 18.2,
+  "first_token": 17.9,
+  "prompt_tokens": 5381,
+  "completion_tokens": 2698,
+  "cost": 0.00051217,
+  "provider": "CoreWeave"
+ },
+ {
+  "model": "gptoss",
+  "label": "gpt-oss-20b · USA, open weights · laptop-size, 4-bit · CoreWeave",
+  "prompt": "s7-2-who-recommends",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "chart": false,
+   "table_min_rows": false,
+   "source_matches": false,
+   "text_matches": false
+  },
+  "passed": 0,
+  "total": 7,
+  "errors": [
+   "no html in reply"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 16.3,
+  "first_token": 16.2,
+  "prompt_tokens": 5359,
+  "completion_tokens": 3078,
+  "cost": 0.00056091,
+  "provider": "CoreWeave"
+ },
+ {
+  "model": "gptoss",
+  "label": "gpt-oss-20b · USA, open weights · laptop-size, 4-bit · CoreWeave",
+  "prompt": "s7-3-check-ten",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "button_matches": true,
+   "source_matches": true,
+   "download": true
+  },
+  "passed": 6,
+  "total": 6,
+  "errors": [],
+  "network": [],
+  "lines": 221,
+  "seconds": 31.6,
+  "first_token": 19.8,
+  "prompt_tokens": 5375,
+  "completion_tokens": 6358,
+  "cost": 0.00098779,
+  "provider": "CoreWeave"
+ },
+ {
+  "model": "gptoss",
+  "label": "gpt-oss-20b · USA, open weights · laptop-size, 4-bit · CoreWeave",
+  "prompt": "s8-1-verbatim",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "chart": false,
+   "search_box": false,
+   "button_matches": false,
+   "source_matches": false,
+   "text_contains_after_search": false
+  },
+  "passed": 0,
+  "total": 8,
+  "errors": [
+   "no html in reply"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 9.9,
+  "first_token": 9.8,
+  "prompt_tokens": 5389,
+  "completion_tokens": 1741,
+  "cost": 0.000388,
+  "provider": "CoreWeave"
+ },
+ {
+  "model": "gptoss",
+  "label": "gpt-oss-20b · USA, open weights · laptop-size, 4-bit · CoreWeave",
+  "prompt": "s8-2-ai-inside",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "calls_studio_ask": true,
+   "batches_max": true,
+   "text_matches": false,
+   "button_matches": false
+  },
+  "passed": 5,
+  "total": 7,
+  "errors": [],
+  "network": [],
+  "lines": 229,
+  "seconds": 26.0,
+  "first_token": 14.8,
+  "prompt_tokens": 5413,
+  "completion_tokens": 5467,
+  "cost": 0.0008731,
+  "provider": "CoreWeave"
+ },
+ {
+  "model": "gptoss",
+  "label": "gpt-oss-20b · USA, open weights · laptop-size, 4-bit · CoreWeave",
+  "prompt": "s8-3-voting",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "controls_min": true,
+   "table_min_rows": true
+  },
+  "passed": 6,
+  "total": 6,
+  "errors": [],
+  "network": [],
+  "lines": 261,
+  "seconds": 28.6,
+  "first_token": 10.1,
+  "prompt_tokens": 5382,
+  "completion_tokens": 3961,
+  "cost": 0.00067639,
+  "provider": "CoreWeave"
+ }
+]

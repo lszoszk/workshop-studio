@@ -1,0 +1,472 @@
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UN Human Rights Recommendations — Kenya Dashboard</title>
+<style>
+  :root { --accent:#1f6fb2; --bg:#f6f8fa; --line:#dde4ea; --text:#1c2733; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+         font-size:16px; color:var(--text); background:var(--bg); line-height:1.5; }
+  .wrap { max-width:1200px; margin:0 auto; padding:24px 28px 60px; }
+  h1 { font-size:1.6rem; margin:0 0 4px; color:#0f3f66; }
+  h2 { font-size:1.15rem; margin:0 0 6px; color:#0f3f66; }
+  .sub { color:#4a5a68; margin:0 0 22px; font-size:0.95rem; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:6px;
+          padding:18px 20px; margin-bottom:22px; }
+  .stats { display:flex; flex-wrap:wrap; gap:24px; }
+  .stat b { display:block; font-size:1.7rem; color:var(--accent); }
+  .stat span { font-size:0.85rem; color:#4a5a68; }
+  .filters { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; }
+  .filters label { display:block; font-size:0.8rem; font-weight:600; color:#3c4c5a; margin-bottom:3px; }
+  .filters select, .filters input { font:inherit; padding:6px 8px; border:1px solid var(--line);
+          border-radius:4px; background:#fff; min-width:130px; }
+  .filters input[type=text] { min-width:260px; flex:1; }
+  button { font:inherit; padding:7px 14px; border:1px solid var(--line); background:#fff;
+           border-radius:4px; cursor:pointer; }
+  button:hover { border-color:var(--accent); color:var(--accent); }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  button.primary:hover { background:#17517f; color:#fff; }
+  button:disabled { opacity:0.5; cursor:not-allowed; }
+  .note { font-size:0.82rem; color:#5a6a78; background:#eef3f8; border-left:3px solid var(--accent);
+          padding:6px 10px; margin:14px 0 0; }
+  .warn { font-size:0.88rem; color:#6b4b00; background:#fdf3e0; border-left:3px solid #c98a00;
+          padding:8px 12px; margin:12px 0; }
+  .chartbox { height:380px; }
+  table { width:100%; border-collapse:collapse; font-size:0.92rem; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em; color:#4a5a68; }
+  tr.rec { cursor:pointer; }
+  tr.rec:hover { background:#f0f6fb; }
+  tr.open { background:#eaf2f9; }
+  tr.detail td { background:#f7fafc; font-size:0.92rem; white-space:pre-wrap; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .badge { display:inline-block; font-size:0.72rem; background:#e3edf6; color:#17517f;
+           border-radius:3px; padding:1px 6px; margin:1px 2px 1px 0; }
+  .badge.ai { background:#f3e8f7; color:#6a2f86; }
+  .muted { color:#6a7a88; }
+  .count-line { font-size:0.9rem; margin:0 0 10px; }
+  .empty { padding:20px; text-align:center; color:#6a7a88; }
+  .agree-yes { color:#1a7a3a; font-weight:600; }
+  .agree-no  { color:#a33; font-weight:600; }
+  .progress { font-size:0.88rem; color:#4a5a68; margin:10px 0; }
+  .ai-summary { display:flex; flex-wrap:wrap; gap:24px; margin-top:10px; }
+  [data-source="ai"] { background:#f8eefc; border-radius:3px; padding:0 3px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>UN Human Rights Recommendations &amp; Observations — <span id="countryName"></span></h1>
+  <p class="sub" id="subLine"></p>
+
+  <div class="card">
+    <div class="stats">
+      <div class="stat"><b id="statTotal">0</b><span>records in dataset</span></div>
+      <div class="stat"><b id="statYears">–</b><span>years covered</span></div>
+      <div class="stat"><b id="statDocs">0</b><span>distinct documents</span></div>
+      <div class="stat"><b id="statShown">0</b><span>records match current filter</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="filters">
+      <div><label for="fMech">Mechanism</label><select id="fMech"></select></div>
+      <div><label for="fBody">Treaty body / mandate</label><select id="fBody"></select></div>
+      <div><label for="fFrom">Year from</label><select id="fFrom"></select></div>
+      <div><label for="fTo">Year to</label><select id="fTo"></select></div>
+      <div><label for="fSdg">SDG</label><select id="fSdg"></select></div>
+      <div style="flex:1;min-width:260px;"><label for="fQ">Keyword search (in text)</label>
+        <input type="text" id="fQ" placeholder="e.g. education, torture, police…"></div>
+      <div><label>&nbsp;</label><button id="btnReset">Reset filters</button></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Top 10 themes in current selection</h2>
+    <div class="chartbox"><canvas id="themeChart"></canvas></div>
+    <p class="note"><strong>How this is computed:</strong> a record can carry several themes, so theme
+      counts may sum to more than the number of records. Only records matching the filters above are
+      counted, and only the 10 most frequent themes are shown. Nothing is estimated.</p>
+  </div>
+
+  <div class="card">
+    <h2>Matching records</h2>
+    <p class="count-line" id="tableCount"></p>
+    <table id="recTable">
+      <thead><tr>
+        <th style="width:100px;">Date</th><th style="width:120px;">Body</th>
+        <th style="width:180px;">Document</th><th>Text</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="empty" id="emptyMsg" hidden>No records match the current filters.</div>
+    <p class="note"><strong>How to read this:</strong> "Body" is the issuing treaty body or Special
+      Procedures mandate. The document symbol links to the official UN document in a new tab. Click
+      any row to expand the full, unedited paragraph text; click again to collapse.</p>
+  </div>
+
+  <div class="card" id="aiCard">
+    <h2>AI SDG suggestions vs. the UN's own SDG tags</h2>
+    <p class="muted" style="margin:0 0 10px;font-size:0.92rem;">
+      This tool sends the text of the first <strong>50 records</strong> of the current selection (in
+      batches of 25) to the workshop's external language model and asks it to assign SDG goal numbers
+      to each paragraph. The result is then compared with the SDG tags already present in the UN data.</p>
+    <button class="primary" id="btnAi">Suggest SDGs with AI</button>
+    <button id="btnStop" hidden>Stop</button>
+    <p class="warn" id="aiNotice" hidden></p>
+    <p class="progress" id="aiProgress" hidden></p>
+    <div id="aiResults" hidden>
+      <div class="ai-summary">
+        <div class="stat"><b><span data-source="ai" id="aiRate">–</span></b><span>agreement rate (this run)</span></div>
+        <div class="stat"><b><span data-source="ai" id="aiRate2">–</span></b><span>agreement rate (previous run)</span></div>
+        <div class="stat"><b id="aiN">0</b><span>records compared</span></div>
+      </div>
+      <table id="aiTable" style="margin-top:14px;">
+        <thead><tr>
+          <th style="width:170px;">Document</th><th>UN's SDGs</th>
+          <th>AI's SDGs (latest run)</th><th>Agrees?</th>
+          <th>AI's SDGs (previous run)</th><th>Agrees?</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="note"><strong>How this is computed:</strong> the model returns, for each record id, the
+        SDG goal numbers (1–17) it would assign. "Agrees" means the set of AI goal numbers exactly
+        matches the set of SDG numbers in the UN data for that record (records with no UN SDG tags
+        agree only if the model also returns none). The agreement rate is the share of the 50 records
+        where the sets match exactly — it is computed by this page, not by the model. Any run may
+        fail to return valid JSON for some records; those are shown as "no answer".</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const D = window.WORKSHOP_DATA.uhri;
+  const recs = (D && Array.isArray(D.records)) ? D.records : [];
+  document.getElementById('countryName').textContent = D.country || '—';
+  document.title = 'UN Human Rights Recommendations — ' + (D.country || '');
+
+  (function () {
+    const years = recs.map(r => r.year).filter(y => typeof y === 'number');
+    const mn = years.length ? Math.min(...years) : '—';
+    const mx = years.length ? Math.max(...years) : '—';
+    const mech = [...new Set(recs.map(r => r.mechanism).filter(Boolean))];
+    document.getElementById('subLine').textContent =
+      'Source: ' + (D.title || 'UHRI extract') + ' — ' + recs.length +
+      ' paragraph-level records (recommendations and observations), ' + mn + '–' + mx +
+      (mech.length ? ', from ' + mech.join(', ') : '') + '. Every number on this page is computed in your browser from these records.';
+    document.getElementById('statTotal').textContent = recs.length;
+    document.getElementById('statYears').textContent = years.length ? mn + '–' + mx : '—';
+    document.getElementById('statDocs').textContent = new Set(recs.map(r => r.symbol).filter(Boolean)).size;
+  })();
+
+  const fMech = document.getElementById('fMech'),
+        fBody = document.getElementById('fBody'),
+        fFrom = document.getElementById('fFrom'),
+        fTo   = document.getElementById('fTo'),
+        fSdg  = document.getElementById('fSdg'),
+        fQ    = document.getElementById('fQ');
+
+  function fill(sel, values, allLabel) {
+    sel.innerHTML = '';
+    const o = document.createElement('option');
+    o.value = ''; o.textContent = allLabel;
+    sel.appendChild(o);
+    values.forEach(v => {
+      const op = document.createElement('option');
+      op.value = v; op.textContent = v;
+      sel.appendChild(op);
+    });
+  }
+  const allYears = [...new Set(recs.map(r => r.year).filter(Boolean))].sort((a,b)=>a-b);
+  const sdgNames = (D.sdg_names || {});
+  const allSdgs = [...new Set(recs.flatMap(r => Array.isArray(r.sdgs) ? r.sdgs : []))]
+    .filter(Number.isFinite).sort((a,b)=>a-b);
+  fill(fMech, [...new Set(recs.map(r => r.mechanism).filter(Boolean))].sort(), 'All mechanisms');
+  fill(fBody, [...new Set(recs.map(r => r.body).filter(Boolean))].sort(), 'All bodies & mandates');
+  fill(fFrom, allYears, 'From (earliest)');
+  fill(fTo, [...allYears].reverse(), 'To (latest)');
+  fill(fSdg, allSdgs.map(g => String(g) + (sdgNames[String(g)] ? ' — ' + sdgNames[String(g)] : '')),
+       'All / any SDG');
+  fSdg.querySelectorAll('option').forEach((o, i) => { if (i > 0) o.dataset.raw = allSdgs[i-1]; });
+
+  const tbody = document.querySelector('#recTable tbody');
+  let chart = null;
+
+  function applyFilters() {
+    const q = fQ.value.trim().toLowerCase();
+    const sdgRaw = fSdg.selectedOptions[0] && fSdg.selectedOptions[0].dataset.raw;
+    const sdg = sdgRaw !== undefined && sdgRaw !== '' ? Number(sdgRaw) : null;
+    return recs.filter(r => {
+      if (fMech.value && r.mechanism !== fMech.value) return false;
+      if (fBody.value && r.body !== fBody.value) return false;
+      if (fFrom.value && r.year < Number(fFrom.value)) return false;
+      if (fTo.value && r.year > Number(fTo.value)) return false;
+      if (sdg !== null && !(Array.isArray(r.sdgs) && r.sdgs.includes(sdg))) return false;
+      if (q && !(r.text || '').toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }
+
+  function firstLine(t) {
+    t = (t || '').trim();
+    const i = t.indexOf('\n');
+    const s = i === -1 ? t : t.slice(0, i);
+    return s.length > 220 ? s.slice(0, 217) + '…' : s;
+  }
+
+  function render() {
+    const sel = applyFilters();
+    document.getElementById('statShown').textContent = sel.length;
+    document.getElementById('tableCount').innerHTML =
+      'Showing <strong>' + sel.length + '</strong> of ' + recs.length +
+      ' records' + (sel.length ? ' (newest first)' : '') + '.';
+    document.getElementById('emptyMsg').hidden = sel.length > 0;
+
+    const counts = {};
+    sel.forEach(r => (r.themes || []).forEach(t => { counts[t] = (counts[t] || 0) + 1; }));
+    const top = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 10)
+      .sort((a,b) => a[1]-b[1]);
+    const ctx = document.getElementById('themeChart').getContext('2d');
+    ctx.canvas.height = ctx.canvas.parentElement.height;
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: top.map(e => e[0]),
+        datasets: [{ label: 'Records mentioning theme', data: top.map(e => e[1]),
+                     backgroundColor: '#1f6fb2' }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        animation: false,
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { label: c => c.parsed.x + ' records' } } },
+        scales: { x: { beginAtZero: true, ticks: { precision: 0 } },
+                  y: { ticks: { font: { size: 13 } } } }
+      }
+    });
+
+    tbody.innerHTML = '';
+    const sorted = [...sel].sort((a,b) => (b.date || '').localeCompare(a.date || ''));
+    sorted.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.className = 'rec';
+      const symCell = r.doc_url
+        ? '<a href="' + r.doc_url.replace(/"/g,'&quot;') + '" target="_blank" rel="noopener">' +
+          (r.symbol || '(no symbol)') + '</a>'
+        : (r.symbol || '');
+      tr.innerHTML =
+        '<td>' + (r.date || (r.year || '')) + '</td>' +
+        '<td>' + (r.body || '') + '<br><span class="badge">' + (r.mechanism || '') + '</span>' +
+          (r.type ? '<span class="badge">' + r.type + '</span>' : '') + '</td>' +
+        '<td>' + symCell + '</td>' +
+        '<td>' + firstLine(r.text).replace(/</g,'&lt;') + '</td>';
+      tr.addEventListener('click', () => {
+        const open = tr.nextElementSibling && tr.nextElementSibling.classList.contains('detail');
+        if (open) { tr.nextElementSibling.remove(); tr.classList.remove('open'); return; }
+        tbody.querySelectorAll('tr.detail').forEach(d => { d.previousElementSibling.classList.remove('open'); d.remove(); });
+        const d = document.createElement('tr');
+        d.className = 'detail';
+        const badges =
+          (r.themes || []).map(t => '<span class="badge">' + t.replace(/</g,'&lt;') + '</span>').join('') +
+          (r.sdg_targets || []).map(t => '<span class="badge">SDG ' + t.replace(/</g,'&lt;') + '</span>').join('') +
+          (r.affected_persons || []).map(t => '<span class="badge">' + t.replace(/</g,'&lt;') + '</span>').join('');
+        d.innerHTML = '<td colspan="4"><div>' + badges + '</div><div style="margin-top:6px;">' +
+          (r.text || '').replace(/</g,'&lt;') + '</div>' +
+          (r.doc_url ? '<p class="muted" style="margin:6px 0 0;font-size:0.82rem;">Full document: <a href="' +
+            r.doc_url.replace(/"/g,'&quot;') + '" target="_blank" rel="noopener">' + r.symbol + '</a></p>' : '') +
+          '</td>';
+        tr.classList.add('open');
+        tr.after(d);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  [fMech, fBody, fFrom, fTo, fSdg].forEach(s => s.addEventListener('change', render));
+  let deb;
+  fQ.addEventListener('input', () => { clearTimeout(deb); deb = setTimeout(render, 200); });
+  document.getElementById('btnReset').addEventListener('click', () => {
+    [fMech, fBody, fFrom, fTo, fSdg].forEach(s => s.value = '');
+    fQ.value = ''; render();
+  });
+
+  /* ---------- AI SDG suggestion ---------- */
+
+  const btnAi = document.getElementById('btnAi'),
+        btnStop = document.getElementById('btnStop'),
+        aiNotice = document.getElementById('aiNotice'),
+        aiProgress = document.getElementById('aiProgress'),
+        aiResults = document.getElementById('aiResults'),
+        aiTbody = document.querySelector('#aiTable tbody');
+
+  let running = false, stopRequested = false;
+  // runs[0] = previous run, runs[1] = latest run (shown side by side)
+  let runs = [];
+
+  function current50() {
+    const sel = applyFilters();
+    const sorted = [...sel].sort((a,b) => (b.date || '').localeCompare(a.date || ''));
+    return sorted.slice(0, 50);
+  }
+
+  function buildPrompt(batch) {
+    const items = batch.map(r =>
+      JSON.stringify({ id: r.id, text: (r.text || '').slice(0, 1500) }));
+    return 'Below are ' + batch.length + ' paragraphs from UN human rights documents (' +
+      (D.country || 'unknown country') + '). For each paragraph, decide which Sustainable ' +
+      'Development Goal numbers (integers 1 to 17) it is relevant to. Assign none if it is purely ' +
+      'procedural (e.g. reporting deadlines). Respond ONLY with valid JSON, no extra text, in this ' +
+      'exact shape: {"suggestions":[{"id":"<record id>","sdgs":[<integers>]}]} — one entry per ' +
+      'paragraph, using the given ids.\n\nParagraphs:\n' + items.join('\n');
+  }
+
+  function parseAnswer(raw, batch) {
+    const out = {};
+    let obj = null;
+    try { obj = JSON.parse(raw); } catch (e) {
+      // try to salvage a JSON object embedded in the reply
+      const m = (raw || '').match(/\{[\s\S]*\}/);
+      if (m) { try { obj = JSON.parse(m[0]); } catch (e2) {} }
+    }
+    const list = obj && Array.isArray(obj.suggestions) ? obj.suggestions
+              : (Array.isArray(obj) ? obj : []);
+    const validIds = new Set(batch.map(r => r.id));
+    list.forEach(s => {
+      if (s && validIds.has(s.id)) {
+        const sdgs = Array.isArray(s.sdgs)
+          ? s.sdgs.map(Number).filter(n => Number.isInteger(n) && n >= 1 && n <= 17) : [];
+        out[s.id] = [...new Set(sdgs)].sort((a,b)=>a-b);
+      }
+    });
+    return out;
+  }
+
+  function agree(unSdgs, aiSdgs) {
+    const a = [...new Set((unSdgs || []).map(Number))].sort((x,y)=>x-y);
+    const b = aiSdgs || [];
+    return a.length === b.length && a.every((v,i) => v === b[i]);
+  }
+
+  function fmtSet(arr) {
+    if (arr === null) return '<span class="muted">no answer</span>';
+    if (!arr.length) return '<span class="muted">(none)</span>';
+    return arr.map(n => '<span class="badge' +
+      (arr._ai ? ' ai' : '') + '">' + n + '</span>').join('');
+  }
+
+  function renderAi() {
+    if (!runs.length) { aiResults.hidden = true; return; }
+    aiResults.hidden = false;
+    const latest = runs[runs.length - 1];
+    const prev = runs.length > 1 ? runs[runs.length - 2] : null;
+    const n = latest.records.length;
+
+    document.getElementById('aiRate').textContent =
+      latest.agreeCount + '/' + n + ' (' + (n ? Math.round(100 * latest.agreeCount / n) : 0) + '%)';
+    document.getElementById('aiRate2').textContent = prev
+      ? prev.agreeCount + '/' + prev.records.length + ' (' +
+        Math.round(100 * prev.agreeCount / prev.records.length) + '%)'
+      : 'not yet run';
+    document.getElementById('aiN').textContent = n;
+
+    aiTbody.innerHTML = '';
+    latest.records.forEach(r => {
+      const unSdgs = [...new Set((r.sdgs || []).map(Number))].sort((a,b)=>a-b);
+      const aiNow = latest.suggestions.hasOwnProperty(r.id) ? latest.suggestions[r.id] : null;
+      const aiPrev = prev && prev.suggestions.hasOwnProperty(r.id) ? prev.suggestions[r.id] : null;
+      const tr = document.createElement('tr');
+      const symCell = r.doc_url
+        ? '<a href="' + r.doc_url.replace(/"/g,'&quot;') + '" target="_blank" rel="noopener">' +
+          (r.symbol || '(no symbol)') + '</a>' : (r.symbol || '');
+      tr.innerHTML =
+        '<td>' + symCell + '<br><span class="muted" style="font-size:0.8rem;">' +
+          (r.date || r.year || '') + '</span></td>' +
+        '<td>' + fmtSet(unSdgs) + '</td>' +
+        '<td data-source="ai">' + fmtSet(aiNow) + '</td>' +
+        '<td data-source="ai" class="' + (aiNow !== null && agree(unSdgs, aiNow) ? 'agree-yes">Yes' : 'agree-no">No') + '</td>' +
+        (prev
+          ? '<td data-source="ai">' + fmtSet(aiPrev) + '</td>' +
+            '<td data-source="ai" class="' + (aiPrev !== null && agree(unSdgs, aiPrev) ? 'agree-yes">Yes' : 'agree-no">No') + '</td>'
+          : '<td class="muted">—</td><td class="muted">—</td>');
+      aiTbody.appendChild(tr);
+    });
+  }
+
+  async function runAi() {
+    if (running) return;
+    const batch50 = current50();
+    if (!batch50.length) {
+      aiNotice.hidden = false;
+      aiNotice.textContent = 'There are no records in the current selection, so there is nothing to send to the model. Adjust the filters first.';
+      return;
+    }
+    running = true; stopRequested = false;
+    btnAi.disabled = true; btnStop.hidden = false;
+    aiProgress.hidden = false;
+    const batches = [];
+    for (let i = 0; i < batch50.length; i += 25) batches.push(batch50.slice(i, i + 25));
+
+    aiNotice.hidden = false;
+    aiNotice.textContent = 'Notice: the full text of ' + batch50.length +
+      ' records left your browser and was sent to an external language model (the workshop model ' +
+      'reached through studio.ask) in ' + batches.length + ' batch(es) of up to 25 records. AI ' +
+      'suggestions are not UN data. Language models are not fully deterministic: running this ' +
+      'again can give different answers — use "Run again" to compare two runs side by side.';
+
+    // shift runs: keep at most two (previous, latest)
+    if (runs.length) runs = [runs[runs.length - 1]];
+
+    const suggestions = {};
+    let agreeCount = 0;
+    try {
+      for (let b = 0; b < batches.length; b++) {
+        if (stopRequested) break;
+        aiProgress.textContent = 'Sending batch ' + (b + 1) + ' of ' + batches.length +
+          ' (' + batches[b].length + ' records) to the model… this can take a while.';
+        const batch = batches[b];
+        try {
+          const raw = await studio.ask(buildPrompt(batch), { json: true });
+          Object.assign(suggestions, parseAnswer(raw, batch));
+        } catch (e) {
+          // batch failed entirely: leave those records without answers
+        }
+        aiProgress.textContent = 'Batch ' + (b + 1) + ' of ' + batches.length + ' done' +
+          (stopRequested ? ' (stopped by user)' : '') + '.';
+      }
+    } finally {
+      running = false;
+      btnStop.hidden = true;
+      setTimeout(() => { aiProgress.hidden = true; }, 2500);
+    }
+
+    agreeCount = batch50.reduce((acc, r) =>
+      acc + (suggestions.hasOwnProperty(r.id) && agree(r.sdgs, suggestions[r.id]) ? 1 : 0), 0);
+
+    // if the run was stopped very early with no answers at all, still show it honestly
+    runs.push({ records: batch50, suggestions, agreeCount,
+                partial: stopRequested || Object.keys(suggestions).length < batch50.length });
+    renderAi();
+    btnAi.disabled = false;
+    if (stopRequested) {
+      aiProgress.hidden = false;
+      aiProgress.textContent += ' The run was stopped before all batches finished; records without an answer show "no answer".';
+    }
+  }
+
+  btnAi.addEventListener('click', runAi);
+  btnStop.addEventListener('click', () => { stopRequested = true; });
+
+  render();
+})();
+</script>
+</body>
+</html>
+```
+
+I added a "Suggest SDGs with AI" section that takes the first 50 records of the current filter (newest first), sends them to the model in two batches of 25 via `studio.ask`, and parses its JSON robustly (including "no answer" for failed records). It shows the agreement rate up top, an on-screen notice that the texts left the browser for the workshop's external language model and that re-runs may differ, and a table comparing the UN's SDGs with the AI's per record. "Run again" keeps the previous and latest runs side by side, with all AI-derived values wrapped in `data-source="ai"` elements.

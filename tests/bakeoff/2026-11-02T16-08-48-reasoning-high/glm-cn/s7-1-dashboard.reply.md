@@ -1,0 +1,483 @@
+Here's the dashboard. It reads everything — country name, counts, years, themes, SDG labels — from the attached file, filters all views together, and keeps every paragraph verbatim behind a click.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UN human rights recommendations</title>
+<style>
+  :root { --accent: #1f6fb2; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f5f7fa; color: #1c2733; font-size: 16px; line-height: 1.5;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 26px 20px 64px; }
+  h1 { font-size: 26px; margin: 0 0 6px; color: #12283a; }
+  h2 { font-size: 19px; margin: 0 0 12px; color: #12283a; }
+  .subtitle { margin: 0; color: #47596b; }
+  .subtitle a { color: var(--accent); }
+  a { color: var(--accent); }
+  .card { background: #fff; border: 1px solid #dfe6ee; border-radius: 8px; padding: 16px 20px; margin-bottom: 22px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 14px 16px; align-items: flex-end; }
+  .filters .field { display: flex; flex-direction: column; }
+  .filters label { font-size: 13px; color: #41566b; margin-bottom: 4px; font-weight: 600; }
+  .filters select, .filters input {
+    font: inherit; padding: 7px 8px; border: 1px solid #c4cfd9; border-radius: 5px; background: #fff; color: #1c2733;
+  }
+  .filters select { min-width: 150px; max-width: 260px; }
+  .filters input[type="number"] { width: 96px; }
+  .filters input[type="search"] { min-width: 210px; width: 240px; }
+  .btn { font: inherit; padding: 8px 18px; border-radius: 5px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+  .btn:hover { background: #185a92; }
+  .btn.secondary { background: #fff; color: var(--accent); }
+  .btn.secondary:hover { background: #eef5fb; }
+  #showingLine { font-size: 18px; font-weight: 600; margin: 0 0 2px; color: #12283a; }
+  #filterDesc { margin: 0; color: #47596b; }
+  .note { font-size: 13px; color: #5a6a7a; margin: 10px 0 0; }
+  .chart-box { height: 380px; position: relative; }
+  .no-match { color: #47596b; font-size: 16px; padding: 18px 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th {
+    text-align: left; border-bottom: 2px solid #d6dee7; padding: 8px 10px;
+    font-size: 12.5px; text-transform: uppercase; letter-spacing: .03em; color: #41566b;
+  }
+  td { border-bottom: 1px solid #e6ecf2; padding: 9px 10px; vertical-align: top; }
+  td.nowrap { white-space: nowrap; }
+  tr.rec { cursor: pointer; }
+  tr.rec:hover { background: #f0f6fb; }
+  tr.rec.open { background: #eaf3fa; }
+  tr.detail td { background: #f7fafd; border-left: 4px solid var(--accent); border-bottom: 2px solid #d6dee7; }
+  .detail-text { white-space: pre-wrap; margin: 2px 0 12px; }
+  .meta { font-size: 14px; color: #33445a; margin: 3px 0; }
+  .meta strong { color: #12283a; }
+  .preview { color: #33445a; }
+  #showMoreWrap { text-align: center; margin-top: 14px; }
+  .table-note { font-size: 13px; color: #5a6a7a; margin: 8px 0 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1 id="title">UN human rights recommendations</h1>
+    <p class="subtitle" id="subtitle"></p>
+    <p class="note" id="typeNote"></p>
+  </header>
+
+  <section class="card" aria-label="Filters">
+    <div class="filters">
+      <div class="field">
+        <label for="fMech">Mechanism</label>
+        <select id="fMech"></select>
+      </div>
+      <div class="field">
+        <label for="fBody">Treaty body / mandate</label>
+        <select id="fBody"></select>
+      </div>
+      <div class="field">
+        <label for="fYearFrom">Year from</label>
+        <input type="number" id="fYearFrom" placeholder="e.g. 2015">
+      </div>
+      <div class="field">
+        <label for="fYearTo">Year to</label>
+        <input type="number" id="fYearTo" placeholder="e.g. 2020">
+      </div>
+      <div class="field">
+        <label for="fSdg">SDG</label>
+        <select id="fSdg"></select>
+      </div>
+      <div class="field">
+        <label for="fKeyword">Keyword</label>
+        <input type="search" id="fKeyword" placeholder="Search the text…">
+      </div>
+      <button type="button" class="btn secondary" id="resetBtn">Reset</button>
+    </div>
+  </section>
+
+  <p id="showingLine"></p>
+  <p id="filterDesc"></p>
+  <p class="note">How this is computed: records are filtered and counted directly from the attached file. Nothing on this page is estimated.</p>
+
+  <section class="card" style="margin-top:18px;">
+    <h2>Most frequent themes</h2>
+    <div class="chart-box" id="chartBox"><canvas id="themeChart"></canvas></div>
+    <p class="no-match" id="noChartMsg" hidden>No records match these filters</p>
+    <p class="note">How this is computed: each matching record contributes one count for every theme it lists, so a record with several items is counted once for each. Only the 10 most frequent themes among the matching records are shown; records with no recorded theme do not appear in this chart.</p>
+  </section>
+
+  <section class="card">
+    <h2>Records</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:110px;">Date</th>
+          <th style="width:150px;">Body</th>
+          <th style="width:200px;">Symbol</th>
+          <th>Text</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <p class="no-match" id="noTableMsg" hidden>No records match these filters</p>
+    <p class="table-note">Newest first; records with no date are shown last. Click a row to see the full paragraph, word for word, with its themes, SDGs and affected persons.</p>
+    <div id="showMoreWrap"><button type="button" class="btn secondary" id="showMoreBtn"></button></div>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var U = window.WORKSHOP_DATA && window.WORKSHOP_DATA.uhri;
+  var sdgNames = (U && U.sdg_names) || {};
+
+  // Only these two types are counted anywhere in the app.
+  var TYPES = ["Recommendations", "Concerns/Observations"];
+  var ALL = ((U && U.records) || []).filter(function (r) {
+    return TYPES.indexOf(r.type) !== -1;
+  });
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  // ---------- Header ----------
+  var yearsAll = ALL.map(function (r) { return r.year; }).filter(function (y) { return typeof y === "number"; });
+  var minYear = yearsAll.length ? yearsAll.reduce(function (a, b) { return Math.min(a, b); }, yearsAll[0]) : null;
+  var maxYear = yearsAll.length ? yearsAll.reduce(function (a, b) { return Math.max(a, b); }, yearsAll[0]) : null;
+
+  document.getElementById("title").textContent =
+    "UN human rights recommendations to " + ((U && U.country) || "your country");
+
+  var subtitleEl = document.getElementById("subtitle");
+  if (U && U.source) {
+    var srcHtml = U.source_url
+      ? '<a href="' + esc(U.source_url) + '" target="_blank" rel="noopener">' + esc(U.source) + "</a>"
+      : esc(U.source);
+    subtitleEl.innerHTML = "Source: " + srcHtml +
+      " &middot; " + ALL.length + " records (recommendations and concerns/observations)" +
+      (minYear != null && maxYear != null ? " &middot; " + minYear + "\u2013" + maxYear : "");
+  } else {
+    subtitleEl.textContent = ALL.length + " records (recommendations and concerns/observations)" +
+      (minYear != null && maxYear != null ? " \u00b7 " + minYear + "\u2013" + maxYear : "");
+  }
+
+  var typeNote = document.getElementById("typeNote");
+  if (U && U.records && U.records.length !== ALL.length) {
+    typeNote.textContent = "Note: the file contains " + U.records.length +
+      " paragraphs in total; only the " + ALL.length +
+      " typed \u201cRecommendations\u201d or \u201cConcerns/Observations\u201d are included in this dashboard.";
+  }
+
+  // ---------- Filter controls ----------
+  var elMech = document.getElementById("fMech");
+  var elBody = document.getElementById("fBody");
+  var elYearFrom = document.getElementById("fYearFrom");
+  var elYearTo = document.getElementById("fYearTo");
+  var elSdg = document.getElementById("fSdg");
+  var elKeyword = document.getElementById("fKeyword");
+  var elReset = document.getElementById("resetBtn");
+
+  function uniqueSorted(field) {
+    var seen = {};
+    ALL.forEach(function (r) { if (r[field]) seen[r[field]] = true; });
+    return Object.keys(seen).sort(function (a, b) { return a.localeCompare(b); });
+  }
+
+  function fillSelect(select, values, allLabel, format) {
+    var html = '<option value="">' + esc(allLabel) + "</option>";
+    values.forEach(function (v) {
+      html += '<option value="' + esc(v) + '">' + esc(format ? format(v) : v) + "</option>";
+    });
+    select.innerHTML = html;
+  }
+
+  fillSelect(elMech, uniqueSorted("mechanism"), "All mechanisms");
+  fillSelect(elBody, uniqueSorted("body"), "All bodies / mandates");
+
+  var sdgSet = {};
+  ALL.forEach(function (r) {
+    (r.sdgs || []).forEach(function (s) { sdgSet[String(s)] = true; });
+  });
+  var sdgValues = Object.keys(sdgSet).sort(function (a, b) { return Number(a) - Number(b); });
+  fillSelect(elSdg, sdgValues, "All SDGs", function (v) {
+    return v + (sdgNames[v] ? " \u2013 " + sdgNames[v] : "");
+  });
+
+  elYearFrom.min = elYearTo.min = minYear != null ? minYear : "";
+  elYearFrom.max = elYearTo.max = maxYear != null ? maxYear : "";
+
+  // ---------- Filtering ----------
+  function currentMatches() {
+    var mech = elMech.value;
+    var body = elBody.value;
+    var y1 = elYearFrom.value === "" ? null : parseInt(elYearFrom.value, 10);
+    var y2 = elYearTo.value === "" ? null : parseInt(elYearTo.value, 10);
+    var sdg = elSdg.value === "" ? null : elSdg.value;
+    var kw = elKeyword.value.trim().toLowerCase();
+
+    return ALL.filter(function (r) {
+      if (mech && r.mechanism !== mech) return false;
+      if (body && r.body !== body) return false;
+      if (y1 !== null || y2 !== null) {
+        if (typeof r.year !== "number") return false;
+        if (y1 !== null && r.year < y1) return false;
+        if (y2 !== null && r.year > y2) return false;
+      }
+      if (sdg !== null) {
+        var list = (r.sdgs || []).map(String);
+        if (list.indexOf(sdg) === -1) return false;
+      }
+      if (kw && !(typeof r.text === "string" && r.text.toLowerCase().indexOf(kw) !== -1)) return false;
+      return true;
+    });
+  }
+
+  function filterDescription() {
+    var parts = [];
+    if (elMech.value) parts.push(elMech.value);
+    if (elBody.value) parts.push(elBody.value);
+    var y1 = elYearFrom.value, y2 = elYearTo.value;
+    if (y1 && y2) parts.push(y1 + "\u2013" + y2);
+    else if (y1) parts.push(y1 + " onwards");
+    else if (y2) parts.push("up to " + y2);
+    if (elSdg.value) parts.push("SDG " + elSdg.value);
+    if (elKeyword.value.trim()) parts.push("keyword: " + elKeyword.value.trim());
+    return parts.length ? "Filters: " + parts.join(" \u00b7 ") : "No filters applied \u2014 showing all records.";
+  }
+
+  // ---------- Text helpers ----------
+  function firstLine(text) {
+    if (!text) return "";
+    var s = String(text);
+    var nl = s.indexOf("\n");
+    var cut = nl >= 0 ? s.slice(0, nl) : s;
+    if (cut.length > 160) cut = cut.slice(0, 160);
+    return cut + (cut.length < s.length ? "\u2026" : "");
+  }
+
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function fmtDate(d) {
+    if (!d) return "date unknown";
+    var t = Date.parse(d);
+    if (isNaN(t)) return d;
+    var dt = new Date(t);
+    return dt.getUTCDate() + " " + MONTHS[dt.getUTCMonth()] + " " + dt.getUTCFullYear();
+  }
+
+  function sortByDateDesc(list) {
+    return list.slice().sort(function (a, b) {
+      var da = a.date, db = b.date;
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return db < da ? -1 : (db > da ? 1 : 0);
+    });
+  }
+
+  function sdgLabel(n) {
+    var key = String(n);
+    return key + (sdgNames[key] ? " \u2013 " + sdgNames[key] : "");
+  }
+
+  // ---------- Chart ----------
+  var chart = null;
+  var valueLabelsPlugin = {
+    id: "valueLabels",
+    afterDatasetsDraw: function (c) {
+      var ctx = c.ctx, meta = c.getDatasetMeta(0);
+      ctx.save();
+      ctx.font = "13px sans-serif";
+      ctx.fillStyle = "#1c2733";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      meta.data.forEach(function (bar, i) {
+        ctx.fillText(c.data.datasets[0].data[i], bar.x + 6, bar.y);
+      });
+      ctx.restore();
+    }
+  };
+
+  function renderChart(list) {
+    var counts = {};
+    list.forEach(function (r) {
+      (r.themes || []).forEach(function (t) { counts[t] = (counts[t] || 0) + 1; });
+    });
+    var entries = Object.keys(counts).map(function (t) { return [t, counts[t]]; })
+      .sort(function (a, b) { return (b[1] - a[1]) || a[0].localeCompare(b[0]); })
+      .slice(0, 10);
+
+    var box = document.getElementById("chartBox");
+    var msg = document.getElementById("noChartMsg");
+
+    if (!entries.length) {
+      box.hidden = true;
+      msg.hidden = false;
+      if (chart) { chart.destroy(); chart = null; }
+      return;
+    }
+    box.hidden = false;
+    msg.hidden = true;
+
+    if (chart) { chart.destroy(); chart = null; }
+    chart = new Chart(document.getElementById("themeChart"), {
+      type: "bar",
+      data: {
+        labels: entries.map(function (e) { return e[0]; }),
+        datasets: [{ label: "Records", data: entries.map(function (e) { return e[1]; }), backgroundColor: "#1f6fb2" }]
+      },
+      options: {
+        indexAxis: "y",
+        animation: false,
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { right: 50 } },
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: "#e6ecf2" } },
+          y: { grid: { display: false }, ticks: { font: { size: 13 }, color: "#33445a" } }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (item) { return item.parsed.x + " matching records"; }
+            }
+          }
+        }
+      },
+      plugins: [valueLabelsPlugin]
+    });
+
+    // Guarantee the longest bar is on top, whatever the axis default order is.
+    var meta = chart.getDatasetMeta(0).data;
+    if (meta.length > 1 && meta[0].y > meta[meta.length - 1].y) {
+      chart.options.scales.y.reverse = true;
+      chart.update("none");
+    }
+  }
+
+  // ---------- Table ----------
+  var PAGE = 100;
+  var tbody = document.getElementById("tbody");
+  var showMoreWrap = document.getElementById("showMoreWrap");
+  var showMoreBtn = document.getElementById("showMoreBtn");
+  var sortedMatches = [];
+  var shown = 0;
+
+  function symbolCell(r) {
+    if (!r.symbol) return '<span class="preview">(no symbol)</span>';
+    var sym = esc(r.symbol);
+    if (r.doc_url) {
+      return '<a href="' + esc(r.doc_url) + '" target="_blank" rel="noopener">' + sym + "</a>";
+    }
+    return sym;
+  }
+
+  function detailHtml(r) {
+    var themes = (r.themes && r.themes.length)
+      ? r.themes.map(esc).join("; ")
+      : "none recorded";
+    var sdgs = (r.sdgs && r.sdgs.length)
+      ? r.sdgs.slice().sort(function (a, b) { return Number(a) - Number(b); }).map(sdgLabel).map(esc).join("; ")
+      : "none recorded";
+    var persons = (r.affected_persons && r.affected_persons.length)
+      ? r.affected_persons.map(esc).join("; ")
+      : "none recorded";
+    var html = '<div class="detail-text">' + esc(r.text || "") + "</div>";
+    html += '<p class="meta"><strong>Themes:</strong> ' + themes + "</p>";
+    html += '<p class="meta"><strong>SDGs:</strong> ' + sdgs + "</p>";
+    html += '<p class="meta"><strong>Affected persons:</strong> ' + persons + "</p>";
+    return html;
+  }
+
+  function appendRow(r) {
+    var tr = document.createElement("tr");
+    tr.className = "rec";
+    tr.innerHTML =
+      '<td class="nowrap">' + esc(fmtDate(r.date)) + "</td>" +
+      '<td class="nowrap">' + esc(r.body || "unknown") + "</td>" +
+      '<td class="nowrap">' + symbolCell(r) + "</td>" +
+      '<td class="preview">' + esc(firstLine(r.text)) + "</td>";
+
+    var det = document.createElement("tr");
+    det.className = "detail";
+    det.style.display = "none";
+    var td = document.createElement("td");
+    td.colSpan = 4;
+    td.innerHTML = detailHtml(r);
+    det.appendChild(td);
+
+    tr.addEventListener("click", function () {
+      var open = det.style.display !== "none";
+      det.style.display = open ? "none" : "";
+      tr.classList.toggle("open", !open);
+    });
+    var link = tr.querySelector("a");
+    if (link) link.addEventListener("click", function (e) { e.stopPropagation(); });
+
+    tbody.appendChild(tr);
+    tbody.appendChild(det);
+  }
+
+  function renderTable() {
+    tbody.innerHTML = "";
+    shown = Math.min(PAGE, sortedMatches.length);
+    for (var i = 0; i < shown; i++) appendRow(sortedMatches[i]);
+    updateShowMore();
+  }
+
+  function updateShowMore() {
+    var remaining = sortedMatches.length - shown;
+    document.getElementById("noTableMsg").hidden = sortedMatches.length !== 0;
+    if (remaining > 0) {
+      showMoreWrap.style.display = "";
+      showMoreBtn.textContent = "Show more (" + remaining + " remaining)";
+    } else {
+      showMoreWrap.style.display = "none";
+    }
+  }
+
+  showMoreBtn.addEventListener("click", function () {
+    var next = Math.min(shown + PAGE, sortedMatches.length);
+    for (var i = shown; i < next; i++) appendRow(sortedMatches[i]);
+    shown = next;
+    updateShowMore();
+  });
+
+  // ---------- Master update ----------
+  function update() {
+    var matches = currentMatches();
+    sortedMatches = sortByDateDesc(matches);
+
+    document.getElementById("showingLine").textContent =
+      "Showing " + matches.length + " of " + ALL.length + " records";
+    document.getElementById("filterDesc").textContent = filterDescription();
+
+    renderChart(matches);
+    renderTable();
+  }
+
+  [elMech, elBody, elYearFrom, elYearTo, elSdg].forEach(function (c) {
+    c.addEventListener("change", update);
+  });
+  elKeyword.addEventListener("input", update);
+
+  elReset.addEventListener("click", function () {
+    elMech.value = ""; elBody.value = ""; elSdg.value = "";
+    elYearFrom.value = ""; elYearTo.value = ""; elKeyword.value = "";
+    update();
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>
+```

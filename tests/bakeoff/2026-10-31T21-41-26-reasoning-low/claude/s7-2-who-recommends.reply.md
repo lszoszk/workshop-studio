@@ -1,0 +1,274 @@
+I added a "Who recommends what" tab next to the dashboard. It reads the State from the last parentheses of each UPR recommendation, charts the top 15, and tabulates each State's most-raised SDGs. Clicking a bar or a table row lists that State's recommendations with linked symbols, and the tab states how many UPR recommendations had no State in parentheses.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UN human rights recommendations dashboard</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#f5f7fa;color:#1d2733}
+main{max-width:1150px;margin:0 auto;padding:28px 20px 60px}
+h1{margin:0 0 4px;font-size:28px}
+h2{font-size:20px;margin:0 0 6px}
+.desc{color:#4a5a6a;margin:0 0 20px}
+.card{background:#fff;border:1px solid #dde4ec;border-radius:8px;padding:18px 20px;margin-bottom:20px}
+.note{font-size:14px;color:#5b6b7b;margin:8px 0 0}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+label{display:block;font-size:14px;font-weight:600;color:#33475b}
+select,input{width:100%;padding:8px;font-size:16px;border:1px solid #b9c5d1;border-radius:5px;background:#fff;margin-top:4px}
+.yr{display:flex;gap:6px}
+.big{font-size:34px;font-weight:700;color:#1f6fb2;line-height:1.1}
+.stats{display:flex;gap:40px;flex-wrap:wrap}
+.stats div span{display:block;font-size:14px;color:#5b6b7b}
+button{background:#1f6fb2;color:#fff;border:0;border-radius:5px;padding:8px 14px;font-size:15px;cursor:pointer}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th{text-align:left;font-size:14px;color:#33475b;border-bottom:2px solid #dde4ec;padding:8px}
+td{padding:8px;border-bottom:1px solid #eef1f5;vertical-align:top;overflow-wrap:anywhere}
+tr.row{cursor:pointer}
+tr.row:hover{background:#f0f6fc}
+tr.sel{background:#e3effa}
+tr.full td{background:#f8fafc;white-space:pre-wrap}
+a{color:#1f6fb2}
+.chartbox{position:relative;height:440px}
+.pager{display:flex;gap:10px;align-items:center;margin-top:12px}
+.tabs{display:flex;gap:6px;margin-bottom:18px;border-bottom:2px solid #dde4ec}
+.tabs button{background:none;color:#33475b;border-radius:6px 6px 0 0;font-size:16px;padding:10px 18px}
+.tabs button.on{background:#1f6fb2;color:#fff}
+.hidden{display:none}
+.warn{background:#fff6dc;border:1px solid #e8d38a;border-radius:6px;padding:10px 14px;margin-top:10px;font-size:15px}
+</style>
+</head>
+<body>
+<main>
+<h1 id="title"></h1>
+<p class="desc" id="desc"></p>
+<div class="tabs">
+<button id="tab1" class="on">Overview</button>
+<button id="tab2">Who recommends what</button>
+</div>
+
+<section id="p1">
+<div class="card">
+<div class="stats">
+<div><div class="big" id="nAll"></div><span>records in total</span></div>
+<div><div class="big" id="nMatch"></div><span>records match the current filters</span></div>
+<div><div class="big" id="years"></div><span>years covered (all records)</span></div>
+</div>
+<p class="note">How this is computed: each record is one paragraph of a UN document. Totals are simple counts of the records loaded; "match" counts the records that pass every filter below.</p>
+</div>
+
+<div class="card">
+<div class="filters">
+<label>Mechanism<select id="fMech"></select></label>
+<label>Treaty body or mandate<select id="fBody"></select></label>
+<label>Year range
+<div class="yr"><select id="fFrom"></select><select id="fTo"></select></div></label>
+<label>SDG<select id="fSdg"></select></label>
+<label>Keyword search<input id="fKw" type="search" placeholder="e.g. detention"></label>
+</div>
+<p class="note">Filters combine (all must match). The keyword search looks for the typed text anywhere in the paragraph, ignoring capitals. <button id="reset" style="margin-left:8px">Reset filters</button></p>
+</div>
+
+<div class="card">
+<h2>10 most frequent themes</h2>
+<div class="chartbox" style="height:380px"><canvas id="chart"></canvas></div>
+<p class="note" id="chartNote"></p>
+</div>
+
+<div class="card">
+<h2>Matching records</h2>
+<table>
+<thead><tr><th style="width:105px">Date</th><th style="width:130px">Body</th><th style="width:200px">Symbol</th><th>First line of text</th></tr></thead>
+<tbody id="tb"></tbody>
+</table>
+<div class="pager"><button id="more">Show more</button><span id="shown"></span></div>
+<p class="note">How this is computed: records are sorted by date, newest first. The first line is the start of the paragraph (up to 160 characters). Click a row to show or hide the full, unaltered text. The symbol links to the UN document in a new tab.</p>
+</div>
+</section>
+
+<section id="p2" class="hidden">
+<div class="card">
+<h2>States that made the most UPR recommendations</h2>
+<div class="stats">
+<div><div class="big" id="uN"></div><span>UPR recommendations in the data</span></div>
+<div><div class="big" id="uWith"></div><span>with a State in final parentheses</span></div>
+<div><div class="big" id="uNo"></div><span>with no State in parentheses</span></div>
+</div>
+<div class="warn" id="uWarn"></div>
+<div class="chartbox"><canvas id="chart2"></canvas></div>
+<p class="note">How this is computed: only records whose mechanism is "Universal Periodic Review" and whose type is "Recommendations" are used. The text inside the last pair of parentheses at the end of the paragraph is taken as the recommending State. Records without such a pair are counted as "no State". Where one pair names several States separated by commas, "and" or semicolons, each State is credited once. Click a bar to list that State's recommendations.</p>
+</div>
+
+<div class="card">
+<h2>SDGs each State raises most</h2>
+<table>
+<thead><tr><th style="width:200px">State</th><th style="width:110px">Recommendations</th><th>Top SDGs (number of recommendations)</th></tr></thead>
+<tbody id="tb2"></tbody>
+</table>
+<p class="note">How this is computed: for each of the 15 States, each SDG tag on its recommendations is counted once per recommendation; the three most frequent are shown. Recommendations without an SDG tag are not counted here. Click a row to list that State's recommendations.</p>
+</div>
+
+<div class="card" id="listCard">
+<h2 id="listTitle">Recommendations by State</h2>
+<p class="note" id="listHint">Click a bar or a table row above to list that State's recommendations.</p>
+<table id="listTable" class="hidden">
+<thead><tr><th style="width:105px">Date</th><th style="width:200px">Symbol</th><th>Recommendation (click for full text)</th></tr></thead>
+<tbody id="tb3"></tbody>
+</table>
+</div>
+</section>
+</main>
+
+<script>
+(function(){
+var D=(window.WORKSHOP_DATA&&WORKSHOP_DATA.uhri)||{};
+var all=(D.records||[]).slice().sort(function(a,b){return (b.date||"").localeCompare(a.date||"")});
+var sdgNames=D.sdg_names||{};
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var country=D.country||"the selected country";
+$("title").textContent="UN human rights recommendations and observations: "+country;
+var ys=all.map(function(r){return r.year}).filter(function(y){return typeof y==="number"});
+var minY=ys.length?Math.min.apply(null,ys):null,maxY=ys.length?Math.max.apply(null,ys):null;
+$("desc").textContent=(D.title||"UN recommendations")+" — source: "+(D.source||"UHRI")+"; n = "+all.length+" paragraphs"+(minY!==null?", "+minY+"–"+maxY:"")+".";
+$("nAll").textContent=all.length;
+$("years").textContent=minY!==null?(minY===maxY?minY:minY+"–"+maxY):"n/a";
+
+function uniq(a){return Array.from(new Set(a)).filter(Boolean).sort()}
+function fill(sel,vals,first,labelFn){
+ sel.innerHTML='<option value="">'+first+'</option>'+vals.map(function(v){return '<option value="'+esc(v)+'">'+esc(labelFn?labelFn(v):v)+'</option>'}).join("")}
+fill($("fMech"),uniq(all.map(function(r){return r.mechanism})),"All mechanisms");
+fill($("fBody"),uniq(all.map(function(r){return r.body})),"All bodies / mandates");
+var sd=uniq([].concat.apply([],all.map(function(r){return (r.sdgs||[]).map(String)}))).sort(function(a,b){return a-b});
+fill($("fSdg"),sd,"All SDGs",function(v){return "SDG "+v+(sdgNames[v]?": "+sdgNames[v]:"")});
+var yl=[];if(minY!==null)for(var y=minY;y<=maxY;y++)yl.push(y);
+fill($("fFrom"),yl,"From");fill($("fTo"),yl,"To");
+
+var chart=null,cur=[],limit=50;
+function filtered(){
+ var m=$("fMech").value,b=$("fBody").value,s=$("fSdg").value,f=+$("fFrom").value||-Infinity,t=+$("fTo").value||Infinity,k=$("fKw").value.trim().toLowerCase();
+ return all.filter(function(r){
+  if(m&&r.mechanism!==m)return false;
+  if(b&&r.body!==b)return false;
+  if(s&&(r.sdgs||[]).map(String).indexOf(s)<0)return false;
+  if(typeof r.year==="number"&&(r.year<f||r.year>t))return false;
+  if(typeof r.year!=="number"&&(f>-Infinity||t<Infinity))return false;
+  if(k&&(r.text||"").toLowerCase().indexOf(k)<0)return false;
+  return true});
+}
+function update(){
+ cur=filtered();limit=50;
+ $("nMatch").textContent=cur.length;
+ drawChart();drawTable();
+}
+function drawChart(){
+ var c={};
+ cur.forEach(function(r){(r.themes||[]).forEach(function(t){c[t]=(c[t]||0)+1})});
+ var top=Object.keys(c).map(function(k){return [k,c[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,10);
+ $("chartNote").textContent="How this is computed: for the "+cur.length+" matching records, each theme tag is counted once per record (a record can have several themes, so bars add up to more than the record count). "+(top.length?"":"No themes to show for this filter.");
+ if(chart)chart.destroy();
+ chart=new Chart($("chart"),{type:"bar",
+  data:{labels:top.map(function(x){return x[0]}),datasets:[{label:"Records",data:top.map(function(x){return x[1]}),backgroundColor:"#1f6fb2"}]},
+  options:{indexAxis:"y",maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0,font:{size:13}},title:{display:true,text:"Number of records"}},y:{ticks:{font:{size:13}}}}}});
+}
+function first(t){t=(t||"").replace(/\s+/g," ").trim();return t.length>160?t.slice(0,160)+"…":t}
+function link(r){return r.doc_url?'<a href="'+esc(r.doc_url)+'" target="_blank" rel="noopener">'+esc(r.symbol)+'</a>':esc(r.symbol)}
+function drawTable(){
+ var rows=cur.slice(0,limit),h="";
+ rows.forEach(function(r,i){
+  h+='<tr class="row" data-i="'+i+'"><td>'+esc(r.date||r.year||"")+'</td><td>'+esc(r.body||"")+'</td><td>'+link(r)+'</td><td>'+esc(first(r.text))+'</td></tr>';
+ });
+ if(!rows.length)h='<tr><td colspan="4">No records match these filters.</td></tr>';
+ $("tb").innerHTML=h;
+ $("shown").textContent="Showing "+rows.length+" of "+cur.length;
+ $("more").style.display=cur.length>limit?"":"none";
+}
+function toggleFull(e,list,cols){
+ if(e.target.tagName==="A")return;
+ var tr=e.target.closest("tr.row");if(!tr)return;
+ var nx=tr.nextElementSibling;
+ if(nx&&nx.classList.contains("full")){nx.remove();return}
+ var r=list[+tr.dataset.i];
+ var x=document.createElement("tr");x.className="full";
+ var meta=[r.mechanism,r.type,r.section].filter(Boolean).join(" · ");
+ x.innerHTML='<td colspan="'+cols+'"><small>'+esc(meta)+'</small><br>'+esc(r.text)+
+  ((r.themes||[]).length?'<br><small>Themes: '+esc(r.themes.join("; "))+'</small>':'')+'</td>';
+ tr.after(x);
+}
+$("tb").addEventListener("click",function(e){toggleFull(e,cur,4)});
+$("more").onclick=function(){limit+=50;drawTable()};
+["fMech","fBody","fSdg","fFrom","fTo"].forEach(function(id){$(id).addEventListener("change",update)});
+$("fKw").addEventListener("input",update);
+$("reset").onclick=function(){["fMech","fBody","fSdg","fFrom","fTo","fKw"].forEach(function(id){$(id).value=""});update()};
+update();
+
+/* ---------- Tab 2 ---------- */
+var built=false,chart2=null,top15=[],byState={},stList=[];
+function stateNames(t){
+ var m=(t||"").trim().replace(/[\s.]+$/,"").match(/\(([^()]*)\)$/);
+ if(!m)return null;
+ var inner=m[1].trim();if(!inner)return null;
+ var parts=inner.split(/\s*(?:;|,|\band\b|&)\s*/i).map(function(s){return s.trim()}).filter(Boolean);
+ return parts.length?parts:null;
+}
+function build(){
+ built=true;
+ var upr=all.filter(function(r){return r.mechanism==="Universal Periodic Review"&&r.type==="Recommendations"});
+ var noState=0,withState=0;
+ upr.forEach(function(r){
+  var s=stateNames(r.text);
+  if(!s){noState++;return}
+  withState++;
+  Array.from(new Set(s)).forEach(function(n){(byState[n]=byState[n]||[]).push(r)});
+ });
+ $("uN").textContent=upr.length;$("uWith").textContent=withState;$("uNo").textContent=noState;
+ $("uWarn").textContent=upr.length?(noState+" of "+upr.length+" UPR recommendations had no State in parentheses at the end of the text and are left out of the chart and tables."):"No UPR recommendations were found in the data, so there is nothing to show.";
+ top15=Object.keys(byState).map(function(k){return [k,byState[k].length]}).sort(function(a,b){return b[1]-a[1]||a[0].localeCompare(b[0])}).slice(0,15);
+ chart2=new Chart($("chart2"),{type:"bar",
+  data:{labels:top15.map(function(x){return x[0]}),datasets:[{label:"Recommendations",data:top15.map(function(x){return x[1]}),backgroundColor:"#1f6fb2"}]},
+  options:{indexAxis:"y",maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},
+   onClick:function(ev,els){if(els.length)showState(top15[els[0].index][0])},
+   onHover:function(ev,els){ev.native.target.style.cursor=els.length?"pointer":"default"},
+   scales:{x:{beginAtZero:true,ticks:{precision:0,font:{size:13}},title:{display:true,text:"Number of UPR recommendations to "+country}},y:{ticks:{font:{size:13}}}}}});
+ var h="";
+ top15.forEach(function(x){
+  var c={};
+  byState[x[0]].forEach(function(r){(r.sdgs||[]).forEach(function(g){c[g]=(c[g]||0)+1})});
+  var t=Object.keys(c).map(function(g){return [g,c[g]]}).sort(function(a,b){return b[1]-a[1]||a[0]-b[0]}).slice(0,3);
+  var txt=t.length?t.map(function(g){return "SDG "+g[0]+(sdgNames[g[0]]?" "+sdgNames[g[0]]:"")+" ("+g[1]+")"}).join("; "):"No SDG tags";
+  h+='<tr class="row" data-s="'+esc(x[0])+'"><td>'+esc(x[0])+'</td><td>'+x[1]+'</td><td>'+esc(txt)+'</td></tr>';
+ });
+ $("tb2").innerHTML=h||'<tr><td colspan="3">No States could be extracted.</td></tr>';
+}
+var stCur=[];
+function showState(name){
+ stCur=(byState[name]||[]).slice();
+ $("listTitle").textContent=name+": "+stCur.length+" UPR recommendation"+(stCur.length===1?"":"s")+" to "+country;
+ $("listHint").textContent="Newest first. Click a row to show or hide the full text; the symbol opens the UN document in a new tab.";
+ $("listTable").classList.remove("hidden");
+ var h="";
+ stCur.forEach(function(r,i){
+  h+='<tr class="row" data-i="'+i+'"><td>'+esc(r.date||r.year||"")+'</td><td>'+link(r)+'</td><td>'+esc(first(r.text))+'</td></tr>';
+ });
+ $("tb3").innerHTML=h;
+ Array.prototype.forEach.call($("tb2").rows,function(tr){tr.classList.toggle("sel",tr.dataset.s===name)});
+ $("listCard").scrollIntoView({block:"nearest"});
+}
+$("tb2").addEventListener("click",function(e){var tr=e.target.closest("tr.row");if(tr)showState(tr.dataset.s)});
+$("tb3").addEventListener("click",function(e){toggleFull(e,stCur,3)});
+
+function tab(n){
+ $("p1").classList.toggle("hidden",n!==1);$("p2").classList.toggle("hidden",n!==2);
+ $("tab1").classList.toggle("on",n===1);$("tab2").classList.toggle("on",n===2);
+ if(n===2&&!built)build();
+}
+$("tab1").onclick=function(){tab(1)};
+$("tab2").onclick=function(){tab(2)};
+})();
+</script>
+</body>
+</html>
+```

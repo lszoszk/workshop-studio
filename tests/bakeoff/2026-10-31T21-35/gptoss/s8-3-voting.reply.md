@@ -1,0 +1,184 @@
+I built a single‑page comparison tool that lets you pick any two Council members, filter by resolution or amendment, and see how often they voted together, a yearly bar chart, and a list of all differing votes with warnings when the official totals don’t match the roll‑call.  
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Human Rights Council Vote Comparison</title>
+<style>
+  body{font-family:system-ui,sans-serif;margin:0;padding:1rem;background:#f9f9f9;color:#333}
+  h1{font-size:1.75rem;margin-bottom:.5rem}
+  h2{font-size:1.25rem;margin:1rem 0 .5rem}
+  .desc{font-size:.9rem;color:#555}
+  .controls{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+  .controls label{display:flex;align-items:center;gap:.5rem}
+  select, input[type=radio]{font-size:1rem}
+  #stats{margin-bottom:1rem}
+  #stats span{font-weight:bold}
+  canvas{max-width:100%;height:auto}
+  table{border-collapse:collapse;width:100%;margin-top:1rem}
+  th,td{border:1px solid #ddd;padding:.5rem;text-align:left}
+  th{background:#eee}
+  .warning{color:#d00;font-size:.9rem;margin-left:.5rem}
+  .radio-group{display:flex;gap:.5rem;align-items:center}
+  .radio-group label{display:flex;align-items:center;gap:.25rem}
+  .note{font-size:.9rem;color:#555;margin-top:.5rem}
+  .no-data{font-style:italic;color:#777;margin-top:.5rem}
+</style>
+</head>
+<body>
+<h1>Human Rights Council Vote Comparison</h1>
+<p class="desc">Compare how two Council members voted on recorded resolutions and amendments. Data source: <code>WORKSHOP_DATA.hrc</code>.</p>
+
+<div class="controls">
+  <label>
+    State 1:
+    <select id="state1"></select>
+  </label>
+  <label>
+    State 2:
+    <select id="state2"></select>
+  </label>
+  <div class="radio-group">
+    <label><input type="radio" name="kind" value="both" checked>Both</label>
+    <label><input type="radio" name="kind" value="resolution">Resolutions</label>
+    <label><input type="radio" name="kind" value="amendment">Amendments</label>
+  </div>
+</div>
+
+<div id="stats"></div>
+<canvas id="timelineChart"></canvas>
+<div class="note">How this is computed: the chart shows the number of votes in which both selected states participated, grouped by year. The table lists all votes where their votes differed.</div>
+
+<div id="diffTable"></div>
+
+<script>
+(() => {
+  const data = window.WORKSHOP_DATA.hrc || [];
+  const states = new Set();
+  data.forEach(r=>{Object.keys(r.votes||{}).forEach(s=>states.add(s))});
+  const stateList = Array.from(states).sort();
+
+  const state1Sel = document.getElementById('state1');
+  const state2Sel = document.getElementById('state2');
+  const kindRadios = document.querySelectorAll('input[name="kind"]');
+  const statsDiv = document.getElementById('stats');
+  const diffDiv = document.getElementById('diffTable');
+  const chartCtx = document.getElementById('timelineChart').getContext('2d');
+  let chart;
+
+  function populateSelect(sel){
+    stateList.forEach(code=>{
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = code;
+      sel.appendChild(opt);
+    });
+  }
+  populateSelect(state1Sel);
+  populateSelect(state2Sel);
+
+  function getKind(){
+    return Array.from(kindRadios).find(r=>r.checked).value;
+  }
+
+  function filterRecords(){
+    const kind = getKind();
+    return data.filter(r=>{
+      if(kind==='resolution' && r.kind!=='resolution') return false;
+      if(kind==='amendment' && r.kind!=='amendment') return false;
+      return true;
+    });
+  }
+
+  function computeStats(stateA, stateB, records){
+    let total=0, same=0, diff=0;
+    const timeline = {};
+    const diffVotes = [];
+    records.forEach(r=>{
+      const vA = r.votes[stateA];
+      const vB = r.votes[stateB];
+      if(vA!==undefined && vB!==undefined){
+        total++;
+        if(vA===vB) same++; else diff++;
+        const yr = r.year;
+        timeline[yr] = (timeline[yr]||0)+1;
+        if(vA!==vB){
+          diffVotes.push(r);
+        }
+      }
+    });
+    const years = Object.keys(timeline).map(Number).sort((a,b)=>a-b);
+    const timelineData = years.map(y=>({year:y,count:timeline[y]}));
+    return {total,same,diff,timeline:timelineData,diffVotes};
+  }
+
+  function renderStats(stats){
+    statsDiv.innerHTML = `
+      <p>Both states participated in <span>${stats.total}</span> recorded votes (${getKind()}). 
+      They voted the same way in <span>${stats.same}</span> (${((stats.same/stats.total)*100||0).toFixed(1)}%) and differed in <span>${stats.diff}</span> (${((stats.diff/stats.total)*100||0).toFixed(1)}%).</p>
+    `;
+  }
+
+  function renderChart(timeline){
+    const labels = timeline.map(d=>d.year);
+    const values = timeline.map(d=>d.count);
+    if(chart) chart.destroy();
+    chart = new Chart(chartCtx, {
+      type:'bar',
+      data:{labels, datasets:[{label:'Votes',data:values,bgColor:'#1f6fb2'}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+    });
+  }
+
+  function renderDiffTable(diffVotes){
+    if(diffVotes.length===0){
+      diffDiv.innerHTML = '<p class="no-data">No differing votes for the selected states.</p>';
+      return;
+    }
+    const rows = diffVotes.map(r=>{
+      const link = r.record_url || r.doc_url || '#';
+      const vA = r.votes[state1Sel.value];
+      const vB = r.votes[state2Sel.value];
+      const totalsMatch = (r.yes+r.no+r.abstain)===Object.values(r.votes||{}).filter(v=>v==='Y').length+
+                           Object.values(r.votes||{}).filter(v=>v==='N').length+
+                           Object.values(r.votes||{}).filter(v=>v==='A').length;
+      const warning = totalsMatch?'':'<span class="warning" title="Official totals differ from roll‑call">⚠️</span>';
+      return `<tr>
+        <td><a href="${link}" target="_blank">${r.symbol}</a></td>
+        <td>${r.title}</td>
+        <td>${r.date}</td>
+        <td>${vA}</td>
+        <td>${vB}</td>
+        <td>${warning}</td>
+      </tr>`;
+    }).join('');
+    diffDiv.innerHTML = `
+      <h2>Differing Votes (${diffVotes.length})</h2>
+      <table>
+        <thead><tr><th>Symbol</th><th>Title</th><th>Date</th><th>${state1Sel.value}</th><th>${state2Sel.value}</th><th>Warning</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  function update(){
+    const stateA = state1Sel.value;
+    const stateB = state2Sel.value;
+    if(!stateA || !stateB) return;
+    const records = filterRecords();
+    const stats = computeStats(stateA,stateB,records);
+    renderStats(stats);
+    renderChart(stats.timeline);
+    renderDiffTable(stats.diffVotes);
+  }
+
+  state1Sel.addEventListener('change',update);
+  state2Sel.addEventListener('change',update);
+  kindRadios.forEach(r=>r.addEventListener('change',update));
+})();
+</script>
+</body>
+</html>
+```

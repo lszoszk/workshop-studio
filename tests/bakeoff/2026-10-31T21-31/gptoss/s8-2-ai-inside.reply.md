@@ -1,0 +1,1 @@
+I added a “Suggest SDGs with AI” button that sends the first 50 filtered records to a language model in batches of 25, shows the AI‑suggested SDGs, compares them to the UN SDGs, and keeps each run side by side. The page also displays the agreement rate and a notice that the texts were sent to an external model.

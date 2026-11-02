@@ -1,0 +1,1 @@
+The page below lets you search the General Comments by keyword, committee and year, highlights the matching text, and shows a bar chart of hits per committee.

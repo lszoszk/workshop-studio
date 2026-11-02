@@ -1,0 +1,29 @@
+# Workshop Studio — Cloudflare Worker (route 2, hot standby). Nothing here is created yet.
+# One-time setup (server/RUNBOOK.md, "Cloudflare Worker"):
+#   npx wrangler kv namespace create STUDIO          → paste the id below
+#   npx wrangler secret put OPENROUTER_API_KEY        → a SEPARATE OpenRouter key with its own credit limit
+#   (repo root) python3 -m server.seats export-kv tools/out/seats.csv > /tmp/seats-kv.json
+#   npx wrangler kv bulk put --binding STUDIO /tmp/seats-kv.json   (re-run after every make_seats.py; spending is kept)
+#   npx wrangler deploy
+# site/config.json expects the URL https://studio-api.lszoszk.workers.dev, hence the name.
+name = "studio-api"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+[[kv_namespaces]]
+binding = "STUDIO"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[vars]
+ALLOWED_ORIGINS = "https://lszoszk.github.io,http://localhost:8766,http://127.0.0.1:8766"
+DATA_URL = "https://lszoszk.github.io/workshop-studio/data/"   # system_prompt.md, schema.md, samples.json
+SEAT_BUDGET = "8"
+DAILY_BUDGET = "200"
+RATE_LIMIT = "20"
+RATE_WINDOW = "300"
+BUSY_RETRY_S = "20"     # retry OpenRouter's transient in-flight-budget 402 this long, then 503
+
+# keep our own content-free console.log lines; invocation logs would carry request metadata (client IP)
+[observability.logs]
+enabled = true
+invocation_logs = false

@@ -1,0 +1,1 @@
+Built an offline SDG comparison tool with dynamic filters, two batches of up to 25 records, stoppable AI runs, exact-set agreement scoring, and side-by-side results for two runs.

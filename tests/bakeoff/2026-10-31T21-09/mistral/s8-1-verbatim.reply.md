@@ -1,0 +1,492 @@
+I built a self-contained search page over `WORKSHOP_DATA.gc`: a boolean query parser (AND / OR / NOT, "exact phrases", parentheses, trailing `*` prefixes), committee and year filters, results with the paragraph text reproduced exactly and matched words highlighted, a Chart.js bar chart of hits per committee, and a "Copy citation" button per row. Everything runs locally in the browser — no network, no model calls.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>General Comments search · UHRI workshop</title>
+<style>
+:root{--accent:#1f6fb2;--accent-dark:#175a92;--ink:#1d2b36;--muted:#5c6b7a;--line:#d8e1ea;--bg:#f4f7fa;--mark:#ffe9a8;}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--bg)}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px}
+header.top{background:#fff;border-bottom:1px solid var(--line);padding:24px 0 18px}
+h1{font-size:1.45rem;margin:0 0 6px;color:var(--accent)}
+h2{font-size:1.1rem;margin:0 0 4px}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+.panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin:18px 0}
+label.lbl{display:block;font-weight:600;margin-bottom:6px}
+.search-row{display:flex;gap:10px;flex-wrap:wrap}
+#q{flex:1;min-width:260px;padding:10px 12px;font-size:16px;border:1px solid var(--line);border-radius:8px}
+button{cursor:pointer;font:inherit}
+.btn-primary{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-weight:600}
+.btn-primary:hover{background:var(--accent-dark)}
+.hint{font-size:.86rem;color:var(--muted);margin:10px 0 6px}
+code{background:#eef3f8;border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:.85em}
+.examples{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 2px}
+.ex{background:#eef4fa;border:1px solid #cfe0ef;color:var(--accent-dark);border-radius:999px;padding:4px 12px;font-size:.85rem}
+.ex:hover{background:#e0ecf7}
+.filters{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px}
+.filters label{display:flex;flex-direction:column;font-size:.86rem;font-weight:600;color:var(--muted);gap:4px}
+select{padding:7px 9px;font-size:15px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}
+#parse{margin:12px 0 0;font-size:.86rem}
+.stats-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+#hits-line{font-weight:600}
+.chart-wrap{position:relative;width:100%;margin-top:10px}
+.note{font-size:.83rem;color:var(--muted);margin:10px 0 0}
+mark{background:var(--mark);color:inherit;padding:0 1px;border-radius:2px}
+.rec{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.rec-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.9rem}
+.badge{background:var(--accent);color:#fff;border-radius:999px;padding:2px 10px;font-size:.78rem;font-weight:700;letter-spacing:.02em;flex:none}
+.rec-meta .sym{font-weight:600;color:var(--accent-dark)}
+.rec-meta .dim{color:var(--muted)}
+.copy-btn{margin-left:auto;background:#fff;border:1px solid var(--accent);color:var(--accent-dark);border-radius:7px;padding:5px 12px;font-size:.85rem;font-weight:600;flex:none}
+.copy-btn:hover{background:#eef4fa}
+.copy-btn.done{background:#e7f4e8;border-color:#3d9a50;color:#22662f}
+.txt{margin:10px 0 0;white-space:pre-wrap;word-wrap:break-word;background:#f8fafc;border-left:3px solid var(--accent);padding:10px 12px;border-radius:0 8px 8px 0;font-size:.95rem}
+#show-all{background:#fff;border:1px solid var(--accent);color:var(--accent-dark);border-radius:8px;padding:9px 16px;font-weight:600;margin:6px 0 24px}
+.empty{padding:18px;text-align:center;color:var(--muted)}
+.fallback-row{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:.85rem}
+.fallback-row .fl{width:110px;text-align:right;flex:none;color:var(--muted)}
+.fallback-row .bar{height:14px;background:var(--accent);border-radius:3px;min-width:2px}
+.fallback-row .fc{flex:none}
+footer{padding:10px 0 30px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <h1>Search the treaty bodies’ General Comments</h1>
+  <p id="dataset-line" class="muted small"></p>
+</div></header>
+
+<main class="wrap">
+  <section class="panel">
+    <form id="search-form">
+      <label class="lbl" for="q">Search the paragraph text</label>
+      <div class="search-row">
+        <input id="q" type="search" autocomplete="off" spellcheck="false"
+          placeholder='torture NOT "non-refoulement"   ·   "death penalty" OR electrocution   ·   discrimin*'>
+        <button class="btn-primary" type="submit">Search</button>
+      </div>
+    </form>
+    <p class="hint">Operators <code>AND</code> <code>OR</code> <code>NOT</code> (uppercase), “exact phrases” in quotes, parentheses, and a trailing <code>*</code> for prefixes (e.g. <code>discrimin*</code>). Case-insensitive; a plain word must match a whole word unless you add <code>*</code>. Adjacent terms are combined with AND. Try:</p>
+    <div class="examples" id="examples"></div>
+    <div class="filters">
+      <label>Committee
+        <select id="committee"><option value="all">All committees</option></select>
+      </label>
+      <label>Year
+        <select id="year"><option value="all">All years</option></select>
+      </label>
+    </div>
+    <p id="parse" class="muted"></p>
+  </section>
+
+  <section class="panel">
+    <div class="stats-head">
+      <h2>Hits per committee</h2>
+      <p id="hits-line"></p>
+    </div>
+    <div class="chart-wrap" id="chart-wrap"><canvas id="chart"></canvas></div>
+    <div id="chart-fallback" hidden></div>
+    <p id="chart-empty" class="empty" hidden>No paragraphs match the current query and filters.</p>
+    <p class="note">How this is computed: for the current query and filters, this page counts the matching paragraphs in each committee — plain counting in JavaScript over the loaded records, nothing estimated. Committees with zero hits are left out. The query is matched against the full paragraph text only.</p>
+  </section>
+
+  <section>
+    <h2>Matching paragraphs <span id="results-count" class="muted small"></span></h2>
+    <p class="note">How this is computed: a paragraph matches when its full text satisfies the parsed query (AND / OR / NOT, quoted phrases, case-insensitive, whole words unless <code>*</code>). Results are sorted by committee, then year (newest first), then paragraph number. The text below is reproduced exactly as stored in the data — the only addition is the highlighting of matched words (words excluded by <code>NOT</code> are not highlighted). Each row links to the UN document through its symbol.</p>
+    <div id="results"></div>
+    <button id="show-all" hidden></button>
+  </section>
+</main>
+
+<footer class="wrap"><p class="muted small">All data was loaded into this page before it ran; every search, filter and count happens locally in your browser and nothing is sent anywhere.</p></footer>
+
+<script>
+(function(){
+"use strict";
+var gc = window.WORKSHOP_DATA && window.WORKSHOP_DATA.gc;
+var records = (gc && Array.isArray(gc.records)) ? gc.records : [];
+function $(id){ return document.getElementById(id); }
+var qInput=$('q'), committeeSel=$('committee'), yearSel=$('year'),
+    parseEl=$('parse'), hitsEl=$('hits-line'), resultsEl=$('results'),
+    countEl=$('results-count'), showAllBtn=$('show-all'),
+    chartWrap=$('chart-wrap'), canvas=$('chart'), chartEmpty=$('chart-empty'),
+    fallbackEl=$('chart-fallback');
+
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function escapeRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+/* ---------- header: source, n, years ---------- */
+(function(){
+  var el=$('dataset-line');
+  if(!gc){ el.textContent='No General Comment dataset was found in WORKSHOP_DATA.gc.'; return; }
+  var years=records.map(function(r){return r.year;}).filter(function(y){return typeof y==='number';});
+  var min=years.length?Math.min.apply(null,years):null, max=years.length?Math.max.apply(null,years):null;
+  var line='Dataset: '+esc(gc.title||'General Comments')+' — source: ';
+  if(gc.source_url){ line+='<a href="'+esc(gc.source_url)+'" target="_blank" rel="noopener">'+esc(gc.source||'source')+'</a>'; }
+  else{ line+=esc(gc.source||'unknown'); }
+  line+='. '+records.length+' paragraphs loaded'+
+        (gc.count!=null && gc.count!==records.length ? ' (file metadata says '+gc.count+')' : '')+
+        (min!=null ? ', years '+min+'–'+max : '')+'.';
+  el.innerHTML=line;
+})();
+
+/* ---------- query language: tokenizer, parser, evaluator ---------- */
+function tokenize(q){
+  var tokens=[], i=0;
+  while(i<q.length){
+    var c=q.charAt(i);
+    if(/\s/.test(c)){ i++; continue; }
+    if(c==='"'){
+      var end=q.indexOf('"', i+1);
+      if(end===-1){ var w=q.slice(i+1); if(w) tokens.push({t:'word',v:w}); i=q.length; }
+      else{ var p=q.slice(i+1,end); if(p) tokens.push({t:'phrase',v:p}); i=end+1; }
+    } else if(c==='('){ tokens.push({t:'lp'}); i++; }
+    else if(c===')'){ tokens.push({t:'rp'}); i++; }
+    else{
+      var j=i;
+      while(j<q.length){ var ch=q.charAt(j); if(/\s/.test(ch)||ch==='"'||ch==='('||ch===')') break; j++; }
+      var w=q.slice(i,j); i=j;
+      var up=w.toUpperCase();
+      if(up==='AND') tokens.push({t:'and'});
+      else if(up==='OR') tokens.push({t:'or'});
+      else if(up==='NOT') tokens.push({t:'not'});
+      else tokens.push({t:'word',v:w});
+    }
+  }
+  return tokens;
+}
+function parse(tokens){
+  var pos=0;
+  function peek(){ return tokens[pos]; }
+  function parseOr(){
+    var left=parseAnd();
+    while(peek() && peek().t==='or'){ pos++; var r=parseAnd(); left={op:'or',l:left,r:r}; }
+    return left;
+  }
+  function parseAnd(){
+    var left=parseUnary();
+    while(peek()){
+      var t=peek().t;
+      if(t==='and'){ pos++; }
+      else if(t==='word'||t==='phrase'||t==='not'||t==='lp'){ /* implicit AND */ }
+      else break;
+      var r=parseUnary();
+      left={op:'and',l:left,r:r};
+    }
+    return left;
+  }
+  function parseUnary(){
+    if(peek() && peek().t==='not'){ pos++; return {op:'not', e:parseUnary()}; }
+    return parsePrimary();
+  }
+  function parsePrimary(){
+    var tk=peek();
+    if(!tk) return {op:'empty'};
+    if(tk.t==='lp'){ pos++; var e=parseOr(); if(peek()&&peek().t==='rp') pos++; return e; }
+    if(tk.t==='word'||tk.t==='phrase'){ pos++; return {op:'term', v:tk.v, phrase:(tk.t==='phrase')}; }
+    return {op:'empty'}; /* stray and/or/rp: leave for the caller */
+  }
+  if(!tokens.length) return {op:'empty'};
+  return parseOr();
+}
+function hasTerm(n){
+  if(!n) return false;
+  if(n.op==='term') return true;
+  if(n.op==='not') return hasTerm(n.e);
+  if(n.op==='and'||n.op==='or') return hasTerm(n.l)||hasTerm(n.r);
+  return false;
+}
+function evalAst(node, hay){
+  if(!node) return true;
+  switch(node.op){
+    case 'term':{
+      var v=String(node.v||'').toLowerCase();
+      if(!v) return true;
+      if(node.phrase) return hay.indexOf(v)!==-1;
+      var star=v.charAt(v.length-1)==='*';
+      var core=star? v.slice(0,-1): v;
+      if(!core) return true;
+      var tail=star? '' : '(?!\\p{L}\\p{N})';
+      return new RegExp('(?<!\\p{L}\\p{N})'+escapeRe(core)+tail,'iu').test(hay);
+    }
+    case 'and': return evalAst(node.l,hay)&&evalAst(node.r,hay);
+    case 'or':  return evalAst(node.l,hay)||evalAst(node.r,hay);
+    case 'not': return !evalAst(node.e,hay);
+    default: return true;
+  }
+}
+function describe(n){
+  if(!n) return '';
+  if(n.op==='term') return n.phrase? '“'+n.v+'”' : n.v;
+  if(n.op==='not') return 'NOT ('+describe(n.e)+')';
+  if(n.op==='and') return '('+describe(n.l)+' AND '+describe(n.r)+')';
+  if(n.op==='or')  return '('+describe(n.l)+' OR '+describe(n.r)+')';
+  return '';
+}
+function collectTerms(node, out, negated){
+  if(!node) return;
+  if(node.op==='term'){ if(!negated) out.push(node); return; }
+  if(node.op==='not'){ collectTerms(node.e,out,true); return; }
+  if(node.op==='and'||node.op==='or'){ collectTerms(node.l,out,negated); collectTerms(node.r,out,negated); }
+}
+function termPattern(t){
+  var v=String(t.v||'').toLowerCase();
+  if(!v || !v.trim()) return null;
+  if(t.phrase) return escapeRe(v);
+  var star=v.charAt(v.length-1)==='*';
+  var core=star? v.slice(0,-1): v;
+  if(!core) return null;
+  return '(?<!\\p{L}\\p{N})'+escapeRe(core)+(star?'':'(?!\\p{L}\\p{N})');
+}
+function buildHlRe(terms){
+  var parts=[];
+  terms.forEach(function(t){ var p=termPattern(t); if(p) parts.push({p:p,len:String(t.v).length}); });
+  if(!parts.length) return null;
+  parts.sort(function(a,b){ return b.len-a.len; });
+  return new RegExp(parts.map(function(x){return x.p;}).join('|'),'giu');
+}
+function highlightHTML(text, re){
+  var safe=(text==null)?'':String(text);
+  if(!re) return esc(safe);
+  re.lastIndex=0;
+  var out='', last=0, m;
+  while((m=re.exec(safe))!==null){
+    if(m[0].length===0){ re.lastIndex++; continue; }
+    out+=esc(safe.slice(last,m.index))+'<mark>'+esc(m[0])+'</mark>';
+    last=m.index+m[0].length;
+  }
+  out+=esc(safe.slice(last));
+  return out;
+}
+
+/* ---------- filter dropdowns, built from the data ---------- */
+(function(){
+  var comms={}, years={};
+  records.forEach(function(r){
+    var c=r.committee||''; comms[c]=(comms[c]||0)+1;
+    if(typeof r.year==='number') years[r.year]=(years[r.year]||0)+1;
+  });
+  Object.keys(comms).sort(function(a,b){
+    return (a||'(not specified)').localeCompare(b||'(not specified)');
+  }).forEach(function(c){
+    var o=document.createElement('option'); o.value=c;
+    o.textContent=(c||'(not specified)')+' ('+comms[c]+')'; committeeSel.appendChild(o);
+  });
+  Object.keys(years).map(Number).sort(function(a,b){return b-a;}).forEach(function(y){
+    var o=document.createElement('option'); o.value=String(y);
+    o.textContent=y+' ('+years[y]+')'; yearSel.appendChild(o);
+  });
+})();
+
+/* ---------- example queries ---------- */
+var EXAMPLES=['torture NOT "non-refoulement"','"racial discrimination" OR xenophobia','children AND (education OR health)','discrimin* AND women'];
+EXAMPLES.forEach(function(ex){
+  var b=document.createElement('button'); b.type='button'; b.className='ex'; b.textContent=ex;
+  b.addEventListener('click', function(){ qInput.value=ex; run(); qInput.focus(); });
+  $('examples').appendChild(b);
+});
+
+/* ---------- chart: hits per committee ---------- */
+var chart=null, chartBroken=false;
+function renderChart(counts){
+  var entries=Object.keys(counts).map(function(k){return [k,counts[k]];})
+    .sort(function(a,b){ return b[1]-a[1] || a[0].localeCompare(b[0]); });
+  if(!entries.length){
+    if(chart){ try{chart.destroy();}catch(e){} chart=null; }
+    canvas.style.display='none'; fallbackEl.hidden=true; fallbackEl.innerHTML='';
+    chartEmpty.hidden=false; return;
+  }
+  chartEmpty.hidden=true;
+  if(chartBroken || !window.Chart){ renderFallback(entries); return; }
+  try{
+    canvas.style.display=''; fallbackEl.hidden=true;
+    var labels=entries.map(function(e){return e[0];});
+    var data=entries.map(function(e){return e[1];});
+    chartWrap.style.height=Math.max(150, entries.length*30+50)+'px';
+    if(chart){
+      chart.data.labels=labels; chart.data.datasets[0].data=data; chart.update();
+    }else{
+      chart=new Chart(canvas.getContext('2d'),{
+        type:'bar',
+        data:{ labels:labels, datasets:[{ label:'Matching paragraphs', data:data,
+          backgroundColor:'#1f6fb2', borderRadius:4, maxBarThickness:22 }]},
+        options:{
+          indexAxis:'y', responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{display:false},
+            tooltip:{ callbacks:{ label:function(c){
+              return ' '+c.parsed.x+' matching paragraph'+(c.parsed.x===1?'':'s'); } } } },
+          scales:{
+            x:{ beginAtZero:true, ticks:{precision:0}, title:{display:true,text:'Matching paragraphs'} },
+            y:{ ticks:{autoSkip:false} }
+          }
+        }
+      });
+    }
+  }catch(err){
+    chartBroken=true;
+    if(chart){ try{chart.destroy();}catch(e){} chart=null; }
+    renderFallback(entries);
+  }
+}
+function renderFallback(entries){
+  canvas.style.display='none';
+  if(chart){ try{chart.destroy();}catch(e){} chart=null; }
+  chartWrap.style.height='auto';
+  fallbackEl.hidden=false; fallbackEl.innerHTML='';
+  var max=entries[0][1];
+  entries.forEach(function(e){
+    var row=document.createElement('div'); row.className='fallback-row';
+    var l=document.createElement('span'); l.className='fl'; l.textContent=e[0];
+    var bar=document.createElement('span'); bar.className='bar';
+    bar.style.width=Math.max(2,Math.round(e[1]/max*100))+'%';
+    var c=document.createElement('span'); c.className='fc'; c.textContent=e[1];
+    row.appendChild(l); row.appendChild(bar); row.appendChild(c);
+    fallbackEl.appendChild(row);
+  });
+}
+
+/* ---------- results ---------- */
+var RENDER_CAP=250, lastHits=[], rendered=0, currentHlRe=null;
+function resultCard(r){
+  var card=document.createElement('article'); card.className='rec';
+  var meta=document.createElement('div'); meta.className='rec-meta';
+  var badge=document.createElement('span'); badge.className='badge';
+  badge.textContent=r.committee||'?'; meta.appendChild(badge);
+  var symWrap=document.createElement('span');
+  if(r.doc_url){
+    var a=document.createElement('a'); a.className='sym'; a.href=r.doc_url;
+    a.target='_blank'; a.rel='noopener';
+    a.textContent=r.symbol||r.doc_url; symWrap.appendChild(a);
+  }else{
+    symWrap.className='sym'; symWrap.textContent=r.symbol||'(no symbol)';
+  }
+  meta.appendChild(symWrap);
+  var title=document.createElement('span'); title.className='dim';
+  title.textContent=(r.short_title||r.title||'')+(r.year!=null?' · '+r.year:''); meta.appendChild(title);
+  var para=document.createElement('span'); para.className='dim';
+  para.textContent='para. '+(r.paragraph!=null?r.paragraph:'?'); meta.appendChild(para);
+  var cite=String(r.symbol||'(no symbol)')+(r.paragraph!=null?', para. '+r.paragraph:'');
+  var btn=document.createElement('button'); btn.className='copy-btn'; btn.type='button';
+  btn.setAttribute('data-cite',cite); btn.title='Copy: '+cite; btn.textContent='Copy citation';
+  meta.appendChild(btn);
+  card.appendChild(meta);
+  var p=document.createElement('p'); p.className='txt';
+  p.innerHTML=highlightHTML(r.text||'', currentHlRe);
+  card.appendChild(p);
+  return card;
+}
+function run(){
+  if(!records.length){
+    parseEl.textContent='';
+    hitsEl.textContent='No General Comment records were loaded (WORKSHOP_DATA.gc.records is empty or missing).';
+    chartEmpty.hidden=false; countEl.textContent='(0)';
+    resultsEl.innerHTML='<p class="empty">Nothing to search — the dataset is empty.</p>';
+    showAllBtn.hidden=true; return;
+  }
+  var q=qInput.value.trim();
+  var tokens=tokenize(q);
+  var ast=parse(tokens);
+  var usable=hasTerm(ast);
+  var terms=[]; collectTerms(ast,terms,false);
+  var seen={}, pos=[];
+  terms.forEach(function(t){
+    var k=(t.phrase?'p:':'w:')+String(t.v).toLowerCase();
+    if(seen[k]) return; seen[k]=1;
+    if(t.v && String(t.v).trim()) pos.push(t);
+  });
+  currentHlRe=buildHlRe(pos);
+
+  var comm=committeeSel.value, yr=yearSel.value;
+  var hits=records.filter(function(r){
+    if(comm!=='all' && (r.committee||'')!==comm) return false;
+    if(yr!=='all' && String(r.year)!==yr) return false;
+    if(!usable) return true;
+    return evalAst(ast, String(r.text||'').toLowerCase());
+  });
+  hits.sort(function(a,b){
+    var ca=a.committee||'', cb=b.committee||'';
+    if(ca!==cb) return ca.localeCompare(cb);
+    var ya=(typeof a.year==='number'?a.year:-1), yb=(typeof b.year==='number'?b.year:-1);
+    if(ya!==yb) return yb-ya;
+    return ((a.paragraph||0)-(b.paragraph||0)) || String(a.symbol||'').localeCompare(String(b.symbol||''));
+  });
+  lastHits=hits;
+
+  if(!tokens.length) parseEl.textContent='Empty query — all paragraphs are listed.';
+  else if(!usable) parseEl.textContent='The query contains only operators, so all paragraphs are listed.';
+  else parseEl.textContent='Parsed as: '+describe(ast)+' — matched against the full paragraph text, case-insensitive.';
+
+  var f=[];
+  if(comm!=='all') f.push('committee = '+(comm||'(not specified)'));
+  if(yr!=='all') f.push('year = '+yr);
+  hitsEl.textContent=hits.length+' of '+records.length+' paragraphs match'+
+    (f.length?' · filters: '+f.join(', '):'')+(q?' · query: “'+q+'”':'');
+
+  var counts={};
+  hits.forEach(function(r){ var c=r.committee||'(not specified)'; counts[c]=(counts[c]||0)+1; });
+  renderChart(counts);
+
+  countEl.textContent='('+hits.length+')';
+  resultsEl.innerHTML=''; rendered=0;
+  if(!hits.length){
+    resultsEl.innerHTML='<p class="empty">No paragraphs match. Try removing a NOT term or a filter, or use * for prefixes.</p>';
+    showAllBtn.hidden=true; return;
+  }
+  var frag=document.createDocumentFragment();
+  var n=Math.min(hits.length, RENDER_CAP);
+  for(var i=0;i<n;i++) frag.appendChild(resultCard(hits[i]));
+  resultsEl.appendChild(frag); rendered=n;
+  if(hits.length>n){
+    showAllBtn.hidden=false;
+    showAllBtn.textContent='Show all '+hits.length+' matching paragraphs (currently showing '+n+')';
+  }else showAllBtn.hidden=true;
+}
+
+/* ---------- copy citation ---------- */
+resultsEl.addEventListener('click', function(e){
+  var btn=e.target.closest('button[data-cite]');
+  if(!btn) return;
+  var text=btn.getAttribute('data-cite');
+  function done(){ btn.classList.add('done'); btn.textContent='Copied ✓';
+    setTimeout(function(){ btn.classList.remove('done'); btn.textContent='Copy citation'; },1600); }
+  function fail(){ btn.textContent='Copy failed — select manually';
+    setTimeout(function(){ btn.textContent='Copy citation'; },2500); }
+  function legacy(){
+    var ta=document.createElement('textarea'); ta.value=text; ta.setAttribute('readonly','');
+    ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    var ok=false; try{ ok=document.execCommand('copy'); }catch(err){}
+    document.body.removeChild(ta);
+    if(ok) done(); else fail();
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done, legacy);
+  }else legacy();
+});
+
+/* ---------- events ---------- */
+var deb=null;
+qInput.addEventListener('input', function(){ clearTimeout(deb); deb=setTimeout(run,220); });
+$('search-form').addEventListener('submit', function(e){ e.preventDefault(); clearTimeout(deb); run(); });
+committeeSel.addEventListener('change', run);
+yearSel.addEventListener('change', run);
+showAllBtn.addEventListener('click', function(){
+  var frag=document.createDocumentFragment();
+  for(var i=rendered;i<lastHits.length;i++) frag.appendChild(resultCard(lastHits[i]));
+  resultsEl.appendChild(frag); rendered=lastHits.length; showAllBtn.hidden=true;
+});
+
+run();
+})();
+</script>
+</body>
+</html>
+```

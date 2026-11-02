@@ -1,0 +1,30 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s8-5-wiki",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "source_matches": true,
+   "text_contains": true,
+   "controls_min": true,
+   "calls_studio_ask": false,
+   "batches_max": false
+  },
+  "passed": 6,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 300,
+  "seconds": 35.6,
+  "first_token": 3.0,
+  "first_thought": 1.8,
+  "reasoning_chars": 398,
+  "prompt_tokens": 7196,
+  "completion_tokens": 3889,
+  "cost": 0.027186,
+  "provider": "Z.AI"
+ }
+]

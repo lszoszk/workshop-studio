@@ -1,0 +1,1 @@
+503 b'{"error":{"message":"Provider returned error","code":503,"metadata":{"raw":"{\\"object\\":\\"error\\",\\"message\\":\\"Service unavailable.\\",\\"type\\":\\"internal_server_error\\",\\"param\\":null,\\"code\\":\\"3800\\",\\"raw_status_code\\":503}","provider_name":"Mistral","is_byok":false}},"user_id":"user_3JkVe9FE7I1'

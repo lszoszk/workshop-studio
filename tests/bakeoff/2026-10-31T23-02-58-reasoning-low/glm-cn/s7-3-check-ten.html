@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UN Human Rights Recommendations — Kenya Dashboard</title>
+<style>
+  :root { --accent:#1f6fb2; --bg:#f6f8fa; --line:#dde4ea; --text:#1c2733; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+         font-size:16px; color:var(--text); background:var(--bg); line-height:1.5; }
+  .wrap { max-width:1200px; margin:0 auto; padding:24px 28px 60px; }
+  h1 { font-size:1.6rem; margin:0 0 4px; color:#0f3f66; }
+  h2 { font-size:1.15rem; margin:0 0 4px; }
+  .sub { color:#4a5a68; margin:0 0 22px; font-size:0.95rem; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:6px;
+          padding:18px 20px; margin-bottom:22px; }
+  .stats { display:flex; flex-wrap:wrap; gap:24px; }
+  .stat b { display:block; font-size:1.7rem; color:var(--accent); }
+  .stat span { font-size:0.85rem; color:#4a5a68; }
+  .filters { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; }
+  .filters label { display:block; font-size:0.8rem; font-weight:600; color:#3c4c5a; margin-bottom:3px; }
+  .filters select, .filters input { font:inherit; padding:6px 8px; border:1px solid var(--line);
+          border-radius:4px; background:#fff; min-width:130px; }
+  .filters input[type=text] { min-width:260px; flex:1; }
+  button { font:inherit; padding:7px 14px; border:1px solid var(--line); background:#fff;
+           border-radius:4px; cursor:pointer; }
+  button:hover { border-color:var(--accent); color:var(--accent); }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  button.primary:hover { background:#17517f; color:#fff; }
+  button:disabled { opacity:0.5; cursor:not-allowed; }
+  .note { font-size:0.82rem; color:#5a6a78; background:#eef3f8; border-left:3px solid var(--accent);
+          padding:6px 10px; margin:14px 0 0; }
+  .chartbox { height:380px; }
+  table { width:100%; border-collapse:collapse; font-size:0.92rem; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em; color:#4a5a68; }
+  tr.rec { cursor:pointer; }
+  tr.rec:hover { background:#f0f6fb; }
+  tr.open { background:#eaf2f9; }
+  tr.detail td { background:#f7fafc; font-size:0.92rem; white-space:pre-wrap; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .badge { display:inline-block; font-size:0.72rem; background:#e3edf6; color:#17517f;
+           border-radius:3px; padding:1px 6px; margin:1px 2px 1px 0; }
+  .muted { color:#6a7a88; }
+  .count-line { font-size:0.9rem; margin:0 0 10px; }
+  .empty { padding:20px; text-align:center; color:#6a7a88; }
+  /* --- review section --- */
+  .sample { border:1px solid var(--line); border-radius:6px; padding:14px 16px; margin:14px 0; }
+  .sample .meta { font-size:0.85rem; color:#4a5a68; margin-bottom:6px; }
+  .sample .full { white-space:pre-wrap; font-size:0.95rem; background:#f7fafc;
+                  border-left:3px solid var(--line); padding:8px 12px; margin:8px 0; }
+  .markrow { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:8px; }
+  .markrow .lbl { font-size:0.85rem; font-weight:600; color:#3c4c5a; }
+  .markbtn.on-Right { background:#2e7d32; border-color:#2e7d32; color:#fff; }
+  .markbtn.on-Wrong { background:#b3261e; border-color:#b3261e; color:#fff; }
+  .markbtn.on-Arguable { background:#b8860b; border-color:#b8860b; color:#fff; }
+  .progress { font-size:0.85rem; color:#4a5a68; margin:6px 0 0; }
+  .summary { margin-top:16px; border-top:1px solid var(--line); padding-top:14px; }
+  .summary .big { font-size:1.6rem; color:var(--accent); font-weight:bold; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>UN Human Rights Recommendations &amp; Observations — <span id="countryName"></span></h1>
+  <p class="sub" id="subLine"></p>
+
+  <div class="card">
+    <div class="stats">
+      <div class="stat"><b id="statTotal">0</b><span>records in dataset</span></div>
+      <div class="stat"><b id="statYears">–</b><span>years covered</span></div>
+      <div class="stat"><b id="statDocs">0</b><span>distinct documents</span></div>
+      <div class="stat"><b id="statShown">0</b><span>records match current filter</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="filters">
+      <div><label for="fMech">Mechanism</label><select id="fMech"></select></div>
+      <div><label for="fBody">Treaty body / mandate</label><select id="fBody"></select></div>
+      <div><label for="fFrom">Year from</label><select id="fFrom"></select></div>
+      <div><label for="fTo">Year to</label><select id="fTo"></select></div>
+      <div><label for="fSdg">SDG</label><select id="fSdg"></select></div>
+      <div style="flex:1;min-width:260px;"><label for="fQ">Keyword search (in text)</label>
+        <input type="text" id="fQ" placeholder="e.g. education, torture, police…"></div>
+      <div><label>&nbsp;</label><button id="btnReset">Reset filters</button></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Top 10 themes in current selection</h2>
+    <div class="chartbox"><canvas id="themeChart"></canvas></div>
+    <p class="note"><strong>How this is computed:</strong> a record can carry several themes, so theme
+      counts may sum to more than the number of records. Only records matching the filters above are
+      counted, and only the 10 most frequent themes are shown. Nothing is estimated.</p>
+  </div>
+
+  <div class="card">
+    <p class="count-line" id="tableCount"></p>
+    <table id="recTable">
+      <thead><tr>
+        <th style="width:100px;">Date</th><th style="width:120px;">Body</th>
+        <th style="width:180px;">Document</th><th>Text</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="empty" id="emptyMsg" hidden>No records match the current filters.</div>
+    <p class="note"><strong>How to read this:</strong> "Body" is the issuing treaty body or Special
+      Procedures mandate. The document symbol links to the official UN document in a new tab. Click
+      any row to expand the full, unedited paragraph text; click again to collapse.</p>
+  </div>
+
+  <div class="card" id="reviewCard">
+    <h2>Quality check: are the SDG tags right?</h2>
+    <p class="muted" style="margin:4px 0 12px;font-size:0.95rem;">
+      Draw a random sample of 10 records from the current filter. For each record, read the full text
+      and judge every SDG the UN index assigned to it: <em>right</em>, <em>wrong</em>, or <em>arguable</em>.
+      When all are marked you get the agreement rate and can download your marks as CSV.</p>
+    <button class="primary" id="btnDraw">Check 10 at random</button>
+    <button id="btnRedraw" hidden>Draw again</button>
+    <button id="btnCsv" hidden>Download CSV</button>
+    <p class="progress" id="drawProgress" hidden></p>
+    <div id="samples"></div>
+    <div class="summary" id="summary" hidden></div>
+    <p class="note"><strong>How this is computed:</strong> the 10 records are drawn at random from the
+      records matching the filters above (if fewer than 10 match, all of them are used — the actual
+      number is shown). The agreement rate is the share of SDG tags you marked "right" out of all tags
+      you marked. Nothing is sent anywhere; your marks stay in this page until you download them.</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  const D = window.WORKSHOP_DATA.uhri;
+  const recs = (D && Array.isArray(D.records)) ? D.records : [];
+  document.getElementById('countryName').textContent = D.country || '—';
+  document.title = 'UN Human Rights Recommendations — ' + (D.country || '');
+
+  (function () {
+    const years = recs.map(r => r.year).filter(y => typeof y === 'number');
+    const mn = years.length ? Math.min(...years) : '—';
+    const mx = years.length ? Math.max(...years) : '—';
+    const mech = [...new Set(recs.map(r => r.mechanism).filter(Boolean))];
+    document.getElementById('subLine').textContent =
+      'Source: ' + (D.title || 'UHRI extract') + ' — ' + recs.length +
+      ' paragraph-level records (recommendations and observations), ' + mn + '–' + mx +
+      (mech.length ? ', from ' + mech.join(', ') : '') + '. Every number on this page is computed in your browser from these records.';
+    document.getElementById('statTotal').textContent = recs.length;
+    document.getElementById('statYears').textContent = years.length ? mn + '–' + mx : '—';
+    document.getElementById('statDocs').textContent = new Set(recs.map(r => r.symbol).filter(Boolean)).size;
+  })();
+
+  const fMech = document.getElementById('fMech'),
+        fBody = document.getElementById('fBody'),
+        fFrom = document.getElementById('fFrom'),
+        fTo   = document.getElementById('fTo'),
+        fSdg  = document.getElementById('fSdg'),
+        fQ    = document.getElementById('fQ');
+
+  function fill(sel, values, allLabel) {
+    sel.innerHTML = '';
+    const o = document.createElement('option');
+    o.value = ''; o.textContent = allLabel;
+    sel.appendChild(o);
+    values.forEach(v => {
+      const op = document.createElement('option');
+      op.value = v; op.textContent = v;
+      sel.appendChild(op);
+    });
+  }
+  const allYears = [...new Set(recs.map(r => r.year).filter(Boolean))].sort((a,b)=>a-b);
+  const sdgNames = (D.sdg_names || {});
+  const allSdgs = [...new Set(recs.flatMap(r => Array.isArray(r.sdgs) ? r.sdgs : []))]
+    .filter(Number.isFinite).sort((a,b)=>a-b);
+  fill(fMech, [...new Set(recs.map(r => r.mechanism).filter(Boolean))].sort(), 'All mechanisms');
+  fill(fBody, [...new Set(recs.map(r => r.body).filter(Boolean))].sort(), 'All bodies & mandates');
+  fill(fFrom, allYears, 'From (earliest)');
+  fill(fTo, [...allYears].reverse(), 'To (latest)');
+  fill(fSdg, allSdgs.map(g => String(g) + (sdgNames[String(g)] ? ' — ' + sdgNames[String(g)] : '')),
+       'All / any SDG');
+  fSdg.querySelectorAll('option').forEach((o, i) => { if (i > 0) o.dataset.raw = allSdgs[i-1]; });
+
+  const tbody = document.querySelector('#recTable tbody');
+  let chart = null;
+
+  function applyFilters() {
+    const q = fQ.value.trim().toLowerCase();
+    const sdgRaw = fSdg.selectedOptions[0] && fSdg.selectedOptions[0].dataset.raw;
+    const sdg = sdgRaw !== undefined && sdgRaw !== '' ? Number(sdgRaw) : null;
+    return recs.filter(r => {
+      if (fMech.value && r.mechanism !== fMech.value) return false;
+      if (fBody.value && r.body !== fBody.value) return false;
+      if (fFrom.value && r.year < Number(fFrom.value)) return false;
+      if (fTo.value && r.year > Number(fTo.value)) return false;
+      if (sdg !== null && !(Array.isArray(r.sdgs) && r.sdgs.includes(sdg))) return false;
+      if (q && !(r.text || '').toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }
+
+  function firstLine(t) {
+    t = (t || '').trim();
+    const i = t.indexOf('\n');
+    const s = i === -1 ? t : t.slice(0, i);
+    return s.length > 220 ? s.slice(0, 217) + '…' : s;
+  }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function attr(s) { return String(s == null ? '' : s).replace(/"/g,'&quot;'); }
+
+  function render() {
+    const sel = applyFilters();
+    document.getElementById('statShown').textContent = sel.length;
+    document.getElementById('tableCount').innerHTML =
+      'Showing <strong>' + sel.length + '</strong> of ' + recs.length +
+      ' records' + (sel.length ? ' (newest first)' : '') + '.';
+    document.getElementById('emptyMsg').hidden = sel.length > 0;
+
+    const counts = {};
+    sel.forEach(r => (r.themes || []).forEach(t => { counts[t] = (counts[t] || 0) + 1; }));
+    const top = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 10)
+      .sort((a,b) => a[1]-b[1]);
+    const ctx = document.getElementById('themeChart').getContext('2d');
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: top.map(e => e[0]),
+        datasets: [{ label: 'Records mentioning theme', data: top.map(e => e[1]),
+                     backgroundColor: '#1f6fb2' }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        animation: false,
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { label: c => c.parsed.x + ' records' } } },
+        scales: { x: { beginAtZero: true, ticks: { precision: 0 } },
+                  y: { ticks: { font: { size: 13 } } } }
+      }
+    });
+
+    tbody.innerHTML = '';
+    const sorted = [...sel].sort((a,b) => (b.date || '').localeCompare(a.date || ''));
+    sorted.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.className = 'rec';
+      const symCell = r.doc_url
+        ? '<a href="' + attr(r.doc_url) + '" target="_blank" rel="noopener">' + esc(r.symbol || '(no symbol)') + '</a>'
+        : esc(r.symbol || '');
+      tr.innerHTML =
+        '<td>' + esc(r.date || r.year || '') + '</td>' +
+        '<td>' + esc(r.body || '') + '<br><span class="badge">' + esc(r.mechanism || '') + '</span>' +
+          (r.type ? '<span class="badge">' + esc(r.type) + '</span>' : '') + '</td>' +
+        '<td>' + symCell + '</td>' +
+        '<td>' + esc(firstLine(r.text)) + '</td>';
+      tr.addEventListener('click', () => {
+        const open = tr.nextElementSibling && tr.nextElementSibling.classList.contains('detail');
+        if (open) { tr.nextElementSibling.remove(); tr.classList.remove('open'); return; }
+        tbody.querySelectorAll('tr.detail').forEach(d => { d.previousElementSibling.classList.remove('open'); d.remove(); });
+        const d = document.createElement('tr');
+        d.className = 'detail';
+        const badges =
+          (r.themes || []).map(t => '<span class="badge">' + esc(t) + '</span>').join('') +
+          (r.sdg_targets || []).map(t => '<span class="badge">SDG ' + esc(t) + '</span>').join('') +
+          (r.affected_persons || []).map(t => '<span class="badge">' + esc(t) + '</span>').join('');
+        d.innerHTML = '<td colspan="4"><div>' + badges + '</div><div style="margin-top:6px;">' +
+          esc(r.text || '') + '</div>' +
+          (r.doc_url ? '<p class="muted" style="margin:6px 0 0;font-size:0.82rem;">Full document: <a href="' +
+            attr(r.doc_url) + '" target="_blank" rel="noopener">' + esc(r.symbol) + '</a></p>' : '') +
+          '</td>';
+        tr.classList.add('open');
+        tr.after(d);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  [fMech, fBody, fFrom, fTo, fSdg].forEach(s => s.addEventListener('change', render));
+  let deb;
+  fQ.addEventListener('input', () => { clearTimeout(deb); deb = setTimeout(render, 200); });
+  document.getElementById('btnReset').addEventListener('click', () => {
+    [fMech, fBody, fFrom, fTo, fSdg].forEach(s => s.value = '');
+    fQ.value = ''; render();
+  });
+
+  /* ---------- SDG quality-check section ---------- */
+  const MARKS = ['Right', 'Wrong', 'Arguable'];
+  let sample = [];        // [{rec, tags:[{goal, target, mark}] }]
+  let currentDraw = [];   // records in this draw
+
+  const btnDraw = document.getElementById('btnDraw'),
+        btnRedraw = document.getElementById('btnRedraw'),
+        btnCsv = document.getElementById('btnCsv'),
+        progEl = document.getElementById('drawProgress'),
+        samplesEl = document.getElementById('samples'),
+        summaryEl = document.getElementById('summary');
+
+  function sdgLabel(g) {
+    return 'SDG ' + g + (sdgNames[String(g)] ? ' — ' + sdgNames[String(g)] : '');
+  }
+  function sdgTargetFor(rec, goal) {
+    const t = (rec.sdg_targets || []).find(t => String(t).split(':')[0].trim() === String(goal));
+    return t || '';
+  }
+
+  function draw() {
+    const pool = applyFilters();
+    if (pool.length === 0) {
+      samplesEl.innerHTML = '<div class="empty">No records match the current filters — ' +
+        'adjust the filters above, then draw again.</div>';
+      btnRedraw.hidden = false; btnCsv.hidden = true; summaryEl.hidden = true;
+      progEl.hidden = true; currentDraw = []; sample = [];
+      return;
+    }
+    currentDraw = [...pool].sort(() => Math.random() - 0.5).slice(0, 10);
+    sample = currentDraw.map(rec => ({
+      rec,
+      tags: (Array.isArray(rec.sdgs) ? rec.sdgs : []).map(g => ({
+        goal: g, target: sdgTargetFor(rec, g), mark: null }))
+    }));
+    renderSample();
+    btnRedraw.hidden = false;
+  }
+
+  function renderSample() {
+    summaryEl.hidden = true;
+    btnCsv.hidden = true;
+    progEl.hidden = false;
+    samplesEl.innerHTML = '';
+    if (currentDraw.length === 0) return;
+
+    const nTags = sample.reduce((n, s) => n + s.tags.length, 0);
+    const nMarked = sample.reduce((n, s) => n + s.tags.filter(t => t.mark).length, 0);
+    progEl.textContent = 'Drew ' + currentDraw.length + ' record' + (currentDraw.length === 1 ? '' : 's') +
+      ' at random from the ' + applyFilters().length + ' matching records' +
+      (nTags ? ' — ' + nMarked + ' of ' + nTags + ' SDG tags marked.' :
+       ' — none of them carries an SDG tag, so there is nothing to mark. Use "Draw again".');
+
+    sample.forEach((s, i) => {
+      const div = document.createElement('div');
+      div.className = 'sample';
+      const r = s.rec;
+      const sym = r.doc_url
+        ? '<a href="' + attr(r.doc_url) + '" target="_blank" rel="noopener">' + esc(r.symbol || '(no symbol)') + '</a>'
+        : esc(r.symbol || '');
+      let html = '<div class="meta"><strong>Record ' + (i+1) + ' of ' + currentDraw.length + '</strong> — ' +
+        esc(r.date || r.year || '') + ' · ' + esc(r.body || '') + ' · ' + sym + '</div>' +
+        '<div class="full">' + esc(r.text || '') + '</div>';
+      if (s.tags.length === 0) {
+        html += '<p class="muted" style="margin:6px 0 0;font-size:0.88rem;">This record carries no SDG tags in the UN index — nothing to judge.</p>';
+      } else {
+        html += s.tags.map((t, ti) =>
+          '<div class="markrow" data-i="' + i + '" data-t="' + ti + '">' +
+          '<span class="lbl">' + esc(sdgLabel(t.goal)) +
+          (t.target ? ' <span class="muted">(' + esc(t.target) + ')</span>' : '') + '</span>' +
+          MARKS.map(m => '<button class="markbtn" data-m="' + m + '">' + m + '</button>').join('') +
+          '</div>').join('');
+      }
+      div.innerHTML = html;
+      samplesEl.appendChild(div);
+    });
+
+    samplesEl.querySelectorAll('.markrow').forEach(row => {
+      const i = +row.dataset.i, ti = +row.dataset.t;
+      row.querySelectorAll('.markbtn').forEach(b => {
+        b.addEventListener('click', () => {
+          sample[i].tags[ti].mark = b.dataset.m;
+          row.querySelectorAll('.markbtn').forEach(x => x.classList.remove('on-Right','on-Wrong','on-Arguable'));
+          b.classList.add('on-' + b.dataset.m);
+          checkComplete();
+        });
+      });
+    });
+  }
+
+  function checkComplete() {
+    const nTags = sample.reduce((n, s) => n + s.tags.length, 0);
+    const marked = sample.flatMap(s => s.tags).filter(t => t.mark);
+    const nMarked = marked.length;
+    progEl.textContent = 'Drew ' + currentDraw.length + ' record' + (currentDraw.length === 1 ? '' : 's') +
+      ' at random from the ' + applyFilters().length + ' matching records — ' +
+      nMarked + ' of ' + nTags + ' SDG tags marked.';
+    if (nTags === 0 || nMarked < nTags) return;
+
+    // summary
+    const nRight = marked.filter(t => t.mark === 'Right').length;
+    const rate = nMarked ? (100 * nRight / nMarked) : 0;
+    const wrong = marked.filter(t => t.mark === 'Wrong');
+    const arg = marked.filter(t => t.mark === 'Arguable');
+    let html = '<p style="margin:0 0 8px;"><span class="big">' + rate.toFixed(1) + '%</span> ' +
+      'agreement — ' + nRight + ' of ' + nMarked + ' SDG tags marked <em>right</em>.</p>' +
+      '<p style="margin:0 0 12px;font-size:0.95rem;"><strong>Wrong:</strong> ' + wrong.length +
+      ' · <strong>Arguable:</strong> ' + arg.length + '</p>';
+    const listMarked = (arr, title, color) => {
+      if (!arr.length) return '';
+      let h = '<p style="margin:8px 0 2px;font-weight:600;color:' + color + ';">' + title + '</p><ul style="margin:4px 0;">';
+      arr.forEach(t => {
+        const rec = sample.find(s => s.tags.includes(t)).rec;
+        h += '<li>' + esc(sdgLabel(t.goal)) + (t.target ? ' (' + esc(t.target) + ')' : '') +
+             ' on ' + esc(rec.symbol || '') +
+             (rec.doc_url ? ' (<a href="' + attr(rec.doc_url) + '" target="_blank" rel="noopener">document</a>)' : '') +
+             '</li>';
+      });
+      return h + '</ul>';
+    };
+    html += listMarked(wrong, 'SDG tags you marked wrong', '#b3261e');
+    html += listMarked(arg, 'SDG tags you marked arguable', '#b8860b');
+    summaryEl.innerHTML = html;
+    summaryEl.hidden = false;
+    btnCsv.hidden = false;
+  }
+
+  function csvCell(v) {
+    v = String(v == null ? '' : v);
+    return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
+
+  btnCsv.addEventListener('click', () => {
+    const rows = [['record_id','symbol','doc_url','date','body','mechanism','type',
+                   'sdg_goal','sdg_goal_name','sdg_target','your_mark','paragraph_text']];
+    sample.forEach(s => {
+      const r = s.rec;
+      if (s.tags.length === 0) {
+        rows.push([r.id, r.symbol, r.doc_url, r.date, r.body, r.mechanism, r.type,
+                   '', '', '', 'no SDG tag', r.text]);
+      } else {
+        s.tags.forEach(t => {
+          rows.push([r.id, r.symbol, r.doc_url, r.date, r.body, r.mechanism, r.type,
+                     t.goal, sdgNames[String(t.goal)] || '', t.target, t.mark, r.text]);
+        });
+      }
+    });
+    const csv = '\uFEFF' + rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'sdg-tag-review-' + (D.country || 'records').toLowerCase().replace(/\s+/g, '-') + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  });
+
+  btnDraw.addEventListener('click', draw);
+  btnRedraw.addEventListener('click', draw);
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UN human rights recommendations dashboard</title>
+<style>
+:root{--accent:#1f6fb2;--accent-dark:#185a92;--ink:#1d2b36;--muted:#5b6b7a;--line:#dde4ec;--bg:#f4f6f9;--card:#fff;--ai:#6b4fa1}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55}
+.wrap{max-width:1140px;margin:0 auto;padding:28px 22px 64px}
+header.top{margin:0 0 20px}
+h1{font-size:27px;line-height:1.25;margin:0 0 6px}
+h1 .country{color:var(--accent)}
+.subtitle{margin:0 0 4px;color:#41505e;font-size:15px;font-weight:600}
+.lede{margin:0;color:var(--muted);font-size:15px}
+a{color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin:0 0 18px}
+h2{font-size:19px;margin:0 0 12px}
+.h2-note{font-size:13px;font-weight:400;color:var(--muted)}
+.note{font-size:13px;color:var(--muted);margin:10px 0 0}
+.note b{color:#41505e}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:0 0 18px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.stat .num{font-size:29px;font-weight:700;color:var(--accent);line-height:1.15;word-break:break-word}
+.stat .lbl{font-weight:600;margin-top:2px}
+.stat .note{margin-top:6px}
+.filters{display:flex;flex-wrap:wrap;gap:14px 16px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:5px;min-width:160px}
+.field.grow{flex:1 1 280px}
+label{font-size:13px;font-weight:600;color:#41505e}
+select,input[type=search]{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #c3cedb;border-radius:7px;background:#fff;color:var(--ink);width:100%}
+select:focus,input[type=search]:focus{outline:2px solid rgba(31,111,178,.35);border-color:var(--accent)}
+button{font:inherit;font-size:15px;font-weight:600;padding:8px 14px;border-radius:7px;border:1px solid var(--accent);background:#fff;color:var(--accent);cursor:pointer}
+button:hover:not(:disabled){background:var(--accent);color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.secondary{border-color:#c3cedb;color:#41505e}
+button.secondary:hover:not(:disabled){background:#eef2f7;color:#1d2b36}
+.chart-box{position:relative;width:100%}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:8px 10px;border-bottom:2px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid #e8edf3;vertical-align:top;font-size:15px}
+tbody tr.rec{cursor:pointer}
+tbody tr.rec:hover,tbody tr.rec.open{background:#eef5fb}
+.c-date{white-space:nowrap;color:#41505e}
+.c-sym a{color:var(--accent);font-weight:600;text-decoration:none;word-break:break-word}
+.c-sym a:hover{text-decoration:underline}
+.c-text{color:#33424f}
+tr.detail td{background:#f7fafd;padding:14px 16px}
+.fulltext{white-space:pre-wrap;margin:0 0 10px;font-size:15px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 20px;font-size:13.5px;color:var(--muted);align-items:center}
+.meta .k{font-weight:600;color:#41505e}
+.chip{display:inline-block;background:#e8f1f9;color:#1c5a94;border-radius:999px;padding:2px 10px;font-size:12.5px;margin:2px 4px 2px 0;white-space:nowrap}
+.empty{text-align:center;color:var(--muted);padding:26px 10px}
+.showing{font-size:15px;margin:0 0 4px}
+.showing b{color:var(--accent)}
+#activeFilters{font-size:13.5px;color:var(--muted);margin:0 0 12px}
+footer{color:var(--muted);font-size:13px;margin-top:4px}
+/* AI section */
+.notice{background:#fff7e6;border:1px solid #f0d9a8;border-radius:8px;padding:12px 14px;font-size:14.5px;margin:12px 0}
+.ai-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0 4px}
+.ai-status{font-size:14px;color:var(--muted)}
+.pbar{height:8px;background:#e6ecf2;border-radius:99px;overflow:hidden;margin:10px 0 2px}
+.pfill{height:100%;width:0;background:var(--accent)}
+.runs{display:grid;grid-template-columns:1fr;gap:16px;margin-top:16px}
+@media(min-width:1060px){.runs{grid-template-columns:1fr 1fr}}
+.run{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:#fbfcfe}
+.run-head{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
+.run h3{margin:0;font-size:16px}
+.run-meta{font-size:13px;color:var(--muted)}
+.agree{font-size:15px;margin:8px 0 2px}
+.agree b{color:var(--accent)}
+.none{color:var(--muted)}
+.ai-tag{display:inline-block;background:var(--ai);color:#fff;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 5px;vertical-align:middle;letter-spacing:.04em}
+[data-source="ai"]{outline:1px dashed #b9a3e3;border-radius:6px;padding:2px 4px}
+.agree-badge{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:600;white-space:nowrap}
+.agree-badge.yes{background:#e2f3e5;color:#1e7a34}
+.agree-badge.partial{background:#fff3d6;color:#8a6100}
+.agree-badge.no{background:#fde3e3;color:#a12727}
+.agree-badge.noans{background:#eceff3;color:#5b6b7a}
+.rec-sym a{color:var(--accent);font-weight:600;text-decoration:none;word-break:break-word}
+.rec-sym a:hover{text-decoration:underline}
+.rec-sub{font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1 id="title">UN human rights recommendations &amp; observations</h1>
+    <p class="subtitle" id="subtitle"></p>
+    <p class="lede" id="lede"></p>
+  </header>
+
+  <section class="stats" aria-label="Dataset overview">
+    <div class="stat"><div class="num" id="statRecords">—</div><div class="lbl">Records (paragraphs)</div><p class="note"><b>How this is computed:</b> every paragraph in the loaded UHRI extract for the country above.</p></div>
+    <div class="stat"><div class="num" id="statYears">—</div><div class="lbl">Years covered</div><p class="note"><b>How this is computed:</b> earliest–latest <i>year</i> among the records that carry one.</p></div>
+    <div class="stat"><div class="num" id="statMech">—</div><div class="lbl">Mechanisms</div><p class="note"><b>How this is computed:</b> distinct <i>mechanism</i> values in the data.</p></div>
+    <div class="stat"><div class="num" id="statBodies">—</div><div class="lbl">Treaty bodies &amp; mandates</div><p class="note"><b>How this is computed:</b> distinct <i>body</i> values (treaty bodies and Special Procedures mandates).</p></div>
+  </section>
+
+  <section class="card" aria-label="Filters">
+    <h2>Filters</h2>
+    <div class="filters">
+      <div class="field"><label for="fMech">Mechanism</label><select id="fMech"></select></div>
+      <div class="field"><label for="fBody">Treaty body / mandate</label><select id="fBody"></select></div>
+      <div class="field"><label for="fType">Type</label><select id="fType"></select></div>
+      <div class="field"><label for="fYearFrom">From year</label><select id="fYearFrom"></select></div>
+      <div class="field"><label for="fYearTo">To year</label><select id="fYearTo"></select></div>
+      <div class="field"><label for="fSdg">SDG</label><select id="fSdg"></select></div>
+      <div class="field grow"><label for="fQ">Keyword search (text, themes, symbols…)</label><input type="search" id="fQ" placeholder="e.g. education, detention, women…"></div>
+      <div class="field"><label>&nbsp;</label><button id="fReset" type="button" class="secondary">Reset filters</button></div>
+    </div>
+  </section>
+
+  <section class="card" aria-label="Themes chart">
+    <h2>Most frequent themes <span id="chartCount"></span></h2>
+    <div class="chart-box" id="chartBox"><canvas id="themeChart" aria-label="Bar chart of the ten most frequent themes among the matching records"></canvas></div>
+    <p class="empty" id="chartEmpty" hidden></p>
+    <p class="note" id="themeNote"></p>
+  </section>
+
+  <section class="card" id="aiCard" aria-label="AI SDG suggestions">
+    <h2>Suggest SDGs with AI <span class="h2-note">(experimental — sends record texts to an external model; never runs on page load)</span></h2>
+    <p class="note" id="aiIntro"><b>How this works:</b> takes the first 50 records matching the filters above (same order as the table below, newest first; if fewer match, all of them), sends their full paragraph texts to a language model in batches of 25 via <code>studio.ask(prompt, {json:true})</code>, and asks for JSON mapping each record id to SDG numbers 1–17. The UN's own SDG tags come from the data; the agreement rate is computed locally. Only the “AI SDGs” column comes from the model. <span id="aiScope"></span></p>
+    <div class="ai-actions">
+      <button id="btnAI" type="button">Suggest SDGs with AI</button>
+      <button id="btnAgain" type="button" hidden>Run again (keeps previous runs)</button>
+      <button id="btnStop" type="button" class="secondary" hidden>Stop</button>
+      <button id="btnClear" type="button" class="secondary" hidden>Clear all runs</button>
+      <span class="ai-status" id="aiStatus" role="status" aria-live="polite"></span>
+    </div>
+    <div class="pbar" id="pbar" hidden><div class="pfill" id="pfill"></div></div>
+    <div class="notice" id="aiNotice" hidden></div>
+    <div class="runs" id="runs"></div>
+    <p class="note">Cells tagged <span class="ai-tag">AI</span> (attribute <code>data-source="ai"</code>) contain values returned by the model. Everything else on this page is computed locally in your browser.</p>
+  </section>
+
+  <section class="card" aria-label="Matching records">
+    <h2>Matching records</h2>
+    <p class="showing" id="showing"></p>
+    <p id="activeFilters"></p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr>
+          <th scope="col">Date</th><th scope="col">Body / mandate</th><th scope="col">Mechanism</th><th scope="col">Type</th><th scope="col">Symbol (UN document)</th><th scope="col">Text — first line</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="note"><b>How this is computed:</b> the records matching all filters above, sorted by date (newest first; records without a date last). The last column shows only the first line of the paragraph — click any row (or press Enter) to read the full text. Symbols link to the UN document and open in a new tab. All counting, filtering and sorting is done locally in your browser; nothing is estimated.</p>
+  </section>
+
+  <footer>Built offline from the workshop dataset (<code>window.WORKSHOP_DATA</code>). The only network-free exception is the optional AI section above, which sends text to the model only when you click a button.</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var DATA = window.WORKSHOP_DATA || {};
+var uhri = DATA.uhri || {};
+var sdgNames = uhri.sdg_names || {};
+var recs = Array.isArray(uhri.records) ? uhri.records : [];
+
+function txt(v){ return v==null ? "" : String(v); }
+function arr(v){ if(Array.isArray(v)) return v; return (v==null || v==="") ? [] : [v]; }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+function uniq(a){ var seen={}, out=[]; a.forEach(function(x){ x=txt(x).trim(); if(x && !seen[x]){ seen[x]=1; out.push(x); } }); return out; }
+function normalizeSdgs(v){
+  var a = Array.isArray(v) ? v : (v==null || v==="" ? [] : [v]);
+  var out=[], seen={};
+  a.forEach(function(x){ var n=Number(x); if(isFinite(n) && n>=1 && n<=17 && Math.floor(n)===n && !seen[n]){ seen[n]=1; out.push(n); } });
+  return out.sort(function(p,q){ return p-q; });
+}
+
+var country = txt(uhri.country) || "the reviewed country";
+
+/* ---------- header & overview stats ---------- */
+var years = recs.map(function(r){ return r.year; }).filter(function(y){ return typeof y==="number" && isFinite(y); });
+var yearSet={}, yearList=[];
+years.forEach(function(y){ if(!yearSet[y]){ yearSet[y]=1; yearList.push(y); } });
+yearList.sort(function(a,b){ return a-b; });
+var minYear = yearList.length ? yearList[0] : null;
+var maxYear = yearList.length ? yearList[yearList.length-1] : null;
+var mechanisms = uniq(recs.map(function(r){ return txt(r.mechanism); })).sort();
+var types = uniq(recs.map(function(r){ return txt(r.type); })).sort();
+var bodies = uniq(recs.map(function(r){ return txt(r.body); })).sort();
+
+document.title = "UN human rights recommendations — " + country;
+document.getElementById("title").innerHTML = 'UN human rights recommendations &amp; observations — <span class="country">' + esc(country) + "</span>";
+document.getElementById("subtitle").textContent = txt(uhri.title);
+var lede = "Source: ";
+if (txt(uhri.source_url)) lede += '<a href="' + esc(uhri.source_url) + '" target="_blank" rel="noopener noreferrer">' + esc(txt(uhri.source) || uhri.source_url) + "</a>";
+else lede += esc(txt(uhri.source) || "UHRI extract");
+lede += " · n = " + recs.length + " records";
+if (typeof uhri.count === "number" && uhri.count !== recs.length) lede += " (dataset header says " + uhri.count + ")";
+lede += " · years " + (minYear != null ? minYear + "–" + maxYear : "not recorded");
+if (txt(uhri.built)) lede += " · built " + esc(uhri.built);
+document.getElementById("lede").innerHTML = lede;
+
+document.getElementById("statRecords").textContent = recs.length.toLocaleString("en-US");
+document.getElementById("statYears").textContent = minYear != null ? minYear + "–" + maxYear : "—";
+document.getElementById("statMech").textContent = mechanisms.length ? mechanisms.join(", ") : "—";
+document.getElementById("statBodies").textContent = bodies.length ? bodies.length.toLocaleString("en-US") : "—";
+
+/* ---------- filter controls ---------- */
+var fMech=document.getElementById("fMech"), fBody=document.getElementById("fBody"), fType=document.getElementById("fType"),
+    fYearFrom=document.getElementById("fYearFrom"), fYearTo=document.getElementById("fYearTo"),
+    fSdg=document.getElementById("fSdg"), fQ=document.getElementById("fQ");
+
+function fill(sel, opts, allLabel){
+  sel.innerHTML = '<option value="">' + esc(allLabel) + "</option>" +
+    opts.map(function(o){ return '<option value="' + esc(o.v) + '">' + esc(o.l) + "</option>"; }).join("");
+}
+fill(fMech, mechanisms.map(function(m){ return {v:m, l:m}; }), "All mechanisms");
+fill(fType, types.map(function(t){ return {v:t, l:t}; }), "All types");
+
+(function(){
+  var groups={};
+  recs.forEach(function(r){
+    var b=txt(r.body).trim(); if(!b) return;
+    var m=txt(r.mechanism).trim() || "(no mechanism)";
+    (groups[m]=groups[m]||{})[b]=1;
+  });
+  var html='<option value="">All bodies &amp; mandates</option>';
+  Object.keys(groups).sort().forEach(function(m){
+    html += '<optgroup label="' + esc(m) + '">';
+    Object.keys(groups[m]).sort().forEach(function(b){ html += '<option value="' + esc(b) + '">' + esc(b) + "</option>"; });
+    html += "</optgroup>";
+  });
+  fBody.innerHTML = html;
+})();
+
+function fillYears(sel, def){
+  if(!yearList.length){ sel.innerHTML='<option value="">—</option>'; sel.disabled=true; return; }
+  sel.disabled=false;
+  sel.innerHTML = yearList.map(function(y){ return '<option value="' + y + '"' + (y===def ? " selected" : "") + ">" + y + "</option>"; }).join("");
+}
+fillYears(fYearFrom, minYear);
+fillYears(fYearTo, maxYear);
+
+var sdgSet={}, sdgList=[];
+recs.forEach(function(r){ arr(r.sdgs).forEach(function(n){ var v=Number(n); if(isFinite(v) && !sdgSet[v]){ sdgSet[v]=1; sdgList.push(v); } }); });
+sdgList.sort(function(a,b){ return a-b; });
+fill(fSdg, sdgList.map(function(n){
+  var name = sdgNames[String(n)] || sdgNames[n];
+  return {v:String(n), l:"SDG " + n + (name ? " — " + name : "")};
+}), "All SDGs");
+
+/* ---------- filtering ---------- */
+var state = { mechanism:"", body:"", type:"", yearFrom:minYear, yearTo:maxYear, sdg:"", q:"" };
+var lastList = [];
+
+function matches(r){
+  if(state.mechanism && txt(r.mechanism).trim() !== state.mechanism) return false;
+  if(state.body && txt(r.body).trim() !== state.body) return false;
+  if(state.type && txt(r.type).trim() !== state.type) return false;
+  if(state.sdg !== ""){
+    var ok=false;
+    arr(r.sdgs).forEach(function(n){ if(Number(n) === Number(state.sdg)) ok=true; });
+    if(!ok) return false;
+  }
+  if(minYear != null && typeof r.year === "number" && isFinite(r.year)){
+    if(r.year < state.yearFrom || r.year > state.yearTo) return false;
+  }
+  if(state.q){
+    var hay = [r.text, r.symbol, r.section, r.body, r.mechanism, r.type]
+      .concat(arr(r.themes), arr(r.sdg_targets), arr(r.affected_persons))
+      .map(txt).join(" ").toLowerCase();
+    if(hay.indexOf(state.q) === -1) return false;
+  }
+  return true;
+}
+function cmpRecords(a,b){
+  var da = txt(a.date).trim(), db = txt(b.date).trim();
+  if(da !== db) return da < db ? 1 : -1;
+  var sa = txt(a.symbol), sb = txt(b.symbol);
+  return sa < sb ? -1 : (sa > sb ? 1 : 0);
+}
+
+/* ---------- theme chart ---------- */
+var chart = null;
+function renderChart(list){
+  var counts={};
+  list.forEach(function(r){ arr(r.themes).forEach(function(t){ var k=txt(t).trim(); if(k) counts[k]=(counts[k]||0)+1; }); });
+  var all = Object.keys(counts).map(function(k){ return [k, counts[k]]; })
+    .sort(function(a,b){ return b[1]-a[1] || (a[0]<b[0] ? -1 : 1); });
+  var top = all.slice(0,10);
+  document.getElementById("chartCount").textContent = list.length ? "— " + list.length + " matching record" + (list.length===1 ? "" : "s") : "";
+  document.getElementById("themeNote").innerHTML =
+    "How this is computed: for the <b>" + list.length + "</b> record" + (list.length===1 ? "" : "s") +
+    " matching the filters above, each theme tag is counted once per record. A record can carry several themes, so the bars can add up to more than " +
+    list.length + ". Showing the top " + top.length + " of " + all.length + " distinct theme" + (all.length===1 ? "" : "s") + ".";
+  var emptyEl = document.getElementById("chartEmpty"), box = document.getElementById("chartBox");
+  if(!top.length){
+    emptyEl.hidden = false;
+    emptyEl.textContent = "No themes are tagged on the records matching the current filters, so there is nothing to chart.";
+    box.style.height = "90px";
+    if(chart){ chart.data.labels=[]; chart.data.datasets[0].data=[]; chart.update(); }
+    return;
+  }
+  emptyEl.hidden = true;
+  box.style.height = Math.max(220, top.length*40 + 80) + "px";
+  var labels = top.map(function(d){ return d[0]; });
+  var values = top.map(function(d){ return d[1]; });
+  if(window.Chart){
+    if(!chart){
+      chart = new Chart(document.getElementById("themeChart").getContext("2d"), {
+        type:"bar",
+        data:{ labels:labels, datasets:[{ label:"Records", data:values, backgroundColor:"#1f6fb2", hoverBackgroundColor:"#185a92", borderRadius:4, maxBarThickness:28 }] },
+        options:{
+          indexAxis:"y", responsive:true, maintainAspectRatio:false, animation:false,
+          plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:function(c){ return " " + c.parsed.x + " record" + (c.parsed.x===1 ? "" : "s"); } } } },
+          scales:{
+            x:{ beginAtZero:true, ticks:{ precision:0 }, title:{ display:true, text:"Matching records" }, grid:{ color:"#e6ecf2" } },
+            y:{ ticks:{ autoSkip:false, font:{ size:13 } }, grid:{ display:false } }
+          }
+        }
+      });
+    } else {
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = values;
+      chart.update();
+    }
+  } else {
+    emptyEl.hidden = false;
+    emptyEl.textContent = "Chart.js is not available in this environment, so the chart cannot be drawn. The table below still lists every matching record.";
+  }
+}
+
+/* ---------- records table ---------- */
+function firstLine(t){
+  var s = txt(t);
+  var lines = s.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
+  var line = lines.length ? lines[0] : s.trim();
+  return line.length > 170 ? line.slice(0,167).trimEnd() + " …" : line;
+}
+function recommendingState(r){
+  if(txt(r.mechanism).toLowerCase().indexOf("periodic") === -1) return "";
+  var m = txt(r.text).trim().match(/\(([^()]{2,120})\)\s*\.?\s*$/);
+  return m ? m[1] : "";
+}
+function detailHtml(r){
+  var parts=[];
+  var sec = txt(r.section).trim();
+  if(sec) parts.push('<span><span class="k">Section:</span> ' + esc(sec) + "</span>");
+  var themes = arr(r.themes).map(function(t){ return txt(t).trim(); }).filter(Boolean);
+  if(themes.length) parts.push('<span><span class="k">Themes:</span> ' + themes.map(function(t){ return '<span class="chip">' + esc(t) + "</span>"; }).join("") + "</span>");
+  var sdgs = arr(r.sdgs);
+  if(sdgs.length) parts.push('<span><span class="k">SDGs:</span> ' + sdgs.map(function(n){
+    var name = sdgNames[String(n)] || sdgNames[n];
+    return '<span class="chip">SDG ' + esc(String(n)) + (name ? " — " + esc(name) : "") + "</span>";
+  }).join("") + "</span>");
+  var persons = arr(r.affected_persons).map(function(p){ return txt(p).trim(); }).filter(Boolean);
+  if(persons.length) parts.push('<span><span class="k">Affected persons:</span> ' + persons.map(function(p){ return '<span class="chip">' + esc(p) + "</span>"; }).join("") + "</span>");
+  var rs = recommendingState(r);
+  if(rs) parts.push('<span><span class="k">Recommending State:</span> ' + esc(rs) + "</span>");
+  var url = txt(r.doc_url).trim();
+  if(url) parts.push('<span><a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">Open the UN document ↗</a></span>');
+  return '<p class="fulltext">' + esc(txt(r.text)) + '</p><div class="meta">' + parts.join("") + "</div>";
+}
+function renderTable(sorted){
+  var tbody = document.getElementById("tbody"), html = "";
+  sorted.forEach(function(r,i){
+    var sym = txt(r.symbol).trim() || "(no symbol)";
+    var url = txt(r.doc_url).trim();
+    var symCell = url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(sym) + "</a>" : esc(sym);
+    var dateCell = txt(r.date).trim() || (typeof r.year === "number" ? String(r.year) : "—");
+    html += '<tr class="rec" tabindex="0" role="button" aria-expanded="false" data-idx="' + i + '">'
+      + '<td class="c-date">' + esc(dateCell) + "</td>"
+      + "<td>" + esc(txt(r.body).trim() || "—") + "</td>"
+      + "<td>" + esc(txt(r.mechanism).trim() || "—") + "</td>"
+      + "<td>" + esc(txt(r.type).trim() || "—") + "</td>"
+      + '<td class="c-sym">' + symCell + "</td>"
+      + '<td class="c-text">' + esc(firstLine(r.text) || "—") + "</td>"
+      + "</tr>"
+      + '<tr class="detail" data-idx="' + i + '" hidden><td colspan="6">' + detailHtml(r) + "</td></tr>";
+  });
+  tbody.innerHTML = html || '<tr><td colspan="6" class="empty">No records match the current filters. Try widening the year range or clearing the keyword search.</td></tr>';
+}
+
+var tbody = document.getElementById("tbody");
+function toggleRow(tr){
+  var det = tbody.querySelector('tr.detail[data-idx="' + tr.getAttribute("data-idx") + '"]');
+  if(!det) return;
+  var open = det.hidden;
+  det.hidden = !open;
+  tr.setAttribute("aria-expanded", String(open));
+  tr.classList.toggle("open", open);
+}
+tbody.addEventListener("click", function(e){
+  var tr = e.target.closest ? e.target.closest("tr.rec") : null;
+  if(tr) toggleRow(tr);
+});
+tbody.addEventListener("keydown", function(e){
+  if(e.key !== "Enter" && e.key !== " ") return;
+  var tr = e.target.closest ? e.target.closest("tr.rec") : null;
+  if(tr){ e.preventDefault(); toggleRow(tr); }
+});
+
+/* ---------- AI SDG suggestion runs ---------- */
+var MAX_RUNS = 3, BATCH = 25, AI_LIMIT = 50, CHAR_CAP = 3000;
+var runCount = 0, running = false, stopRequested = false;
+var btnAI = document.getElementById("btnAI"), btnAgain = document.getElementById("btnAgain"),
+    btnStop = document.getElementById("btnStop"), btnClear = document.getElementById("btnClear"),
+    aiStatus = document.getElementById("aiStatus"), aiNotice = document.getElementById("aiNotice"),
+    runsEl = document.getElementById("runs"), pbar = document.getElementById("pbar"), pfill = document.getElementById("pfill"),
+    aiScope = document.getElementById("aiScope");
+
+function setStatus(msg){ aiStatus.textContent = msg; }
+
+function buildPrompt(items){
+  var payload = items.map(function(it){
+    var t = txt(it.r.text);
+    if(t.length > CHAR_CAP) t = t.slice(0, CHAR_CAP) + " …[truncated at " + CHAR_CAP + " characters]";
+    return { id: it.id, text: t };
+  });
+  return "You tag UN human rights recommendations and observations with Sustainable Development Goals (SDGs).\n" +
+    "Below are " + items.length + " records, each with an \"id\" and the full \"text\" of one UN paragraph addressed to a State.\n" +
+    "For EACH record, decide which SDGs (goal numbers 1 to 17 only) the text relates to.\n" +
+    'Return ONLY valid JSON, no prose, in exactly this shape:\n{"suggestions":[{"id":"<id>","sdgs":[16,10]}, ...]}\n' +
+    'Rules: one entry for every id listed below; "sdgs" is an array of integers between 1 and 17 (empty array if none apply); do not invent or omit ids; output nothing outside the JSON.\n\nRECORDS:\n' +
+    JSON.stringify(payload);
+}
+
+function parseAI(raw){
+  var s = String(raw == null ? "" : raw).trim();
+  if(!s) return null;
+  var obj = null;
+  try { obj = JSON.parse(s); } catch(e){
+    var m = s.match(/\{[\s\S]*\}/);
+    if(m){ try { obj = JSON.parse(m[0]); } catch(e2){ obj = null; } }
+  }
+  if(!obj) return null;
+  var list = null;
+  if(Array.isArray(obj)) list = obj;
+  else if(Array.isArray(obj.suggestions)) list = obj.suggestions;
+  else if(Array.isArray(obj.records)) list = obj.records;
+  else if(Array.isArray(obj.results)) list = obj.results;
+  else if(typeof obj === "object"){
+    var keys = Object.keys(obj), allIds = keys.length > 0;
+    keys.forEach(function(k){ if(!/^[0-9a-z\-]{6,}$/i.test(k)) allIds = false; });
+    if(allIds) return obj; /* id -> sdgs map */
+    return null;
+  }
+  if(!list) return null;
+  var map = {};
+  list.forEach(function(it){
+    if(!it || typeof it !== "object") return;
+    var id = it.id != null ? String(it.id) : (it.record_id != null ? String(it.record_id) : null);
+    if(id == null) return;
+    var v = it.sdgs != null ? it.sdgs : (it.sdg != null ? it.sdg : (it.goals != null ? it.goals : it.SDGs));
+    map[id] = v;
+  });
+  return map;
+}
+
+function sdgChips(nums){
+  if(!nums || !nums.length) return '<span class="none">— none tagged</span>';
+  return nums.map(function(n){
+    var name = sdgNames[String(n)] || sdgNames[n];
+    return '<span class="chip" title="' + esc(name || "") + '">SDG ' + n + "</span>";
+  }).join(" ");
+}
+function agreeInfo(unNums, aiNums){
+  if(!aiNums) return { cls:"noans", label:"no answer" };
+  var us = normalizeSdgs(unNums), as = normalizeSdgs(aiNums);
+  if(us.join(",") === as.join(",")) return { cls:"yes", label:"Yes — exact match" };
+  var inter = us.filter(function(n){ return as.indexOf(n) !== -1; }).length;
+  if(inter > 0) return { cls:"partial", label:"Partial — " + inter + " shared" };
+  return { cls:"no", label:"No overlap" };
+}
+function rowHtml(it, res){
+  var r = it.r;
+  var sym = txt(r.symbol).trim() || "(no symbol)";
+  var url = txt(r.doc_url).trim();
+  var symCell = url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(sym) + "</a>" : esc(sym);
+  var un = normalizeSdgs(arr(r.sdgs));
+  var ai = res && res.sdgs ? res.sdgs : null;
+  var ag = agreeInfo(un, ai);
+  var aiCell = ai
+    ? '<span data-source="ai">' + sdgChips(ai) + ' <span class="ai-tag">AI</span></span>'
+    : '<span data-source="ai"><span class="none">no answer</span> <span class="ai-tag">AI</span></span>';
+  return "<tr>"
+    + '<td><div class="rec-sym">' + symCell + '</div><div class="rec-sub">'
+    + esc(txt(r.date).trim() || (typeof r.year === "number" ? String(r.year) : "—")) + " · " + esc(txt(r.body).trim() || "—") + "</div></td>"
+    + "<td>" + sdgChips(un) + "</td>"
+    + "<td>" + aiCell + "</td>"
+    + '<td><span class="agree-badge ' + ag.cls + '" data-source="ai">' + esc(ag.label) + "</span></td>"
+    + "</tr>";
+}
+function buildRunPanel(runNo){
+  var div = document.createElement("div");
+  div.className = "run";
+  div.innerHTML = '<div class="run-head"><h3>Run ' + runNo + '</h3><span class="run-meta" data-runmeta></span></div>'
+    + '<p class="agree" data-agree></p>'
+    + '<p class="note" data-agreenote></p>'
+    + '<div class="table-scroll"><table><thead><tr>'
+    + "<th>Record</th><th>UN SDGs (from the data)</th><th>AI SDGs (from the model)</th><th>Agree?</th>"
+    + "</tr></thead><tbody data-runbody></tbody></table></div>";
+  return div;
+}
+function renderRunResults(panel, items, results, runNo, meta){
+  var yes=0, partial=0, no=0, noans=0;
+  items.forEach(function(it){
+    var un = normalizeSdgs(arr(it.r.sdgs));
+    var res = results[it.id];
+    var ag = agreeInfo(un, res && res.sdgs ? res.sdgs : null);
+    if(ag.cls==="yes") yes++; else if(ag.cls==="partial") partial++; else if(ag.cls==="no") no++; else noans++;
+  });
+  var n = items.length;
+  var pct = n ? Math.round(yes / n * 1000) / 10 : 0;
+  var agreeEl = panel.querySelector("[data-agree]");
+  if(meta.progress){
+    agreeEl.innerHTML = "Run in progress — " + meta.answered + " of " + n + " records answered so far…";
+  } else {
+    agreeEl.innerHTML = "Agreement rate: <b>" + yes + " of " + n + " records (" + pct + "%)</b> where the AI's SDG set exactly equals the UN's SDG set"
+      + (meta.stopped ? " (run stopped early)" : "")
+      + ". Partial overlap: " + partial + " · no overlap: " + no + " · no answer: " + noans + ".";
+  }
+  panel.querySelector("[data-agreenote]").innerHTML =
+    "How this is computed: the two SDG sets are compared as sets (order ignored), locally in your browser — a deterministic count, not an estimate. The UN column comes from the <code>sdgs</code> field of the data; the AI column and the comparison against it come from the model's answers (<code>data-source=\"ai\"</code>).";
+  panel.querySelector("[data-runmeta]").textContent =
+    "started " + meta.time + " · " + n + " records (first of the current filter, newest first) · "
+    + meta.batches + " batch(es) of ≤ " + BATCH + (meta.stopped ? " · stopped after " + meta.sent + " sent" : " · all sent")
+    + " · " + meta.secs + " s";
+  panel.querySelector("[data-runbody]").innerHTML = items.map(function(it){ return rowHtml(it, results[it.id]); }).join("");
+}
+
+async function runAI(){
+  if(running) return;
+  if(typeof studio === "undefined" || !studio || typeof studio.ask !== "function"){
+    setStatus("studio.ask is not available in this environment, so no AI run is possible.");
+    return;
+  }
+  if(runCount >= MAX_RUNS){ setStatus("Maximum of " + MAX_RUNS + " runs are kept side by side — clear the runs to start over."); return; }
+  var list = lastList.slice(0, AI_LIMIT);
+  if(!list.length){ setStatus("No records match the current filters — nothing to send."); return; }
+
+  running = true; stopRequested = false;
+  runCount++;
+  var runNo = runCount;
+  btnAI.disabled = true; btnAgain.disabled = true; btnStop.hidden = false;
+  pbar.hidden = false; pfill.style.width = "0%";
+
+  var items = list.map(function(r,i){ return { r:r, id: r.id != null ? String(r.id) : ("row-" + i) }; });
+  var panel = buildRunPanel(runNo);
+  runsEl.appendChild(panel);
+  btnClear.hidden = false;
+
+  aiNotice.hidden = false;
+  aiNotice.innerHTML = "⚠ <b>" + items.length + " record texts</b> (full paragraphs, each capped at " + CHAR_CAP.toLocaleString("en-US") +
+    " characters) were sent to an external language model: <b>the model behind <code>studio.ask()</code> in this workshop environment</b> — the API does not expose the model's name or version, so it cannot be displayed here. " +
+    "<b>These texts left this browser.</b> The call is slow and may cost money. Model answers are non-deterministic: <b>running again can give different answers</b>. Values tagged <span class='ai-tag'>AI</span> came from the model.";
+
+  var t0 = Date.now();
+  var results = {};
+  var batches = Math.ceil(items.length / BATCH);
+  var sent = 0, answered = 0;
+  for(var b=0; b<batches; b++){
+    if(stopRequested) break;
+    var chunk = items.slice(b*BATCH, (b+1)*BATCH);
+    setStatus("Run " + runNo + ": sending batch " + (b+1) + " of " + batches + " (" + chunk.length + " records) to the model…");
+    var raw = null, err = null;
+    try { raw = await studio.ask(buildPrompt(chunk), { json:true }); }
+    catch(e){ err = e; }
+    sent += chunk.length;
+    pfill.style.width = Math.round(sent / items.length * 100) + "%";
+    if(err){
+      chunk.forEach(function(it){ results[it.id] = { sdgs:null }; });
+      setStatus("Run " + runNo + ": batch " + (b+1) + " failed (" + (err && err.message ? err.message : err) + "). Those records are marked “no answer”.");
+    } else {
+      var map = parseAI(raw);
+      if(!map){
+        chunk.forEach(function(it){ results[it.id] = { sdgs:null }; });
+        setStatus("Run " + runNo + ": batch " + (b+1) + " returned invalid JSON — those records are marked “no answer”.");
+      } else {
+        chunk.forEach(function(it){
+          var v = map[it.id];
+          if(v == null){ results[it.id] = { sdgs:null }; return; }
+          var nums = normalizeSdgs(v);
+          results[it.id] = { sdgs: nums };
+          if(nums.length) answered++;
+        });
+        setStatus("Run " + runNo + ": batch " + (b+1) + " of " + batches + " done — " + sent + " of " + items.length + " records sent, " + answered + " answered.");
+      }
+    }
+    renderRunResults(panel, items, results, runNo, {
+      progress:true, answered:answered, time:new Date().toLocaleTimeString("en-GB"),
+      batches:batches, sent:sent, secs:((Date.now()-t0)/1000).toFixed(1), stopped:false
+    });
+  }
+
+  var stopped = stopRequested;
+  var secs = ((Date.now()-t0)/1000).toFixed(1);
+  renderRunResults(panel, items, results, runNo, {
+    progress:false, answered:answered, time:new Date(t0).toLocaleTimeString("en-GB"),
+    batches:batches, sent:sent, secs:secs, stopped:stopped
+  });
+  setStatus(stopped
+    ? "Run " + runNo + " stopped after " + sent + " of " + items.length + " records were sent."
+    : "Run " + runNo + " finished: " + items.length + " records sent in " + batches + " batch(es) of ≤ " + BATCH + ", in " + secs + " s.");
+  running = false;
+  btnStop.hidden = true; pbar.hidden = true;
+  btnAI.disabled = false; btnAgain.disabled = false;
+  btnAgain.hidden = false;
+  if(runCount >= MAX_RUNS){
+    btnAI.disabled = true; btnAgain.disabled = true;
+    setStatus("Maximum of " + MAX_RUNS + " runs kept side by side — use “Clear all runs” to start over.");
+  }
+}
+
+btnAI.addEventListener("click", runAI);
+btnAgain.addEventListener("click", runAI);
+btnStop.addEventListener("click", function(){
+  stopRequested = true;
+  setStatus("Stop requested — the current batch will finish, then the run ends.");
+});
+btnClear.addEventListener("click", function(){
+  if(running) return;
+  runCount = 0;
+  runsEl.innerHTML = "";
+  aiNotice.hidden = true;
+  btnAgain.hidden = true; btnClear.hidden = true;
+  btnAI.disabled = false; btnAgain.disabled = false;
+  setStatus("Runs cleared.");
+});
+
+/* ---------- update everything ---------- */
+function sdgLabel(v){
+  var n = Number(v), name = sdgNames[String(n)] || sdgNames[n];
+  return "SDG " + n + (name ? " — " + name : "");
+}
+function update(){
+  var list = recs.filter(matches);
+  lastList = list.slice().sort(cmpRecords);
+  document.getElementById("showing").innerHTML = "Showing <b>" + list.length + "</b> of " + recs.length + " records";
+  var parts = [];
+  if(state.mechanism) parts.push("mechanism = " + state.mechanism);
+  if(state.body) parts.push("body/mandate = " + state.body);
+  if(state.type) parts.push("type = " + state.type);
+  if(minYear != null && (state.yearFrom !== minYear || state.yearTo !== maxYear)) parts.push("years " + state.yearFrom + "–" + state.yearTo);
+  if(state.sdg !== "") parts.push(sdgLabel(state.sdg));
+  if(state.q) parts.push("keyword \u201C" + state.q + "\u201D");
+  document.getElementById("activeFilters").textContent = parts.length
+    ? "Active filters: " + parts.join(" · ")
+    : "No filters active — all " + recs.length + " records are shown.";
+  aiScope.textContent = "The current filter matches " + list.length + " record" + (list.length===1 ? "" : "s") +
+    " — an AI run would use the first " + Math.min(AI_LIMIT, list.length) + ".";
+  renderChart(list);
+  renderTable(lastList);
+}
+
+fMech.addEventListener("change", function(){ state.mechanism = fMech.value; update(); });
+fBody.addEventListener("change", function(){ state.body = fBody.value; update(); });
+fType.addEventListener("change", function(){ state.type = fType.value; update(); });
+fSdg.addEventListener("change", function(){ state.sdg = fSdg.value; update(); });
+fYearFrom.addEventListener("change", function(){
+  state.yearFrom = Number(fYearFrom.value);
+  if(state.yearTo < state.yearFrom){ state.yearTo = state.yearFrom; fYearTo.value = String(state.yearTo); }
+  update();
+});
+fYearTo.addEventListener("change", function(){
+  state.yearTo = Number(fYearTo.value);
+  if(state.yearFrom > state.yearTo){ state.yearFrom = state.yearTo; fYearFrom.value = String(state.yearFrom); }
+  update();
+});
+var qTimer = null;
+fQ.addEventListener("input", function(){
+  clearTimeout(qTimer);
+  qTimer = setTimeout(function(){ state.q = fQ.value.trim().toLowerCase(); update(); }, 180);
+});
+document.getElementById("fReset").addEventListener("click", function(){
+  state.mechanism=""; state.body=""; state.type=""; state.sdg=""; state.q="";
+  state.yearFrom = minYear; state.yearTo = maxYear;
+  fMech.value=""; fBody.value=""; fType.value=""; fSdg.value=""; fQ.value="";
+  fillYears(fYearFrom, minYear); fillYears(fYearTo, maxYear);
+  update();
+});
+
+update();
+})();
+</script>
+</body>
+</html>

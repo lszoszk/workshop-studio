@@ -1,0 +1,471 @@
+Here's the General Comments search tool. It searches paragraph text with AND/OR/NOT and quoted phrases, filters by committee and year, charts matches per committee, and gives one-click citations like "CCPR/C/GC/37, para. 12". All counts come from the data itself — nothing is hard-coded.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>General Comments search</title>
+<style>
+  :root{
+    --accent:#1f6fb2; --accent-soft:#e7f0f8; --bg:#f5f7fa;
+    --ink:#1d2a36; --muted:#5b6b7a; --line:#d8e0e8;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; padding:28px 36px 70px; background:var(--bg); color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  .wrap{ max-width:1060px; margin:0 auto; }
+  h1{ font-size:27px; margin:0 0 4px; }
+  #dataLine{ margin:0 0 22px; color:var(--muted); font-size:15px; }
+  .panel{ background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px 20px; margin-bottom:18px; }
+  .searchrow{ display:flex; gap:10px; }
+  #q{ flex:1; padding:10px 12px; font:inherit; border:1px solid var(--line); border-radius:6px; min-width:0; }
+  #q:focus{ outline:2px solid var(--accent-soft); border-color:var(--accent); }
+  #searchBtn{
+    padding:10px 22px; font:inherit; font-weight:600; color:#fff;
+    background:var(--accent); border:none; border-radius:6px; cursor:pointer; white-space:nowrap;
+  }
+  #searchBtn:hover{ background:#185a92; }
+  .help{ margin:10px 0 0; font-size:14px; color:var(--muted); }
+  .help code{ background:var(--accent-soft); padding:1px 5px; border-radius:4px; }
+  .filters{ display:flex; flex-wrap:wrap; gap:16px 26px; margin-top:16px; align-items:flex-end; }
+  .filters label{ font-size:14px; color:var(--muted); display:flex; flex-direction:column; gap:4px; }
+  .filters select,.filters input{
+    font:inherit; padding:7px 9px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink);
+  }
+  .filters input{ width:110px; }
+  #countLine{ font-size:16px; margin:18px 0 4px; }
+  .note{ font-size:13px; color:var(--muted); margin:4px 0 0; }
+  .chartbox h2{ font-size:17px; margin:0 0 12px; }
+  .chartwrap{ position:relative; height:230px; }
+  #noChart{ margin:8px 0 0; color:var(--muted); }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:8px; padding:14px 18px 12px; margin-bottom:13px; }
+  .cardhead{ display:flex; flex-wrap:wrap; gap:8px 12px; align-items:baseline; margin-bottom:8px; }
+  .chip{ background:var(--accent-soft); color:var(--accent); font-size:13px; font-weight:700; padding:2px 9px; border-radius:11px; }
+  .ctitle{ font-size:15px; }
+  .cyear{ color:var(--muted); font-size:14px; }
+  .csym{ margin-left:auto; font-size:14px; font-family:ui-monospace,"SF Mono",Consolas,"Liberation Mono",monospace; }
+  .csym a{ color:var(--accent); text-decoration:none; }
+  .csym a:hover{ text-decoration:underline; }
+  .ctext{ white-space:pre-wrap; overflow-wrap:anywhere; margin:0 0 10px; font-size:15.5px; }
+  mark{ background:#ffe58f; color:inherit; padding:0 1px; border-radius:2px; }
+  .copy-btn{
+    font:inherit; font-size:14px; color:var(--accent); background:#fff;
+    border:1px solid var(--accent); border-radius:6px; padding:5px 14px; cursor:pointer;
+  }
+  .copy-btn.copied{ background:var(--accent); color:#fff; }
+  .empty{ font-size:18px; font-weight:600; margin:10px 0 4px; }
+  .tip{ color:var(--muted); margin:0; }
+  .trunc{ color:var(--muted); font-size:14px; margin-top:6px; }
+  .notext{ color:var(--muted); font-style:italic; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>General Comments search</h1>
+  <p id="dataLine"></p>
+
+  <div class="panel">
+    <div class="searchrow">
+      <input id="q" type="text" spellcheck="false" aria-label="Search words"
+             placeholder='Search the paragraph text, e.g. "best interests" AND child'>
+      <button id="searchBtn" type="button">Search</button>
+    </div>
+    <p class="help">
+      Words are combined with AND unless you write OR; NOT excludes a word; "quotes" find an exact
+      phrase. Plain words match whole words only ("right" does not match "rights").
+      Example: <code>"best interests" AND child</code>.
+    </p>
+    <div class="filters">
+      <label>Committee <select id="committee"></select></label>
+      <label>Year from <input id="fromY" type="number"></label>
+      <label>Year to <input id="toY" type="number"></label>
+    </div>
+  </div>
+
+  <p id="countLine" aria-live="polite"></p>
+  <p class="note">How this is computed: the committee and year filters are applied first; the second
+    number counts the paragraphs left after filtering, and the first number counts those whose text
+    matches the search. The chart and the cards use this same list, so the bars add up to the first number.</p>
+
+  <div class="panel chartbox">
+    <h2>Matching paragraphs by committee</h2>
+    <div class="chartwrap"><canvas id="chart"></canvas></div>
+    <p id="noChart" style="display:none;"></p>
+    <p class="note">How this is computed: each bar counts the matching paragraphs (after filters and
+      search) grouped by their committee field. Committees with no matching paragraph are omitted,
+      so the bars always add up to the number of matching paragraphs.</p>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var GC = (window.WORKSHOP_DATA && window.WORKSHOP_DATA.gc) || {};
+var recs = Array.isArray(GC.records) ? GC.records : [];
+
+/* ---------- header line: source, n, year range (all read from the data) ---------- */
+(function(){
+  var el = document.getElementById('dataLine');
+  if(!recs.length){ el.textContent = 'No General Comment data is loaded.'; return; }
+  var min = null, max = null;
+  recs.forEach(function(r){
+    if(typeof r.year === 'number'){
+      if(min === null || r.year < min) min = r.year;
+      if(max === null || r.year > max) max = r.year;
+    }
+  });
+  var src = GC.source || GC.title || 'unknown source';
+  el.textContent = 'Source: ' + src + ' \u00b7 ' + recs.length.toLocaleString() + ' paragraphs' +
+    (min !== null ? ' \u00b7 ' + min + '\u2013' + max : ' \u00b7 year range unknown');
+  var f = document.getElementById('fromY'), t = document.getElementById('toY');
+  if(min !== null){
+    f.min = t.min = min; f.max = t.max = max;
+    f.placeholder = String(min); t.placeholder = String(max);
+  }
+})();
+
+/* ---------- committee filter options ---------- */
+var committees = [];
+recs.forEach(function(r){
+  if(r.committee && committees.indexOf(r.committee) === -1) committees.push(r.committee);
+});
+committees.sort();
+var commSel = document.getElementById('committee');
+['All'].concat(committees).forEach(function(c){
+  var o = document.createElement('option');
+  o.value = c; o.textContent = c;
+  commSel.appendChild(o);
+});
+
+/* ---------- query language: AND (default), OR, NOT, "quoted phrases" ---------- */
+function tokenize(q){
+  var tokens = [], i = 0;
+  while(i < q.length){
+    var ch = q[i];
+    if(ch === '"'){
+      var end = q.indexOf('"', i + 1), val, next;
+      if(end === -1){ val = q.slice(i + 1).trim(); next = q.length; }
+      else{ val = q.slice(i + 1, end).trim(); next = end + 1; }
+      if(val) tokens.push({ kind:'phrase', v: val });
+      i = next;
+    } else if(/\s/.test(ch)){
+      i++;
+    } else {
+      var j = i;
+      while(j < q.length && !/\s/.test(q[j]) && q[j] !== '"') j++;
+      tokens.push({ kind:'word', v: q.slice(i, j) });
+      i = j;
+    }
+  }
+  return tokens;
+}
+
+function isOp(tok, name){
+  return tok.kind === 'word' && tok.v === name;
+}
+
+function parseQuery(q){
+  var tokens = tokenize(q), groups = [], cur = [];
+  for(var k = 0; k < tokens.length; k++){
+    var t = tokens[k];
+    if(isOp(t, 'OR')){
+      if(cur.length) groups.push(cur);
+      cur = [];
+    } else if(isOp(t, 'NOT')){
+      var nxt = tokens[k + 1];
+      if(nxt && !isOp(nxt, 'OR') && !isOp(nxt, 'AND') && !isOp(nxt, 'NOT')){
+        cur.push({ neg: true, phrase: nxt.kind === 'phrase', v: nxt.v });
+        k++;
+      }
+    } else if(isOp(t, 'AND')){
+      /* AND is the default combination: nothing to do */
+    } else {
+      cur.push({ neg: false, phrase: t.kind === 'phrase', v: t.v });
+    }
+  }
+  if(cur.length) groups.push(cur);
+  return groups;
+}
+
+/* ---------- matching (case-insensitive, whole words, exact phrases) ---------- */
+function escapeRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+var B0 = '(?<![\\p{L}\\p{N}])', B1 = '(?![\\p{L}\\p{N}])';
+
+function termPattern(t){
+  if(t.phrase){
+    var ws = t.v.split(/\s+/).filter(Boolean).map(escapeRe);
+    if(!ws.length) return null;
+    return B0 + '(?:' + ws.join('\\s+') + ')' + B1;
+  }
+  return B0 + escapeRe(t.v) + B1;
+}
+
+var testCache = new Map();
+function testRegex(t){
+  var key = (t.neg ? '-' : '+') + (t.phrase ? 'p' : 'w') + '\u0001' + t.v;
+  if(!testCache.has(key)){
+    var p = termPattern(t);
+    testCache.set(key, p ? new RegExp(p, 'iu') : null);
+  }
+  return testCache.get(key);
+}
+
+function matchesQuery(r, groups){
+  if(!groups.length) return true;            /* no search: everything in the pool matches */
+  var text = r.text || '';
+  if(!text.trim()) return false;             /* a paragraph with no text never matches */
+  return groups.some(function(g){
+    return g.every(function(t){
+      var re = testRegex(t);
+      var hit = re ? re.test(text) : false;
+      return t.neg ? !hit : hit;
+    });
+  });
+}
+
+function highlightRegex(groups){
+  var pats = [];
+  groups.forEach(function(g){
+    g.forEach(function(t){
+      if(!t.neg){
+        var p = termPattern(t);
+        if(p) pats.push(p);
+      }
+    });
+  });
+  if(!pats.length) return null;
+  pats.sort(function(a, b){ return b.length - a.length; }); /* phrases before single words */
+  try{ return new RegExp('(?:' + pats.join('|') + ')', 'giu'); }
+  catch(e){ return null; }
+}
+
+/* ---------- rendering helpers ---------- */
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+
+/* Wraps the matched words in <mark>; the text itself is shown character for character. */
+function renderHighlighted(text, re){
+  if(!re) return escapeHtml(text);
+  var out = '', last = 0, m;
+  re.lastIndex = 0;
+  while((m = re.exec(text)) !== null){
+    out += escapeHtml(text.slice(last, m.index)) + '<mark>' + escapeHtml(m[0]) + '</mark>';
+    last = m.index + m[0].length;
+    if(m[0].length === 0) re.lastIndex++;
+  }
+  return out + escapeHtml(text.slice(last));
+}
+
+/* ---------- filters, sorting, citation ---------- */
+var fromY = document.getElementById('fromY'), toY = document.getElementById('toY');
+var resultsEl = document.getElementById('results');
+var countLine = document.getElementById('countLine');
+var currentQuery = '';
+var shownRecs = [];
+var CAP = 2000; /* cards drawn on screen; the count and chart always cover all matches */
+
+function numOrNull(el){
+  var v = el.value.trim();
+  if(v === '') return null;
+  var n = parseInt(v, 10);
+  return isNaN(n) ? null : n;
+}
+function yearOk(r, f, t){
+  if(f === null && t === null) return true;   /* filter open: unknown years included */
+  if(typeof r.year !== 'number') return false;/* a from-to range excludes unknown years */
+  if(f !== null && r.year < f) return false;
+  if(t !== null && r.year > t) return false;
+  return true;
+}
+function yearDesc(f, t){
+  if(f === null && t === null) return 'all years';
+  if(f !== null && t !== null) return f + '\u2013' + t;
+  if(f !== null) return 'from ' + f;
+  return 'up to ' + t;
+}
+function cmp(a, b){ /* newest General Comment first */
+  var ya = typeof a.year === 'number' ? a.year : -Infinity;
+  var yb = typeof b.year === 'number' ? b.year : -Infinity;
+  if(ya !== yb) return yb - ya;
+  var sa = a.symbol || '', sb = b.symbol || '';
+  if(sa !== sb) return sa.localeCompare(sb);
+  return (a.paragraph || 0) - (b.paragraph || 0);
+}
+function makeCitation(r){
+  if(r.paragraph == null) return r.symbol || '';
+  return (r.symbol || '') + ', para. ' + r.paragraph;
+}
+
+/* ---------- chart ---------- */
+var chart = null;
+function drawChart(labels, data){
+  var canvas = document.getElementById('chart');
+  var noChart = document.getElementById('noChart');
+  if(chart){ chart.destroy(); chart = null; }
+  if(typeof window.Chart === 'undefined'){
+    canvas.style.display = 'none';
+    noChart.style.display = 'block';
+    noChart.textContent = 'The chart library is not available in this sandbox, so the counts per committee cannot be drawn.';
+    return;
+  }
+  if(!labels.length){
+    canvas.style.display = 'none';
+    noChart.style.display = 'block';
+    noChart.textContent = 'Nothing to chart: no paragraphs match the current filters and search.';
+    return;
+  }
+  canvas.style.display = 'block';
+  noChart.style.display = 'none';
+  chart = new window.Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{ label: 'Matching paragraphs', data: data, backgroundColor: '#1f6fb2', maxBarThickness: 70 }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Matching paragraphs' } },
+        x: { ticks: { maxRotation: 45, minRotation: 0 } }
+      }
+    }
+  });
+}
+
+/* ---------- main render: filters first, then search; N, chart and cards share one list ---------- */
+function render(){
+  var comm = commSel.value;
+  var f = numOrNull(fromY), t = numOrNull(toY);
+
+  var pool = recs.filter(function(r){
+    return (comm === 'All' || r.committee === comm) && yearOk(r, f, t);
+  });
+  var groups = parseQuery(currentQuery);
+  var results = pool.filter(function(r){ return matchesQuery(r, groups); }).sort(cmp);
+  var hl = highlightRegex(groups);
+
+  var qTxt = currentQuery.trim();
+  var filtersTxt = 'committee: ' + comm + ' \u00b7 year: ' + yearDesc(f, t) +
+    ' \u00b7 search: ' + (qTxt ? '\u201c' + qTxt + '\u201d' : 'none');
+  countLine.innerHTML = '<strong>' + results.length.toLocaleString() + '</strong> paragraph' +
+    (results.length === 1 ? '' : 's') + ' match out of ' + pool.length.toLocaleString() +
+    ' (after filters) \u2014 filters: ' + escapeHtml(filtersTxt);
+
+  var byComm = {};
+  results.forEach(function(r){
+    var c = r.committee || 'Unknown';
+    byComm[c] = (byComm[c] || 0) + 1;
+  });
+  var labels = Object.keys(byComm).sort(function(a, b){
+    return (byComm[b] - byComm[a]) || a.localeCompare(b);
+  });
+  drawChart(labels, labels.map(function(c){ return byComm[c]; }));
+
+  shownRecs = results.slice(0, CAP);
+  if(!results.length){
+    resultsEl.innerHTML =
+      '<p class="empty">No paragraph contains these words.</p>' +
+      '<p class="tip">Tip: try OR between alternatives, or use fewer words to broaden the search.</p>';
+    return;
+  }
+  var html = '';
+  shownRecs.forEach(function(r, i){
+    var title = r.short_title || r.title || r.symbol || '(untitled)';
+    var yearTxt = typeof r.year === 'number' ? String(r.year) : 'year unknown';
+    var sym = r.symbol || '(no symbol)';
+    var symHtml = r.doc_url
+      ? '<a href="' + escapeHtml(r.doc_url) + '" target="_blank" rel="noopener">' + escapeHtml(sym) + '</a>'
+      : escapeHtml(sym);
+    var bodyHtml = (r.text && r.text.trim())
+      ? renderHighlighted(r.text, hl)
+      : '<span class="notext">(this paragraph has no text in the data)</span>';
+    html +=
+      '<article class="card">' +
+        '<div class="cardhead">' +
+          '<span class="chip">' + escapeHtml(r.committee || 'Unknown') + '</span>' +
+          '<span class="ctitle">' + escapeHtml(title) + '</span>' +
+          '<span class="cyear">' + escapeHtml(yearTxt) + '</span>' +
+          '<span class="csym">' + symHtml + '</span>' +
+        '</div>' +
+        '<p class="ctext">' + bodyHtml + '</p>' +
+        '<button type="button" class="copy-btn" data-i="' + i + '">Copy citation</button>' +
+      '</article>';
+  });
+  if(results.length > CAP){
+    html += '<p class="trunc">Showing the first ' + CAP.toLocaleString() + ' of ' +
+      results.length.toLocaleString() + ' matching paragraphs. Refine the search or the filters to ' +
+      'shorten the list \u2014 the count and the chart above already cover all matches.</p>';
+  }
+  resultsEl.innerHTML = html;
+}
+
+/* ---------- copy citation (clipboard with fallback) ---------- */
+function copyText(str, btn){
+  function done(){
+    btn.textContent = 'Copied';
+    btn.classList.add('copied');
+    clearTimeout(btn._t);
+    btn._t = setTimeout(function(){
+      btn.textContent = 'Copy citation';
+      btn.classList.remove('copied');
+    }, 2000);
+  }
+  function fallback(){
+    var ta = document.createElement('textarea');
+    ta.value = str;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); }catch(err){}
+    document.body.removeChild(ta);
+    done();
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(str).then(done, fallback);
+  } else {
+    fallback();
+  }
+}
+
+resultsEl.addEventListener('click', function(e){
+  var btn = e.target && e.target.closest ? e.target.closest('.copy-btn') : null;
+  if(!btn) return;
+  var r = shownRecs[parseInt(btn.getAttribute('data-i'), 10)];
+  if(!r) return;
+  copyText(makeCitation(r), btn);
+});
+
+/* ---------- events: Search button, Enter, and filter changes re-run the search ---------- */
+document.getElementById('searchBtn').addEventListener('click', function(){
+  currentQuery = document.getElementById('q').value;
+  render();
+});
+document.getElementById('q').addEventListener('keydown', function(e){
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    currentQuery = this.value;
+    render();
+  }
+});
+commSel.addEventListener('change', render);
+fromY.addEventListener('change', render);
+toY.addEventListener('change', render);
+
+render();
+})();
+</script>
+</body>
+</html>
+```

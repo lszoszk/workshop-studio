@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UN human rights recommendations dashboard</title>
+<style>
+  :root { --accent:#1f6fb2; --ink:#1c2733; --muted:#5b6b7b; --line:#dde5ec; --bg:#f6f8fa; --card:#ffffff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  .wrap { max-width:1120px; margin:0 auto; padding:28px 20px 60px; }
+  header h1 { font-size:1.55rem; margin:0 0 6px; line-height:1.25; }
+  .muted { color:var(--muted); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px 20px; margin-top:18px; }
+  .filters { display:flex; flex-wrap:wrap; gap:14px 18px; align-items:flex-end; }
+  .filters label { display:flex; flex-direction:column; font-size:.82rem; color:var(--muted); gap:4px; font-weight:600; }
+  .filters select, .filters input[type="search"] { font:inherit; padding:7px 9px; border:1px solid var(--line);
+         border-radius:7px; background:#fff; color:var(--ink); min-width:150px; }
+  .filters input[type="search"] { min-width:230px; }
+  button { font:inherit; padding:8px 14px; border-radius:7px; border:1px solid var(--accent);
+           background:var(--accent); color:#fff; cursor:pointer; }
+  button.ghost { background:#fff; color:var(--accent); }
+  button:hover { filter:brightness(1.07); }
+  #showing { margin:16px 2px 0; font-weight:600; }
+  .note { font-size:.85rem; color:var(--muted); margin:10px 2px 0; }
+  .chart-box { position:relative; width:100%; }
+  table { width:100%; border-collapse:collapse; margin-top:6px; }
+  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  tbody tr.data { cursor:pointer; }
+  tbody tr.data:hover { background:#eef5fb; }
+  td.date { white-space:nowrap; color:var(--muted); }
+  td.body { white-space:nowrap; font-weight:600; }
+  td a { color:var(--accent); }
+  td.first { max-width:520px; }
+  tr.detail td { background:#f2f7fc; cursor:default; }
+  .fulltext { white-space:pre-wrap; margin:0 0 12px; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px 22px; font-size:.88rem; }
+  .meta b { color:var(--muted); font-weight:600; margin-right:5px; }
+  .tag { display:inline-block; background:#e8f1f9; color:#17517f; border-radius:20px;
+         padding:1px 10px; margin:2px 4px 2px 0; font-size:.82rem; }
+  .empty { padding:22px; text-align:center; color:var(--muted); }
+  h2 { font-size:1.05rem; margin:0 0 4px; }
+  .chev { color:var(--accent); font-weight:700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="title">UN human rights recommendations &amp; observations</h1>
+    <p id="subtitle" class="muted"></p>
+  </header>
+
+  <section class="card" aria-label="Filters">
+    <div class="filters">
+      <label>Mechanism
+        <select id="fMechanism"><option value="">All mechanisms</option></select>
+      </label>
+      <label>Treaty body / mandate
+        <select id="fBody"><option value="">All bodies &amp; mandates</option></select>
+      </label>
+      <label>Year from
+        <select id="fYearFrom"></select>
+      </label>
+      <label>Year to
+        <select id="fYearTo"></select>
+      </label>
+      <label>SDG
+        <select id="fSdg"><option value="">All SDGs</option></select>
+      </label>
+      <label>Keyword search
+        <input type="search" id="fKeyword" placeholder="e.g. education, torture, women…">
+      </label>
+      <button id="fReset" class="ghost" type="button">Reset filters</button>
+    </div>
+  </section>
+
+  <p id="showing"></p>
+
+  <section class="card">
+    <h2>Most frequent themes (current filter)</h2>
+    <div class="chart-box" id="chartBox"><canvas id="themeChart"></canvas></div>
+    <p class="note" id="chartNote"></p>
+    <p class="empty" id="chartEmpty" hidden>No themes to chart — no records match the current filters.</p>
+  </section>
+
+  <section class="card">
+    <h2>Matching records</h2>
+    <table id="recTable">
+      <thead>
+        <tr><th style="width:90px">Date</th><th style="width:130px">Body / mandate</th>
+            <th style="width:170px">Symbol (UN document)</th><th>First line of the text</th><th style="width:30px"></th></tr>
+      </thead>
+      <tbody id="recBody"></tbody>
+    </table>
+    <p class="empty" id="tableEmpty" hidden>No records match the current filters.</p>
+    <p class="note" id="tableNote"></p>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var D = window.WORKSHOP_DATA && window.WORKSHOP_DATA.uhri ? window.WORKSHOP_DATA.uhri : {};
+  var records = Array.isArray(D.records) ? D.records : [];
+  var country = D.country || "the reviewed State";
+  var sdgNames = D.sdg_names || {};
+
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function uniq(arr){ var seen={}, out=[]; arr.forEach(function(v){ if(v==null||v==="")return;
+    var k=String(v); if(!seen[k]){ seen[k]=1; out.push(v); } }); return out; }
+  function years(){ return uniq(records.map(function(r){ return r.year; }))
+    .filter(function(y){ return typeof y==="number"; }).sort(function(a,b){ return a-b; }); }
+  function firstLine(t){
+    if(!t) return "";
+    var line = String(t).split("\n").map(function(s){ return s.trim(); }).filter(Boolean)[0] || "";
+    return line.length > 240 ? line.slice(0,240) + "…" : line;
+  }
+  function recommender(t){
+    var m = String(t||"").match(/\(([^()]{2,90})\)\s*\.?\s*$/);
+    return m ? m[1] : "";
+  }
+  function sdgLabel(n){
+    var k = String(n);
+    return sdgNames[k] ? ("SDG " + k + " — " + sdgNames[k]) : ("SDG " + k);
+  }
+
+  /* ---------- header ---------- */
+  var yrs = years();
+  var minY = yrs.length ? yrs[0] : null, maxY = yrs.length ? yrs[yrs.length-1] : null;
+  document.getElementById("title").textContent =
+    "UN human rights recommendations & observations addressed to " + country;
+  var sub = (D.source ? D.source : "UN human rights recommendations (UHRI)") + " — ";
+  sub += records.length + " records loaded";
+  if (D.count != null && Number(D.count) !== records.length)
+    sub += " (file header reports " + D.count + ")";
+  if (minY != null) sub += ", covering " + minY + "–" + maxY + " (" + yrs.length + " distinct years)";
+  if (D.built) sub += ". File built " + D.built + ".";
+  document.getElementById("subtitle").textContent = sub;
+
+  /* ---------- filter controls ---------- */
+  var fMech = document.getElementById("fMechanism"),
+      fBody = document.getElementById("fBody"),
+      fFrom = document.getElementById("fYearFrom"),
+      fTo   = document.getElementById("fYearTo"),
+      fSdg  = document.getElementById("fSdg"),
+      fKey  = document.getElementById("fKeyword");
+
+  uniq(records.map(function(r){ return r.mechanism; })).sort().forEach(function(m){
+    var o=document.createElement("option"); o.value=m; o.textContent=m; fMech.appendChild(o); });
+  uniq(records.map(function(r){ return r.body; })).sort().forEach(function(b){
+    var o=document.createElement("option"); o.value=b; o.textContent=b; fBody.appendChild(o); });
+  yrs.forEach(function(y){
+    var a=document.createElement("option"); a.value=y; a.textContent=y; fFrom.appendChild(a);
+    var b=document.createElement("option"); b.value=y; b.textContent=y; fTo.appendChild(b); });
+  if (minY!=null){ fFrom.value=minY; fTo.value=maxY; }
+
+  var sdgSet = {};
+  records.forEach(function(r){ (r.sdgs||[]).forEach(function(n){ sdgSet[String(n)]=1; }); });
+  Object.keys(sdgSet).sort(function(a,b){ return Number(a)-Number(b); }).forEach(function(k){
+    var o=document.createElement("option"); o.value=k; o.textContent=sdgLabel(k); fSdg.appendChild(o); });
+
+  /* ---------- filtering ---------- */
+  function filtered(){
+    var mech=fMech.value, body=fBody.value, from=Number(fFrom.value), to=Number(fTo.value),
+        sdg=fSdg.value, kw=fKey.value.trim().toLowerCase();
+    return records.filter(function(r){
+      if (mech && r.mechanism!==mech) return false;
+      if (body && r.body!==body) return false;
+      if (typeof r.year==="number" && (r.year<from || r.year>to)) return false;
+      if (sdg && !(r.sdgs||[]).map(Number).includes(Number(sdg))) return false;
+      if (kw){
+        var hay = [r.text,r.symbol,r.body,r.mechanism,r.type,r.section,
+                   (r.themes||[]).join(" "),(r.sdg_targets||[]).join(" "),
+                   (r.affected_persons||[]).join(" "),(r.countries||[]).join(" ")].join(" ").toLowerCase();
+        if (hay.indexOf(kw)===-1) return false;
+      }
+      return true;
+    }).sort(function(a,b){
+      var da=a.date||"", db=b.date||"";
+      if (da!==db) return da<db?1:-1;
+      return String(a.symbol||"").localeCompare(String(b.symbol||""));
+    });
+  }
+
+  /* ---------- chart ---------- */
+  var chart=null, current=[];
+  function renderChart(list){
+    var counts={};
+    list.forEach(function(r){ (r.themes||[]).forEach(function(t){ counts[t]=(counts[t]||0)+1; }); });
+    var top = Object.keys(counts).map(function(k){ return [k,counts[k]]; })
+      .sort(function(a,b){ return b[1]-a[1] || a[0].localeCompare(b[0]); }).slice(0,10);
+    var box=document.getElementById("chartBox"),
+        empty=document.getElementById("chartEmpty"),
+        note=document.getElementById("chartNote");
+    if (chart){ chart.destroy(); chart=null; }
+    if (!top.length){
+      box.style.display="none"; empty.hidden=false;
+      note.textContent = "How this is computed: theme tags are counted on the " + list.length +
+        " record(s) matching the current filters — none of them carry a theme tag.";
+      return;
+    }
+    box.style.display="block"; empty.hidden=true;
+    box.style.height = Math.max(240, top.length*36 + 70) + "px";
+    var ctx = document.getElementById("themeChart").getContext("2d");
+    chart = new Chart(ctx, {
+      type:"bar",
+      data:{ labels: top.map(function(t){ return t[0]; }),
+             datasets:[{ label:"Matching records", data: top.map(function(t){ return t[1]; }),
+                         backgroundColor:"#1f6fb2", borderRadius:4 }] },
+      options:{ indexAxis:"y", responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false},
+          tooltip:{ callbacks:{ label:function(c){ return " " + c.parsed.x + " record(s)"; } } } },
+        scales:{ x:{ beginAtZero:true, ticks:{ precision:0 },
+                     title:{ display:true, text:"Number of matching records" } },
+                 y:{ ticks:{ autoSkip:false } } } }
+    });
+    note.textContent = "How this is computed: each theme tag on the " + list.length +
+      " record(s) matching the current filters is counted once per record; a record can carry several " +
+      "themes, so the counts can add up to more than " + list.length + ". The 10 most frequent themes are shown.";
+  }
+
+  /* ---------- table ---------- */
+  var expanded = {};
+  function metaRow(r){
+    var bits=[];
+    function add(label, val){ if (val) bits.push("<span><b>"+esc(label)+"</b>"+esc(val)+"</span>"); }
+    add("Mechanism", r.mechanism); add("Type", r.type); add("Section", r.section);
+    add("Date", r.date); add("Recommending State", recommender(r.text));
+    add("Countries", (r.countries||[]).join(", "));
+    var tags="";
+    (r.themes||[]).forEach(function(t){ tags+='<span class="tag">'+esc(t)+'</span>'; });
+    if (tags) bits.push("<span><b>Themes</b>"+tags+"</span>");
+    var sdgs=(r.sdgs||[]).map(function(n){ return '<span class="tag">'+esc(sdgLabel(n))+'</span>'; }).join("");
+    if (sdgs) bits.push("<span><b>SDGs</b>"+sdgs+"</span>");
+    if (r.sdg_targets && r.sdg_targets.length)
+      bits.push("<span><b>SDG targets</b>"+esc(r.sdg_targets.join("; "))+"</span>");
+    var ap=(r.affected_persons||[]).map(function(t){ return '<span class="tag">'+esc(t)+'</span>'; }).join("");
+    if (ap) bits.push("<span><b>Affected persons</b>"+ap+"</span>");
+    if (r.doc_url) bits.push('<span><b>Document</b><a href="'+esc(r.doc_url)+'" target="_blank" rel="noopener">'+esc(r.symbol||r.doc_url)+'</a></span>');
+    return '<div class="meta">'+bits.join("")+'</div>';
+  }
+  function renderTable(list){
+    var tb=document.getElementById("recBody"), html="";
+    list.forEach(function(r){
+      var link = r.doc_url
+        ? '<a href="'+esc(r.doc_url)+'" target="_blank" rel="noopener">'+esc(r.symbol||"(no symbol)")+'</a>'
+        : esc(r.symbol||"");
+      var open = expanded[r.id] ? "▾" : "▸";
+      html += '<tr class="data" data-id="'+esc(r.id)+'">' +
+        '<td class="date">'+esc(r.date||r.year||"")+'</td>' +
+        '<td class="body">'+esc(r.body||"")+'</td>' +
+        '<td>'+link+'</td>' +
+        '<td class="first">'+esc(firstLine(r.text))+'</td>' +
+        '<td class="chev">'+open+'</td></tr>';
+      if (expanded[r.id]){
+        html += '<tr class="detail"><td colspan="5">' +
+          '<p class="fulltext">'+esc(r.text||"")+'</p>' + metaRow(r) + '</td></tr>';
+      }
+    });
+    tb.innerHTML = html;
+    document.getElementById("tableEmpty").hidden = list.length>0;
+    document.getElementById("tableNote").textContent =
+      "How this is computed: all " + list.length + " of " + records.length +
+      " records matching the current filters, sorted by date (newest first). Only the first line of each " +
+      "paragraph is shown — click a row to read the full text and its tags. Every symbol links to the UN document in a new tab.";
+  }
+  document.getElementById("recBody").addEventListener("click", function(e){
+    var tr = e.target.closest("tr.data"); if(!tr) return;
+    var id = tr.getAttribute("data-id");
+    if (expanded[id]) delete expanded[id]; else expanded[id]=1;
+    renderTable(current);
+  });
+
+  /* ---------- render all ---------- */
+  function render(){
+    current = filtered();
+    document.getElementById("showing").textContent =
+      "Showing " + current.length + " of " + records.length + " records addressed to " + country + ".";
+    renderChart(current);
+    renderTable(current);
+  }
+  [fMech,fBody,fFrom,fTo,fSdg].forEach(function(el){ el.addEventListener("change", function(){
+    if (Number(fFrom.value) > Number(fTo.value)){ var t=fFrom.value; fFrom.value=fTo.value; fTo.value=t; }
+    render();
+  }); });
+  fKey.addEventListener("input", render);
+  document.getElementById("fReset").addEventListener("click", function(){
+    fMech.value=""; fBody.value=""; fSdg.value=""; fKey.value="";
+    if (minY!=null){ fFrom.value=minY; fTo.value=maxY; }
+    render();
+  });
+
+  if (!records.length){
+    document.getElementById("showing").textContent = "No records were loaded in this file.";
+  }
+  render();
+})();
+</script>
+</body>
+</html>

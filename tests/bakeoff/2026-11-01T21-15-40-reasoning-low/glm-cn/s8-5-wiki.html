@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>General Comments Research Wiki</title>
+<style>
+  :root { --accent:#1f6fb2; --bg:#f6f8fa; --line:#dde4ea; --ink:#22303c; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:18px 28px; }
+  header h1 { margin:0; font-size:22px; }
+  header p { margin:4px 0 0; color:#5a6b7b; font-size:14px; }
+  .layout { display:flex; min-height:calc(100vh - 90px); }
+  aside { width:270px; background:#fff; border-right:1px solid var(--line); padding:16px; flex-shrink:0; }
+  aside h2 { font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:#5a6b7b; margin:0 0 8px; }
+  .concept-list { list-style:none; margin:0; padding:0; }
+  .concept-list li { margin:2px 0; }
+  .concept-list button { width:100%; text-align:left; padding:7px 9px; border:0; background:none; border-radius:6px; cursor:pointer; font:inherit; color:var(--ink); }
+  .concept-list button:hover { background:#eef3f8; }
+  .concept-list button.active { background:var(--accent); color:#fff; }
+  .concept-list .n { color:#8a99a8; font-size:13px; float:right; }
+  .add-form { display:flex; gap:6px; margin-top:12px; }
+  .add-form input { flex:1; min-width:0; padding:6px 8px; border:1px solid var(--line); border-radius:6px; font:inherit; }
+  button.primary { background:var(--accent); color:#fff; border:0; border-radius:6px; padding:6px 12px; font:inherit; cursor:pointer; }
+  button.primary:disabled { opacity:.5; cursor:default; }
+  main { flex:1; padding:24px 32px; max-width:960px; }
+  .note { background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px 14px; font-size:13.5px; color:#5a6b7b; margin:12px 0; }
+  .doc-group { background:#fff; border:1px solid var(--line); border-radius:8px; margin:18px 0; overflow:hidden; }
+  .doc-head { padding:12px 16px; border-bottom:1px solid var(--line); background:#fbfcfd; }
+  .doc-head .sym { font-weight:600; color:var(--accent); text-decoration:none; }
+  .doc-head .t { display:block; font-size:13.5px; color:#5a6b7b; margin-top:2px; }
+  .para { padding:12px 16px; border-bottom:1px solid #edf1f5; }
+  .para:last-child { border-bottom:0; }
+  .para-meta { font-size:13px; margin-bottom:6px; }
+  .para-link { display:inline-block; background:#eef3f8; color:var(--accent); border-radius:5px; padding:2px 8px; text-decoration:none; font-size:13px; cursor:pointer; border:0; font-family:inherit; }
+  .para-link:hover { background:#dce9f5; }
+  .para-text { margin:0; white-space:pre-wrap; }
+  mark { background:#ffe9a8; padding:0 1px; }
+  .related { margin:20px 0; }
+  .related a { display:inline-block; background:#fff; border:1px solid var(--line); border-radius:14px; padding:4px 12px; margin:3px 4px 3px 0; text-decoration:none; color:var(--accent); cursor:pointer; font-size:14px; }
+  .ai-box { background:#fffbe9; border:1px solid #e8d48a; border-radius:8px; padding:14px 16px; margin:16px 0; }
+  .ai-box .label { font-size:12.5px; font-weight:600; color:#8a6d1a; text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+  .ai-box p { margin:0; }
+  .status { font-size:13.5px; color:#5a6b7b; margin:8px 0; }
+  .empty { color:#5a6b7b; background:#fff; border:1px dashed var(--line); border-radius:8px; padding:24px; text-align:center; margin-top:24px; }
+  .page-title { margin:0 0 4px; font-size:26px; }
+  .counts { color:#5a6b7b; font-size:14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>General Comments Research Wiki</h1>
+  <p id="dataDesc"></p>
+</header>
+<div class="layout">
+  <aside>
+    <h2>Concepts</h2>
+    <ul class="concept-list" id="conceptList"></ul>
+    <form class="add-form" id="addForm">
+      <input id="newConcept" placeholder="Add a concept…" aria-label="Add a concept">
+      <button class="primary" type="submit">Add</button>
+    </form>
+  </aside>
+  <main id="main"></main>
+</div>
+
+<script>
+(function () {
+  const lib = WORKSHOP_DATA.un_library;
+  const defaultConcepts = ["proportionality", "legal capacity", "surveillance",
+    "non-State actors", "reasonable accommodation", "access to information",
+    "deprivation of liberty"];
+  const concepts = defaultConcepts.slice();
+  let current = null;
+  let asking = false;
+
+  document.getElementById('dataDesc').textContent =
+    (lib.title || 'Library of General Comments') + " — " + lib.count +
+    " documents, " + lib.records.reduce((s, d) => s + d.paragraphs.length, 0) +
+    " numbered paragraphs. Text is verbatim; every hit links to the PDF page.";
+
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function highlight(text, term) {
+    const t = esc(text);
+    if (!term) return t;
+    try {
+      const re = new RegExp("(" + term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi");
+      return t.replace(re, "<mark>$1</mark>");
+    } catch (e) { return t; }
+  }
+  // A paragraph "uses" a term if it appears at least once (case-insensitive).
+  function matches(text, term) {
+    return text.toLowerCase().includes(term.toLowerCase());
+  }
+  function hitsFor(term) {
+    const hits = [];
+    for (const doc of lib.records) {
+      const paras = doc.paragraphs.filter(p => matches(p.text, term));
+      if (paras.length) hits.push({ doc, paras });
+    }
+    return hits;
+  }
+
+  function renderSidebar() {
+    const ul = document.getElementById('conceptList');
+    ul.innerHTML = "";
+    for (const c of concepts) {
+      const n = hitsFor(c).reduce((s, g) => s + g.paras.length, 0);
+      const li = document.createElement('li');
+      const b = document.createElement('button');
+      b.innerHTML = esc(c) + ' <span class="n">' + n + '</span>';
+      if (c === current) b.className = "active";
+      b.onclick = () => { current = c; render(); };
+      li.appendChild(b);
+      ul.appendChild(li);
+    }
+  }
+
+  function render() {
+    renderSidebar();
+    const main = document.getElementById('main');
+    main.innerHTML = "";
+    if (!current) {
+      main.innerHTML = '<div class="empty">Pick a concept from the sidebar, or add your own term.</div>';
+      return;
+    }
+    const term = current;
+    const hits = hitsFor(term);
+    const total = hits.reduce((s, g) => s + g.paras.length, 0);
+
+    const h = document.createElement('h2');
+    h.className = 'page-title';
+    h.textContent = term;
+    main.appendChild(h);
+    const c = document.createElement('p');
+    c.className = 'counts';
+    c.textContent = total + " paragraph" + (total === 1 ? "" : "s") + " in " +
+      hits.length + " of " + lib.records.length + " documents mention “" + term + "” (simple case-insensitive text match).";
+    main.appendChild(c);
+
+    // AI summary control
+    const btn = document.createElement('button');
+    btn.className = 'primary';
+    btn.textContent = 'Draft a summary';
+    btn.disabled = asking;
+    btn.onclick = draftSummary;
+    main.appendChild(btn);
+    const status = document.createElement('div');
+    status.className = 'status';
+    status.id = 'aiStatus';
+    main.appendChild(status);
+    const aiBox = document.createElement('div');
+    aiBox.id = 'aiBox';
+    main.appendChild(aiBox);
+
+    if (total === 0) {
+      const e = document.createElement('div');
+      e.className = 'empty';
+      e.textContent = 'No paragraph in these nine General Comments uses the term “' + term + '”. Try another wording.';
+      main.appendChild(e);
+      return;
+    }
+
+    // Related concepts: other concepts found in the same paragraphs
+    const allParas = hits.flatMap(g => g.paras);
+    const rels = concepts.filter(c2 => c2 !== term && allParas.some(p => matches(p.text, c2)));
+    if (rels.length) {
+      const rd = document.createElement('div');
+      rd.className = 'related';
+      const lab = document.createElement('p');
+      lab.style.cssText = "font-size:13.5px;color:#5a6b7b;margin:0 0 4px;";
+      lab.textContent = "Related concepts (appear in the same paragraphs):";
+      rd.appendChild(lab);
+      for (const r of rels) {
+        const a = document.createElement('a');
+        a.textContent = r;
+        a.onclick = () => { current = r; render(); };
+        rd.appendChild(a);
+      }
+      main.appendChild(rd);
+    }
+
+    for (const g of hits) {
+      const grp = document.createElement('div');
+      grp.className = 'doc-group';
+      const head = document.createElement('div');
+      head.className = 'doc-head';
+      const sym = document.createElement('a');
+      sym.className = 'sym';
+      sym.href = g.doc.doc_url; sym.target = '_blank'; sym.rel = 'noopener';
+      sym.textContent = g.doc.symbol;
+      head.appendChild(sym);
+      const t = document.createElement('span');
+      t.className = 't';
+      t.textContent = g.doc.title + " · " + g.paras.length + " paragraph" + (g.paras.length === 1 ? "" : "s");
+      head.appendChild(t);
+      grp.appendChild(head);
+      for (const p of g.paras) {
+        grp.appendChild(paraEl(g.doc, p, term));
+      }
+      main.appendChild(grp);
+    }
+  }
+
+  function paraEl(doc, p, term) {
+    const d = document.createElement('div');
+    d.className = 'para';
+    const meta = document.createElement('div');
+    meta.className = 'para-meta';
+    const link = document.createElement('button');
+    link.className = 'para-link';
+    link.textContent = '¶ ' + p.paragraph + ' · p. ' + p.page;
+    link.title = 'Open the PDF at this page';
+    link.onclick = () => studio.openSource(doc.symbol, p.page);
+    meta.appendChild(link);
+    if (p.cited_articles && p.cited_articles.length) {
+      const span = document.createElement('span');
+      span.style.cssText = "color:#8a99a8;margin-left:8px;";
+      span.textContent = p.cited_articles.join(" · ");
+      meta.appendChild(span);
+    }
+    d.appendChild(meta);
+    const t = document.createElement('p');
+    t.className = 'para-text';
+    t.innerHTML = highlight(p.text, term);
+    d.appendChild(t);
+    return d;
+  }
+
+  async function draftSummary() {
+    if (asking) return;
+    const hits = hitsFor(current);
+    const all = hits.flatMap(g => g.paras.map(p => ({ doc: g.doc, p })));
+    // Take at most 12, spread across documents: round-robin.
+    const picked = [];
+    const queues = hits.map(g => g.paras.slice());
+    let more = true;
+    while (picked.length < 12 && more) {
+      more = false;
+      for (const q of queues) {
+        if (q.length && picked.length < 12) { picked.push({ doc: queues.indexOf(q) >= 0 ? null : null, p: q.shift() }); more = true; }
+      }
+    }
+    // re-attach docs properly
+    const docByPara = new Map();
+    hits.forEach(g => g.paras.forEach(p => docByPara.set(p, g.doc)));
+    const sel = picked.map(x => ({ doc: docByPara.get(x.p), p: x.p }));
+
+    const status = document.getElementById('aiStatus');
+    const box = document.getElementById('aiBox');
+    asking = true;
+    document.querySelector('.primary').disabled = true;
+    status.textContent = "Sending " + sel.length + " of " + all.length + " paragraphs to the language model — this may take a moment. The text leaves your browser.";
+    box.innerHTML = "";
+    const stopBtn = document.createElement('button');
+    stopBtn.className = 'primary';
+    stopBtn.textContent = 'Stop';
+    let stopped = false;
+    stopBtn.onclick = () => { stopped = true; asking = false; status.textContent = "Stopped."; document.querySelector('.primary').disabled = false; };
+    status.appendChild(document.createTextNode(" "));
+    status.appendChild(stopBtn);
+    status.appendChild(document.createTextNode(" (Sending " + sel.length + " paragraphs to a language model — they leave your browser.)"));
+
+    const body = sel.map(x => "[" + x.doc.symbol + ", para. " + x.p.paragraph + "] " + x.p.text).join("\n\n");
+    const prompt = "Below are excerpts from UN treaty-body General Comments on the concept \"" + current +
+      "\". Write exactly three sentences summarising what these paragraphs say about \"" + current +
+      "\". Each sentence must end with the paragraph it rests on, cited like (CCPR/C/GC/37, para. 40). Use only these excerpts.\n\n" + body;
+
+    try {
+      const answer = await studio.ask(prompt);
+      if (stopped) return;
+      box.className = 'ai-box';
+      box.innerHTML = '<div class="label">AI-drafted summary — written by a language model, check against the originals</div>' +
+        '<p data-source="ai">' + esc(answer.trim()) + '</p>';
+      status.textContent = "Summary drafted from " + sel.length + " paragraph" + (sel.length === 1 ? "" : "s") +
+        " (of " + all.length + " matching). This text was processed by a language model outside your browser.";
+    } catch (e) {
+      box.className = '';
+      status.textContent = "The model could not be reached: " + (e && e.message ? e.message : e) + ". No summary was produced.";
+    }
+    asking = false;
+    const b = document.querySelector('.primary'); if (b) b.disabled = false;
+  }
+
+  document.getElementById('addForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const v = document.getElementById('newConcept').value.trim();
+    if (!v) return;
+    if (!concepts.some(c => c.toLowerCase() === v.toLowerCase())) concepts.push(v);
+    document.getElementById('newConcept').value = "";
+    current = v;
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

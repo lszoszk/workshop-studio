@@ -1,0 +1,8 @@
+tools/out/
+__pycache__/
+.DS_Store
+*.pyc
+.pytest_cache/
+server/.env
+server/state/
+node_modules/

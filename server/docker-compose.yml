@@ -1,0 +1,32 @@
+# VM: /home/amuvmuser/workshop-studio — `docker compose -f server/docker-compose.yml up -d --build`
+# One container, studio-api, on 127.0.0.1:8011; nginx fronts it at /studio-api/ (install-nginx.sh).
+#
+# Shares the box with production services, so it is boxed in like aiact: bounded memory, one CPU,
+# bounded processes and bounded logs. 30–40 parallel SSE streams are I/O-bound and need little RAM;
+# the load-test target is < 300 MB, so 384 MB is the ceiling.
+services:
+  studio-api:
+    build: { context: . }
+    image: studio-api:latest
+    container_name: studio-api
+    ports: ["127.0.0.1:8011:8011"]        # never public — nginx fronts it
+    user: "1000:1000"                     # amuvmuser, so the state directory stays editable over ssh
+    volumes:
+      - ./state:/state                     # studio.sqlite3, gallery/, seats.csv — the only writable path
+      - ../site/data:/data:ro              # system_prompt.md, schema.md, samples.json (read at start-up)
+    env_file:
+      - path: ./.env                       # OPENROUTER_API_KEY, STUDIO_ADMIN_KEY — on the VM only, never in git
+        required: true
+    environment:
+      - STUDIO_BUILD=${STUDIO_BUILD:-}
+    read_only: true
+    tmpfs: [/tmp]
+    mem_limit: 384m
+    memswap_limit: 384m                    # no swap thrashing at the host's expense
+    cpus: "1.0"
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    restart: unless-stopped
+    stop_grace_period: 15s

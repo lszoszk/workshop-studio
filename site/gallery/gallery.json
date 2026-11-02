@@ -1,0 +1,248 @@
+{
+ "country": "Kenya",
+ "built": "2026-11-02",
+ "models": {
+  "mistral": {
+   "name": "Mistral Large 4",
+   "origin": "France",
+   "host": "Mistral, in the EU",
+   "weights": "closed"
+  },
+  "claude": {
+   "name": "Claude Sonnet 5.5",
+   "origin": "USA",
+   "host": "Amazon Bedrock",
+   "weights": "closed"
+  },
+  "glm-cn": {
+   "name": "GLM-5.3",
+   "origin": "China",
+   "host": "Z.AI, the developer's service",
+   "weights": "open"
+  }
+ },
+ "prompts": [
+  {
+   "id": "s7-1-dashboard",
+   "title": "Your country's recommendations dashboard",
+   "prompt": "Build this app. Follow the plan below; where it says nothing, keep it simple.\n\n## Goal\nA dashboard for a diplomat, NGO or NHRI staff member to see at a glance what UN human rights mechanisms have said to Kenya: how much, when, on which themes, and to find the exact paragraphs quickly.\n\n## The data\nFile `WORKSHOP_DATA.uhri`; the country name is read from its `country` field, never typed in. Fields used: `date`, `year`, `body`, `mechanism`, `type`, `symbol`, `doc_url`, `text`, `themes`, `sdgs`, `affected_persons`, plus `sdg_names` for the SDG filter labels.\n\n## What the app shows\n1. Title \"UN human rights recommendations to [country]\", then one line: source, total number of records, earliest–latest year, all read from the file.\n2. A filter bar: dropdown for mechanism; dropdown for body (treaty body or mandate); two boxes for first and last year; dropdown for SDG (number and name); a keyword box; a \"Reset\" button. Any change updates everything below at once.\n3. A line \"Showing X of Y records\" plus a plain description of the active filters (e.g. \"Treaty bodies · 2015–2020 · keyword: torture\").\n4. A horizontal bar chart of the 10 most frequent themes among the matching records, longest bar on top, each labelled with its count. Note below: \"A record with several items is counted once for each.\"\n5. A table of matching records, newest first: date, body, symbol (linked to the UN document, new tab), first line of the text. The recommending State is not shown as a separate column. Clicking a row expands it to show the full paragraph with its themes and SDGs; clicking again closes it. 100 rows at a time, with \"Show more\".\n\n## Rules for the code\n- Total and year range come from counting all records and taking the smallest and largest `year`.\n- A record matches when it passes every active filter; keyword search is case-insensitive on `text`. Only recommendations and concerns/observations are counted anywhere.\n- Chart: for each matching record add one per item in its list; sort by count, keep the top 10, break ties alphabetically.\n- Text stays verbatim: the first line is `text` up to its first line break or 160 characters plus \"…\"; the expanded view is the full `text`, unchanged.\n- Every row links `symbol` to `doc_url`. Missing `doc_url`: symbol shown unlinked. Missing `symbol`: \"(no symbol)\".\n- Missing `date`: \"date unknown\", sorted last. Missing `body`: \"unknown\". Empty `themes` or `sdgs`: \"none recorded\" in the expanded row; such records simply do not appear in the chart.\n- No matches: show \"No records match these filters\" instead of an empty chart.\n\n## How we will know it works\n1. On load, the title names your country and \"Showing X of Y\" has X equal to Y.\n2. Choose \"Universal Periodic Review\": the count, chart and table change together, and no row shows a treaty body like CEDAW or CRC.\n3. Type a rare word: the count drops and every visible row contains that word when expanded.\n4. Click a symbol: a docs.un.org page opens in a new tab with the same symbol.\n5. Click a row: the full paragraph appears word for word, including its paragraph number.\n\n## Not in this version\n- No comparison with other countries or with the global average.\n- No tracking of whether a recommendation was accepted, noted or implemented.\n- No AI summaries or translations; every word on screen comes from the file.\n- No export to Excel or PDF.",
+   "session": "S7"
+  },
+  {
+   "id": "s7-4-extract",
+   "title": "Paragraphs out of a PDF",
+   "prompt": "Build this app. Follow the plan below; where it says nothing, keep it simple.\n\n## Goal\nA checking tool for anyone who quotes a UN document paragraph by paragraph. It splits the raw PDF text of E/C.12/GC/27 into its numbered paragraphs and shows where the converter damaged the text, so the reader can verify the split before relying on it.\n\n## The data\n`WORKSHOP_DATA.pdf_text`: `title`, `symbol`, `doc_url` and `source` for the heading and links; `records` (`page`, `text`) is the text to split; `reference.paragraphs`, `reference.footnotes` and `reference.first_words` are the answer key.\n\n## What the app shows\n1. Title and symbol linked to `doc_url`, with one line: \"raw PDF text, N pages, source: …\" (N from the data).\n2. Three counters: paragraphs found / paragraphs in the reference; footnotes removed / footnotes in the reference; paragraphs whose opening words differ from the reference. Under them: \"Found by the code from the page text; reference figures come from the file.\"\n3. A table, one row per paragraph: number, page where it starts, first line (about 90 characters), symbol linked to `doc_url`, and a \"Differs\" mark where the opening words do not match. A tick box \"Show differences first\" moves marked rows to the top. Clicking a row opens the full paragraph beneath it, exactly as extracted, with the reference's first words shown beside it.\n4. A \"Download CSV\" button.\n5. A collapsed list \"Lines removed as headers, footers and footnotes\", so the reader can see nothing substantive was discarded.\n\n## Rules for the code\n- Join the pages in order. Remove lines that are only a page number, only the document symbol, or a distribution code (\"GE.\" followed by digits).\n- Footnote lines (a small number then text, at the foot of a page) are removed from the paragraphs and only counted.\n- A paragraph starts where a line begins with the next expected number, a full stop and a space (\"1. \", then \"2. \" …). Numbers out of sequence (years, cross-references) do not start a paragraph. Text runs until the next start.\n- Lettered sub-paragraphs stay inside their numbered paragraph.\n- \"Differs\" means the paragraph's first six words are not the reference's, comparing word by word while ignoring case, punctuation and extra spaces. If the reference has no entry for a number, show \"no reference\", not \"Differs\".\n- Paragraph text is never edited or paraphrased, only displayed.\n- The CSV holds number, page, whether it matches the reference, and the full text with values quoted, built and saved in the browser.\n\n## How we will know it works\n- The first counter reads \"N of 90\" (90 is the reference count in the file), with N close to it.\n- The table numbers run 1, 2, 3 … without gaps, and at least 30 rows appear.\n- Clicking row 1 shows text starting \"A clean, healthy and sustainable environment\".\n- Every row marked \"Differs\" shows the reference words it was compared with.\n- The downloaded CSV opens in a spreadsheet with as many rows as the table.\n\n## Not in this version\n- It flags damage; it does not repair text or reorder paragraphs.\n- Only this document; no upload of other PDFs.\n- No comparison with other language versions.",
+   "session": "S7"
+  },
+  {
+   "id": "s8-1-verbatim",
+   "title": "Verbatim finder for General Comments",
+   "prompt": "Build this app. Follow the plan below; where it says nothing, keep it simple.\n\n## Goal\nA search tool for people drafting submissions, reports or briefs who need to find and cite exactly what a treaty body said in a General Comment. Type a search, find the real paragraph, copy a correct citation.\n\n## The data\n`WORKSHOP_DATA.gc`, one record per paragraph. Fields used: `text` (searched and displayed), `committee`, `year`, `symbol`, `paragraph`, `short_title`, `doc_url`. `title` is used only when `short_title` is empty. `id` and `cited_articles` are not used.\n\n## What the app shows\n1. Title \"General Comments search\" and one line: source, number of paragraphs, year range, all read from the data.\n2. Search box with a Search button (Enter also searches) and a one-line help: words are combined with AND unless you write OR; NOT excludes a word; \"quotes\" find an exact phrase. Example: `\"best interests\" AND child`.\n3. Two filters: committee (every committee in the data, plus \"All\") and year (from–to). Changing a filter re-runs the search.\n4. A count line: \"N paragraphs match out of M, filters: …\".\n5. A small bar chart: matching paragraphs per committee for the current search, with a \"How this is computed\" note.\n6. Results, sorted newest General Comment first. Each card: committee, short title, year, the symbol linked to `doc_url` (new tab); then the full paragraph, with the search words highlighted; and a \"Copy citation\" button that copies the symbol and paragraph only, e.g. \"CCPR/C/GC/37, para. 12\". The button reads \"Copied\" for two seconds.\n7. If nothing matches: \"No paragraph contains these words\" and a tip to try OR or fewer words.\n\n## Rules for the code\n- The search looks at the paragraph text only. Matching is case-insensitive. A plain word matches a whole word (\"right\" does not match \"rights\"); a quoted phrase matches that exact sequence of words. Words separated by spaces are ANDed; OR joins alternatives; NOT before a word or phrase excludes it.\n- Filters are applied first, then the search. N, the chart bars and the cards come from the same list, so the bars add up to N.\n- `text` is shown character for character; highlighting only wraps the matched words and never changes, trims or summarises them.\n- The citation is `symbol` + \", para. \" + `paragraph`, nothing invented.\n- Missing values: no `short_title` → show `title`, else the symbol; no `year` → show \"year unknown\", included when the year filter is open, excluded by a from–to range; no `doc_url` → symbol unlinked; empty `text` → never matches but still counted in M.\n\n## How we will know it works\n1. Search `\"best interests\" AND child`: every card highlights both \"best interests\" and \"child\"; the number of cards equals N.\n2. Search `torture NOT detention`: no card contains the word \"detention\".\n3. Choose CRC in the committee filter: the chart shows a single bar whose height equals N.\n4. Click Copy citation, paste into a text editor: you get the card's own symbol and paragraph, e.g. `CRC/C/GC/14, para. 6`.\n5. Click a symbol: the UN document opens in a new tab.\n\n## Not in this version\n- No brackets for grouping searches, no wildcards, no stemming (\"right\" and \"rights\" are different words).\n- No export of all results to a file.\n- No saved or shared searches.",
+   "session": "S8"
+  },
+  {
+   "id": "s8-5-wiki",
+   "title": "A research wiki on neurotechnology and justice",
+   "prompt": "Build this app. Follow the plan below; where it says nothing, keep it simple.\n\n## Goal\nA research wiki for diplomats and NGO, NHRI and UN staff: what nine documents say about one concept in neurotechnology and justice, every quote opening its original page.\n\n## The data\n`WORKSHOP_DATA.library`, one record per document: `id`, `symbol`, `kind`, `author`, `year`, `short_title`, `url`; from each of its `passages`: `id`, `page`, `page_label`, `paragraph`, `section`, `text`.\n\n## What the app shows\n1. Sidebar: the concept pages with passage counts: mental privacy, freedom of thought, self-incrimination, lie detection, consent, neural data, data solidarity, proportionality. Below, \"Add a concept\": type a term, press Enter.\n2. Page heading: the concept and the terms that find it (lie detection also \"deception detection\", \"brain fingerprinting\").\n3. Table \"Passages by kind of document\": one row per `kind`, and a total.\n4. The passages, grouped by document, in library order. Group heading: `short_title`, `kind`, `year`, `symbol` linked to `url`. Each passage: its citation as a link calling `studio.openSource(id, page)`, the `section` if any, the `text` folded after three lines.\n5. \"Related concepts\": other concepts found in the same passages, as links.\n6. Button \"Draft a summary\": sends at most the first 12 passages on the page with `await studio.ask(prompt)`; the answer appears in a box labelled \"Written by AI. N passages were sent to the model and left the browser\".\n\n## Rules for the code\n- A passage uses a concept when its `text` contains one of the terms, ignoring case and line breaks. Table, groups, sidebar and related concepts use the same list.\n- `text` is shown character for character; the fold hides, never shortens.\n- Citation: `symbol` + \", para. \" + `paragraph` when `paragraph` is set; otherwise author, year and printed page, e.g. \"Szoszkiewicz & Yuste 2025, p. 3471\". Journal articles are cited by surnames (\"Szoszkiewicz & Yuste\"; \"Prainsack et al.\" for three or more), other documents by `author` as written. `openSource` gets `page`, never `page_label`.\n- The prompt lists the passages with their citations and asks for three sentences, each ending with the citation it rests on; the model may rest on only the passages it was sent. The answer sits inside `data-source=\"ai\"`; never called on page load.\n- No `symbol` → show `author`; no `section` → omitted; no passages → \"No passage uses this term\", no button.\n\n## How we will know it works\n1. Click \"mental privacy\": the table rows add up to its total; the Journal article row is not zero.\n2. Click \"A/81/351, para. N\": the PDF opens where that paragraph starts.\n3. Open \"lie detection\": one passage contains \"deception detection\" but not \"lie detection\".\n4. Click \"Draft a summary\": three sentences, each ending with a citation also on the page; the label says how many were sent.\n\n## Not in this version\n- No adding terms to an existing concept; added concepts are lost on reload.\n- No synonyms: \"consent\" finds \"consented\", not \"agreement\".",
+   "session": "S8"
+  }
+ ],
+ "results": [
+  {
+   "model": "claude",
+   "prompt": "s7-1-dashboard",
+   "app": true,
+   "passed": 8,
+   "total": 8,
+   "failed": [],
+   "seconds": 56.1,
+   "first_token": 22.9,
+   "cost": 0.1301102,
+   "completion_tokens": 9367,
+   "lines": 357,
+   "attempts": 1,
+   "returned": 1,
+   "full": 1
+  },
+  {
+   "model": "claude",
+   "prompt": "s7-4-extract",
+   "app": true,
+   "passed": 6,
+   "total": 6,
+   "failed": [],
+   "seconds": 93.4,
+   "first_token": 64.2,
+   "cost": 0.1728254,
+   "completion_tokens": 13267,
+   "lines": 260,
+   "attempts": 1,
+   "returned": 1,
+   "full": 1
+  },
+  {
+   "model": "claude",
+   "prompt": "s8-1-verbatim",
+   "app": true,
+   "passed": 8,
+   "total": 8,
+   "failed": [],
+   "seconds": 55.8,
+   "first_token": 28.2,
+   "cost": 0.1249248,
+   "completion_tokens": 8902,
+   "lines": 295,
+   "attempts": 1,
+   "returned": 1,
+   "full": 1
+  },
+  {
+   "model": "claude",
+   "prompt": "s8-5-wiki",
+   "app": true,
+   "passed": 8,
+   "total": 8,
+   "failed": [],
+   "seconds": 82.5,
+   "first_token": 45.1,
+   "cost": 0.1644676,
+   "completion_tokens": 12510,
+   "lines": 320,
+   "attempts": 1,
+   "returned": 1,
+   "full": 1
+  },
+  {
+   "model": "glm-cn",
+   "prompt": "s7-1-dashboard",
+   "app": true,
+   "passed": 8,
+   "total": 8,
+   "failed": [],
+   "seconds": 41.5,
+   "first_token": 1.1,
+   "cost": 0.0325494,
+   "completion_tokens": 4694,
+   "lines": 482,
+   "attempts": 1,
+   "returned": 1,
+   "full": 1
+  },
+  {
+   "model": "glm-cn",
+   "prompt": "s7-4-extract",
+   "app": true,
+   "passed": 5,
+   "total": 6,
+   "failed": [
+    "table_min_rows"
+   ],
+   "seconds": 47.9,
+   "first_token": 12.4,
+   "cost": 0.0216602,
+   "completion_tokens": 4230,
+   "lines": 264,
+   "attempts": 1,
+   "returned": 1,
+   "full": 0
+  },
+  {
+   "model": "glm-cn",
+   "prompt": "s8-1-verbatim",
+   "app": true,
+   "passed": 8,
+   "total": 8,
+   "failed": [],
+   "seconds": 48.7,
+   "first_token": 5.9,
+   "cost": 0.0245766,
+   "completion_tokens": 4875,
+   "lines": 482,
+   "attempts": 1,
+   "returned": 1,
+   "full": 1
+  },
+  {
+   "model": "glm-cn",
+   "prompt": "s8-5-wiki",
+   "app": true,
+   "passed": 8,
+   "total": 8,
+   "failed": [],
+   "seconds": 55.3,
+   "first_token": 7.9,
+   "cost": 0.0270814,
+   "completion_tokens": 5457,
+   "lines": 407,
+   "attempts": 1,
+   "returned": 1,
+   "full": 1
+  },
+  {
+   "model": "mistral",
+   "prompt": "s7-1-dashboard",
+   "app": true,
+   "passed": 8,
+   "total": 8,
+   "failed": [],
+   "seconds": 109.6,
+   "first_token": 82.6,
+   "cost": 0.04359047,
+   "completion_tokens": 16025,
+   "lines": 453,
+   "attempts": 1,
+   "returned": 1,
+   "full": 1
+  },
+  {
+   "model": "mistral",
+   "prompt": "s7-4-extract",
+   "app": true,
+   "passed": 5,
+   "total": 6,
+   "failed": [
+    "table_min_rows"
+   ],
+   "seconds": 221.2,
+   "first_token": 191.0,
+   "cost": 0.07970578,
+   "completion_tokens": 31682,
+   "lines": 280,
+   "attempts": 1,
+   "returned": 1,
+   "full": 0
+  },
+  {
+   "model": "mistral",
+   "prompt": "s8-1-verbatim",
+   "app": true,
+   "passed": 8,
+   "total": 8,
+   "failed": [],
+   "seconds": 76.7,
+   "first_token": 40.0,
+   "cost": 0.022136576,
+   "completion_tokens": 9274,
+   "lines": 434,
+   "attempts": 3,
+   "returned": 1,
+   "full": 1
+  },
+  {
+   "model": "mistral",
+   "prompt": "s8-5-wiki",
+   "app": true,
+   "passed": 8,
+   "total": 8,
+   "failed": [],
+   "seconds": 139.0,
+   "first_token": 104.2,
+   "cost": 0.05518898,
+   "completion_tokens": 21062,
+   "lines": 389,
+   "attempts": 1,
+   "returned": 1,
+   "full": 1
+  }
+ ]
+}

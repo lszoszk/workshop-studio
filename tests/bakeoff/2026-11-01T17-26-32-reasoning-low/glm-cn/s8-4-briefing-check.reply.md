@@ -1,0 +1,403 @@
+Built a briefing checker for recorded HRC votes: pick a resolution (defaults to A/HRC/RES/51/27 if present), optionally generate an AI briefing from only the symbol and title, paste or edit text in the box, then "Check claims" parses vote counts, dates, sessions, and per-State vote claims against the roll call. Each claim gets a verdict of matches, wrong, or cannot be checked in this data.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HRC Resolution Briefing Checker</title>
+<style>
+  :root { --accent:#1f6fb2; --ink:#22303c; --line:#d8e0e8; --bg:#f6f8fa; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); background:var(--bg); }
+  .wrap { max-width:1100px; margin:0 auto; padding:28px 22px 60px; }
+  h1 { font-size:26px; margin:0 0 6px; color:#12324f; }
+  .sub { color:#5a6b7a; margin:0 0 22px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px 20px; margin-bottom:20px; }
+  h2 { font-size:19px; margin:0 0 12px; color:#12324f; }
+  label { display:block; font-weight:600; margin:0 0 6px; }
+  select, textarea { width:100%; font:inherit; padding:9px 10px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); }
+  textarea { min-height:170px; resize:vertical; }
+  button { font:inherit; font-weight:600; background:var(--accent); color:#fff; border:none; border-radius:6px; padding:10px 18px; cursor:pointer; }
+  button.secondary { background:#fff; color:var(--accent); border:1.5px solid var(--accent); }
+  button:disabled { opacity:.55; cursor:default; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+  .note { font-size:13.5px; color:#5a6b7a; background:#eef4f9; border-left:3px solid var(--accent); padding:8px 12px; margin:12px 0 0; border-radius:0 5px 5px 0; }
+  .meta { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:8px 24px; margin:0; font-size:14.5px; }
+  .meta div { padding:2px 0; }
+  .meta b { color:#12324f; }
+  a { color:var(--accent); }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; margin-top:10px; }
+  th, td { text-align:left; vertical-align:top; padding:8px 10px; border-bottom:1px solid var(--line); }
+  th { background:#eef4f9; color:#12324f; font-size:13.5px; text-transform:uppercase; letter-spacing:.03em; }
+  td.v { font-weight:600; white-space:nowrap; }
+  .ok { color:#1d7a3d; } .bad { color:#b3261e; } .unknown { color:#8a6d00; }
+  .status { font-size:14px; margin-top:8px; }
+  .empty { color:#5a6b7a; font-style:italic; }
+  .claim { max-width:340px; }
+  .what { max-width:340px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Human Rights Council Resolution Briefing Checker</h1>
+  <p class="sub" id="subtitle">Loading…</p>
+
+  <div class="card">
+    <h2>1. Pick a recorded vote</h2>
+    <label for="resSel">Resolution or amendment</label>
+    <select id="resSel"></select>
+    <div id="resInfo" style="margin-top:14px;"></div>
+    <p class="note" id="voteNote"></p>
+  </div>
+
+  <div class="card">
+    <h2>2. Briefing text</h2>
+    <p style="margin:0 0 10px;" class="sub">Type or paste a briefing below, or ask the model to draft one from what it already knows about this resolution.</p>
+    <div class="row" style="margin:0 0 10px;">
+      <button id="askBtn">Ask AI for a briefing</button>
+      <button id="stopBtn" class="secondary" disabled>Stop</button>
+    </div>
+    <div class="status" id="askStatus"></div>
+    <textarea id="briefText" placeholder="Paste or write the briefing text here, then press &quot;Check claims&quot;."></textarea>
+    <p class="note" id="askNote"></p>
+  </div>
+
+  <div class="card">
+    <h2>3. Check the claims</h2>
+    <div class="row" style="margin:0 0 6px;">
+      <button id="checkBtn">Check claims</button>
+      <button id="clearBtn" class="secondary">Clear results</button>
+    </div>
+    <div id="results"></div>
+    <p class="note">
+      <b>How this is computed:</b> the checker reads the text you provide and compares each recognisable claim
+      against the recorded vote for the selected resolution — the official totals (yes / no / abstain) and the
+      roll call of the 47 Council members. "Cannot be checked in this data" means exactly that: the data here has
+      no answer for the claim. It is <b>not</b> the same as "wrong" — the claim may well be true, but this dataset
+      (one roll call per resolution) simply cannot confirm it. Counting and matching are done by this page's code,
+      deterministically; nothing is estimated.
+    </p>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var hrc = (window.WORKSHOP_DATA && window.WORKSHOP_DATA.hrc) || { records: [], countries: {}, count: 0, title: "" };
+  var records = hrc.records || [];
+  var countries = hrc.countries || {};
+
+  // ---- Subtitle -------------------------------------------------------
+  (function () {
+    var years = records.map(function (r) { return r.year; });
+    var yMin = years.length ? Math.min.apply(null, years) : null;
+    var yMax = years.length ? Math.max.apply(null, years) : null;
+    var yr = (yMin === yMax) ? String(yMin) : (yMin + "–" + yMax);
+    var el = document.getElementById("subtitle");
+    el.textContent = "Recorded votes of the Human Rights Council (" + hrc.title + "), " +
+      records.length + " records" + (yMin ? ", " + yr : "") +
+      ". Claims are checked against this data only.";
+  })();
+
+  // ---- Resolution selector --------------------------------------------
+  var sel = document.getElementById("resSel");
+  var DEFAULT = "A/HRC/RES/51/27";
+  var sorted = records.slice().sort(function (a, b) {
+    return (b.year - a.year) || (a.symbol < b.symbol ? -1 : 1);
+  });
+  sorted.forEach(function (r, i) {
+    var o = document.createElement("option");
+    o.value = r.id;
+    o.textContent = r.symbol + " — " + (r.title || "(untitled)").slice(0, 90);
+    sel.appendChild(o);
+  });
+  var def = records.filter(function (r) { return r.symbol === DEFAULT; })[0];
+  sel.value = def ? def.id : (sorted[0] ? sorted[0].id : "");
+  if (!records.length) sel.disabled = true;
+
+  function currentRes() {
+    return records.filter(function (r) { return String(r.id) === String(sel.value); })[0];
+  }
+
+  function rollCounts(r) {
+    var c = { Y: 0, N: 0, A: 0, gaps: 0 };
+    Object.keys(r.votes || {}).forEach(function (iso) {
+      var v = r.votes[iso];
+      if (v === "Y") c.Y++; else if (v === "N") c.N++; else if (v === "A") c.A++; else c.gaps++;
+    });
+    return c;
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (ch) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+    });
+  }
+
+  function symLink(r) {
+    if (!r.doc_url) return esc(r.symbol) + " <span class='empty'>(no document link)</span>";
+    return "<a href=\"" + esc(r.doc_url) + "\" target=\"_blank\" rel=\"noopener\">" + esc(r.symbol) + "</a>";
+  }
+
+  function renderInfo() {
+    var r = currentRes(), box = document.getElementById("resInfo"), note = document.getElementById("voteNote");
+    document.getElementById("askNote").textContent = "";
+    document.getElementById("results").innerHTML = "";
+    if (!r) {
+      box.innerHTML = "<p class='empty'>No recorded votes are available in this dataset.</p>";
+      note.textContent = "";
+      return;
+    }
+    var rc = rollCounts(r);
+    box.innerHTML =
+      "<div class='meta'>" +
+      "<div><b>Symbol:</b> " + symLink(r) + "</div>" +
+      "<div><b>Title:</b> " + esc(r.title) + "</div>" +
+      "<div><b>Kind:</b> " + esc(r.kind) + "</div>" +
+      "<div><b>Vote date:</b> " + esc(r.date) + "</div>" +
+      "<div><b>Session:</b> " + esc(r.session) + "</div>" +
+      "<div><b>Agenda item:</b> " + esc(r.agenda_item) + "</div>" +
+      "<div><b>Main sponsors:</b> " + (r.main_sponsors && r.main_sponsors.length ? esc(r.main_sponsors.join("; ")) : "<span class='empty'>none listed</span>") + "</div>" +
+      "<div><b>Official totals:</b> " + r.yes + " yes / " + r.no + " no / " + r.abstain + " abstain</div>" +
+      "<div><b>Roll call (from votes):</b> " + rc.Y + " yes / " + rc.N + " no / " + rc.A + " abstain" + (rc.gaps ? " (" + rc.gaps + " uncoded)" : "") + "</div>" +
+      "<div><b>Record:</b> <a href=\"" + esc(r.record_url) + "\" target=\"_blank\" rel=\"noopener\">OHCHR record " + esc(r.id) + "</a></div>" +
+      "</div>";
+    var agree = (rc.Y === r.yes && rc.N === r.no && rc.A === r.abstain);
+    note.innerHTML = "<b>How this is computed:</b> the roll call is counted directly from the per-member votes in this dataset. " +
+      (agree ? "It agrees with the official totals for this record."
+             : "It <b>differs</b> from the official totals (the source has gaps for some records), so both are shown and the checker accepts either set of numbers.") +
+      " n = " + Object.keys(r.votes || {}).length + " member votes in this record.";
+  }
+  sel.addEventListener("change", renderInfo);
+  renderInfo();
+
+  // ---- AI briefing ------------------------------------------------------
+  var askBtn = document.getElementById("askBtn");
+  var stopBtn = document.getElementById("stopBtn");
+  var askStatus = document.getElementById("askStatus");
+  var askNote = document.getElementById("askNote");
+  var stopped = false;
+
+  askBtn.addEventListener("click", async function () {
+    var r = currentRes();
+    if (!r || !(window.studio && typeof window.studio.ask === "function")) {
+      askStatus.textContent = "No model is available in this session, or no resolution is selected.";
+      return;
+    }
+    stopped = false;
+    askBtn.disabled = true; stopBtn.disabled = false;
+    askStatus.textContent = "Asking the model… 1 record (the symbol and title only) is being sent to the model and leaves this browser. Nothing else from this dataset is sent.";
+    var prompt = "Write a factual briefing of about 250 words on the United Nations Human Rights Council " +
+      "resolution " + r.symbol + ", titled \"" + r.title + "\". Use only what you already know. If you are " +
+      "uncertain about details such as the vote counts, the date, the session, or how specific States voted, " +
+      "either omit them or say you are unsure.";
+    try {
+      var answer = await studio.ask(prompt);
+      if (stopped) { askStatus.textContent = "Stopped."; return; }
+      document.getElementById("briefText").value = answer || "";
+      askStatus.textContent = "Model reply received and placed in the text box below. It is the model's own text from its prior knowledge — not from this dataset — and is shown for you to check.";
+      askNote.textContent = "The text below came from the model (AI source). Only the symbol and title of " + r.symbol + " were sent to it.";
+    } catch (e) {
+      askStatus.textContent = "The model request failed: " + (e && e.message ? e.message : "unknown error");
+    } finally {
+      askBtn.disabled = false; stopBtn.disabled = true;
+    }
+  });
+  stopBtn.addEventListener("click", function () { stopped = true; });
+
+  // ---- Claim checking ---------------------------------------------------
+  var MONTHS = { january:1, february:2, march:3, april:4, may:5, june:6, july:7, august:8, september:9, october:10, november:11, december:12 };
+
+  function parseDate(s) {
+    var m = s.match(/(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i);
+    if (m) return m[3] + "-" + String(MONTHS[m[2].toLowerCase()]).padStart(2, "0") + "-" + m[1].padStart(2, "0");
+    m = s.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s+(\d{4})/i);
+    if (m) return m[3] + "-" + String(MONTHS[m[1].toLowerCase()]).padStart(2, "0") + "-" + m[2].padStart(2, "0");
+    m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return m[0];
+    m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (m) return m[3] + "-" + m[2].padStart(2, "0") + "-" + m[1].padStart(2, "0");
+    return null;
+  }
+
+  function findNumClaims(text) {
+    var claims = [];
+    var re = /(\d{1,3})\s*(?:votes?\s*)?(?:in favour|in favor|for)\b[^.]{0,60}?(\d{1,3})\s*(?:votes?\s*)?(?:against)\b[^.]{0,60}?(\d{1,3})\s*(?:votes?\s*)?abstentions?/gi;
+    var m;
+    while ((m = re.exec(text))) {
+      claims.push({ kind: "triple", snippet: m[0], yes: +m[1], no: +m[2], abst: +m[3] });
+    }
+    if (!claims.length) {
+      var singles = [
+        { re: /(\d{1,3})\s*(?:votes?\s*)?(?:in favour|in favor)/i, key: "yes", label: "votes in favour" },
+        { re: /(\d{1,3})\s*(?:votes?\s*)?against/i, key: "no", label: "votes against" },
+        { re: /(\d{1,3})\s*(?:votes?\s*)?abstentions?/i, key: "abst", label: "abstentions" }
+      ];
+      singles.forEach(function (s) {
+        var mm = text.match(s.re);
+        if (mm) claims.push({ kind: "single", snippet: mm[0], key: s.key, label: s.label, value: +mm[1] });
+      });
+    }
+    return claims;
+  }
+
+  function findDateClaims(text) {
+    var out = [], re = /(\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})|(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}|\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4}/gi;
+    var seen = {}, m;
+    while ((m = re.exec(text))) {
+      var iso = parseDate(m[0]);
+      if (iso && !seen[iso]) { seen[iso] = 1; out.push({ snippet: m[0], iso: iso }); }
+    }
+    return out;
+  }
+
+  function findSessionClaims(text) {
+    var out = [], re = /(\d{1,3})(?:st|nd|rd|th)\s+session/gi, seen = {};
+    var m;
+    while ((m = re.exec(text))) {
+      var n = +m[1];
+      if (!seen[n]) { seen[n] = 1; out.push({ snippet: m[0], num: n }); }
+    }
+    return out;
+  }
+
+  function findStateClaims(text) {
+    var out = [];
+    // vote phrases ordered: abstain, against, in favour
+    var patterns = [
+      { code: "A", re: /\b(?:abstained|abstaining|abstention(?:s)? (?:in|on) the vote (?:was|were)? ?)/i, label: "abstained" },
+      { code: "N", re: /\b(?:voted against|against (?:the )?(?:resolution|draft|amendment|vote)|opposed|voted no)\b/i, label: "voted against" },
+      { code: "Y", re: /\b(?:voted in favour|in favour(?: of)?(?: the)?(?: resolution| draft| amendment)?|voted yes|supported|voted for)\b/i, label: "voted in favour" }
+    ];
+    Object.keys(countries).forEach(function (iso) {
+      var name = countries[iso];
+      var nameRe = new RegExp("\\b" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "g");
+      var m;
+      while ((m = nameRe.exec(text))) {
+        var start = Math.max(0, m.index - 80), end = Math.min(text.length, m.index + m[0].length + 80);
+        var before = text.slice(start, m.index);
+        var after = text.slice(m.index + m[0].length, end);
+        var matched = null;
+        for (var p = 0; p < patterns.length && !matched; p++) {
+          var kw = null;
+          var mb = patterns[p].re.exec(before);
+          if (mb) kw = mb[0];
+          var ma = patterns[p].re.exec(after);
+          if (ma && (!kw || m.index + m[0].length - ma.index < m.index - (before.length - mb.index))) kw = ma[0];
+          if (ma && !kw) kw = ma[0];
+          if (kw) matched = { code: patterns[p].code, label: patterns[p].label, kw: kw };
+        }
+        if (matched) out.push({ iso: iso, name: name, snippet: text.slice(Math.max(0, m.index - 70), Math.min(text.length, m.index + m[0].length + 70)).trim(), claim: matched });
+      }
+    });
+    return out;
+  }
+
+  function sessionNumberOf(r) {
+    var m = (r.session || "").match(/(\d{1,3})(?:st|nd|rd|th)/i);
+    return m ? +m[1] : null;
+  }
+
+  function verdictRow(claim, says, verdict, cls) {
+    return "<tr><td class='claim'>" + esc(claim) + "</td><td class='what'>" + says +
+      "</td><td class='v " + cls + "'>" + verdict + "</td></tr>";
+  }
+
+  document.getElementById("clearBtn").addEventListener("click", function () {
+    document.getElementById("results").innerHTML = "";
+  });
+
+  document.getElementById("checkBtn").addEventListener("click", function () {
+    var out = document.getElementById("results");
+    var r = currentRes();
+    var text = document.getElementById("briefText").value;
+    if (!r) { out.innerHTML = "<p class='empty'>No resolution selected.</p>"; return; }
+    if (!text.trim()) { out.innerHTML = "<p class='empty'>Enter or paste some briefing text first.</p>"; return; }
+
+    var rc = rollCounts(r);
+    var rows = [];
+    var nClaims = 0;
+
+    // --- vote-count claims ---
+    findNumClaims(text).forEach(function (c) {
+      if (c.kind === "triple") {
+        nClaims++;
+        var okOff = (c.yes === r.yes && c.no === r.no && c.abst === r.abstain);
+        var okRoll = (c.yes === rc.Y && c.no === rc.N && c.abst === rc.A);
+        var says = "Official totals: " + r.yes + " / " + r.no + " / " + r.abstain +
+          ". Roll call counted from this record: " + rc.Y + " / " + rc.N + " / " + rc.A + ".";
+        rows.push(verdictRow("…" + c.snippet + "…", says,
+          okOff ? "Matches" : (okRoll ? "Matches (roll call)" : "Wrong"), okOff || okRoll ? "ok" : "bad"));
+      } else {
+        nClaims++;
+        var off = { yes: r.yes, no: r.no, abst: r.abstain }[c.key];
+        var roll = { yes: rc.Y, no: rc.N, abst: rc.A }[c.key];
+        var says2 = "Official " + c.label + ": " + off + ". Roll call: " + roll + ".";
+        rows.push(verdictRow("…" + c.snippet + "…", says2,
+          c.value === off ? "Matches" : (c.value === roll ? "Matches (roll call)" : "Wrong"),
+          (c.value === off || c.value === roll) ? "ok" : "bad"));
+      }
+    });
+
+    // --- date claims ---
+    findDateClaims(text).forEach(function (d) {
+      nClaims++;
+      if (d.iso === r.date) {
+        rows.push(verdictRow("Date: " + d.snippet, "Recorded vote date: " + r.date + " (" + symLink(r) + ").", "Matches", "ok"));
+      } else {
+        rows.push(verdictRow("Date: " + d.snippet,
+          "This dataset holds one date for this resolution: the vote date, " + r.date + ".",
+          "Wrong", "bad"));
+      }
+    });
+
+    // --- session claims ---
+    var sessNum = sessionNumberOf(r);
+    findSessionClaims(text).forEach(function (s) {
+      nClaims++;
+      if (sessNum === null) {
+        rows.push(verdictRow("Session: " + s.snippet, "The record's session field (\"" + esc(r.session) + "\") has no session number to compare against.", "Cannot be checked in this data", "unknown"));
+      } else if (s.num === sessNum) {
+        rows.push(verdictRow("Session: " + s.snippet, "Recorded session: " + esc(r.session) + ".", "Matches", "ok"));
+      } else {
+        rows.push(verdictRow("Session: " + s.snippet, "Recorded session: " + esc(r.session) + ".", "Wrong", "bad"));
+      }
+    });
+
+    // --- State vote claims ---
+    findStateClaims(text).forEach(function (s) {
+      nClaims++;
+      var v = (r.votes || {})[s.iso];
+      if (v === undefined) {
+        rows.push(verdictRow(s.name + " " + s.claim.label, "This roll call has no vote for " + esc(s.name) + " (" + s.iso + ") — it was not among the voting members recorded here.", "Cannot be checked in this data", "unknown"));
+      } else if (v === s.claim.code) {
+        rows.push(verdictRow(s.name + " " + s.claim.label, "Roll call: " + esc(s.name) + " voted " + ({ Y: "yes", N: "no", A: "abstain" })[v] + ".", "Matches", "ok"));
+      } else {
+        rows.push(verdictRow(s.name + " " + s.claim.label, "Roll call: " + esc(s.name) + " voted " + ({ Y: "yes", N: "no", A: "abstain" })[v] + ".", "Wrong", "bad"));
+      }
+    });
+
+    var counts = { ok: (rows.join("").match(/class='v ok'/g) || []).length,
+                   bad: (rows.join("").match(/class='v bad'/g) || []).length,
+                   unknown: (rows.join("").match(/class='v unknown'/g) || []).length };
+
+    var html = "<p style='margin:12px 0 4px;'><b>" + nClaims + " checkable claim" + (nClaims === 1 ? "" : "s") + " found</b> — " +
+      counts.ok + " match" + (counts.ok === 1 ? "es" : "") + ", " + counts.bad + " wrong, " + counts.unknown + " cannot be checked in this data.</p>";
+    html += "<p class='sub' style='margin:0 0 4px;'>Checked against " + symLink(r) + ", vote of " + esc(r.date) + " (" + esc(r.session) + ").</p>";
+    if (!nClaims) {
+      html += "<p class='empty'>No claims of a checkable kind were found in the text (vote counts, dates, sessions, or States' votes).</p>";
+    } else {
+      html += "<table><thead><tr><th>Claim as written</th><th>What the recorded vote says</th><th>Verdict</th></tr></thead><tbody>" + rows.join("") + "</tbody></table>";
+    }
+    html += "<p class='note'>A verdict of <b>cannot be checked in this data</b> is not a finding of error: it means this dataset — one roll call plus official totals per resolution — holds no answer to that claim. " +
+      (rc.Y !== r.yes || rc.N !== r.no || rc.A !== r.abstain ? "For this record the counted roll call and the official totals differ, so a number matching either is accepted. " : "") +
+      "Claims are found by pattern-matching in this page's JavaScript; subtle phrasings may be missed, and anything missed is simply not listed.</p>";
+    out.innerHTML = html;
+  });
+})();
+</script>
+</body>
+</html>
+```

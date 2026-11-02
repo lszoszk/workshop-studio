@@ -1,0 +1,60 @@
+[
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · USA · Amazon Bedrock",
+  "prompt": "s8-4-briefing-check",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "calls_studio_ask": true,
+   "batches_max": true,
+   "button_matches": true,
+   "text_contains": true,
+   "text_matches": false
+  },
+  "passed": 7,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 312,
+  "seconds": 254.7,
+  "first_token": 192.5,
+  "first_thought": 3.3,
+  "reasoning_chars": 20869,
+  "prompt_tokens": 8400,
+  "completion_tokens": 36392,
+  "cost": 0.418792,
+  "provider": "Amazon Bedrock"
+ },
+ {
+  "model": "mistral",
+  "label": "Mistral Large 4 · France · Mistral (EU)",
+  "prompt": "s8-4-briefing-check",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "calls_studio_ask": false,
+   "batches_max": false,
+   "button_matches": true,
+   "text_contains": false,
+   "text_matches": true
+  },
+  "passed": 4,
+  "total": 8,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Invalid regular expression: missing /"
+  ],
+  "network": [],
+  "lines": 547,
+  "seconds": 332.6,
+  "first_token": 289.8,
+  "first_thought": 1.2,
+  "reasoning_chars": 165459,
+  "prompt_tokens": 5949,
+  "completion_tokens": 59173,
+  "cost": 0.14127036,
+  "provider": "Mistral"
+ }
+]

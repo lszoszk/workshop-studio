@@ -1,0 +1,29 @@
+{
+  "note": "What each workshop app's planner receives. `problem` is what the participant types (short, in their words); `facilitator_brief` is the minimal steering, shown to participants as \"Facilitator's brief\". Written 2 Nov 2026.",
+  "apps": {
+    "s7-1-dashboard": {
+      "title": "Your country's recommendations dashboard",
+      "dataset": "uhri",
+      "problem": "I need to see what UN human rights mechanisms have told my country, and find the exact paragraphs fast.",
+      "facilitator_brief": "A dashboard on the participant's country's file from the Universal Human Rights Index. It should be trustworthy enough for a diplomat preparing a meeting: every number explained, every paragraph one click from its UN document, and a way to check the UN's own labels on a random sample."
+    },
+    "s7-4-extract": {
+      "title": "Paragraphs out of a PDF",
+      "dataset": "pdf_text",
+      "problem": "Our office copies paragraphs out of UN PDFs by hand. Can a tool split a General Comment into its numbered paragraphs, and show me where it got things wrong?",
+      "facilitator_brief": "The file is the raw text of CESCR General comment No. 27 as a PDF converter produced it, page by page, with a reference (paragraph and footnote counts, first words of each paragraph). The tool must check itself against the reference and make every repair it makes visible."
+    },
+    "s8-1-verbatim": {
+      "title": "Verbatim finder for General Comments",
+      "dataset": "gc",
+      "problem": "When I draft a submission I need the exact words of a General Comment and a correct citation. Help me find them.",
+      "facilitator_brief": "A search tool over every General Comment paragraph of the treaty bodies: it retrieves, it never generates. Boolean search and exact phrases, citations ready to paste, and a way to collect quotations for a draft."
+    },
+    "s8-5-wiki": {
+      "title": "A research wiki on neurotechnology and justice",
+      "dataset": "wiki",
+      "problem": "Our team keeps losing track of what each report says about neurotechnology in the justice system. Build us a research wiki we can trust and keep up to date.",
+      "facilitator_brief": "The wiki is already compiled from nine sources (WORKSHOP_DATA.wiki), following Karpathy's LLM-wiki pattern as kept in a book project: source, concept, entity and question pages, verified pins that open the PDF page, registers and contested claims. The app is the team's workspace for it: read and navigate, Ask the wiki and file good answers back, Ingest the waiting source A/HRC/57/61 with a human approving each change, and Lint. The model drafts; the code verifies every quotation."
+    }
+  }
+}

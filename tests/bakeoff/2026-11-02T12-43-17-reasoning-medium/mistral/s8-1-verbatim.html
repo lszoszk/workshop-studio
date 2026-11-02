@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>General Comments search</title>
+<style>
+  :root{
+    --accent:#1f6fb2; --bg:#f4f6f9; --card:#ffffff; --ink:#1c2733;
+    --muted:#5b6b7b; --line:#d9e1ea;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .wrap{ max-width:920px; margin:0 auto; padding:28px 20px 64px; }
+  h1{ font-size:1.6rem; margin:0 0 6px; color:var(--accent); }
+  .sub{ color:var(--muted); margin:0 0 22px; }
+  .panel{
+    background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:16px 18px; margin-bottom:16px;
+  }
+  .searchrow{ display:flex; gap:10px; flex-wrap:wrap; }
+  #q{
+    flex:1 1 320px; padding:10px 12px; font-size:16px;
+    border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink);
+  }
+  #q:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+  .btn{
+    background:var(--accent); color:#fff; border:none; border-radius:8px;
+    padding:10px 20px; font-size:16px; cursor:pointer;
+  }
+  .btn:hover{ filter:brightness(1.08); }
+  .help{ color:var(--muted); font-size:0.92rem; margin:10px 0 0; }
+  code{
+    background:#eef3f8; border:1px solid var(--line); border-radius:4px;
+    padding:1px 5px; font-size:0.88rem;
+  }
+  .filters{ display:flex; gap:18px; flex-wrap:wrap; align-items:flex-end; margin-top:14px; }
+  .filters label{ display:block; font-size:0.88rem; color:var(--muted); margin-bottom:4px; }
+  select, input[type=number]{
+    padding:8px 10px; font-size:15px; border:1px solid var(--line);
+    border-radius:8px; background:#fff; color:var(--ink);
+  }
+  .yearinputs input{ width:96px; }
+  .yearinputs .dash{ color:var(--muted); padding:0 4px; }
+  #countline{ font-weight:600; margin:0 0 4px; }
+  .note{ color:var(--muted); font-size:0.88rem; margin:4px 0 0; }
+  #chartbox{ height:250px; max-width:680px; }
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:14px 18px; margin-bottom:14px;
+  }
+  .card-head{ display:flex; flex-wrap:wrap; gap:6px 16px; align-items:baseline; margin-bottom:8px; }
+  .committee{ font-weight:700; color:var(--accent); }
+  .gctitle{ font-weight:600; }
+  .year{ color:var(--muted); }
+  .symbol{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:0.92rem; }
+  .para{ margin:6px 0 12px; white-space:pre-wrap; overflow-wrap:break-word; }
+  .parano{ color:var(--muted); font-size:0.9rem; margin-right:8px; }
+  mark{ background:#ffe9a8; padding:0 1px; border-radius:2px; }
+  .copy{
+    background:#fff; color:var(--accent); border:1px solid var(--accent);
+    border-radius:8px; padding:6px 14px; font-size:0.92rem; cursor:pointer;
+  }
+  .copy:hover{ background:#eef5fb; }
+  .copy.copied{ background:var(--accent); color:#fff; }
+  .nomatch strong{ color:var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>General Comments search</h1>
+  <p class="sub" id="sub"></p>
+
+  <div class="panel">
+    <div class="searchrow">
+      <input id="q" type="text" aria-label="Search paragraph text"
+             placeholder='Search paragraph text, e.g. "best interests" AND child'>
+      <button class="btn" id="searchbtn">Search</button>
+    </div>
+    <p class="help">Words are combined with AND unless you write OR; NOT excludes a word; "quotes" find an exact phrase. Example: <code>"best interests" AND child</code>.</p>
+    <div class="filters">
+      <div>
+        <label for="committee">Committee</label>
+        <select id="committee"></select>
+      </div>
+      <div class="yearinputs">
+        <label for="yfrom">Year (from–to)</label>
+        <input id="yfrom" type="number" placeholder="from" aria-label="Year from">
+        <span class="dash">–</span>
+        <input id="yto" type="number" placeholder="to" aria-label="Year to">
+      </div>
+    </div>
+  </div>
+
+  <p id="countline"></p>
+  <p class="note">How this is computed: the committee and year filters are applied first, then the word search runs on the paragraph text only (case-insensitive, whole words; quoted phrases match the exact sequence). All counting is done in your browser on the loaded records — nothing is estimated.</p>
+
+  <div class="panel" style="margin-top:16px;">
+    <div id="chartbox"><canvas id="chart"></canvas></div>
+    <p class="note">How this is computed: each matching paragraph is counted once, under its committee, for the current search and filters — the bars add up to the N in the count line above.</p>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var gc = (window.WORKSHOP_DATA && window.WORKSHOP_DATA.gc) ? window.WORKSHOP_DATA.gc : { records: [] };
+  var records = gc.records || [];
+  var M = records.length;
+
+  /* ---------- helpers ---------- */
+  function escHtml(s){
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+  function escAttr(s){ return escHtml(s); }
+  function escRe(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g,"\\$&"); }
+
+  /* ---------- header line: source, n, year range ---------- */
+  var years = records.map(function(r){ return r.year; })
+                     .filter(function(y){ return typeof y === "number" && !isNaN(y); });
+  var yMin = years.length ? Math.min.apply(null, years) : null;
+  var yMax = years.length ? Math.max.apply(null, years) : null;
+  document.getElementById("sub").textContent =
+    "Source: " + (gc.source || "General Comments") +
+    " · " + M + " paragraphs · " +
+    (yMin === null ? "years unknown" : ("years " + yMin + "–" + yMax));
+
+  /* ---------- committee filter ---------- */
+  var comSel = document.getElementById("committee");
+  var coms = Array.from(new Set(records.map(function(r){ return r.committee; }).filter(Boolean)))
+                  .sort(function(a,b){ return a.localeCompare(b); });
+  comSel.innerHTML = '<option value="All">All committees</option>' +
+    coms.map(function(c){ return '<option value="' + escAttr(c) + '">' + escHtml(c) + "</option>"; }).join("");
+  if (yMin !== null){
+    document.getElementById("yfrom").min = yMin;
+    document.getElementById("yto").max = yMax;
+  }
+
+  /* ---------- query parsing: AND / OR / NOT / "phrases" ---------- */
+  function tokenize(q){
+    var toks = [], re = /"([^"]*)"|(\S+)/g, m;
+    while ((m = re.exec(q)) !== null){
+      if (m[1] !== undefined){
+        var v = m[1].trim();
+        if (v) toks.push({ value: v, quoted: true });
+      } else {
+        toks.push({ value: m[2], quoted: false });
+      }
+    }
+    return toks;
+  }
+  function termRegex(term){
+    var pat;
+    if (term.quoted){
+      var words = term.value.split(/\s+/).filter(Boolean).map(escRe);
+      if (!words.length) return null;
+      pat = words.join("\\s+");
+    } else {
+      pat = escRe(term.value);
+    }
+    /* whole-word match: the term must not touch another word character on either side */
+    return new RegExp("(^|[^\\w])(" + pat + ")(?=$|[^\\w])", "gi");
+  }
+  function parseQuery(q){
+    var toks = tokenize(q);
+    var clauses = [], group = null, neg = false, lastOr = false;
+    for (var i = 0; i < toks.length; i++){
+      var t = toks[i], v = t.value;
+      if (!t.quoted && v === "AND"){ group = null; lastOr = false; neg = false; continue; }
+      if (!t.quoted && v === "OR"){
+        if (!group){ group = { neg: false, alts: [] }; clauses.push(group); }
+        lastOr = true; neg = false; continue;
+      }
+      if (!t.quoted && v === "NOT"){ neg = true; continue; }
+      var term = { value: v, quoted: t.quoted, re: null };
+      if (group && lastOr){ group.alts.push(term); }
+      else { group = { neg: neg, alts: [term] }; clauses.push(group); }
+      lastOr = false; neg = false;
+    }
+    for (var c = 0; c < clauses.length; c++)
+      for (var a = 0; a < clauses[c].alts.length; a++)
+        clauses[c].alts[a].re = termRegex(clauses[c].alts[a]);
+    return clauses;
+  }
+  function recordMatches(rec, clauses){
+    var text = rec.text || "";
+    if (!text) return false; /* empty text never matches, but is still counted in M */
+    for (var i = 0; i < clauses.length; i++){
+      var cl = clauses[i], any = false;
+      for (var j = 0; j < cl.alts.length; j++){
+        var re = cl.alts[j].re;
+        if (!re) continue;
+        re.lastIndex = 0;
+        if (re.exec(text) !== null) any = true;
+      }
+      if (cl.neg ? any : !any) return false;
+    }
+    return true;
+  }
+
+  /* ---------- highlighting (never alters the text, only wraps matches) ---------- */
+  function highlightRanges(text, clauses){
+    var ranges = [];
+    for (var i = 0; i < clauses.length; i++){
+      var cl = clauses[i];
+      if (cl.neg) continue; /* NOT terms are not highlighted */
+      for (var j = 0; j < cl.alts.length; j++){
+        var re = cl.alts[j].re;
+        if (!re) continue;
+        re.lastIndex = 0;
+        var m;
+        while ((m = re.exec(text)) !== null){
+          var start = m.index + m[1].length;
+          ranges.push([start, start + m[2].length]);
+        }
+      }
+    }
+    ranges.sort(function(a,b){ return a[0]-b[0] || a[1]-b[1]; });
+    var merged = [];
+    for (var k = 0; k < ranges.length; k++){
+      var last = merged[merged.length-1];
+      if (last && ranges[k][0] <= last[1]) last[1] = Math.max(last[1], ranges[k][1]);
+      else merged.push([ranges[k][0], ranges[k][1]]);
+    }
+    return merged;
+  }
+  function renderHighlighted(text, ranges){
+    var out = "", pos = 0;
+    for (var i = 0; i < ranges.length; i++){
+      var a = ranges[i][0], b = ranges[i][1];
+      out += escHtml(text.slice(pos, a)) + "<mark>" + escHtml(text.slice(a, b)) + "</mark>";
+      pos = b;
+    }
+    out += escHtml(text.slice(pos));
+    return out;
+  }
+
+  /* ---------- filters ---------- */
+  function passesYear(rec, from, to){
+    if (from === "" && to === "") return true; /* open range includes year-unknown records */
+    var y = rec.year;
+    if (typeof y !== "number" || isNaN(y)) return false;
+    if (from !== "" && y < Number(from)) return false;
+    if (to !== "" && y > Number(to)) return false;
+    return true;
+  }
+
+  /* ---------- rendering ---------- */
+  var chart = null;
+  function renderCount(n, com, from, to, q){
+    var parts = [];
+    if (com !== "All") parts.push("committee = " + com);
+    if (from !== "" || to !== "") parts.push("years = " + (from || "…") + "–" + (to || "…"));
+    if (q.trim() !== "") parts.push('search = "' + q.trim() + '"');
+    document.getElementById("countline").textContent =
+      n + (n === 1 ? " paragraph matches" : " paragraphs match") + " out of " + M +
+      ", filters: " + (parts.length ? parts.join("; ") : "none");
+  }
+  function renderChart(matched){
+    var counts = {};
+    for (var i = 0; i < matched.length; i++){
+      var c = matched[i].committee || "(no committee)";
+      counts[c] = (counts[c] || 0) + 1;
+    }
+    var entries = Object.keys(counts).map(function(k){ return [k, counts[k]]; })
+      .sort(function(a,b){ return b[1]-a[1] || a[0].localeCompare(b[0]); });
+    var labels = entries.map(function(e){ return e[0]; });
+    var data = entries.map(function(e){ return e[1]; });
+    if (chart){ chart.destroy(); chart = null; }
+    if (window.Chart){
+      chart = new Chart(document.getElementById("chart").getContext("2d"), {
+        type: "bar",
+        data: { labels: labels, datasets: [{ label: "Matching paragraphs", data: data, backgroundColor: "#1f6fb2", borderRadius: 4 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: function(c){ return c.parsed.y + (c.parsed.y === 1 ? " paragraph" : " paragraphs"); } } }
+          },
+          scales: {
+            x: { ticks: { autoSkip: false } },
+            y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: "Matching paragraphs" } }
+          }
+        }
+      });
+    }
+  }
+  function renderResults(matched, clauses){
+    var box = document.getElementById("results");
+    if (!matched.length){
+      box.innerHTML = '<div class="panel nomatch"><strong>No paragraph contains these words.</strong><br>' +
+        "Tip: try OR instead of AND, or use fewer words.</div>";
+      return;
+    }
+    var html = [];
+    for (var i = 0; i < matched.length; i++){
+      var rec = matched[i];
+      var title = rec.short_title || rec.title || rec.symbol || "";
+      var yearTxt = (rec.year === null || rec.year === undefined) ? "year unknown" : String(rec.year);
+      var sym = rec.symbol || "";
+      var symHtml = rec.doc_url
+        ? '<a class="symbol" href="' + escAttr(rec.doc_url) + '" target="_blank" rel="noopener noreferrer">' + escHtml(sym) + "</a>"
+        : '<span class="symbol">' + escHtml(sym) + "</span>";
+      var paraLabel = (rec.paragraph === null || rec.paragraph === undefined) ? "" : "para. " + rec.paragraph;
+      var citation = (rec.symbol || rec.short_title || rec.title || "") +
+                     (rec.paragraph !== null && rec.paragraph !== undefined ? ", para. " + rec.paragraph : "");
+      var body = renderHighlighted(rec.text || "", highlightRanges(rec.text || "", clauses));
+      html.push(
+        '<article class="card">' +
+          '<div class="card-head">' +
+            '<span class="committee">' + escHtml(rec.committee || "") + "</span>" +
+            '<span class="gctitle">' + escHtml(title) + "</span>" +
+            '<span class="year">' + escHtml(yearTxt) + "</span>" +
+            symHtml +
+          "</div>" +
+          '<p class="para">' + (paraLabel ? '<span class="parano">' + escHtml(paraLabel) + "</span>" : "") +
+            '<span class="ptext">' + body + "</span></p>" +
+          '<button class="copy" data-cite="' + escAttr(citation) + '">Copy citation</button>' +
+        "</article>"
+      );
+    }
+    box.innerHTML = html.join("");
+  }
+
+  /* ---------- copy citation ---------- */
+  function fallbackCopy(t){
+    var ta = document.createElement("textarea");
+    ta.value = t;
+    ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try { document.execCommand("copy"); } catch(e){}
+    document.body.removeChild(ta);
+  }
+  function copyText(t){
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(t).catch(function(){ fallbackCopy(t); });
+    }
+    fallbackCopy(t);
+    return Promise.resolve();
+  }
+  document.getElementById("results").addEventListener("click", function(e){
+    var btn = e.target.closest ? e.target.closest(".copy") : null;
+    if (!btn) return;
+    copyText(btn.getAttribute("data-cite")).then(function(){
+      btn.textContent = "Copied";
+      btn.classList.add("copied");
+      clearTimeout(btn._t);
+      btn._t = setTimeout(function(){
+        btn.textContent = "Copy citation";
+        btn.classList.remove("copied");
+      }, 2000);
+    });
+  });
+
+  /* ---------- run: filters first, then search; one list feeds count, chart, cards ---------- */
+  function run(){
+    var q = document.getElementById("q").value;
+    var clauses = parseQuery(q);
+    var com = comSel.value;
+    var from = document.getElementById("yfrom").value.trim();
+    var to = document.getElementById("yto").value.trim();
+    var matched = [];
+    for (var i = 0; i < records.length; i++){
+      var rec = records[i];
+      if (com !== "All" && rec.committee !== com) continue;
+      if (!passesYear(rec, from, to)) continue;
+      if (!recordMatches(rec, clauses)) continue;
+      matched.push(rec);
+    }
+    matched.sort(function(a,b){
+      var ya = (typeof a.year === "number" && !isNaN(a.year)) ? a.year : -Infinity;
+      var yb = (typeof b.year === "number" && !isNaN(b.year)) ? b.year : -Infinity;
+      if (yb !== ya) return yb - ya; /* newest General Comment first */
+      var sa = a.symbol || "", sb = b.symbol || "";
+      if (sa !== sb) return sa.localeCompare(sb);
+      return (b.paragraph || 0) - (a.paragraph || 0);
+    });
+    renderCount(matched.length, com, from, to, q);
+    renderChart(matched);
+    renderResults(matched, clauses);
+  }
+
+  document.getElementById("searchbtn").addEventListener("click", run);
+  document.getElementById("q").addEventListener("keydown", function(e){
+    if (e.key === "Enter"){ e.preventDefault(); run(); }
+  });
+  comSel.addEventListener("change", run);
+  document.getElementById("yfrom").addEventListener("input", run);
+  document.getElementById("yto").addEventListener("input", run);
+
+  run();
+})();
+</script>
+</body>
+</html>

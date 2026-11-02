@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HRC Voting Comparison</title>
+<style>
+  :root {
+    --accent: #1f6fb2;
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --text: #212529;
+    --muted: #6c757d;
+    --border: #dee2e6;
+    --green: #2e7d32;
+    --green-bg: #e8f5e9;
+    --red: #c62828;
+    --red-bg: #ffebee;
+    --amber: #f57f17;
+    --amber-bg: #fff8e1;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.5;
+    padding: 24px 20px 60px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  header { margin-bottom: 28px; }
+  h1 { font-size: 1.7rem; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+  .subtitle { color: var(--muted); font-size: 0.95rem; max-width: 800px; }
+  .subtitle a { color: var(--accent); text-decoration: none; }
+  .subtitle a:hover { text-decoration: underline; }
+
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end;
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px 20px; margin-bottom: 24px; box-shadow: var(--shadow);
+  }
+  .control-group { display: flex; flex-direction: column; gap: 4px; }
+  .control-group label { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  select {
+    font-size: 0.95rem; padding: 8px 12px; border: 1px solid var(--border);
+    border-radius: 6px; background: #fff; color: var(--text); min-width: 220px;
+    cursor: pointer; appearance: auto;
+  }
+  select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+
+  .summary { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    flex: 1 1 200px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 18px 20px; box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .stat-card .number { font-size: 2rem; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .stat-card .number.green { color: var(--green); }
+  .stat-card .number.red { color: var(--red); }
+  .stat-card .label { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+  .stat-card .pct { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+  .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 24px; box-shadow: var(--shadow); }
+  .section h2 { font-size: 1.15rem; font-weight: 600; margin-bottom: 4px; color: #1a1a2e; }
+  .how { font-size: 0.82rem; color: var(--muted); margin-bottom: 16px; }
+  .chart-wrap { position: relative; height: 320px; }
+  .no-data { color: var(--muted); font-style: italic; padding: 20px 0; text-align: center; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th {
+    text-align: left; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .sym { font-family: 'SF Mono', 'Consolas', 'Menlo', monospace; font-size: 0.82rem; white-space: nowrap; }
+  .sym a { color: var(--accent); text-decoration: none; }
+  .sym a:hover { text-decoration: underline; }
+  .title-cell { max-width: 380px; }
+  .kind-badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background: #eef2f7; color: #495057; white-space: nowrap; }
+  .vote-badge { display: inline-block; font-size: 0.8rem; font-weight: 600; padding: 3px 10px; border-radius: 14px; white-space: nowrap; }
+  .vote-y { background: var(--green-bg); color: var(--green); }
+  .vote-n { background: var(--red-bg); color: var(--red); }
+  .vote-a { background: var(--amber-bg); color: var(--amber); }
+  .warn-badge {
+    display: inline-block; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px;
+    background: #fff3cd; color: #856404; white-space: nowrap; cursor: help;
+  }
+  .table-scroll { max-height: 520px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; }
+  .table-scroll table { border: none; }
+  .table-scroll th { position: sticky; top: 0; background: #f8f9fa; z-index: 1; }
+  .empty-msg { color: var(--muted); font-style: italic; padding: 16px 0; text-align: center; }
+  @media (max-width: 700px) {
+    .controls { flex-direction: column; align-items: stretch; }
+    select { min-width: 100%; }
+    .summary { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Human Rights Council Voting Comparison</h1>
+    <p class="subtitle" id="subtitle"></p>
+  </header>
+
+  <div class="controls">
+    <div class="control-group">
+      <label for="stateA">State A</label>
+      <select id="stateA"></select>
+    </div>
+    <div class="control-group">
+      <label for="stateB">State B</label>
+      <select id="stateB"></select>
+    </div>
+    <div class="control-group">
+      <label for="kindFilter">Vote type</label>
+      <select id="kindFilter">
+        <option value="all">All votes</option>
+        <option value="resolution">Resolutions</option>
+        <option value="amendment">Amendments</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="section">
+    <h2>Timeline by year</h2>
+    <p class="how">Each bar shows recorded votes in that year where the two States voted the same way (green) or differently (red). Hover for the agreement rate. Only votes where both States are recorded as voting are counted.</p>
+    <div class="chart-wrap" id="chartWrap">
+      <canvas id="timelineChart"></canvas>
+    </div>
+    <div class="no-data" id="chartNoData" style="display:none;">No votes found for the selected States and filter.</div>
+  </div>
+
+  <div class="section">
+    <h2>Votes where they differed</h2>
+    <p class="how" id="diffHow"></p>
+    <div class="table-scroll" id="diffTableWrap">
+      <table id="diffTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Symbol</th>
+            <th>Title</th>
+            <th>Type</th>
+            <th id="thA">State A</th>
+            <th id="thB">State B</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody id="diffTbody"></tbody>
+      </table>
+    </div>
+    <div class="empty-msg" id="diffEmpty" style="display:none;">No differing votes found for the selected States and filter.</div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const hrc = WORKSHOP_DATA.hrc;
+  const records = hrc.records || [];
+  const countryNames = hrc.countries || {};
+  const voteLabels = (hrc.vote_codes && typeof hrc.vote_codes === 'object') ? hrc.vote_codes : { Y: 'Yes', N: 'No', A: 'Abstain' };
+
+  // Build subtitle
+  const subtitleEl = document.getElementById('subtitle');
+  subtitleEl.textContent = 'Compare how two States voted on recorded votes at the UN Human Rights Council. Data: ' +
+    (hrc.title || 'HRC recorded votes') + ' — ' + (hrc.count || records.length) + ' recorded votes.';
+
+  // Find all states that appear in at least one votes object
+  const stateSet = new Set();
+  records.forEach(r => {
+    if (r.votes && typeof r.votes === 'object') {
+      Object.keys(r.votes).forEach(iso => stateSet.add(iso));
+    }
+  });
+  const states = Array.from(stateSet).sort((a, b) =>
+    (countryNames[a] || a).localeCompare(countryNames[b] || b)
+  );
+
+  const selA = document.getElementById('stateA');
+  const selB = document.getElementById('stateB');
+  const kindFilter = document.getElementById('kindFilter');
+
+  function populateDropdown(sel, excludeIso) {
+    sel.innerHTML = '';
+    states.forEach(iso => {
+      if (iso === excludeIso) return;
+      const opt = document.createElement('option');
+      opt.value = iso;
+      opt.textContent = countryNames[iso] || iso;
+      sel.appendChild(opt);
+    });
+  }
+
+  populateDropdown(selA, null);
+  populateDropdown(selB, null);
+  // Default: first two states
+  if (states.length >= 2) {
+    selA.value = states[0];
+    selB.value = states[1];
+  }
+
+  // Prevent same state in both dropdowns
+  function syncDropdowns() {
+    const aVal = selA.value;
+    const bVal = selB.value;
+    if (aVal === bVal && aVal) {
+      // Find another state for B
+      const alt = states.find(s => s !== aVal);
+      if (alt) selB.value = alt;
+    }
+  }
+  selA.addEventListener('change', () => { syncDropdowns(); compare(); });
+  selB.addEventListener('change', () => { syncDropdowns(); compare(); });
+  kindFilter.addEventListener('change', compare);
+
+  let chartInstance = null;
+
+  function getRollCall(r) {
+    const votes = r.votes || {};
+    let y = 0, n = 0, a = 0;
+    Object.values(votes).forEach(v => {
+      if (v === 'Y') y++;
+      else if (v === 'N') n++;
+      else if (v === 'A') a++;
+    });
+    return { y, n, a };
+  }
+
+  function totalsDiffer(r) {
+    const rc = getRollCall(r);
+    return rc.y !== r.yes || rc.n !== r.no || rc.a !== r.abstain;
+  }
+
+  function voteLabel(v) { return voteLabels[v] || v; }
+
+  function fmtDate(d) {
+    if (!d) return '';
+    try {
+      const dt = new Date(d + 'T00:00:00');
+      return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch (e) { return d; }
+  }
+
+  function compare() {
+    const stateA = selA.value;
+    const stateB = selB.value;
+    const kind = kindFilter.value;
+
+    const filtered = records.filter(r => {
+      if (kind !== 'all' && r.kind !== kind) return false;
+      return r.votes && r.votes[stateA] !== undefined && r.votes[stateB] !== undefined;
+    });
+
+    const same = filtered.filter(r => r.votes[stateA] === r.votes[stateB]);
+    const diff = filtered.filter(r => r.votes[stateA] !== r.votes[stateB]);
+
+    updateSummary(filtered.length, same.length, diff.length, stateA, stateB);
+    updateChart(filtered, stateA, stateB);
+    updateTable(diff, stateA, stateB);
+  }
+
+  function updateSummary(total, sameCount, diffCount, stateA, stateB) {
+    const summaryEl = document.getElementById('summary');
+    const nameA = countryNames[stateA] || stateA;
+    const nameB = countryNames[stateB] || stateB;
+    const pctSame = total > 0 ? Math.round(sameCount / total * 1000) / 10 : 0;
+    const pctDiff = total > 0 ? Math.round(diffCount / total * 1000) / 10 : 0;
+
+    summaryEl.innerHTML = `
+      <div class="stat-card">
+        <div class="number">${total}</div>
+        <div class="label">Votes both took part in</div>
+        <div class="pct">${nameA} &amp; ${nameB}</div>
+      </div>
+      <div class="stat-card">
+        <div class="number green">${sameCount}</div>
+        <div class="label">Voted the same way</div>
+        <div class="pct">${pctSame}% of shared votes</div>
+      </div>
+      <div class="stat-card">
+        <div class="number red">${diffCount}</div>
+        <div class="label">Voted differently</div>
+        <div class="pct">${pctDiff}% of shared votes</div>
+      </div>
+    `;
+  }
+
+  function updateChart(filtered, stateA, stateB) {
+    const yearMap = new Map();
+    filtered.forEach(r => {
+      const y = r.year;
+      if (!yearMap.has(y)) yearMap.set(y, { same: 0, diff: 0 });
+      const entry = yearMap.get(y);
+      if (r.votes[stateA] === r.votes[stateB]) entry.same++;
+      else entry.diff++;
+    });
+    const years = Array.from(yearMap.keys()).sort((a, b) => a - b);
+
+    const canvas = document.getElementById('timelineChart');
+    const noDataEl = document.getElementById('chartNoData');
+    const chartWrap = document.getElementById('chartWrap');
+
+    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+    if (years.length === 0) {
+      canvas.style.display = 'none';
+      noDataEl.style.display = 'block';
+      return;
+    }
+    canvas.style.display = 'block';
+    noDataEl.style.display = 'none';
+
+    const ctx = canvas.getContext('2d');
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: years.map(String),
+        datasets: [
+          {
+            label: 'Same vote',
+            data: years.map(y => yearMap.get(y).same),
+            backgroundColor: '#4caf50',
+            stack: 'votes',
+            borderRadius: 2
+          },
+          {
+            label: 'Different vote',
+            data: years.map(y => yearMap.get(y).diff),
+            backgroundColor: '#e53935',
+            stack: 'votes',
+            borderRadius: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { stacked: true, grid: { display: false }, title: { display: true, text: 'Year', font: { size: 13 } } },
+          y: {
+            stacked: true,
+            beginAtZero: true,
+            ticks: { precision: 0, stepSize: 1 },
+            title: { display: true, text: 'Number of votes', font: { size: 13 } }
+          }
+        },
+        plugins: {
+          legend: { position: 'top', labels: { font: { size: 13 } } },
+          tooltip: {
+            callbacks: {
+              afterBody: function(items) {
+                if (!items || items.length === 0) return '';
+                const year = items[0].label;
+                const d = yearMap.get(parseInt(year, 10));
+                if (!d) return '';
+                const total = d.same + d.diff;
+                const rate = total > 0 ? Math.round(d.same / total * 1000) / 10 : 0;
+                return 'Agreement rate: ' + rate + '% (' + d.same + '/' + total + ')';
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function updateTable(diffRecords, stateA, stateB) {
+    const tbody = document.getElementById('diffTbody');
+    const emptyEl = document.getElementById('diffEmpty');
+    const tableWrap = document.getElementById('diffTableWrap');
+    const thA = document.getElementById('thA');
+    const thB = document.getElementById('thB');
+    const diffHow = document.getElementById('diffHow');
+
+    const nameA = countryNames[stateA] || stateA;
+    const nameB = countryNames[stateB] || stateB;
+    thA.textContent = nameA;
+    thB.textContent = nameB;
+    diffHow.textContent = 'Votes where ' + nameA + ' and ' + nameB + ' recorded different votes. ⚠ marks votes where the official totals differ from the roll call. Sorted by date, most recent first.';
+
+    tbody.innerHTML = '';
+
+    if (diffRecords.length === 0) {
+      tableWrap.style.display = 'none';
+      emptyEl.style.display = 'block';
+      return;
+    }
+    tableWrap.style.display = 'block';
+    emptyEl.style.display = 'none';
+
+    const sorted = diffRecords.slice().sort((a, b) => {
+      if (a.date && b.date) return b.date.localeCompare(a.date);
+      return (b.year || 0) - (a.year || 0);
+    });
+
+    sorted.forEach(r => {
+      const tr = document.createElement('tr');
+      const link = r.doc_url || r.record_url || '#';
+      const warn = totalsDiffer(r);
+      const rc = getRollCall(r);
+      const warnTitle = 'Official totals: ' + r.yes + 'Y/' + r.no + 'N/' + r.abstain + 'A. Roll call: ' + rc.y + 'Y/' + rc.n + 'N/' + rc.a + 'A.';
+
+      const voteA = r.votes[stateA];
+      const voteB = r.votes[stateB];
+      const clsA = voteA === 'Y' ? 'vote-y' : voteA === 'N' ? 'vote-n' : 'vote-a';
+      const clsB = voteB === 'Y' ? 'vote-y' : voteB === 'N' ? 'vote-n' : 'vote-a';
+
+      tr.innerHTML = `
+        <td style="white-space:nowrap;">${fmtDate(r.date)}</td>
+        <td class="sym"><a href="${link}" target="_blank" rel="noopener">${r.symbol || '—'}</a></td>
+        <td class="title-cell">${r.title || ''}</td>
+        <td><span class="kind-badge">${r.kind === 'resolution' ? 'Resolution' : r.kind === 'amendment' ? 'Amendment' : (r.kind || '')}</span></td>
+        <td><span class="vote-badge ${clsA}">${voteLabel(voteA)}</span></td>
+        <td><span class="vote-badge ${clsB}">${voteLabel(voteB)}</span></td>
+        <td>${warn ? '<span class="warn-badge" title="' + warnTitle.replace(/"/g, '&quot;') + '">⚠ Totals differ</span>' : ''}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Initial render
+  syncDropdowns();
+  compare();
+})();
+</script>
+</body>
+</html>

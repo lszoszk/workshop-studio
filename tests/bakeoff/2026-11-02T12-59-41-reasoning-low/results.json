@@ -1,0 +1,30 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "download": true
+  },
+  "passed": 3,
+  "total": 6,
+  "errors": [
+   "Cannot read properties of null (reading '1')"
+  ],
+  "network": [],
+  "lines": 324,
+  "seconds": 43.6,
+  "first_token": 2.0,
+  "first_thought": 1.7,
+  "reasoning_chars": 23,
+  "prompt_tokens": 8448,
+  "completion_tokens": 4097,
+  "cost": 0.02066104,
+  "provider": "Z.AI"
+ }
+]

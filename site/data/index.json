@@ -1,0 +1,1221 @@
+{
+ "built": "2026-11-01",
+ "countries": [
+  {
+   "name": "Afghanistan",
+   "file": "uhri_afghanistan.json",
+   "count": 1320,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Albania",
+   "file": "uhri_albania.json",
+   "count": 1766,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Algeria",
+   "file": "uhri_algeria.json",
+   "count": 1336,
+   "region": "Africa"
+  },
+  {
+   "name": "Andorra",
+   "file": "uhri_andorra.json",
+   "count": 742,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Angola",
+   "file": "uhri_angola.json",
+   "count": 1586,
+   "region": "Africa"
+  },
+  {
+   "name": "Antigua and Barbuda",
+   "file": "uhri_antigua-and-barbuda.json",
+   "count": 566,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Argentina",
+   "file": "uhri_argentina.json",
+   "count": 2160,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Armenia",
+   "file": "uhri_armenia.json",
+   "count": 1925,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Australia",
+   "file": "uhri_australia.json",
+   "count": 2543,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Austria",
+   "file": "uhri_austria.json",
+   "count": 1848,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Azerbaijan",
+   "file": "uhri_azerbaijan.json",
+   "count": 1974,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Bahamas",
+   "file": "uhri_bahamas.json",
+   "count": 636,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Bahrain",
+   "file": "uhri_bahrain.json",
+   "count": 1359,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Bangladesh",
+   "file": "uhri_bangladesh.json",
+   "count": 1515,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Barbados",
+   "file": "uhri_barbados.json",
+   "count": 634,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Belarus",
+   "file": "uhri_belarus.json",
+   "count": 1795,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Belgium",
+   "file": "uhri_belgium.json",
+   "count": 1734,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Belize",
+   "file": "uhri_belize.json",
+   "count": 675,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Benin",
+   "file": "uhri_benin.json",
+   "count": 1451,
+   "region": "Africa"
+  },
+  {
+   "name": "Bhutan",
+   "file": "uhri_bhutan.json",
+   "count": 1149,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Bolivia (Plurinational State of)",
+   "file": "uhri_bolivia-plurinational-state-of.json",
+   "count": 1902,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Bosnia and Herzegovina",
+   "file": "uhri_bosnia-and-herzegovina.json",
+   "count": 1956,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Botswana",
+   "file": "uhri_botswana.json",
+   "count": 1349,
+   "region": "Africa"
+  },
+  {
+   "name": "Brazil",
+   "file": "uhri_brazil.json",
+   "count": 2245,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Brunei Darussalam",
+   "file": "uhri_brunei-darussalam.json",
+   "count": 858,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Bulgaria",
+   "file": "uhri_bulgaria.json",
+   "count": 1772,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Burkina Faso",
+   "file": "uhri_burkina-faso.json",
+   "count": 1552,
+   "region": "Africa"
+  },
+  {
+   "name": "Burundi",
+   "file": "uhri_burundi.json",
+   "count": 1325,
+   "region": "Africa"
+  },
+  {
+   "name": "Cabo Verde",
+   "file": "uhri_cabo-verde.json",
+   "count": 1068,
+   "region": "Africa"
+  },
+  {
+   "name": "Cambodia",
+   "file": "uhri_cambodia.json",
+   "count": 1534,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Cameroon",
+   "file": "uhri_cameroon.json",
+   "count": 1487,
+   "region": "Africa"
+  },
+  {
+   "name": "Canada",
+   "file": "uhri_canada.json",
+   "count": 1958,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Central African Republic",
+   "file": "uhri_central-african-republic.json",
+   "count": 1033,
+   "region": "Africa"
+  },
+  {
+   "name": "Chad",
+   "file": "uhri_chad.json",
+   "count": 1422,
+   "region": "Africa"
+  },
+  {
+   "name": "Chile",
+   "file": "uhri_chile.json",
+   "count": 2341,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "China",
+   "file": "uhri_china.json",
+   "count": 2540,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Colombia",
+   "file": "uhri_colombia.json",
+   "count": 2150,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Comoros",
+   "file": "uhri_comoros.json",
+   "count": 694,
+   "region": "Africa"
+  },
+  {
+   "name": "Congo",
+   "file": "uhri_congo.json",
+   "count": 1222,
+   "region": "Africa"
+  },
+  {
+   "name": "Cook Islands",
+   "file": "uhri_cook-islands.json",
+   "count": 232,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Costa Rica",
+   "file": "uhri_costa-rica.json",
+   "count": 1666,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Croatia",
+   "file": "uhri_croatia.json",
+   "count": 1463,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Cuba",
+   "file": "uhri_cuba.json",
+   "count": 1728,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Cyprus",
+   "file": "uhri_cyprus.json",
+   "count": 1506,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Czechia",
+   "file": "uhri_czechia.json",
+   "count": 1479,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Côte d'Ivoire",
+   "file": "uhri_cote-d-ivoire.json",
+   "count": 1152,
+   "region": "Africa"
+  },
+  {
+   "name": "Democratic People's Republic of Korea",
+   "file": "uhri_democratic-people-s-republic-of-korea.json",
+   "count": 1286,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Democratic Republic of the Congo",
+   "file": "uhri_democratic-republic-of-the-congo.json",
+   "count": 1597,
+   "region": "Africa"
+  },
+  {
+   "name": "Denmark",
+   "file": "uhri_denmark.json",
+   "count": 1466,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Djibouti",
+   "file": "uhri_djibouti.json",
+   "count": 1161,
+   "region": "Africa"
+  },
+  {
+   "name": "Dominica",
+   "file": "uhri_dominica.json",
+   "count": 539,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Dominican Republic",
+   "file": "uhri_dominican-republic.json",
+   "count": 1413,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Ecuador",
+   "file": "uhri_ecuador.json",
+   "count": 1988,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Egypt",
+   "file": "uhri_egypt.json",
+   "count": 1680,
+   "region": "Africa"
+  },
+  {
+   "name": "El Salvador",
+   "file": "uhri_el-salvador.json",
+   "count": 1944,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Equatorial Guinea",
+   "file": "uhri_equatorial-guinea.json",
+   "count": 920,
+   "region": "Africa"
+  },
+  {
+   "name": "Eritrea",
+   "file": "uhri_eritrea.json",
+   "count": 1267,
+   "region": "Africa"
+  },
+  {
+   "name": "Estonia",
+   "file": "uhri_estonia.json",
+   "count": 1368,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Eswatini",
+   "file": "uhri_eswatini.json",
+   "count": 711,
+   "region": "Africa"
+  },
+  {
+   "name": "Ethiopia",
+   "file": "uhri_ethiopia.json",
+   "count": 1767,
+   "region": "Africa"
+  },
+  {
+   "name": "European Union",
+   "file": "uhri_european-union.json",
+   "count": 233,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Fiji",
+   "file": "uhri_fiji.json",
+   "count": 1142,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Finland",
+   "file": "uhri_finland.json",
+   "count": 1247,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "France",
+   "file": "uhri_france.json",
+   "count": 2164,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Gabon",
+   "file": "uhri_gabon.json",
+   "count": 1033,
+   "region": "Africa"
+  },
+  {
+   "name": "Gambia",
+   "file": "uhri_gambia.json",
+   "count": 1393,
+   "region": "Africa"
+  },
+  {
+   "name": "Georgia",
+   "file": "uhri_georgia.json",
+   "count": 1951,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Germany",
+   "file": "uhri_germany.json",
+   "count": 2087,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Ghana",
+   "file": "uhri_ghana.json",
+   "count": 1281,
+   "region": "Africa"
+  },
+  {
+   "name": "Greece",
+   "file": "uhri_greece.json",
+   "count": 1504,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Grenada",
+   "file": "uhri_grenada.json",
+   "count": 661,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Guatemala",
+   "file": "uhri_guatemala.json",
+   "count": 1928,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Guinea",
+   "file": "uhri_guinea.json",
+   "count": 1305,
+   "region": "Africa"
+  },
+  {
+   "name": "Guinea-Bissau",
+   "file": "uhri_guinea-bissau.json",
+   "count": 985,
+   "region": "Africa"
+  },
+  {
+   "name": "Guyana",
+   "file": "uhri_guyana.json",
+   "count": 1049,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Haiti",
+   "file": "uhri_haiti.json",
+   "count": 856,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Holy See",
+   "file": "uhri_holy-see.json",
+   "count": 153,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Honduras",
+   "file": "uhri_honduras.json",
+   "count": 2143,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Hungary",
+   "file": "uhri_hungary.json",
+   "count": 1446,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Iceland",
+   "file": "uhri_iceland.json",
+   "count": 1022,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "India",
+   "file": "uhri_india.json",
+   "count": 1506,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Indonesia",
+   "file": "uhri_indonesia.json",
+   "count": 1614,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Iran (Islamic Republic of)",
+   "file": "uhri_iran-islamic-republic-of.json",
+   "count": 1581,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Iraq",
+   "file": "uhri_iraq.json",
+   "count": 2089,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Ireland",
+   "file": "uhri_ireland.json",
+   "count": 1395,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Israel",
+   "file": "uhri_israel.json",
+   "count": 1898,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Italy",
+   "file": "uhri_italy.json",
+   "count": 2208,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Jamaica",
+   "file": "uhri_jamaica.json",
+   "count": 1279,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Japan",
+   "file": "uhri_japan.json",
+   "count": 1749,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Jordan",
+   "file": "uhri_jordan.json",
+   "count": 1525,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Kazakhstan",
+   "file": "uhri_kazakhstan.json",
+   "count": 2220,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Kenya",
+   "file": "uhri_kenya.json",
+   "count": 2264,
+   "region": "Africa"
+  },
+  {
+   "name": "Kiribati",
+   "file": "uhri_kiribati.json",
+   "count": 678,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Kosovo*",
+   "file": "uhri_kosovo.json",
+   "count": 75,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Kuwait",
+   "file": "uhri_kuwait.json",
+   "count": 2009,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Kyrgyzstan",
+   "file": "uhri_kyrgyzstan.json",
+   "count": 2225,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Lao People's Democratic Republic",
+   "file": "uhri_lao-people-s-democratic-republic.json",
+   "count": 1485,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Latvia",
+   "file": "uhri_latvia.json",
+   "count": 1107,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Lebanon",
+   "file": "uhri_lebanon.json",
+   "count": 1423,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Lesotho",
+   "file": "uhri_lesotho.json",
+   "count": 1155,
+   "region": "Africa"
+  },
+  {
+   "name": "Liberia",
+   "file": "uhri_liberia.json",
+   "count": 1219,
+   "region": "Africa"
+  },
+  {
+   "name": "Libya",
+   "file": "uhri_libya.json",
+   "count": 1063,
+   "region": "Africa"
+  },
+  {
+   "name": "Liechtenstein",
+   "file": "uhri_liechtenstein.json",
+   "count": 907,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Lithuania",
+   "file": "uhri_lithuania.json",
+   "count": 1322,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Luxembourg",
+   "file": "uhri_luxembourg.json",
+   "count": 1177,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Madagascar",
+   "file": "uhri_madagascar.json",
+   "count": 1216,
+   "region": "Africa"
+  },
+  {
+   "name": "Malawi",
+   "file": "uhri_malawi.json",
+   "count": 1459,
+   "region": "Africa"
+  },
+  {
+   "name": "Malaysia",
+   "file": "uhri_malaysia.json",
+   "count": 1638,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Maldives",
+   "file": "uhri_maldives.json",
+   "count": 2235,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Mali",
+   "file": "uhri_mali.json",
+   "count": 1104,
+   "region": "Africa"
+  },
+  {
+   "name": "Malta",
+   "file": "uhri_malta.json",
+   "count": 1081,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Marshall Islands",
+   "file": "uhri_marshall-islands.json",
+   "count": 786,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Mauritania",
+   "file": "uhri_mauritania.json",
+   "count": 1870,
+   "region": "Africa"
+  },
+  {
+   "name": "Mauritius",
+   "file": "uhri_mauritius.json",
+   "count": 1483,
+   "region": "Africa"
+  },
+  {
+   "name": "Mexico",
+   "file": "uhri_mexico.json",
+   "count": 2602,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Micronesia (Federated States of)",
+   "file": "uhri_micronesia-federated-states-of.json",
+   "count": 514,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Monaco",
+   "file": "uhri_monaco.json",
+   "count": 660,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Mongolia",
+   "file": "uhri_mongolia.json",
+   "count": 1839,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Montenegro",
+   "file": "uhri_montenegro.json",
+   "count": 1520,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Morocco",
+   "file": "uhri_morocco.json",
+   "count": 1610,
+   "region": "Africa"
+  },
+  {
+   "name": "Mozambique",
+   "file": "uhri_mozambique.json",
+   "count": 1166,
+   "region": "Africa"
+  },
+  {
+   "name": "Myanmar",
+   "file": "uhri_myanmar.json",
+   "count": 872,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Namibia",
+   "file": "uhri_namibia.json",
+   "count": 1331,
+   "region": "Africa"
+  },
+  {
+   "name": "Nauru",
+   "file": "uhri_nauru.json",
+   "count": 682,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Nepal",
+   "file": "uhri_nepal.json",
+   "count": 1504,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Netherlands",
+   "file": "uhri_netherlands.json",
+   "count": 2001,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "New Zealand",
+   "file": "uhri_new-zealand.json",
+   "count": 1888,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Nicaragua",
+   "file": "uhri_nicaragua.json",
+   "count": 1358,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Niger",
+   "file": "uhri_niger.json",
+   "count": 1404,
+   "region": "Africa"
+  },
+  {
+   "name": "Nigeria",
+   "file": "uhri_nigeria.json",
+   "count": 1353,
+   "region": "Africa"
+  },
+  {
+   "name": "Niue",
+   "file": "uhri_niue.json",
+   "count": 68,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "North Macedonia",
+   "file": "uhri_north-macedonia.json",
+   "count": 1398,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Norway",
+   "file": "uhri_norway.json",
+   "count": 1825,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Oman",
+   "file": "uhri_oman.json",
+   "count": 1436,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Pakistan",
+   "file": "uhri_pakistan.json",
+   "count": 1674,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Palau",
+   "file": "uhri_palau.json",
+   "count": 502,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Panama",
+   "file": "uhri_panama.json",
+   "count": 1574,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Papua New Guinea",
+   "file": "uhri_papua-new-guinea.json",
+   "count": 563,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Paraguay",
+   "file": "uhri_paraguay.json",
+   "count": 1868,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Peru",
+   "file": "uhri_peru.json",
+   "count": 1863,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Philippines",
+   "file": "uhri_philippines.json",
+   "count": 1732,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Poland",
+   "file": "uhri_poland.json",
+   "count": 1689,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Portugal",
+   "file": "uhri_portugal.json",
+   "count": 1799,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Qatar",
+   "file": "uhri_qatar.json",
+   "count": 1810,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Republic of Korea",
+   "file": "uhri_republic-of-korea.json",
+   "count": 1736,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Republic of Moldova",
+   "file": "uhri_republic-of-moldova.json",
+   "count": 1542,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Romania",
+   "file": "uhri_romania.json",
+   "count": 1351,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Russian Federation",
+   "file": "uhri_russian-federation.json",
+   "count": 2141,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Rwanda",
+   "file": "uhri_rwanda.json",
+   "count": 1817,
+   "region": "Africa"
+  },
+  {
+   "name": "Saint Kitts and Nevis",
+   "file": "uhri_saint-kitts-and-nevis.json",
+   "count": 763,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Saint Lucia",
+   "file": "uhri_saint-lucia.json",
+   "count": 662,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Saint Vincent and the Grenadines",
+   "file": "uhri_saint-vincent-and-the-grenadines.json",
+   "count": 654,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Samoa",
+   "file": "uhri_samoa.json",
+   "count": 676,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "San Marino",
+   "file": "uhri_san-marino.json",
+   "count": 502,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Sao Tome and Principe",
+   "file": "uhri_sao-tome-and-principe.json",
+   "count": 802,
+   "region": "Africa"
+  },
+  {
+   "name": "Saudi Arabia",
+   "file": "uhri_saudi-arabia.json",
+   "count": 1417,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Senegal",
+   "file": "uhri_senegal.json",
+   "count": 1848,
+   "region": "Africa"
+  },
+  {
+   "name": "Serbia",
+   "file": "uhri_serbia.json",
+   "count": 1865,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Seychelles",
+   "file": "uhri_seychelles.json",
+   "count": 948,
+   "region": "Africa"
+  },
+  {
+   "name": "Sierra Leone",
+   "file": "uhri_sierra-leone.json",
+   "count": 1020,
+   "region": "Africa"
+  },
+  {
+   "name": "Singapore",
+   "file": "uhri_singapore.json",
+   "count": 1203,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Slovakia",
+   "file": "uhri_slovakia.json",
+   "count": 1638,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Slovenia",
+   "file": "uhri_slovenia.json",
+   "count": 1376,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "Solomon Islands",
+   "file": "uhri_solomon-islands.json",
+   "count": 570,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Somalia",
+   "file": "uhri_somalia.json",
+   "count": 982,
+   "region": "Africa"
+  },
+  {
+   "name": "South Africa",
+   "file": "uhri_south-africa.json",
+   "count": 1419,
+   "region": "Africa"
+  },
+  {
+   "name": "South Sudan",
+   "file": "uhri_south-sudan.json",
+   "count": 675,
+   "region": "Africa"
+  },
+  {
+   "name": "Spain",
+   "file": "uhri_spain.json",
+   "count": 2199,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Sri Lanka",
+   "file": "uhri_sri-lanka.json",
+   "count": 2360,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "State of Palestine*",
+   "file": "uhri_state-of-palestine.json",
+   "count": 472,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Sudan",
+   "file": "uhri_sudan.json",
+   "count": 1258,
+   "region": "Africa"
+  },
+  {
+   "name": "Suriname",
+   "file": "uhri_suriname.json",
+   "count": 818,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Sweden",
+   "file": "uhri_sweden.json",
+   "count": 2124,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Switzerland",
+   "file": "uhri_switzerland.json",
+   "count": 1868,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Syrian Arab Republic",
+   "file": "uhri_syrian-arab-republic.json",
+   "count": 1244,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Tajikistan",
+   "file": "uhri_tajikistan.json",
+   "count": 1655,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Thailand",
+   "file": "uhri_thailand.json",
+   "count": 1401,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Timor-Leste",
+   "file": "uhri_timor-leste.json",
+   "count": 976,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Togo",
+   "file": "uhri_togo.json",
+   "count": 1410,
+   "region": "Africa"
+  },
+  {
+   "name": "Tonga",
+   "file": "uhri_tonga.json",
+   "count": 479,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Trinidad and Tobago",
+   "file": "uhri_trinidad-and-tobago.json",
+   "count": 529,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Tunisia",
+   "file": "uhri_tunisia.json",
+   "count": 1658,
+   "region": "Africa"
+  },
+  {
+   "name": "Turkmenistan",
+   "file": "uhri_turkmenistan.json",
+   "count": 1561,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Tuvalu",
+   "file": "uhri_tuvalu.json",
+   "count": 792,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Türkiye",
+   "file": "uhri_turkiye.json",
+   "count": 2142,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Uganda",
+   "file": "uhri_uganda.json",
+   "count": 1170,
+   "region": "Africa"
+  },
+  {
+   "name": "Ukraine",
+   "file": "uhri_ukraine.json",
+   "count": 1765,
+   "region": "Eastern Europe"
+  },
+  {
+   "name": "United Arab Emirates",
+   "file": "uhri_united-arab-emirates.json",
+   "count": 1351,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "United Kingdom of Great Britain and Northern Ireland",
+   "file": "uhri_united-kingdom-of-great-britain-and-northern-ireland.json",
+   "count": 2400,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "United Republic of Tanzania",
+   "file": "uhri_united-republic-of-tanzania.json",
+   "count": 1021,
+   "region": "Africa"
+  },
+  {
+   "name": "United States of America",
+   "file": "uhri_united-states-of-america.json",
+   "count": 2030,
+   "region": "Western Europe & Others"
+  },
+  {
+   "name": "Uruguay",
+   "file": "uhri_uruguay.json",
+   "count": 2052,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Uzbekistan",
+   "file": "uhri_uzbekistan.json",
+   "count": 1741,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Vanuatu",
+   "file": "uhri_vanuatu.json",
+   "count": 752,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Venezuela (Bolivarian Republic of)",
+   "file": "uhri_venezuela-bolivarian-republic-of.json",
+   "count": 1465,
+   "region": "Latin America and the Caribbean"
+  },
+  {
+   "name": "Viet Nam",
+   "file": "uhri_viet-nam.json",
+   "count": 1701,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Yemen",
+   "file": "uhri_yemen.json",
+   "count": 1496,
+   "region": "Asia-Pacific"
+  },
+  {
+   "name": "Zambia",
+   "file": "uhri_zambia.json",
+   "count": 1155,
+   "region": "Africa"
+  },
+  {
+   "name": "Zimbabwe",
+   "file": "uhri_zimbabwe.json",
+   "count": 1184,
+   "region": "Africa"
+  }
+ ],
+ "datasets": {
+  "gc": {
+   "file": "gc.json",
+   "count": 7304
+  },
+  "hrc": {
+   "file": "hrc.json",
+   "count": 382
+  },
+  "pdf_text": {
+   "file": "pdf_text.json",
+   "count": 20
+  },
+  "library": {
+   "file": "library.json",
+   "count": 10
+  },
+  "wiki": {
+   "file": "wiki.json",
+   "count": 40
+  }
+ }
+}

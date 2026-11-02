@@ -1,0 +1,580 @@
+I built a single-page briefing checker: a resolution picker (defaulting to A/HRC/RES/51/27) with its recorded vote shown as both official totals and a roll call counted from the votes map, an "Ask AI for a briefing" button that sends only the symbol and title to `studio.ask` and fills an editable text box (marked `data-source="ai"`), and a "Check" button that deterministically extracts vote-count, date, session and per-State claims from the text and verdicts each against the recorded vote in a table.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Briefing checker — Human Rights Council recorded votes</title>
+<style>
+  :root{
+    --accent:#1f6fb2; --bg:#f4f6f9; --card:#ffffff; --ink:#1c2733;
+    --muted:#5b6b7b; --line:#dde4ec; --soft:#eef3f8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:26px 20px 64px;}
+  header h1{font-size:1.55rem; margin:0 0 6px; color:var(--accent);}
+  .sub{color:var(--muted); margin:0 0 4px; max-width:70ch;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px 22px 20px; margin-top:20px;}
+  h2{font-size:1.15rem; margin:0 0 12px; color:var(--accent);}
+  .lbl{display:block; font-weight:600; margin-bottom:6px;}
+  select{width:100%; padding:8px 10px; font:inherit; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink);}
+  .details{margin-top:14px; border-top:1px dashed var(--line); padding-top:10px;}
+  .drow{display:flex; gap:12px; padding:4px 0; align-items:baseline;}
+  .dk{flex:0 0 210px; color:var(--muted); font-size:14px;}
+  .dv{flex:1; min-width:0; overflow-wrap:anywhere;}
+  a{color:var(--accent);}
+  .note{color:var(--muted); font-size:14px; margin:10px 0 0;}
+  .how{color:var(--muted); font-size:14px; background:var(--soft); border-left:3px solid var(--accent); padding:8px 12px; border-radius:0 6px 6px 0; margin:14px 0 0;}
+  .chartBox{height:230px; margin-top:14px;}
+  .btnRow{display:flex; gap:10px; flex-wrap:wrap; margin:6px 0 10px;}
+  button{
+    font:inherit; font-weight:600; cursor:pointer; border-radius:6px; padding:9px 16px;
+    background:var(--accent); color:#fff; border:1px solid var(--accent);
+  }
+  button:hover{filter:brightness(1.07);}
+  button:disabled{opacity:.55; cursor:default;}
+  button.ghost{background:#fff; color:var(--accent);}
+  .status{margin:8px 0; padding:8px 12px; border-radius:6px; background:var(--soft); font-size:14px; display:none;}
+  .status.show{display:block;}
+  .status.err{background:#fbe3e3; color:#a11c1c;}
+  textarea{
+    width:100%; min-height:230px; font:inherit; padding:10px 12px; margin-top:8px;
+    border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); resize:vertical;
+  }
+  .hint{color:var(--muted); font-size:13.5px; margin:8px 0 0;}
+  .tableWrap{overflow-x:auto; margin-top:12px;}
+  table{border-collapse:collapse; width:100%; min-width:640px;}
+  th,td{border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; font-size:15px;}
+  th{background:var(--soft); font-size:14px;}
+  .catTag{display:inline-block; font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px;}
+  .badge{display:inline-block; padding:3px 11px; border-radius:999px; font-size:13px; font-weight:700; white-space:nowrap;}
+  .b-match{background:#e2f3e5; color:#1c6b2f;}
+  .b-wrong{background:#fbe3e3; color:#a11c1c;}
+  .b-cant{background:#eceff3; color:#5b6b7b;}
+  .summary{font-weight:600; margin:12px 0 4px;}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:14px; font-size:14px; color:var(--muted);}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Briefing checker — Human Rights Council recorded votes</h1>
+    <p class="sub" id="dataLine"></p>
+  </header>
+
+  <section class="card">
+    <h2>1 · Pick a recorded vote</h2>
+    <label class="lbl" for="resSelect">Resolution or amendment (recorded vote):</label>
+    <select id="resSelect"></select>
+    <div class="details" id="details"></div>
+    <p class="note" id="rollNote"></p>
+    <div class="chartBox"><canvas id="voteChart"></canvas></div>
+    <p class="how"><strong>How this is computed:</strong> the “official totals” are the yes / no / abstain fields of the selected record; the “roll call” is counted on this page from the record’s votes map (one entry per Council member). For a few records the two differ because of gaps in the source — both are always shown, never silently picked. The chart plots both.</p>
+  </section>
+
+  <section class="card">
+    <h2>2 · Briefing text (AI or your own)</h2>
+    <p class="note">The button below sends <strong>only the symbol and the title</strong> of the selected resolution to the language model — none of the workshop data. It is slow and costs money; you can press Stop and the answer will be discarded. The answer lands in the text box marked <code>data-source="ai"</code>; you can edit it or paste your own text at any time.</p>
+    <div class="btnRow">
+      <button id="askBtn" type="button">Ask AI for a briefing</button>
+      <button id="stopBtn" type="button" class="ghost" style="display:none">Stop (discard the answer)</button>
+    </div>
+    <p class="status" id="aiStatus"></p>
+    <textarea id="briefText" placeholder="Ask AI for a briefing, or paste your own text here, then press Check below."></textarea>
+    <p class="hint">Claims the checker recognises in the text: numbers such as “29 votes in favour”, “16 against”, “1 abstention”, “29-16-1”; dates such as “7 July 2026”, “July 7, 2026” or “2026-07-07”; the session such as “51st session”; and State votes such as “Kenya voted in favour”, “France voted against”, “China abstained”, “X did not vote”.</p>
+  </section>
+
+  <section class="card">
+    <h2>3 · Check the text against the recorded vote</h2>
+    <div class="btnRow"><button id="checkBtn" type="button">Check</button></div>
+    <div id="results"></div>
+    <div class="legend">
+      <span><span class="badge b-match">matches</span> the recorded vote agrees with the claim</span>
+      <span><span class="badge b-wrong">wrong</span> the recorded vote directly contradicts the claim</span>
+      <span><span class="badge b-cant">cannot be checked</span> this data has no value to compare against</span>
+    </div>
+    <p class="how"><strong>“Cannot be checked” is not the same as “wrong”.</strong> “Wrong” means the recorded vote contradicts the claim (for example the text says 30 in favour but the record says 29). “Cannot be checked” means this dataset simply has nothing to compare — for example the State is not in the roll call for this vote (the votes map has gaps), or the record has no session number. It is an absence of evidence here, not evidence of an error.<br><br>
+    <strong>How this is computed:</strong> every claim above is found by deterministic text matching (regular expressions) in the text box and compared with the selected record’s fields (yes/no/abstain totals, the roll call counted from the votes map, date, session, votes). Counting, filtering and matching are done by this page’s code — nothing is estimated, and no AI is used for the check.</p>
+  </section>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+var W = window.WORKSHOP_DATA || {};
+var HRC = W.hrc || {records:[], countries:{}, vote_codes:{}};
+var records = Array.isArray(HRC.records) ? HRC.records : [];
+var countries = HRC.countries || {};
+var voteCodes = HRC.vote_codes || {Y:'Yes', N:'No', A:'Abstain'};
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+function tn(s){ return document.createTextNode(s==null || s==='' ? '—' : String(s)); }
+function pad(n){ return (n<10?'0':'')+n; }
+function voteLabel(code){
+  if (voteCodes && voteCodes[code]) return voteCodes[code];
+  return code==='Y' ? 'in favour' : code==='N' ? 'against' : code==='A' ? 'abstaining' : code;
+}
+
+/* ---------- header line ---------- */
+var years = records.map(function(r){ return r.year; }).filter(function(y){ return typeof y==='number'; });
+$('dataLine').textContent =
+  'Source: Human Rights Council recorded votes (window.WORKSHOP_DATA.hrc, from the OHCHR Search Library) — ' +
+  records.length + ' recorded votes' +
+  (years.length ? ', ' + Math.min.apply(null,years) + '–' + Math.max.apply(null,years) : '') +
+  '. Every number on this page is counted from these records by the page itself; nothing is estimated.';
+
+/* ---------- resolution picker ---------- */
+var sel = $('resSelect');
+var sorted = records.slice().sort(function(a,b){
+  return ((b.year||0)-(a.year||0)) || String(a.symbol||'').localeCompare(String(b.symbol||''));
+});
+sorted.forEach(function(r,i){
+  var o = document.createElement('option');
+  o.value = String(i);
+  o.textContent = (r.symbol || '(no symbol)') + ' — ' + (r.title || '');
+  sel.appendChild(o);
+});
+var defIdx = 0;
+for (var i=0;i<sorted.length;i++){ if (sorted[i].symbol === 'A/HRC/RES/51/27'){ defIdx = i; break; } }
+sel.value = String(defIdx);
+
+function rollCounts(rec){
+  var v = rec.votes || {}, y=0, n=0, a=0;
+  for (var k in v){ var c = v[k]; if (c==='Y') y++; else if (c==='N') n++; else if (c==='A') a++; }
+  return {y:y, n:n, a:a, total:Object.keys(v).length};
+}
+
+/* ---------- chart ---------- */
+var chart = null;
+if (window.Chart && records.length){
+  chart = new Chart($('voteChart').getContext('2d'), {
+    type:'bar',
+    data:{ labels:['In favour','Against','Abstaining'], datasets:[
+      {label:'Official totals (record fields)', data:[0,0,0], backgroundColor:'#1f6fb2'},
+      {label:'Roll call (counted from the votes map)', data:[0,0,0], backgroundColor:'#9cc3e5'}
+    ]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      scales:{ x:{ beginAtZero:true, title:{display:true, text:'Votes'} } },
+      plugins:{ legend:{ position:'bottom' } } }
+  });
+} else { $('voteChart').style.display='none'; }
+
+/* ---------- details panel ---------- */
+function mkLink(url, label){
+  var a = document.createElement('a');
+  a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = label;
+  return a;
+}
+function renderDetails(){
+  var rec = sorted[+sel.value];
+  var d = $('details');
+  d.innerHTML = '';
+  if (!rec){
+    d.appendChild(tn('No recorded votes are present in the data.'));
+    return;
+  }
+  function addRow(k, node){
+    var div = document.createElement('div'); div.className='drow';
+    var kk = document.createElement('span'); kk.className='dk'; kk.textContent=k;
+    var vv = document.createElement('span'); vv.className='dv'; vv.appendChild(node);
+    div.appendChild(kk); div.appendChild(vv); d.appendChild(div);
+  }
+  var sym = document.createElement('span');
+  var a = document.createElement('a');
+  a.textContent = rec.symbol || '—';
+  var url = rec.doc_url || rec.record_url || '';
+  if (url){ a.href = url; a.target='_blank'; a.rel='noopener'; }
+  sym.appendChild(a);
+  addRow('Symbol (linked to the document)', sym);
+  addRow('Title', tn(rec.title));
+  addRow('Kind', tn(rec.kind));
+  addRow('Date', tn(rec.date));
+  addRow('Session', tn(rec.session));
+  addRow('Agenda item', tn(rec.agenda_item));
+  addRow('Main sponsors', tn((rec.main_sponsors && rec.main_sponsors.length) ? rec.main_sponsors.join('; ') : ''));
+  addRow('Official totals', tn('in favour ' + rec.yes + ' · against ' + rec.no + ' · abstaining ' + rec.abstain));
+  var roll = rollCounts(rec);
+  addRow('Roll call (counted here)', tn('in favour ' + roll.y + ' · against ' + roll.n + ' · abstaining ' + roll.a + ' · ' + roll.total + ' members listed in the votes map'));
+  var links = document.createElement('span');
+  if (rec.doc_url){ links.appendChild(mkLink(rec.doc_url, 'Resolution text (UN Docs)')); links.appendChild(tn(' · ')); }
+  if (rec.record_url){ links.appendChild(mkLink(rec.record_url, 'OHCHR Search Library record')); }
+  addRow('Links', links);
+
+  var same = (roll.y===rec.yes && roll.n===rec.no && roll.a===rec.abstain);
+  $('rollNote').textContent = same
+    ? 'For this record the roll call counted from the votes map equals the official totals.'
+    : 'For this record the roll call counted from the votes map differs from the official totals (gaps in the source). Both are shown; the checker compares claims against the official totals and also reports a match with the roll call.';
+
+  if (chart){
+    chart.data.datasets[0].data = [rec.yes||0, rec.no||0, rec.abstain||0];
+    chart.data.datasets[1].data = [roll.y, roll.n, roll.a];
+    chart.update();
+  }
+  var res = $('results');
+  res.innerHTML = '';
+  var p = document.createElement('p'); p.className='note';
+  p.textContent = 'Press “Check” to compare the text box with this recorded vote.';
+  res.appendChild(p);
+}
+sel.addEventListener('change', renderDetails);
+
+/* ---------- country names ---------- */
+var nameMap = {}, nameList = [];
+function addName(name, iso){
+  var k = String(name).toLowerCase().replace(/\s+/g,' ').replace(/^the\s+/,'').trim();
+  if (!k) return;
+  if (!nameMap[k]){ nameMap[k] = iso; nameList.push(name); }
+}
+(function buildNames(){
+  for (var iso in countries){
+    var nm = countries[iso]; if (!nm) continue;
+    addName(nm, iso);
+    addName(String(nm).replace(/\s*\(.*?\)\s*/g,' ').replace(/\s+/g,' ').trim(), iso);
+  }
+  var ALIASES = {
+    'united states':'USA','united states of america':'USA','usa':'USA','u.s.':'USA',
+    'russia':'RUS','russian federation':'RUS','south korea':'KOR','republic of korea':'KOR',
+    'north korea':'PRK',"democratic people's republic of korea":'PRK',
+    'ivory coast':'CIV',"côte d'ivoire":'CIV','cote divoire':'CIV','vietnam':'VNM','turkey':'TUR','türkiye':'TUR',
+    'bolivia':'BOL','venezuela':'VEN','iran':'IRN','syria':'SYR','tanzania':'TZA','moldova':'MDA','laos':'LAO',
+    'micronesia':'FSM','cape verde':'CPV','czech republic':'CZE','czechia':'CZE','north macedonia':'MKD',
+    'eswatini':'SWZ','swaziland':'SWZ','the gambia':'GMB','united kingdom':'GBR','great britain':'GBR','britain':'GBR','uk':'GBR',
+    'democratic republic of the congo':'COD','republic of the congo':'COG','south africa':'ZAF','myanmar':'MMR','burma':'MMR'
+  };
+  for (var a in ALIASES){ if (countries[ALIASES[a]]) addName(a, ALIASES[a]); }
+  nameList.sort(function(x,y){ return y.length - x.length; });
+})();
+function lookupName(s){
+  var k = String(s).toLowerCase().replace(/\s+/g,' ').replace(/^the\s+/,'').trim();
+  return nameMap[k] || null;
+}
+function statesInSubject(subject){
+  var res = [], s = String(subject).replace(/\s+/g,' ').trim();
+  function tryAdd(str){
+    var iso = lookupName(str);
+    if (iso && res.indexOf(iso) === -1) res.push(iso);
+    return !!iso;
+  }
+  if (tryAdd(s)) return res;
+  var parts = s.split(/\s*,\s*/);
+  for (var p=0; p<parts.length; p++){
+    if (tryAdd(parts[p])) continue;
+    var words = parts[p].split(/\s+/);
+    for (var len=Math.min(4,words.length); len>=1; len--){
+      for (var j=0; j+len<=words.length; j++){
+        tryAdd(words.slice(j,j+len).join(' '));
+      }
+    }
+  }
+  return res;
+}
+
+/* ---------- claim extraction (deterministic) ---------- */
+var MONTHS = {january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12};
+
+function extractDates(text){
+  var out = [], seen = {};
+  function push(claim, iso){
+    var k = claim.toLowerCase();
+    if (seen[k]) return; seen[k]=1; out.push({claim:claim, iso:iso});
+  }
+  var m, re;
+  re = /\b(\d{4})-(\d{1,2})-(\d{1,2})\b/g;
+  while ((m = re.exec(text))){
+    var y=+m[1], mo=+m[2], d=+m[3];
+    if (mo>=1 && mo<=12 && d>=1 && d<=31) push(m[0], y+'-'+pad(mo)+'-'+pad(d));
+  }
+  re = /\b(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)\s*,?\s+(\d{4})\b/g;
+  while ((m = re.exec(text))){
+    var mo2 = MONTHS[m[2].toLowerCase()];
+    if (mo2){ var d2=+m[1], y2=+m[3]; if (d2>=1 && d2<=31) push(m[0], y2+'-'+pad(mo2)+'-'+pad(d2)); }
+  }
+  re = /\b([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})\b/g;
+  while ((m = re.exec(text))){
+    var mo3 = MONTHS[m[1].toLowerCase()];
+    if (mo3){ var d3=+m[2], y3=+m[3]; if (d3>=1 && d3<=31) push(m[0], y3+'-'+pad(mo3)+'-'+pad(d3)); }
+  }
+  return out;
+}
+
+function extractCounts(text){
+  var out = [], seen = {};
+  function push(claim, cat, val){
+    var k = cat+'|'+val+'|'+claim.toLowerCase();
+    if (seen[k]) return; seen[k]=1; out.push({claim:claim, cat:cat, val:val});
+  }
+  var pats = [
+    {re:/(\d+)\s*(?:votes?|ballots?)?\s*(?:in\s+favo[u]?r|for|yes)\b/gi, cat:'yes'},
+    {re:/(\d+)\s*(?:votes?|ballots?)?\s*against\b/gi, cat:'no'},
+    {re:/(\d+)\s*(?:votes?|ballots?)?\s*abstain\w*/gi, cat:'abstain'},
+    {re:/(\d+)\s*(?:votes?|ballots?)?\s*no\b/gi, cat:'no'}
+  ];
+  for (var i=0;i<pats.length;i++){
+    var re = pats[i].re; re.lastIndex = 0; var m;
+    while ((m = re.exec(text))) push(m[0].trim(), pats[i].cat, +m[1]);
+  }
+  var dash = /(\d+)\s*[-–—]\s*(\d+)\s*[-–—]\s*(\d+)/g, mm;
+  while ((mm = dash.exec(text))){
+    var ctx = text.slice(Math.max(0,mm.index-50), mm.index+mm[0].length+50);
+    if (/favo|against|abstain/i.test(ctx)){
+      var label = mm[0] + ' (read as in favour–against–abstaining)';
+      push(label,'yes',+mm[1]); push(label,'no',+mm[2]); push(label,'abstain',+mm[3]);
+    }
+  }
+  return out;
+}
+
+function extractSessions(text){
+  var out = [], seen = {};
+  function push(claim, num){
+    var k = claim.toLowerCase();
+    if (seen[k]) return; seen[k]=1; out.push({claim:claim, num:num});
+  }
+  var m, re;
+  re = /\b(?:at\s+its\s+)?(\d{1,2})(?:st|nd|rd|th)\s+session\b/gi;
+  while ((m = re.exec(text))) push(m[0], +m[1]);
+  re = /\bsession\s+(?:no\.?\s*)?(\d{1,2})\b/gi;
+  while ((m = re.exec(text))) push(m[0], +m[1]);
+  return out;
+}
+
+function wayCode(phrase){
+  var s = ' ' + phrase.toLowerCase() + ' ';
+  if (/did\s+not\s+vote/.test(s)) return 'absent';
+  if (/abstain/.test(s)) return 'A';
+  if (/against/.test(s) || /\bno\b/.test(s)) return 'N';
+  return 'Y';
+}
+
+function extractStates(text){
+  var claims = [], seen = {};
+  function push(iso, way, claim){
+    var k = iso + '|' + way;
+    if (seen[k]) return; seen[k]=1;
+    claims.push({iso:iso, way:way, claim:claim});
+  }
+  /* pass 1: subject lists, e.g. "France and Germany voted against" */
+  var subj = /\b((?:[A-Z][A-Za-z'’.\-]*|of|the|and|de|del|van|von|al|bin|el|la|le|du|di)(?:\s+(?:[A-Z][A-Za-z'’.\-]*|of|the|and|de|del|van|von|al|bin|el|la|le|du|di)){0,5})\s+(voted\s+(?:in\s+favo[u]?r|for|against|yes|no|to\s+abstain)|abstained|did\s+not\s+vote)\b/gi;
+  var m;
+  while ((m = subj.exec(text))){
+    var isos = statesInSubject(m[1]);
+    for (var i=0;i<isos.length;i++) push(isos[i], wayCode(m[2]), m[0].trim());
+  }
+  /* pass 2: a single State immediately before the verb phrase */
+  for (var n=0;n<nameList.length;n++){
+    var name = nameList[n], iso = nameMap[name.toLowerCase().replace(/\s+/g,' ').replace(/^the\s+/,'').trim()];
+    if (!iso) continue;
+    var re = new RegExp('\\b' + esc(name) + '\\s+(voted\\s+(?:in\\s+favo[u]?r|for|against|yes|no|to\\s+abstain)|abstained|did\\s+not\\s+vote)\\b', 'gi');
+    while ((m = re.exec(text))) push(iso, wayCode(m[1]), m[0].trim());
+  }
+  return claims;
+}
+
+/* ---------- checking ---------- */
+function currentRec(){ return sorted[+sel.value]; }
+
+function checkText(){
+  var rec = currentRec();
+  var res = $('results');
+  res.innerHTML = '';
+  if (!rec){ res.appendChild(tn('No recorded vote selected.')); return; }
+  var text = $('briefText').value;
+  if (!text || !text.trim()){
+    var p0 = document.createElement('p'); p0.className='note';
+    p0.textContent = 'Nothing to check — the text box is empty. Ask AI for a briefing or paste your own text first.';
+    res.appendChild(p0); return;
+  }
+  var roll = rollCounts(rec);
+  var official = {yes:rec.yes, no:rec.no, abstain:rec.abstain};
+  var rollMap  = {yes:roll.y, no:roll.n, abstain:roll.a};
+  var rows = [];
+
+  extractCounts(text).forEach(function(c){
+    var off = official[c.cat], rl = rollMap[c.cat];
+    var verdict, note = '';
+    if (off === c.val) verdict = 'matches';
+    else if (rl === c.val){ verdict = 'matches'; note = ' (matches the roll call counted from the votes map; the official total differs)'; }
+    else verdict = 'wrong';
+    var word = c.cat==='yes' ? 'in favour' : c.cat==='no' ? 'against' : 'abstaining';
+    rows.push({cat:'Vote count', claim:c.claim,
+      says:'Recorded for this vote — ' + word + ': official total ' + off + '; roll call counted from the votes map ' + rl + ' (' + roll.total + ' members listed).' + note,
+      verdict:verdict});
+  });
+
+  var recDate = rec.date ? String(rec.date) : '';
+  extractDates(text).forEach(function(d){
+    var verdict = recDate ? (d.iso === recDate ? 'matches' : 'wrong') : 'cannot be checked';
+    rows.push({cat:'Date', claim:d.claim,
+      says: recDate ? 'Recorded date of this vote: ' + recDate + '.' : 'This record has no date field, so the claim cannot be compared.',
+      verdict:verdict});
+  });
+
+  var sm = String(rec.session||'').match(/\d+/);
+  var recSess = sm ? +sm[0] : null;
+  extractSessions(text).forEach(function(s){
+    var verdict = recSess===null ? 'cannot be checked' : (s.num === recSess ? 'matches' : 'wrong');
+    rows.push({cat:'Session', claim:s.claim,
+      says: recSess===null
+        ? 'This record has no session number (session field: "' + (rec.session||'') + '"), so the claim cannot be compared.'
+        : 'Recorded session of this vote: "' + rec.session + '" (session ' + recSess + ').',
+      verdict:verdict});
+  });
+
+  var votes = rec.votes || {};
+  extractStates(text).forEach(function(st){
+    var name = countries[st.iso] || st.iso;
+    var wayWord = st.way==='Y' ? 'in favour' : st.way==='N' ? 'against' : st.way==='A' ? 'abstaining' : 'not voting';
+    if (st.way === 'absent'){
+      if (st.iso in votes){
+        rows.push({cat:'State vote', claim:st.claim,
+          says:'Roll call: ' + name + ' (' + st.iso + ') is recorded as voting ' + votes[st.iso] + ' (' + voteLabel(votes[st.iso]) + ') — so “did not vote” contradicts the roll call.',
+          verdict:'wrong'});
+      } else {
+        rows.push({cat:'State vote', claim:st.claim,
+          says:name + ' (' + st.iso + ') is not in the roll call for this vote (' + Object.keys(votes).length + ' members recorded; the source has gaps), so this cannot be verified here.',
+          verdict:'cannot be checked'});
+      }
+    } else if (st.iso in votes){
+      var code = votes[st.iso];
+      rows.push({cat:'State vote', claim:st.claim,
+        says:'Roll call: ' + name + ' (' + st.iso + ') = ' + code + ' (' + voteLabel(code) + '). The claim says ' + wayWord + '.',
+        verdict: code === st.way ? 'matches' : 'wrong'});
+    } else {
+      rows.push({cat:'State vote', claim:st.claim,
+        says:name + ' (' + st.iso + ') is not in the roll call for this vote (' + Object.keys(votes).length + ' members recorded; the source has gaps), so this cannot be verified here.',
+        verdict:'cannot be checked'});
+    }
+  });
+
+  /* summary */
+  var m = rows.filter(function(r){return r.verdict==='matches';}).length;
+  var w = rows.filter(function(r){return r.verdict==='wrong';}).length;
+  var c = rows.filter(function(r){return r.verdict==='cannot be checked';}).length;
+  var sum = document.createElement('p'); sum.className='summary';
+  sum.appendChild(document.createTextNode('Checked ' + rows.length + ' claim(s) in the text against the recorded vote '));
+  var link = document.createElement('a');
+  link.href = rec.doc_url || rec.record_url || '#'; link.target='_blank'; link.rel='noopener';
+  link.textContent = rec.symbol || '(no symbol)';
+  sum.appendChild(link);
+  sum.appendChild(document.createTextNode(': ' + m + ' match, ' + w + ' wrong, ' + c + ' cannot be checked.'));
+  res.appendChild(sum);
+
+  var cats = {'Vote count':0, 'Date':0, 'Session':0, 'State vote':0};
+  rows.forEach(function(r){ cats[r.cat]++; });
+  var found = Object.keys(cats).filter(function(k){return cats[k]>0;})
+    .map(function(k){ return cats[k] + ' ' + k.toLowerCase() + ' claim' + (cats[k]>1?'s':''); });
+  var missing = Object.keys(cats).filter(function(k){return cats[k]===0;});
+  var fp = document.createElement('p'); fp.className='note';
+  fp.textContent = 'Found in the text: ' + (found.length ? found.join(', ') : 'no checkable claims') +
+    (missing.length ? '. Not found in the text: ' + missing.join(', ').toLowerCase() + '.' : '.');
+  res.appendChild(fp);
+
+  if (!rows.length){
+    var p2 = document.createElement('p'); p2.className='note';
+    p2.textContent = 'No checkable claims were found in the text (see the recognised patterns above the text box).';
+    res.appendChild(p2);
+    return;
+  }
+
+  var wrap = document.createElement('div'); wrap.className='tableWrap';
+  var t = document.createElement('table');
+  var thead = document.createElement('thead');
+  var htr = document.createElement('tr');
+  ['#','Claim as written','What the recorded vote says','Verdict'].forEach(function(h){
+    var th = document.createElement('th'); th.textContent = h; htr.appendChild(th);
+  });
+  thead.appendChild(htr); t.appendChild(thead);
+  var tbody = document.createElement('tbody');
+  rows.forEach(function(r, idx){
+    var tr = document.createElement('tr');
+    var td1 = document.createElement('td'); td1.textContent = String(idx+1);
+    var td2 = document.createElement('td');
+    var tag = document.createElement('span'); tag.className='catTag'; tag.textContent = r.cat;
+    td2.appendChild(tag); td2.appendChild(document.createElement('br'));
+    td2.appendChild(document.createTextNode('“' + r.claim + '”'));
+    var td3 = document.createElement('td'); td3.textContent = r.says;
+    var td4 = document.createElement('td');
+    var b = document.createElement('span');
+    b.className = 'badge ' + (r.verdict==='matches' ? 'b-match' : r.verdict==='wrong' ? 'b-wrong' : 'b-cant');
+    b.textContent = r.verdict;
+    td4.appendChild(b);
+    tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
+    tbody.appendChild(tr);
+  });
+  t.appendChild(tbody);
+  wrap.appendChild(t);
+  res.appendChild(wrap);
+}
+$('checkBtn').addEventListener('click', checkText);
+
+/* ---------- Ask AI ---------- */
+var asking = false, stopFlag = false;
+function setStatus(msg, isErr){
+  var s = $('aiStatus');
+  s.textContent = msg;
+  s.className = 'status show' + (isErr ? ' err' : '');
+}
+$('askBtn').addEventListener('click', async function(){
+  if (asking) return;
+  var rec = currentRec();
+  if (!rec) return;
+  if (!(window.studio && typeof window.studio.ask === 'function')){
+    setStatus('studio.ask is not available in this environment, so no briefing can be requested here.', true);
+    return;
+  }
+  asking = true; stopFlag = false;
+  $('askBtn').disabled = true;
+  $('stopBtn').style.display = 'inline-block';
+  setStatus('Sending to the model: 1 item — the symbol and title only (“' + rec.symbol + '” — “' + rec.title + '”). None of the workshop data is sent; this text left your browser. Waiting for the answer…');
+  var prompt = 'Write a briefing of about 250 words on the United Nations Human Rights Council resolution with symbol "' +
+    rec.symbol + '" titled "' + rec.title + '". Use only your own knowledge; no data is provided with this request and none should be assumed. Return plain text only.';
+  try {
+    var raw = await window.studio.ask(prompt, {json:true});
+    if (stopFlag){
+      setStatus('Stopped — the answer arrived after you pressed Stop and was discarded. Nothing was added to the text box.');
+    } else {
+      var txt = String(raw == null ? '' : raw);
+      try {
+        var p = JSON.parse(txt);
+        if (typeof p === 'string') txt = p;
+        else if (p && typeof p === 'object') txt = String(p.briefing || p.text || p.answer || p.content || p.message || txt);
+      } catch(e){ /* keep raw text */ }
+      var ta = $('briefText');
+      ta.value = txt;
+      ta.setAttribute('data-source','ai');
+      var wc = txt.trim() ? txt.trim().split(/\s+/).length : 0;
+      setStatus('Briefing received from the model (' + wc + ' words) and placed in the text box, marked data-source="ai". It was generated from the symbol and title only — none of the workshop data was sent. Edit it or paste your own text, then press Check.');
+    }
+  } catch(err){
+    setStatus('The model request failed: ' + err, true);
+  } finally {
+    asking = false;
+    $('askBtn').disabled = false;
+    $('stopBtn').style.display = 'none';
+  }
+});
+$('stopBtn').addEventListener('click', function(){
+  if (asking){ stopFlag = true; setStatus('Stop requested — if an answer arrives it will be discarded.'); }
+});
+$('briefText').addEventListener('input', function(){
+  $('briefText').removeAttribute('data-source');
+  setStatus('The text box now holds your own text (no longer marked data-source="ai"). Press Check to verify it against the recorded vote.');
+});
+
+/* ---------- init ---------- */
+renderDetails();
+})();
+</script>
+</body>
+</html>
+```

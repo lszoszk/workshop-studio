@@ -1,0 +1,170 @@
+{
+  "version": "2026-11-01",
+  "title": "Workshop Studio",
+  "event": "AI for Human Rights Professionals · Geneva Human Rights Hub · ITU, 4 December 2026",
+  "default_country": "Kenya",
+  "default_model": "mistral",
+  "routes": [
+    {
+      "id": "vm",
+      "type": "server",
+      "label": "University server (Poznań)",
+      "base": "https://150.254.115.204/studio-api"
+    },
+    {
+      "id": "worker",
+      "type": "server",
+      "label": "Backup server",
+      "base": "https://studio-api.lszoszk.workers.dev"
+    },
+    {
+      "id": "direct",
+      "type": "direct",
+      "label": "Direct connection to the model service"
+    },
+    {
+      "id": "replay",
+      "type": "replay",
+      "label": "Recorded answers: no model is called"
+    }
+  ],
+  "models": {
+    "mistral": {
+      "host_region": "the EU",
+      "label": "Mistral Large 4",
+      "maker": "Mistral AI",
+      "origin": "France",
+      "region": "Europe",
+      "host": "Mistral",
+      "host_note": "the developer's own service, in the EU",
+      "openrouter": "mistralai/mistral-large-4-0",
+      "provider": "mistral/eu",
+      "price": "$0.77 in / $2.31 out per million tokens",
+      "reasoning": "high"
+    },
+    "claude": {
+      "host_region": "the US",
+      "label": "Claude Sonnet 5.5",
+      "maker": "Anthropic",
+      "origin": "USA",
+      "region": "USA",
+      "host": "Amazon Bedrock",
+      "host_note": "Amazon's cloud (AWS)",
+      "openrouter": "anthropic/claude-sonnet-5.5",
+      "provider": "amazon-bedrock/us-east-1",
+      "price": "$2.20 in / $11 out per million tokens",
+      "reasoning": "high"
+    },
+    "glm-eu": {
+      "host_region": "the EU",
+      "label": "GLM-5.3 (run in the EU)",
+      "maker": "Z.AI (Zhipu)",
+      "origin": "China",
+      "region": "China",
+      "host": "Mistral",
+      "host_note": "an open-weights Chinese model, run by Mistral in the EU",
+      "openrouter": "z-ai/glm-5.3",
+      "provider": "mistral/nvfp4/eu",
+      "price": "$1.54 in / $4.84 out per million tokens",
+      "reasoning": "high"
+    },
+    "glm-cn": {
+      "host_region": "China",
+      "label": "GLM-5.3 (developer's service)",
+      "maker": "Z.AI (Zhipu)",
+      "origin": "China",
+      "region": "China",
+      "host": "Z.AI",
+      "host_note": "the developer's own service",
+      "openrouter": "z-ai/glm-5.3",
+      "provider": "z-ai",
+      "price": "$1.40 in / $4.40 out per million tokens",
+      "reasoning": "high"
+    }
+  },
+  "model_groups": [
+    {
+      "label": "Europe",
+      "ids": [
+        "mistral"
+      ]
+    },
+    {
+      "label": "USA",
+      "ids": [
+        "claude"
+      ]
+    },
+    {
+      "label": "China",
+      "ids": [
+        "glm-eu",
+        "glm-cn"
+      ]
+    }
+  ],
+  "direct_system": {
+    "inapp": "You are called from inside a data app built in a workshop. Answer only what is asked. If JSON is requested, reply with JSON only, no prose and no code fences.",
+    "question": null
+  },
+  "replay": {
+    "model": "mistral",
+    "dir": "replay/mistral/"
+  },
+  "author": {
+    "name": "Łukasz Szoszkiewicz",
+    "url": "https://lszoszk.github.io/",
+    "place": "Adam Mickiewicz University, Poznań",
+    "place_url": "https://prawo.amu.edu.pl/en/",
+    "orcid": "https://orcid.org/0000-0001-6671-2893",
+    "github": "https://github.com/lszoszk",
+    "line": "I build small open human-rights tools and teach AI literacy.",
+    "tools": [
+      {"name": "UN Human Rights Database", "url": "https://lszoszk.github.io/generalcomments/", "repo": "https://github.com/lszoszk/generalcomments",
+       "blurb": "Find and cite what UN human rights mechanisms actually wrote, paragraph by paragraph.", "with": "Zuzanna Kowalska"},
+      {"name": "UHRI+", "url": "https://lszoszk.github.io/UnitedNations_recommendations/", "repo": "https://github.com/lszoszk/UnitedNations_recommendations",
+       "blurb": "An open analytical layer over the OHCHR Universal Human Rights Index: the data behind your country file."},
+      {"name": "HUDOC Researcher", "url": "https://lszoszk.github.io/ECHR-Dashboard/", "repo": "https://github.com/lszoszk/ECHR-Dashboard",
+       "blurb": "The judgments of the European Court of Human Rights, paragraph by paragraph: search, citation checking, Cites and Cited by.", "with": "Sebastian Marcisz"},
+      {"name": "HRC Voting", "url": "https://lszoszk.github.io/hrc-voting/", "repo": "https://github.com/lszoszk/hrc-voting",
+       "blurb": "UN human rights voting records: the Commission, the Council and the General Assembly Third Committee."}
+    ]
+  },
+  "files": [
+    {"key": "uhri", "kind": "csv", "label": "{country}: UN recommendations and observations",
+     "blurb": "Every recommendation and observation addressed to {country} in the Universal Human Rights Index, with its themes and SDGs"},
+    {"key": "gc", "kind": "csv", "label": "General Comments, paragraph by paragraph",
+     "blurb": "The General Comments and General Recommendations of the UN treaty bodies"},
+    {"key": "hrc", "kind": "csv", "label": "Human Rights Council votes",
+     "blurb": "Every recorded vote since 2021, with how each member State voted"},
+    {"key": "library", "kind": "lib", "label": "Library: neurotechnology and justice (9 PDFs)",
+     "blurb": "The Secretary-General's 2026 report, a UNODC–INTERPOL paper, a civil-society submission, a national human rights institution's report, two journal articles and three General Comments. Attached, your app gets every passage with its page"},
+    {"key": "pdf_text", "kind": "pdf", "label": "CESCR General comment No. 27 (PDF)", "pdf": "files/E_C.12_GC_27.pdf",
+     "blurb": "A UN document as a PDF. Attached, your app gets its text page by page, as a PDF converter extracts it"}
+  ],
+  "trap": {
+    "ask": "Quote paragraph 97 of General comment No. 27 (2025) of the UN Committee on Economic, Social and Cultural Rights, and give the document symbol.",
+    "symbol": "E/C.12/GC/27",
+    "paragraph": 97,
+    "truth": "gc_paragraph",
+    "note": "The document has no paragraph 97. A fluent quotation here is invented, however confident it sounds; the box from the data can only show what exists. Asked whether the paragraph exists, and told to say so if unsure, models invent much less often: the wording of the question matters."
+  },
+  "questions": {
+    "uhri": {
+      "ask": "How many UN human rights recommendations and observations addressed to {country} are in the Universal Human Rights Index, and how many of them come from the Universal Periodic Review? Answer with two numbers and one sentence.",
+      "truth": "uhri_count"
+    },
+    "gc": {
+      "ask": "In the General Comments and General Recommendations of the UN treaty bodies, how many paragraphs contain the word \"climate\"? Answer with one number and one sentence.",
+      "truth": "gc_climate"
+    },
+    "hrc": {
+      "ask": "Since 2021, how many resolutions has the UN Human Rights Council adopted by a recorded vote (not counting votes on amendments)? Answer with one number and one sentence.",
+      "truth": "hrc_resolutions"
+    },
+    "pdf_text": {
+      "ask": "How many numbered paragraphs does General comment No. 27 (2025) of the UN Committee on Economic, Social and Cultural Rights have, and how many footnotes? Answer with two numbers and one sentence.",
+      "truth": "pdf_count"
+    }
+  }
+}

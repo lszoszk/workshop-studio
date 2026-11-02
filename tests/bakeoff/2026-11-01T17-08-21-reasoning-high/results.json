@@ -1,0 +1,54 @@
+[
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · USA · Amazon Bedrock",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "download": true
+  },
+  "passed": 6,
+  "total": 6,
+  "errors": [],
+  "network": [],
+  "lines": 334,
+  "seconds": 161.8,
+  "first_token": 119.5,
+  "first_thought": 3.6,
+  "reasoning_chars": 14034,
+  "prompt_tokens": 8302,
+  "completion_tokens": 22252,
+  "cost": 0.2630364,
+  "provider": "Amazon Bedrock"
+ },
+ {
+  "model": "mistral",
+  "label": "Mistral Large 4 · France · Mistral (EU)",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "download": true
+  },
+  "passed": 6,
+  "total": 6,
+  "errors": [],
+  "network": [],
+  "lines": 316,
+  "seconds": 198.5,
+  "first_token": 187.1,
+  "first_thought": 1.2,
+  "reasoning_chars": 107406,
+  "prompt_tokens": 5872,
+  "completion_tokens": 34213,
+  "cost": 0.08355347,
+  "provider": "Mistral"
+ }
+]

@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comparing two States' votes — Human Rights Council</title>
+<style>
+  :root{
+    --accent:#1f6fb2; --ink:#1c2733; --muted:#5b6b7b; --line:#d9e2ec;
+    --bg:#f5f8fb; --card:#ffffff; --warn:#8a5a00; --warn-bg:#fff4d6; --warn-line:#e8cf8a;
+    --yes:#1e7d46; --yes-bg:#e3f2e8; --no:#b3261e; --no-bg:#fbe7e5; --abs:#5f6b7a; --abs-bg:#eceff3;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 64px}
+  header.top{border-bottom:3px solid var(--accent);padding-bottom:14px;margin-bottom:20px}
+  h1{font-size:1.5rem;line-height:1.25;margin:0 0 8px;color:var(--accent)}
+  .lede{margin:0;color:var(--muted);font-size:.95rem;max-width:70ch}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:16px 18px;margin-bottom:18px;box-shadow:0 1px 2px rgba(28,39,51,.05)}
+  h2{font-size:1.08rem;margin:0 0 4px}
+  .note{font-size:.85rem;color:var(--muted);margin:4px 0 12px;max-width:90ch}
+  .controls{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end}
+  .ctl{display:flex;flex-direction:column;gap:6px}
+  .ctl label,.lbl{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;
+    background:#fff;color:var(--ink);min-width:230px;max-width:100%}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+  .seg button{font:inherit;padding:8px 14px;border:0;background:#fff;color:var(--ink);cursor:pointer}
+  .seg button + button{border-left:1px solid var(--line)}
+  .seg button.active{background:var(--accent);color:#fff}
+  #swap{font:inherit;padding:8px 12px;border:1px solid var(--line);border-radius:8px;
+    background:#fff;cursor:pointer;color:var(--accent);font-weight:700}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:6px}
+  .stat{text-align:left}
+  .stat .num{font-size:2rem;font-weight:700;color:var(--accent);line-height:1.1}
+  .stat .cap{font-size:.88rem;color:var(--muted);margin-top:4px}
+  .notice{background:var(--warn-bg);border:1px solid var(--warn-line);color:#6b4e00;
+    padding:10px 14px;border-radius:8px;font-size:.92rem;margin:0 0 18px}
+  .chartbox{position:relative;height:340px}
+  #diffWrap{overflow-x:auto}
+  table.votes{width:100%;border-collapse:collapse;min-width:640px}
+  table.votes th{font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+    text-align:left;padding:6px 8px;border-bottom:2px solid var(--line)}
+  table.votes td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:.92rem}
+  td.nowrap{white-space:nowrap}
+  .sym a{color:var(--accent);font-weight:600;overflow-wrap:anywhere}
+  .sym .rec{font-size:.76rem;font-weight:400;margin-left:6px;white-space:nowrap}
+  .kind{font-size:.76rem;color:var(--muted);margin-top:2px}
+  .ttl{overflow-wrap:anywhere}
+  .vote{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.82rem;font-weight:700;white-space:nowrap}
+  .vote.yes{background:var(--yes-bg);color:var(--yes)}
+  .vote.no{background:var(--no-bg);color:var(--no)}
+  .vote.abs{background:var(--abs-bg);color:var(--abs)}
+  .warn{display:inline-block;font-size:.76rem;color:var(--warn);background:var(--warn-bg);
+    border:1px solid var(--warn-line);padding:2px 8px;border-radius:6px}
+  .empty{color:var(--muted);font-style:italic;margin:8px 0 0}
+  footer{color:var(--muted);font-size:.82rem;margin-top:8px}
+  @media (max-width:760px){ .cards{grid-template-columns:1fr} select{min-width:0;width:100%} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>Comparing two States' votes at the Human Rights Council</h1>
+    <p class="lede" id="lede"></p>
+  </header>
+
+  <section class="card controls" aria-label="Controls">
+    <div class="ctl">
+      <label for="selA">State A</label>
+      <select id="selA"></select>
+    </div>
+    <div class="ctl">
+      <button id="swap" title="Swap State A and State B" aria-label="Swap states">⇄</button>
+    </div>
+    <div class="ctl">
+      <label for="selB">State B</label>
+      <select id="selB"></select>
+    </div>
+    <div class="ctl">
+      <span class="lbl" id="scopeLbl">Scope</span>
+      <div class="seg" id="seg" role="group" aria-labelledby="scopeLbl">
+        <button data-kind="both" class="active">Both</button>
+        <button data-kind="resolution">Resolutions</button>
+        <button data-kind="amendment">Amendments</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="noticeSlot"></div>
+
+  <section class="cards" id="statsSection">
+    <div class="card stat"><div class="num" id="nBoth">–</div><div class="cap">recorded votes both States took part in</div></div>
+    <div class="card stat"><div class="num" id="nSame">–</div><div class="cap">voted the same way (<span id="pSame">–</span>)</div></div>
+    <div class="card stat"><div class="num" id="nDiff">–</div><div class="cap">voted differently (<span id="pDiff">–</span>)</div></div>
+  </section>
+  <p class="note" id="howStats"></p>
+
+  <section class="card">
+    <h2>Timeline by year</h2>
+    <p class="note">How this is computed: for each year, the bars count the recorded votes in the selected
+      scope in which <em>both</em> selected States appear in the roll call, split into “same vote” vs
+      “different vote” (identical Y/N/A code or not). The dark line shows the share voting the same that
+      year, on the right-hand axis.</p>
+    <div class="chartbox"><canvas id="chart"></canvas></div>
+  </section>
+
+  <section class="card">
+    <h2 id="listTitle">Votes where they differed</h2>
+    <p class="note">How this is computed: every recorded vote in the selected scope where both States took
+      part but their vote codes differ, most recent first. The symbol links to the UN document (or the OHCHR
+      vote record when no document link exists). Rows marked <span class="warn">⚠ totals ≠ roll call</span>
+      are cases where the official totals (yes/no/abstain) do not match the roll call counted from the
+      record’s votes map — both figures are shown in the tooltip.</p>
+    <div id="diffWrap"></div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var HRC = window.WORKSHOP_DATA && window.WORKSHOP_DATA.hrc ? window.WORKSHOP_DATA.hrc : {records:[],countries:{}};
+  var recs = HRC.records || [];
+  var countries = HRC.countries || {};
+  var voteCodes = HRC.vote_codes || {};
+  var VOTE_LABEL = {Y:"Yes", N:"No", A:"Abstain"};
+  Object.keys(voteCodes).forEach(function(k){ VOTE_LABEL[k] = voteCodes[k]; });
+  var VOTE_CLASS = {Y:"yes", N:"no", A:"abs"};
+  var KIND_LABEL = {both:"resolutions and amendments", resolution:"resolutions", amendment:"amendments"};
+
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  /* ---- States that were Council members for at least one vote ---- */
+  var memberSet = {};
+  recs.forEach(function(r){
+    var v = r.votes || {};
+    Object.keys(v).forEach(function(code){ memberSet[code] = true; });
+  });
+  var members = Object.keys(memberSet).map(function(code){
+    return {code: code, name: countries[code] || code};
+  }).sort(function(a,b){ return a.name.localeCompare(b.name); });
+
+  /* ---- Header description ---- */
+  var years = recs.map(function(r){ return r.year || (r.date ? Number(r.date.slice(0,4)) : NaN); })
+                  .filter(function(y){ return isFinite(y); });
+  var minY = years.length ? Math.min.apply(null, years) : null;
+  var maxY = years.length ? Math.max.apply(null, years) : null;
+  var count = (HRC.count != null ? HRC.count : recs.length);
+  document.getElementById("lede").textContent =
+    "Source: " + (HRC.title || "Human Rights Council recorded votes") + " — " + count +
+    " recorded votes (resolutions and amendments), " +
+    (minY != null ? minY + "–" + maxY : "no dates") + ". " +
+    "You can pick any two of the " + members.length +
+    " States that appear in at least one roll call (vote codes: Y = yes, N = no, A = abstain).";
+
+  document.getElementById("foot").textContent =
+    "All counting, filtering and sorting on this page is done locally in your browser from the loaded dataset; nothing is estimated and no data leaves the page.";
+
+  /* ---- Controls ---- */
+  var selA = document.getElementById("selA");
+  var selB = document.getElementById("selB");
+  var kind = "both";
+  var chart = null;
+
+  members.forEach(function(m){
+    var o1 = document.createElement("option");
+    o1.value = m.code; o1.textContent = m.name + " (" + m.code + ")";
+    selA.appendChild(o1);
+    var o2 = o1.cloneNode(true);
+    selB.appendChild(o2);
+  });
+  if (members.length > 0) selA.value = members[0].code;
+  if (members.length > 1) selB.value = members[1].code;
+
+  selA.addEventListener("change", render);
+  selB.addEventListener("change", render);
+  document.getElementById("swap").addEventListener("click", function(){
+    var tmp = selA.value; selA.value = selB.value; selB.value = tmp; render();
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("#seg button"), function(btn){
+    btn.addEventListener("click", function(){
+      kind = btn.getAttribute("data-kind");
+      Array.prototype.forEach.call(document.querySelectorAll("#seg button"), function(b){
+        b.classList.toggle("active", b === btn);
+      });
+      render();
+    });
+  });
+
+  /* ---- Helpers ---- */
+  function rollCall(r){
+    var v = r.votes || {}, y = 0, n = 0, a = 0;
+    Object.keys(v).forEach(function(k){
+      var c = v[k];
+      if (c === "Y") y++; else if (c === "N") n++; else if (c === "A") a++;
+    });
+    return {y:y, n:n, a:a};
+  }
+  /* Returns mismatch details if official totals differ from the roll call, else null. */
+  function mismatch(r){
+    var v = r.votes;
+    if (!v || Object.keys(v).length === 0) return null;
+    var rc = rollCall(r);
+    var off = [r.yes, r.no, r.abstain], roll = [rc.y, rc.n, rc.a];
+    var bad = off.some(function(val, i){ return val != null && val !== roll[i]; });
+    if (!bad) return null;
+    return {official: off.map(function(x){ return x == null ? "?" : x; }).join("/"),
+            roll: roll.join("/")};
+  }
+  function yearOf(r){
+    var y = Number(r.year);
+    if (!isFinite(y) && r.date) y = Number(String(r.date).slice(0,4));
+    return isFinite(y) ? y : null;
+  }
+  function pct(part, whole){
+    return whole ? Math.round(100 * part / whole) + "%" : "–";
+  }
+
+  /* ---- Main render ---- */
+  function render(){
+    var noticeSlot = document.getElementById("noticeSlot");
+    var a = selA.value, b = selB.value;
+
+    if (members.length < 2){
+      noticeSlot.innerHTML = '<div class="notice">Fewer than two States appear in the roll calls, so there is nothing to compare.</div>';
+      return;
+    }
+    if (!a || !b){
+      noticeSlot.innerHTML = '<div class="notice">Please choose two States.</div>';
+      return;
+    }
+    if (a === b){
+      noticeSlot.innerHTML = '<div class="notice">State A and State B are the same — please pick two different States to compare.</div>';
+      document.getElementById("nBoth").textContent = "–";
+      document.getElementById("nSame").textContent = "–";
+      document.getElementById("nDiff").textContent = "–";
+      document.getElementById("pSame").textContent = "–";
+      document.getElementById("pDiff").textContent = "–";
+      document.getElementById("howStats").textContent = "";
+      document.getElementById("listTitle").textContent = "Votes where they differed";
+      document.getElementById("diffWrap").innerHTML = "";
+      if (chart){ chart.destroy(); chart = null; }
+      return;
+    }
+    noticeSlot.innerHTML = "";
+
+    var nameA = countries[a] || a, nameB = countries[b] || b;
+
+    var inScope = recs.filter(function(r){ return kind === "both" || r.kind === kind; });
+    var both = inScope.filter(function(r){
+      var v = r.votes || {};
+      return v[a] !== undefined && v[b] !== undefined;
+    });
+    var same = both.filter(function(r){ return r.votes[a] === r.votes[b]; });
+    var diff = both.filter(function(r){ return r.votes[a] !== r.votes[b]; });
+
+    /* Stats */
+    document.getElementById("nBoth").textContent = both.length;
+    document.getElementById("nSame").textContent = same.length;
+    document.getElementById("nDiff").textContent = diff.length;
+    document.getElementById("pSame").textContent = pct(same.length, both.length);
+    document.getElementById("pDiff").textContent = pct(diff.length, both.length);
+    document.getElementById("howStats").textContent =
+      "How this is computed: of the " + inScope.length + " " + KIND_LABEL[kind] +
+      " in the dataset, " + both.length + " have both " + nameA + " and " + nameB +
+      " in the roll call (the record’s votes map). “Same” means an identical vote code (Y/N/A). " +
+      "Percentages are shares of those " + both.length + " shared votes.";
+
+    /* Timeline by year */
+    var ym = {};
+    both.forEach(function(r){
+      var y = yearOf(r);
+      if (y == null) return;
+      if (!ym[y]) ym[y] = {same:0, diff:0};
+      if (r.votes[a] === r.votes[b]) ym[y].same++; else ym[y].diff++;
+    });
+    var ys = Object.keys(ym).map(Number).sort(function(x,y){ return x - y; });
+    var sameData = ys.map(function(y){ return ym[y].same; });
+    var diffData = ys.map(function(y){ return ym[y].diff; });
+    var pctData  = ys.map(function(y){
+      var t = ym[y].same + ym[y].diff;
+      return t ? Math.round(100 * ym[y].same / t) : null;
+    });
+
+    var ctx = document.getElementById("chart").getContext("2d");
+    if (chart) chart.destroy();
+    if (ys.length){
+      chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: ys.map(String),
+          datasets: [
+            {type:"bar", label:"Same vote", data:sameData, backgroundColor:"#1f6fb2", stack:"v"},
+            {type:"bar", label:"Different vote", data:diffData, backgroundColor:"#d97b29", stack:"v"},
+            {type:"line", label:"% voting the same (right axis)", data:pctData, yAxisID:"y1",
+             borderColor:"#22303c", backgroundColor:"#22303c", tension:0.25, pointRadius:3, spanGaps:false}
+          ]
+        },
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          scales:{
+            x:{stacked:true, title:{display:true, text:"Year"}},
+            y:{stacked:true, beginAtZero:true, ticks:{precision:0},
+               title:{display:true, text:"Recorded votes both States took part in"}},
+            y1:{position:"right", min:0, max:100, grid:{drawOnChartArea:false},
+                title:{display:true, text:"% same"}, ticks:{callback:function(v){ return v + "%"; }}}
+          },
+          plugins:{
+            legend:{position:"bottom"},
+            tooltip:{
+              callbacks:{
+                label:function(c){
+                  if (c.dataset.yAxisID === "y1") return "% voting the same: " + c.parsed.y + "%";
+                  return c.dataset.label + ": " + c.parsed.y;
+                },
+                footer:function(items){
+                  if (!items.length) return "";
+                  var i = items[0].dataIndex, t = sameData[i] + diffData[i];
+                  return "Both took part in " + t + " vote" + (t === 1 ? "" : "s") + " this year";
+                }
+              }
+            }
+          }
+        }
+      });
+    } else {
+      chart = null;
+      var box = document.querySelector(".chartbox");
+      box.innerHTML = '<p class="empty">No recorded votes in this scope have both States in the roll call.</p>';
+      // restore canvas for next render
+      box.innerHTML = '<canvas id="chart"></canvas>';
+    }
+
+    /* Differing votes list */
+    diff.sort(function(r1, r2){ return String(r2.date || "").localeCompare(String(r1.date || "")); });
+    document.getElementById("listTitle").textContent =
+      "Votes where " + nameA + " and " + nameB + " differed (" + diff.length + " of " + both.length + " shared " + KIND_LABEL[kind] + ")";
+
+    var html;
+    if (!diff.length){
+      html = '<p class="empty">No recorded votes in this scope where the two States voted differently.</p>';
+    } else {
+      html = '<table class="votes"><thead><tr>' +
+        "<th>Date</th><th>Document</th><th>Title</th>" +
+        "<th>" + esc(nameA) + "</th><th>" + esc(nameB) + "</th><th>Note</th>" +
+        "</tr></thead><tbody>";
+      diff.forEach(function(r){
+        var va = r.votes[a], vb = r.votes[b];
+        var url = r.doc_url || r.record_url || "";
+        var sym = esc(r.symbol || r.id || "—");
+        var symHtml = url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener">' + sym + "</a>" : sym;
+        var recLink = (r.doc_url && r.record_url)
+          ? ' <a class="rec" href="' + esc(r.record_url) + '" target="_blank" rel="noopener">record ↗</a>' : "";
+        var mm = mismatch(r);
+        var warn = mm
+          ? '<span class="warn" title="Official totals Y/N/A = ' + esc(mm.official) +
+            " but the roll call counts to " + esc(mm.roll) + '.">⚠ totals ≠ roll call</span>'
+          : "";
+        html += "<tr>" +
+          '<td class="nowrap">' + esc(r.date || "—") + "</td>" +
+          '<td class="sym">' + symHtml + recLink +
+            '<div class="kind">' + esc(r.kind || "") + (r.session ? " · " + esc(r.session) : "") + "</div></td>" +
+          '<td class="ttl">' + esc(r.title || "") + "</td>" +
+          '<td><span class="vote ' + (VOTE_CLASS[va] || "") + '">' + esc(VOTE_LABEL[va] || va || "—") + "</span></td>" +
+          '<td><span class="vote ' + (VOTE_CLASS[vb] || "") + '">' + esc(VOTE_LABEL[vb] || vb || "—") + "</span></td>" +
+          "<td>" + warn + "</td>" +
+          "</tr>";
+      });
+      html += "</tbody></table>";
+    }
+    document.getElementById("diffWrap").innerHTML = html;
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

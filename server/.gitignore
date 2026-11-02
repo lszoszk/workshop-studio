@@ -1,0 +1,5 @@
+# the OpenRouter key, the admin key and seat codes are credentials: never committed
+.env
+state/
+seats.csv
+__pycache__/

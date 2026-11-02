@@ -1,0 +1,56 @@
+[
+ {
+  "model": "mistral",
+  "label": "Mistral Large 4 · France · Mistral (EU)",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "table_min_rows": false,
+   "text_contains": false,
+   "download": false
+  },
+  "passed": 0,
+  "total": 6,
+  "errors": [
+   "503 b'{\"error\":{\"message\":\"Provider returned error\",\"code\":503,\"metadata\":{\"raw\":\"{\\\\\"object\\\\\":\\\\\"error\\\\\",\\\\\"message\\\\\":\\\\\"Service unavailable.\\\\\",\\\\\"type\\\\\":\\\\\"internal_server_error\\\\\",\\\\\"param\\\\\":null,\\\\\"code\\\\\":\\\\\"3800\\\\\",\\\\\"raw_status_code\\\\\":503}\",\"provider_name\":\"Mistral\",\"is_byok\":false}},\"user_id\":\"user_3JkVe9FE7I1'"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 3.3,
+  "first_token": null,
+  "first_thought": null,
+  "reasoning_chars": null,
+  "prompt_tokens": null,
+  "completion_tokens": null,
+  "cost": null,
+  "provider": null
+ },
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · USA · Amazon Bedrock",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "download": true
+  },
+  "passed": 6,
+  "total": 6,
+  "errors": [],
+  "network": [],
+  "lines": 284,
+  "seconds": 112.7,
+  "first_token": 76.2,
+  "first_thought": 3.7,
+  "reasoning_chars": 9481,
+  "prompt_tokens": 12222,
+  "completion_tokens": 15880,
+  "cost": 0.2015684,
+  "provider": "Amazon Bedrock"
+ }
+]

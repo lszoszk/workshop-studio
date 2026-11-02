@@ -1,0 +1,1 @@
+I'll build the General Comments search app: a query box with AND/OR/NOT/phrase support, committee and year filters, a per-committee bar chart, and result cards with highlighting and a copy-citation button — all driven by `WORKSHOP_DATA.gc`.

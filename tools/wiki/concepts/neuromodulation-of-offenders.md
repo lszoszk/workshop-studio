@@ -1,0 +1,61 @@
+---
+title: Neuromodulation of offenders
+type: concept
+tags: [neuromodulation, deep-brain-stimulation, tms, tdcs, neurofeedback, offenders, rehabilitation, art-7, art-10, art-18, consent, parole]
+register: [b, c, d, f]
+status: reviewed
+updated: 2026-11-02
+links: [[a-81-351]], [[unodc-interpol-2025]], [[ahrc-2025]], [[szoszkiewicz-yuste-2025]], [[ccpr-c-21-rev-1-add-4]], [[ccpr-c-gc-34]], [[iccpr-art-7]], [[iccpr-art-18]], [[consent-in-custody]], [[freedom-of-thought]], [[neuroprediction]], [[a-hrc-57-61]]
+sources: [A/81/351, UNODC-INTERPOL-2025, AHRC-2025, Szoszkiewicz-Yuste-2025, CCPR/C/21/Rev.1/Add.4, CCPR/C/GC/34]
+---
+
+# Neuromodulation of offenders
+
+**One-liner.** Neuromodulation "writes" to the brain: deep brain stimulation, transcranial magnetic or direct current stimulation, neurofeedback. Applied to offenders it is discussed as treatment to reduce aggression or impulsivity, as a sentencing option, or as a route to earlier release. The library's common ground is narrow and firm: it can be lawful only with genuinely free and informed consent, and in custody that consent is doubtful. The Human Rights Council Advisory Committee, as the Secretary-General reports it, is of the view that such techniques "may constitute" treatment contrary to articles 7 or 10 of the Covenant when imposed without such consent; the Secretary-General recommends prohibiting coercive neuromodulation outright.
+
+## What the library says
+
+### (b) The Human Rights Committee
+
+Neither General Comment mentions neuromodulation; the application is the Secretary-General's. The rules: article 18 "does not permit any limitations whatsoever on the freedom of thought and conscience" [General Comment No. 22, para. 3](pin:CCPR/C/21/Rev.1/Add.4#p2 "It does not permit any limitations whatsoever on the freedom of thought and conscience or on the freedom to have or adopt a religion or belief of one’s choice") ✓, and "Any form of effort to coerce the holding or not holding of any opinion is prohibited" [General Comment No. 34, para. 10](pin:CCPR/C/GC/34#p3 "Any form of effort to coerce the holding or not holding of any opinion is prohibited") ✓.
+
+### (c) The Secretary-General, A/81/351
+
+The report places the offender application in research: "There is also research on the use of neurostimulation to modulate neural processes associated with aggression or impulse control", whose issues "should be addressed before the technologies are deployed" [A/81/351, para. 12](pin:A/81/351#p5 "There is also research on the use of neurostimulation to modulate neural processes associated with aggression or impulse control … should be addressed before the technologies are deployed") ✓.
+
+The central paragraph relays the Advisory Committee's position with its hedges intact. The Committee "is of the view that the use of neuromodulation techniques intended to alter the brain activity of offenders to reduce aggression or impulsivity may constitute treatment contrary to articles 7 or 10 of the Covenant when imposed without genuinely free and informed consent"; where techniques are tied to "early release or favourable parole outcomes, there is a significant risk that consent may not be fully free or voluntary" [A/81/351, para. 29](pin:A/81/351#p10 "is of the view that the use of neuromodulation techniques intended to alter the brain activity of offenders to reduce aggression or impulsivity may constitute treatment contrary to articles 7 or 10 of the Covenant when imposed without genuinely free and informed consent … early release or favourable parole outcomes, there is a significant risk that consent may not be fully free or voluntary") ✓. The same paragraph recalls that article 7 "expressly prohibits medical or scientific experimentation without the free consent of the person concerned", and that the Human Rights Committee has acknowledged the difficulty of free consent for detainees [A/81/351, para. 29](pin:A/81/351#p10 "Article 7 of the Covenant “expressly prohibits medical or scientific experimentation without the free consent of the person concerned”. The difficulty of establishing that consent is genuinely free given the particularly vulnerable status of those who are detained has been acknowledged by the Human Rights Committee") ✓ (its footnotes 57 and 58, on the same PDF page, cite General Comment No. 20 (1992), para. 7, not in the library). The Advisory Committee's own report is [[a-hrc-57-61]], in the inbox.
+
+Article 10 (1) ICCPR (not in the library; text on the [OHCHR ICCPR page](https://www.ohchr.org/en/instruments-mechanisms/instruments/international-covenant-civil-and-political-rights)) entitles detainees to be treated with humanity and dignity. The report reads neuromodulation "applied in detention or investigative contexts" as something that "may result in mental or physical suffering contravening the protection provided under articles 7 and 10 (1)" [A/81/351, para. 28](pin:A/81/351#p9 "coercive interrogation techniques, and neuromodulation, applied in detention or investigative contexts, may result in mental or physical suffering contravening the protection provided under articles 7 and 10 (1)") ✓, and glosses "humanity" as meaning that detainees "should not be subjected to any hardship or constraint other than that resulting from the deprivation of liberty itself" [A/81/351, para. 30](pin:A/81/351#p10 "“Humanity” means that detainees should not be subjected to any hardship or constraint other than that resulting from the deprivation of liberty itself") ✓ (its footnote 59, on the same PDF page, cites article 10 and General Comment No. 21). On thought and opinion: "Forced neurological interventions, indoctrination programmes or threats of violence designed to compel individuals to form particular opinions or change their opinion would violate this freedom" [A/81/351, para. 23](pin:A/81/351#p8 "Forced neurological interventions, indoctrination programmes or threats of violence designed to compel individuals to form particular opinions or change their opinion would violate this freedom") ✓. On legal personality: coercive neuromodulation "that alters personality, affective responses or cognitive recall could also constitute a direct threat to the right to recognition as a person before the law" [A/81/351, para. 35](pin:A/81/351#p11 "Use of coercive neuromodulation that alters personality, affective responses or cognitive recall could also constitute a direct threat to the right to recognition as a person before the law") ✓.
+
+The recommendations: prohibit compulsory or coercive use, naming "neuromodulation" [A/81/351, para. 50 (c)](pin:A/81/351#p15 "Prohibit the compulsory or coercive use of neurotechnologies in the administration of justice, including … neuromodulation") ✓, and, given "the constrained and coercive nature of justice settings", subject any consent "to the highest evidentiary standards and rigorous scrutiny" [A/81/351, para. 50 (e)](pin:A/81/351#p15 "Given the constrained and coercive nature of justice settings, any consent should be subject to the highest evidentiary standards and rigorous scrutiny") ✓.
+
+### (c) UNODC–INTERPOL 2025
+
+The paper is the library's most favourable voice, and it hedges too. It sees "promising potential uses of emerging neurotechnologies for the reintegration of incarcerated persons": EEG neurofeedback for self-regulation, and non-invasive brain stimulation "for its potential use in improving decisionmaking behaviours among violent offenders" [UNODC–INTERPOL 2025, p. 2](pin:UNODC-INTERPOL-2025#p5 "there are promising potential uses of emerging neurotechnologies for the reintegration of incarcerated persons back into society … non-invasive brain stimulation has been examined for its potential use in improving decisionmaking behaviours among violent offenders") ✓. But "many of these studies are preliminary", and the technologies "must not be used to further discriminate against these individuals" [UNODC–INTERPOL 2025, p. 2](pin:UNODC-INTERPOL-2025#p5 "many of these studies are preliminary. Additionally, given the vulnerability of this population, the neurotechnologies used in this context must not be used to further discriminate against these individuals") ✓. It flags technologies "offered" in coercive conditions "or under the guise of moral-enhancement" [UNODC–INTERPOL 2025, p. 4](pin:UNODC-INTERPOL-2025#p7 "“offered” the use of these technologies in ways that are coercive, or under the guise of moral-enhancement, or similar") ✓ and requires consent "free of coercion or undue influence, particularly in custodial or correctional settings where power imbalances are acute" [UNODC–INTERPOL 2025, p. 6](pin:UNODC-INTERPOL-2025#p9 "Consent must be voluntary and informed, free of coercion or undue influence, particularly in custodial or correctional settings where power imbalances are acute") ✓.
+
+### (d) AHRC 2025
+
+The Commission frames neuromodulation as a sentencing option: "Neurotechnology could offer sentencing options that are more rehabilitative than punitive. Nonconsensual medical treatment could, however, violate medical ethics and human rights" [AHRC 2025, p. 35](pin:AHRC-2025#p35 "Neurotechnology could offer sentencing options that are more rehabilitative than punitive. Nonconsensual medical treatment could, however, violate medical ethics and human rights") ✓. Its example is court-mandated post-prison treatment in the Netherlands, where neurointerventions "are not acting as a ’biological fix’" but "identify neural precursors that trigger feelings of aggression and then stimulate the brain to calm the person down" [AHRC 2025, p. 35](pin:AHRC-2025#p35 "Such neurointerventions are not acting as a ’biological fix’. Instead, they are used (for example) to identify neural precursors that trigger feelings of aggression and then stimulate the brain to calm the person down") ✓. The consent problem is stated as a transaction: consent "could be used transactionally for sentence reduction or an earlier parole – despite the offender’s preference not to be the subject of a neurointervention in the absence of such incentives" [AHRC 2025, p. 35](pin:AHRC-2025#p35 "consent to the use of neurotechnology could be used transactionally for sentence reduction or an earlier parole – despite the offender’s preference not to be the subject of a neurointervention in the absence of such incentives") ✓.
+
+### (f) Scholarship
+
+Szoszkiewicz and Yuste draw the read/write line that organises this page: today's devices are "capable of both decoding and modulating neural activity" [Szoszkiewicz & Yuste 2025, p. 3469](pin:Szoszkiewicz-Yuste-2025#p1 "The current neurotechnology landscape encompasses a range of invasive and noninvasive devices capable of both decoding and modulating neural activity") ✓. The article does not discuss offenders.
+
+## Open questions
+
+- Is there a disagreement? UNODC–INTERPOL and the AHRC see a rehabilitative use; the Secretary-General prohibits coercive use. All make consent the hinge, and all doubt consent in custody. The split, if any, is whether "voluntary" neuromodulation tied to release is possible: see the card on [[consent-in-custody]].
+- Is court-mandated treatment (the AHRC's Dutch example) "compulsory" within A/81/351 para. 50 (c)? The library does not say.
+- Everything here is prospective: no document reports a State modulating offenders' brains as a sentence. General Comments No. 20 and 21, cited by A/81/351, are not in the library.
+
+## Related
+
+- [[a-81-351]] (the Advisory Committee's "may constitute"; articles 7 and 10; prohibition of coercive neuromodulation)
+- [[unodc-interpol-2025]] (reintegration uses; "preliminary" studies; moral enhancement by coercion)
+- [[ahrc-2025]] (sentencing options; transactional consent)
+- [[szoszkiewicz-yuste-2025]] (decoding versus modulating)
+- [[ccpr-c-21-rev-1-add-4]] and [[ccpr-c-gc-34]] (no limitation on thought; no coercion of opinion)
+- [[iccpr-art-7]] (experimentation without free consent; ill-treatment)
+- [[iccpr-art-18]] and [[freedom-of-thought]] (alteration of thought)
+- [[consent-in-custody]] (whether consent tied to release can be free)
+- [[neuroprediction]] (the "read" counterpart)
+- [[a-hrc-57-61]] (the Advisory Committee's report, in the inbox)

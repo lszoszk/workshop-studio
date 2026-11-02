@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>General Comments search</title>
+<style>
+  :root { --accent:#1f6fb2; --ink:#1c2733; --muted:#5b6b7b; --line:#d9e2ec; --bg:#f5f8fb; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  .wrap { max-width:920px; margin:0 auto; padding:28px 20px 60px; }
+  h1 { font-size:1.6rem; margin:0 0 4px; color:var(--accent); }
+  .sub { color:var(--muted); margin:0 0 22px; font-size:.95rem; }
+  .panel { background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:18px; }
+  .searchrow { display:flex; gap:10px; }
+  #q { flex:1; font:inherit; padding:9px 12px; border:1px solid var(--line); border-radius:7px; }
+  #q:focus { outline:2px solid var(--accent); outline-offset:1px; }
+  button { font:inherit; cursor:pointer; }
+  #searchBtn { background:var(--accent); color:#fff; border:none; border-radius:7px; padding:9px 18px; }
+  #searchBtn:hover { filter:brightness(1.08); }
+  .help { color:var(--muted); font-size:.88rem; margin:8px 0 0; }
+  .filters { display:flex; flex-wrap:wrap; gap:14px; align-items:end; }
+  .filters label { display:flex; flex-direction:column; font-size:.82rem; color:var(--muted); gap:4px; }
+  .filters select, .filters input { font:inherit; padding:7px 10px; border:1px solid var(--line); border-radius:7px; background:#fff; }
+  .filters input { width:110px; }
+  #countLine { font-weight:600; margin:0 0 6px; }
+  #filterLine { color:var(--muted); font-size:.88rem; margin:0 0 14px; }
+  .note { color:var(--muted); font-size:.82rem; margin:8px 0 0; }
+  #chartBox { max-width:640px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:14px 18px; margin-bottom:14px; }
+  .card-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin-bottom:8px; }
+  .badge { background:var(--accent); color:#fff; font-size:.78rem; font-weight:700; padding:2px 9px; border-radius:20px; letter-spacing:.03em; }
+  .gctitle { font-weight:600; }
+  .year { color:var(--muted); font-size:.9rem; }
+  .parano { color:var(--muted); font-size:.9rem; }
+  .symbol { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9rem; color:var(--accent); }
+  .para { margin:6px 0 12px; white-space:pre-wrap; word-wrap:break-word; }
+  mark { background:#ffe9a8; padding:0 1px; border-radius:2px; }
+  .copy { background:#fff; color:var(--accent); border:1px solid var(--accent); border-radius:7px; padding:6px 14px; font-size:.9rem; }
+  .copy:hover { background:#eaf3fb; }
+  .empty { background:#fff; border:1px dashed var(--line); border-radius:10px; padding:22px; text-align:center; color:var(--muted); }
+  .empty strong { color:var(--ink); display:block; margin-bottom:6px; font-size:1.05rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>General Comments search</h1>
+  <p class="sub" id="subLine"></p>
+
+  <div class="panel">
+    <div class="searchrow">
+      <input id="q" type="search" placeholder='Search the paragraph text, e.g. "best interests" AND child' aria-label="Search paragraphs">
+      <button id="searchBtn">Search</button>
+    </div>
+    <p class="help">Words are combined with AND unless you write OR; NOT excludes a word; "quotes" find an exact phrase. Example: <em>"best interests" AND child</em></p>
+  </div>
+
+  <div class="panel filters">
+    <label>Committee
+      <select id="committee"><option value="">All</option></select>
+    </label>
+    <label>Year from
+      <input id="yearFrom" type="number" placeholder="from">
+    </label>
+    <label>Year to
+      <input id="yearTo" type="number" placeholder="to">
+    </label>
+  </div>
+
+  <p id="countLine"></p>
+  <p id="filterLine"></p>
+
+  <div class="panel" id="chartBox">
+    <canvas id="chart" height="180"></canvas>
+    <p class="note">How this is computed: each bar counts the paragraphs that match the current search and filters, grouped by committee. The bar heights add up to the number of matching paragraphs (N).</p>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var GC = window.WORKSHOP_DATA.gc;
+  var records = (GC && GC.records) ? GC.records : [];
+  var M = records.length;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var qInput=$('q'), committeeSel=$('committee'), yearFrom=$('yearFrom'), yearTo=$('yearTo');
+  var countLine=$('countLine'), filterLine=$('filterLine'), results=$('results'), subLine=$('subLine');
+
+  /* ---------- header line, all read from the data ---------- */
+  var years = records.map(function(r){ return r.year; }).filter(function(y){ return typeof y==='number'; });
+  var minY = years.length ? Math.min.apply(null, years) : null;
+  var maxY = years.length ? Math.max.apply(null, years) : null;
+  subLine.textContent = (GC.title || 'General Comments') + ' — ' + (GC.source || 'source unknown') +
+    ' · ' + M + ' paragraphs · ' + (minY!==null ? (minY + '–' + maxY) : 'years unknown');
+
+  /* ---------- committee filter options ---------- */
+  var committees = {};
+  records.forEach(function(r){ committees[r.committee || 'Unknown'] = true; });
+  Object.keys(committees).sort().forEach(function(c){
+    var o=document.createElement('option'); o.value=c; o.textContent=c; committeeSel.appendChild(o);
+  });
+
+  /* ---------- search parser: AND (implicit) / OR / NOT, "quoted phrases" ---------- */
+  function tokenize(q){
+    var toks=[], i=0;
+    while(i<q.length){
+      var c=q[i];
+      if(/\s/.test(c)){ i++; continue; }
+      if(c==='"'){
+        var end=q.indexOf('"', i+1);
+        if(end===-1){ toks.push({type:'phrase', text:q.slice(i+1)}); i=q.length; }
+        else { toks.push({type:'phrase', text:q.slice(i+1,end)}); i=end+1; }
+        continue;
+      }
+      var j=i;
+      while(j<q.length && !/\s/.test(q[j]) && q[j]!=='"') j++;
+      toks.push({type:'word', text:q.slice(i,j)});
+      i=j;
+    }
+    return toks;
+  }
+
+  // Returns array of AND-groups (OR of ANDs), or null when the query is empty (match all).
+  function parse(q){
+    var toks=tokenize(q), items=[], pendingOp='AND', pendingNot=false;
+    for(var k=0;k<toks.length;k++){
+      var t=toks[k], up=t.text.toUpperCase();
+      if(t.type==='word' && up==='AND'){ pendingOp='AND'; pendingNot=false; continue; }
+      if(t.type==='word' && up==='OR'){ pendingOp='OR'; pendingNot=false; continue; }
+      if(t.type==='word' && up==='NOT'){ pendingNot=true; continue; }
+      items.push({ op: items.length===0 ? 'AND' : pendingOp, neg: pendingNot, atom: t });
+      pendingNot=false; pendingOp='AND';
+    }
+    var groups=[], cur=[];
+    items.forEach(function(it){
+      if(it.op==='OR' && cur.length){ groups.push(cur); cur=[]; }
+      cur.push(it);
+    });
+    if(cur.length) groups.push(cur);
+    return groups.length ? groups : null;
+  }
+
+  function escRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+  function atomRegex(atom){
+    var core = atom.type==='phrase' ? escRe(atom.text).replace(/\s+/g,'\\s+') : escRe(atom.text);
+    return new RegExp('(?<![A-Za-z0-9])' + core + '(?![A-Za-z0-9])', 'gi');
+  }
+  function matches(groups, text){
+    if(!groups) return true;                 // empty query: everything matches
+    if(!text) return false;                  // empty text never matches a query
+    return groups.some(function(g){
+      return g.every(function(it){
+        var hit = atomRegex(it.atom).test(text);
+        return it.neg ? !hit : hit;
+      });
+    });
+  }
+
+  /* ---------- highlighting: wraps matched spans, never alters the text ---------- */
+  function escapeHTML(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function highlightHTML(text, groups){
+    var spans=[];
+    if(groups && text){
+      groups.forEach(function(g){
+        g.forEach(function(it){
+          if(it.neg) return;
+          var re=atomRegex(it.atom), m;
+          while((m=re.exec(text))){ spans.push([m.index, m.index+m[0].length]); re.lastIndex=m.index+m[0].length; }
+        });
+      });
+    }
+    spans.sort(function(a,b){ return a[0]-b[0]; });
+    var merged=[], out='', pos=0;
+    spans.forEach(function(s){
+      if(merged.length && s[0]<=merged[merged.length-1][1]){
+        merged[merged.length-1][1]=Math.max(merged[merged.length-1][1], s[1]);
+      } else merged.push(s);
+    });
+    merged.forEach(function(s){
+      out += escapeHTML(text.slice(pos,s[0])) + '<mark>' + escapeHTML(text.slice(s[0],s[1])) + '</mark>';
+      pos=s[1];
+    });
+    out += escapeHTML(text.slice(pos));
+    return out;
+  }
+
+  /* ---------- filters ---------- */
+  function inYearFilter(r){
+    var f=yearFrom.value.trim(), t=yearTo.value.trim();
+    if(f==='' && t==='') return true;                 // open range: unknown years included
+    if(typeof r.year!=='number') return false;         // a set range excludes unknown years
+    if(f!=='' && r.year < +f) return false;
+    if(t!=='' && r.year > +t) return false;
+    return true;
+  }
+
+  /* ---------- chart ---------- */
+  var chart=null;
+  function renderChart(counts){
+    var labels=Object.keys(counts).sort();
+    var data=labels.map(function(l){ return counts[l]; });
+    var cfg={ type:'bar',
+      data:{ labels:labels, datasets:[{ label:'Matching paragraphs', data:data,
+        backgroundColor:'#1f6fb2', borderRadius:4 }] },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:false } },
+        scales:{ y:{ beginAtZero:true, ticks:{ precision:0, stepSize:1 }, title:{ display:true, text:'Paragraphs' } },
+                 x:{ ticks:{ autoSkip:false } } } } };
+    if(chart){ chart.destroy(); }
+    chart=new Chart($('chart').getContext('2d'), cfg);
+  }
+
+  /* ---------- copy citation ---------- */
+  function copyCitation(text, btn){
+    function done(){
+      btn.textContent='Copied';
+      setTimeout(function(){ btn.textContent='Copy citation'; }, 2000);
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ fallback(); });
+    } else fallback();
+    function fallback(){
+      var ta=document.createElement('textarea');
+      ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); }catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  }
+
+  /* ---------- main render ---------- */
+  function render(){
+    var query=qInput.value;
+    var groups=parse(query);
+    var committee=committeeSel.value;
+
+    var matched=records.filter(function(r){
+      if(committee && (r.committee||'Unknown')!==committee) return false;
+      if(!inYearFilter(r)) return false;
+      return matches(groups, r.text || '');
+    });
+
+    // newest General Comment first; unknown year last
+    matched.sort(function(a,b){
+      var ya=(typeof a.year==='number')?a.year:-Infinity;
+      var yb=(typeof b.year==='number')?b.year:-Infinity;
+      if(yb!==ya) return yb-ya;
+      var sa=(a.symbol||''), sb=(b.symbol||'');
+      if(sa!==sb) return sa<sb?-1:1;
+      return (a.paragraph||0)-(b.paragraph||0);
+    });
+
+    var N=matched.length;
+
+    // count line + filter description
+    var fparts=[];
+    if(committee) fparts.push('committee = '+committee);
+    var f=yearFrom.value.trim(), t=yearTo.value.trim();
+    if(f!==''||t!=='') fparts.push('years '+(f!==''?('≥ '+f):'')+(f!==''&&t!==''?' ' :'')+(t!==''?('≤ '+t):''));
+    if(query.trim()!=='') fparts.push('search: '+query.trim());
+    countLine.textContent = N + ' paragraph' + (N===1?'':'s') + ' match out of ' + M;
+    filterLine.textContent = 'Filters: ' + (fparts.length ? fparts.join('; ') : 'none');
+
+    // chart: matching paragraphs per committee
+    var counts={};
+    matched.forEach(function(r){ var c=r.committee||'Unknown'; counts[c]=(counts[c]||0)+1; });
+    renderChart(counts);
+
+    // cards
+    results.innerHTML='';
+    if(N===0){
+      var d=document.createElement('div');
+      d.className='empty';
+      d.innerHTML='<strong>No paragraph contains these words</strong>Tip: try OR instead of AND, or use fewer words (e.g. drop a NOT, or search a shorter phrase).';
+      results.appendChild(d);
+      return;
+    }
+    matched.forEach(function(r){
+      var card=document.createElement('article'); card.className='card';
+      var head=document.createElement('div'); head.className='card-head';
+      var badge=document.createElement('span'); badge.className='badge'; badge.textContent=r.committee||'Unknown';
+      var title=document.createElement('span'); title.className='gctitle';
+      title.textContent=r.short_title || r.title || r.symbol || '(untitled)';
+      var yr=document.createElement('span'); yr.className='year';
+      yr.textContent=(typeof r.year==='number') ? r.year : 'year unknown';
+      var pn=document.createElement('span'); pn.className='parano';
+      pn.textContent=(r.paragraph!=null) ? ('para. '+r.paragraph) : '';
+      head.appendChild(badge); head.appendChild(title); head.appendChild(yr); head.appendChild(pn);
+      if(r.doc_url){
+        var a=document.createElement('a'); a.className='symbol'; a.href=r.doc_url;
+        a.target='_blank'; a.rel='noopener noreferrer'; a.textContent=r.symbol||r.doc_url;
+        head.appendChild(a);
+      } else {
+        var s=document.createElement('span'); s.className='symbol'; s.textContent=r.symbol||'(no symbol)';
+        head.appendChild(s);
+      }
+      var p=document.createElement('p'); p.className='para';
+      p.innerHTML=highlightHTML(r.text||'', groups);
+      var btn=document.createElement('button'); btn.className='copy'; btn.type='button';
+      btn.textContent='Copy citation';
+      var cite=(r.symbol||'(no symbol)') + (r.paragraph!=null ? ', para. '+r.paragraph : '');
+      btn.addEventListener('click', function(){ copyCitation(cite, btn); });
+      card.appendChild(head); card.appendChild(p); card.appendChild(btn);
+      results.appendChild(card);
+    });
+  }
+
+  /* ---------- events ---------- */
+  $('searchBtn').addEventListener('click', render);
+  qInput.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); render(); } });
+  committeeSel.addEventListener('change', render);
+  yearFrom.addEventListener('input', render);
+  yearTo.addEventListener('input', render);
+
+  render();
+})();
+</script>
+</body>
+</html>

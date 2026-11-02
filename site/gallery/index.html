@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Same request, different models</title>
+<meta name="robots" content="noindex, nofollow">
+<script src="../gate.js"></script>
+<link rel="stylesheet" href="../studio.css?v=2026-11-02k">
+<style>
+  body { overflow: auto; }
+  .wrap { max-width: 1500px; margin: 0 auto; padding: 22px 24px 60px; }
+  h1 { margin: 0 0 4px; font-size: 26px; }
+  .lead { color: var(--muted); margin: 0 0 18px; max-width: 900px; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tabs button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+  .tabs button[aria-selected=true] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .prompt { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 16px; }
+  .prompt .who { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+  .card a.shot { display: block; aspect-ratio: 1440 / 900; background: var(--bg); overflow: hidden; }
+  .card img { width: 100%; display: block; }
+  .card .body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .card h3 { margin: 0; font-size: 16px; }
+  .where { font-size: 13px; color: var(--muted); }
+  .where b { color: var(--ink); }
+  .stats { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; }
+  .stats span b { font-size: 15px; }
+  .checks { font-size: 12px; }
+  .checks.ok { color: #1e6b34; }
+  .checks.bad { color: var(--danger); }
+  .note { font-size: 13px; background: var(--truth-bg); border-left: 3px solid var(--script); padding: 6px 8px; }
+  .open { margin-top: auto; align-self: flex-start; }
+  .tag { font-size: 11px; padding: 1px 7px; border-radius: 4px; background: var(--bg); color: var(--muted); margin-left: 6px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Same request, different models</h1>
+  <p class="lead">Each model got exactly what the studio sends: the request, the studio's instructions, a description of the data and three sample records. The apps run here on the full data for <span id="country"></span>. Checks are automatic (runs without errors, sends nothing out, uses the data, has the chart, table or buttons the request asked for); how good the app is remains your call.</p>
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <div class="prompt"><div class="who">Request</div><div id="promptText"></div></div>
+  <div class="cards" id="cards"></div>
+</div>
+<script>
+(async function () {
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  // the bake-off's check names, as a participant would say them
+  const CHECK = {
+    no_console_errors: 'runs without errors', no_network: 'sends nothing out', uses_workshop_data: 'uses the workshop data',
+    chart: 'has a chart', table_min_rows: 'has a table', text_contains: 'names the country', controls_min: 'has filters',
+    links_to: 'links to the UN documents', source_matches: 'uses the method asked for', text_matches: 'says what was asked',
+    button_matches: 'has the button asked for', download: 'lets you save the results', search_box: 'has a search box',
+    text_contains_after_search: 'the search finds the phrase', calls_studio_ask: 'calls the model from inside',
+    batches_max: 'sends at most 25 records at a time',
+  };
+  const g = await (await fetch('gallery.json', { cache: 'no-cache' })).json();
+  document.getElementById('country').textContent = g.country;
+  let current = new URLSearchParams(location.search).get('prompt') || g.prompts[0].id;
+
+  function render() {
+    document.getElementById('tabs').innerHTML = g.prompts.map((p) =>
+      `<button role="tab" aria-selected="${p.id === current}" data-id="${p.id}">${esc(p.session)} · ${esc(p.title)}</button>`).join('');
+    document.querySelectorAll('#tabs button').forEach((b) => { b.onclick = () => { current = b.dataset.id; history.replaceState(null, '', '?prompt=' + current); render(); }; });
+    document.getElementById('promptText').textContent = g.prompts.find((p) => p.id === current).prompt;
+    const rows = g.results.filter((r) => r.prompt === current);
+    document.getElementById('cards').innerHTML = rows.map((r) => {
+      const m = g.models[r.model] || { name: r.model };
+      const view = `view.html?app=${encodeURIComponent(r.model + '/' + r.prompt)}`;
+      return `<div class="card">
+        <a class="shot" href="${r.app ? view : '#'}" target="_blank"><img src="apps/${r.model}/${r.prompt}.png" alt="Screenshot of the app built by ${esc(m.name)}" loading="lazy"></a>
+        <div class="body">
+          <h3>${esc(m.name)}<span class="tag">${esc(m.weights || '')} model</span></h3>
+          <div class="where">Made in <b>${esc(m.origin || '')}</b> · ran on <b>${esc(m.host || '')}</b></div>
+          <div class="stats">
+            <span><b>${r.seconds != null ? Math.round(r.seconds) : '–'}</b> s</span>
+            <span><b>${r.cost != null ? '$' + r.cost.toFixed(3) : '–'}</b></span>
+            <span><b>${r.lines || '–'}</b> lines</span>
+          </div>
+          <div class="checks ${r.passed === r.total ? 'ok' : 'bad'}">${r.passed}/${r.total} checks${r.failed.length ? ' · missed: ' + esc(r.failed.map((k) => CHECK[k] || k).join(', ')) : ''}</div>
+          ${r.attempts > 1 ? `<div class="checks ${r.full === r.attempts ? 'ok' : 'bad'}">${r.attempts} attempts: an app came back ${r.returned}×, passed every check ${r.full}×. Shown: the best one.</div>` : ''}
+          ${m.note ? `<div class="note">${esc(m.note)}</div>` : ''}
+          ${r.app ? `<a class="tool open" href="${view}" target="_blank">Open the app</a>` : '<span class="checks bad">No app returned</span>'}
+        </div></div>`;
+    }).join('');
+  }
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+I built a single‑page dashboard that lists all UN recommendations and observations addressed to Kenya, lets you filter them, shows the most frequent themes in a bar chart, and displays the matching records in an expandable table. The page uses only the data already in `window.WORKSHOP_DATA`, Chart.js 4 (preloaded as `window.Chart`), and no external resources.

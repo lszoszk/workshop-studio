@@ -1,0 +1,593 @@
+I added an "AI SDG suggestions" section: a button that sends the first 50 records of the current filter to `studio.ask` in batches of 25 (with progress, a Stop button, and an on-screen notice that the texts leave the browser), parses the JSON answers defensively, and renders each run as a panel with the agreement rate, a per-record table (UN SDGs vs AI SDGs vs agreement, AI cells badged with `data-source="ai"`), plus a "Run again" button that keeps every run visible side by side in a comparison summary.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UN human rights recommendations — Kenya</title>
+<style>
+:root{
+  --accent:#1f6fb2; --accent-dark:#17517f; --ink:#1d2733; --muted:#5c6b7a;
+  --bg:#f4f6f9; --card:#ffffff; --line:#dde4ec; --soft:#e8f1fa;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:16px;line-height:1.55;color:var(--ink);background:var(--bg);
+}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 72px}
+header.top{padding:4px 2px 0}
+h1{font-size:1.55rem;line-height:1.25;margin:0 0 6px}
+h1 .cc{color:var(--accent)}
+.lede{margin:0;color:var(--muted);font-size:.95rem}
+.lede a{color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-top:18px}
+.card h2{font-size:1.12rem;margin:0 0 4px}
+.note{font-size:.85rem;color:var(--muted);margin:4px 0 12px}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px 14px;align-items:end}
+.field label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:4px;letter-spacing:.02em}
+.field select,.field input{width:100%;padding:8px 10px;font:inherit;font-size:.92rem;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}
+.field select:focus,.field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.btnrow{display:flex;align-items:flex-end}
+button.reset{padding:8px 14px;font:inherit;font-size:.9rem;border:1px solid var(--line);background:#fff;color:var(--accent-dark);border-radius:7px;cursor:pointer;white-space:nowrap}
+button.reset:hover{background:var(--soft)}
+#filterDesc{font-size:.88rem;color:var(--accent-dark);margin:12px 0 0;font-weight:600}
+.stats{display:flex;flex-wrap:wrap;gap:14px 36px;margin-top:2px}
+.stat .num{font-size:1.5rem;font-weight:700;color:var(--accent);line-height:1.15}
+.stat .lbl{font-size:.82rem;color:var(--muted)}
+.chart-box{position:relative;width:100%}
+table{width:100%;border-collapse:collapse;margin-top:6px}
+th{font-size:.76rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:2px solid var(--line)}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top;font-size:.93rem}
+tr.rec{cursor:pointer}
+tr.rec:hover{background:#f0f6fc}
+tr.rec.open{background:var(--soft)}
+tr.detail td{background:#f8fafd}
+.chev{width:20px;color:var(--accent)}
+tr.rec.open .chev{font-weight:700}
+.cdate{white-space:nowrap;font-variant-numeric:tabular-nums}
+.cbody{white-space:nowrap}
+.sub{font-size:.78rem;color:var(--muted);white-space:normal}
+.muted{color:var(--muted)}
+.csym a{color:var(--accent);text-decoration:none;font-weight:600}
+.csym a:hover{text-decoration:underline}
+.ctext{color:#33404d}
+.fulltext{white-space:pre-wrap;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:.92rem;margin:6px 0 10px}
+.dline{margin:6px 0;font-size:.88rem}
+.dsec{margin:2px 0 6px;font-size:.88rem;color:var(--muted)}
+.dlist{margin:4px 0 8px;padding-left:20px;font-size:.86rem;color:#33404d}
+.chip{display:inline-block;background:var(--soft);color:var(--accent-dark);border-radius:999px;padding:1px 10px;font-size:.78rem;margin:2px 4px 2px 0}
+.empty{padding:18px;border:1px dashed var(--line);border-radius:8px;color:var(--muted);background:#fbfcfe;text-align:center}
+a{color:var(--accent)}
+footer{margin-top:26px;font-size:.82rem;color:var(--muted)}
+/* AI section */
+.btn-primary{background:var(--accent);color:#fff;border:1px solid var(--accent);padding:9px 16px;font:inherit;font-size:.92rem;font-weight:600;border-radius:7px;cursor:pointer}
+.btn-primary:hover:not(:disabled){background:var(--accent-dark)}
+.btn-primary:disabled{opacity:.55;cursor:default}
+.btn-secondary{background:#fff;color:var(--accent-dark);border:1px solid var(--accent);padding:9px 16px;font:inherit;font-size:.92rem;border-radius:7px;cursor:pointer}
+.btn-secondary:hover:not(:disabled){background:var(--soft)}
+.btn-secondary:disabled{opacity:.55;cursor:default}
+.btn-danger{background:#fff;color:#a33;border:1px solid #d9a3a3;padding:9px 16px;font:inherit;font-size:.92rem;border-radius:7px;cursor:pointer}
+.btnrow2{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.ai-status{font-size:.88rem;color:var(--accent-dark);margin:10px 0 0;min-height:1.2em}
+.pbar{height:8px;background:#e3eaf2;border-radius:99px;overflow:hidden;margin-top:10px;max-width:420px}
+.pbar>div{height:100%;width:0;background:var(--accent);border-radius:99px}
+.ai-note{background:#fff8e6;border:1px solid #ecd9a0;border-radius:8px;padding:10px 14px;font-size:.88rem;margin:10px 0}
+.ai-note strong{color:#7a5c00}
+.runs{display:grid;grid-template-columns:repeat(auto-fit,minmax(490px,1fr));gap:14px;margin-top:6px;align-items:start}
+.run-panel{border:1px solid var(--line);border-radius:10px;background:#fbfdff;padding:14px 16px}
+.run-panel h3{margin:0 0 6px;font-size:1rem}
+.run-panel .meta{font-size:.82rem;color:var(--muted);margin:0 0 8px}
+.run-panel table{font-size:.84rem}
+.run-panel th,.run-panel td{padding:7px 8px;word-break:break-word}
+[data-source="ai"]{background:#fff8e6}
+td[data-source="ai"]::after{content:"AI";font-size:.6rem;font-weight:700;letter-spacing:.04em;color:#7a5c00;background:#f3e2ac;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:middle}
+.sw{display:inline-block;width:12px;height:12px;background:#fff8e6;border:1px solid #ecd9a0;border-radius:3px;vertical-align:-2px;margin:0 4px}
+.legend{font-size:.8rem;color:var(--muted);margin:8px 0 0}
+#runsSummary table{font-size:.86rem;max-width:680px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>UN human rights recommendations &amp; observations addressed to <span class="cc" id="country"></span></h1>
+    <p class="lede" id="lede"></p>
+  </header>
+
+  <section class="card" aria-label="Filters">
+    <h2>Filters</h2>
+    <p class="note">Every chart and number on this page updates to the records that pass all filters below. Filtering and counting are done exactly, in your browser, on the loaded dataset — nothing is estimated.</p>
+    <div class="filters">
+      <div class="field"><label for="fMechanism">Mechanism</label><select id="fMechanism"></select></div>
+      <div class="field"><label for="fBody">Treaty body / mandate</label><select id="fBody"></select></div>
+      <div class="field"><label for="fFrom">Year from</label><select id="fFrom"></select></div>
+      <div class="field"><label for="fTo">Year to</label><select id="fTo"></select></div>
+      <div class="field"><label for="fSdg">SDG</label><select id="fSdg"></select></div>
+      <div class="field"><label for="fQ">Keyword search</label><input id="fQ" type="search" placeholder="text, theme, symbol…"></div>
+      <div class="btnrow"><button class="reset" id="reset" type="button">Reset filters</button></div>
+    </div>
+    <p id="filterDesc"></p>
+  </section>
+
+  <section class="card" aria-label="Overview">
+    <h2>Overview of the dataset</h2>
+    <div class="stats" id="statsRow"></div>
+    <p class="note">How this is computed: each figure is a plain count over the <span id="nNote"></span> records loaded in this page; mechanisms, bodies and years are the distinct values actually found in the data.</p>
+  </section>
+
+  <section class="card" aria-label="Themes chart">
+    <h2>10 most frequent themes <span id="chartN"></span></h2>
+    <p class="note">How this is computed: each matching record adds 1 to every theme it carries (a record with three themes counts once in each of them); the 10 highest counts are charted. Exact counts, no estimates.</p>
+    <div class="chart-box" id="chartWrap"><canvas id="themeCanvas"></canvas></div>
+    <div id="chartFallback" hidden></div>
+    <p class="empty" id="chartEmpty" hidden></p>
+  </section>
+
+  <section class="card" id="aiCard" aria-label="AI SDG suggestions">
+    <h2>Suggest SDGs with AI</h2>
+    <p class="note">Clicking the button sends the <strong>first 50 records matching the current filters</strong> (or all of them if fewer match) — their <strong>full paragraph text</strong> — to an external language model, in batches of 25, and asks it to assign SDG numbers to each record. <strong>When you click, those texts leave this browser</strong> and are processed by the model behind this workshop's <code>studio.ask</code> API (the API does not disclose the model's name; if the model self-reports one, it is shown, marked AI). The model is not deterministic: <strong>running it again can give different answers</strong>. Everything the model returns is shown with an <span class="sw"></span>AI badge and is never mixed into the counts above.</p>
+    <div class="btnrow2">
+      <button id="aiRun" class="btn-primary" type="button">Suggest SDGs with AI</button>
+      <button id="aiAgain" class="btn-secondary" type="button" hidden>Run again</button>
+      <button id="aiStop" class="btn-danger" type="button" hidden>Stop</button>
+    </div>
+    <div class="pbar" id="aiPbar" hidden><div id="aiPbarFill"></div></div>
+    <p class="ai-status" id="aiStatus"></p>
+    <div id="runsSummaryWrap" hidden>
+      <h3 style="font-size:.95rem;margin:16px 0 4px">Runs side by side</h3>
+      <p class="note" style="margin-top:0">How this is computed: agreement rate = records where the model's SDG set exactly equals the UN's SDG set, divided by the records the model answered. The comparison itself is done exactly by this page, never estimated.</p>
+      <div id="runsSummary"></div>
+    </div>
+    <div id="runs" class="runs"></div>
+  </section>
+
+  <section class="card" aria-label="Records table">
+    <h2>Matching records — <span id="matchCount"></span></h2>
+    <p class="note">How this is computed: the rows below are exactly the records that pass the filters above, sorted by date (newest first). The last column shows the first line of the paragraph — click a row to read the full text. The symbol links to the UN document and opens in a new tab.</p>
+    <table>
+      <thead>
+        <tr><th></th><th>Date</th><th>Body / mandate</th><th>Symbol</th><th>Text (first line — click row for full text)</th></tr>
+      </thead>
+      <tbody id="recBody"></tbody>
+    </table>
+    <p class="empty" id="tableEmpty" hidden>No records match the current filters. Loosen a filter or reset them to see the full list.</p>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+var DATA = window.WORKSHOP_DATA || {};
+var U = DATA.uhri || {};
+var records = Array.isArray(U.records) ? U.records : [];
+var sdgNames = U.sdg_names || {};
+var country = U.country || 'the reviewed country';
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function arr(v){ return Array.isArray(v)?v:(v==null||v===''?[]:[v]); }
+function distinct(key){
+  var seen={}, out=[];
+  records.forEach(function(r){ var v=r[key]; if(v!=null&&v!==''){ v=String(v); if(!seen[v]){ seen[v]=1; out.push(v); } } });
+  return out.sort();
+}
+
+var mechanisms = distinct('mechanism');
+var bodies = distinct('body');
+var yearSet=[], seenY={};
+records.forEach(function(r){ if(typeof r.year==='number' && !seenY[r.year]){ seenY[r.year]=1; yearSet.push(r.year); } });
+yearSet.sort(function(a,b){ return a-b; });
+var yearMin = yearSet.length ? yearSet[0] : null;
+var yearMax = yearSet.length ? yearSet[yearSet.length-1] : null;
+var sdgList=[], seenS={};
+records.forEach(function(r){ arr(r.sdgs).forEach(function(n){ var k=String(n); if(!seenS[k]){ seenS[k]=1; sdgList.push(k); } }); });
+sdgList.sort(function(a,b){ return (parseInt(a,10)||0)-(parseInt(b,10)||0); });
+
+var state = { mechanism:'', body:'', from:'', to:'', sdg:'', q:'' };
+var currentList = [];
+var chart = null;
+
+function fillSelect(el, opts, allLabel){
+  el.innerHTML = '<option value="">'+esc(allLabel)+'</option>' + opts.map(function(o){
+    return '<option value="'+esc(o.v)+'">'+esc(o.l)+'</option>';
+  }).join('');
+}
+fillSelect($('fMechanism'), mechanisms.map(function(m){ return {v:m,l:m}; }), 'All mechanisms');
+fillSelect($('fBody'), bodies.map(function(b){ return {v:b,l:b}; }), 'All bodies / mandates');
+fillSelect($('fFrom'), yearSet.map(function(y){ return {v:String(y),l:String(y)}; }), 'From (any)');
+fillSelect($('fTo'), yearSet.map(function(y){ return {v:String(y),l:String(y)}; }), 'To (any)');
+fillSelect($('fSdg'), sdgList.map(function(n){ return {v:n, l:'SDG '+n+(sdgNames[n]?' — '+sdgNames[n]:'')}; }), 'All SDGs');
+
+/* ---------- header & overview ---------- */
+$('country').textContent = country;
+document.title = 'UN human rights recommendations — ' + country;
+var lede = esc(U.title || 'UN human rights recommendations and observations addressed to ' + country)
+  + ' · n = ' + records.length + ' records'
+  + (yearMin!=null ? ' · years ' + yearMin + '–' + yearMax + ' (' + yearSet.length + ' distinct years)' : ' · no year information in the data');
+if(U.source){ lede += ' · source: ' + (U.source_url ? '<a href="'+esc(U.source_url)+'" target="_blank" rel="noopener noreferrer">'+esc(U.source)+'</a>' : esc(U.source)); }
+if(U.built){ lede += ' · dataset built ' + esc(U.built); }
+$('lede').innerHTML = lede;
+
+function stat(num, lbl){ return '<div class="stat"><div class="num">'+esc(num)+'</div><div class="lbl">'+esc(lbl)+'</div></div>'; }
+$('statsRow').innerHTML =
+  stat(records.length, 'records loaded') +
+  stat(yearMin!=null ? yearMin+'–'+yearMax : '—', 'year range') +
+  stat(yearSet.length, 'distinct years') +
+  stat(mechanisms.length, 'mechanisms') +
+  stat(bodies.length, 'bodies / mandates');
+$('nNote').textContent = records.length;
+$('foot').innerHTML = 'Data: ' + esc(U.title || 'UHRI extract') + (U.source ? ' (' + esc(U.source) + ')' : '')
+  + '. All data was loaded into this page before it opened; apart from the optional AI step you trigger yourself, the page makes no network requests. Symbols link to the UN documents and open in a new tab.';
+
+/* ---------- filtering ---------- */
+function matches(r){
+  if(state.mechanism && String(r.mechanism==null?'':r.mechanism) !== state.mechanism) return false;
+  if(state.body && String(r.body==null?'':r.body) !== state.body) return false;
+  var y = r.year;
+  if(state.from){ if(typeof y!=='number' || y < parseInt(state.from,10)) return false; }
+  if(state.to){ if(typeof y!=='number' || y > parseInt(state.to,10)) return false; }
+  if(state.sdg){
+    var ok=false;
+    arr(r.sdgs).forEach(function(n){ if(String(n)===state.sdg) ok=true; });
+    if(!ok) return false;
+  }
+  if(state.q){
+    var hay = [r.text, r.symbol, r.body, r.mechanism, r.type, r.section, r.doc_url]
+      .concat(arr(r.themes), arr(r.sdg_targets), arr(r.affected_persons), arr(r.countries))
+      .join(' ').toLowerCase();
+    if(hay.indexOf(state.q) === -1) return false;
+  }
+  return true;
+}
+
+function themeCounts(list){
+  var m = {};
+  list.forEach(function(r){
+    var seen = {};
+    arr(r.themes).forEach(function(t){
+      var k = String(t);
+      if(!seen[k]){ seen[k]=1; m[k] = (m[k]||0)+1; }
+    });
+  });
+  return Object.keys(m).map(function(k){ return [k, m[k]]; })
+    .sort(function(a,b){ return b[1]-a[1] || a[0].localeCompare(b[0]); })
+    .slice(0,10);
+}
+
+/* ---------- chart ---------- */
+function renderChart(list){
+  var data = themeCounts(list);
+  var canvas = $('themeCanvas'), wrap = $('chartWrap'), empty = $('chartEmpty'), fb = $('chartFallback');
+  if(!data.length){
+    if(chart){ chart.destroy(); chart = null; }
+    canvas.style.display='none'; fb.hidden = true; wrap.style.height='0px';
+    empty.hidden = false;
+    empty.textContent = list.length
+      ? 'None of the ' + list.length + ' matching records carries a theme tag.'
+      : 'No records match the current filters.';
+    return;
+  }
+  empty.hidden = true;
+  if(!window.Chart){
+    canvas.style.display='none';
+    fb.hidden = false;
+    var max = data[0][1];
+    fb.innerHTML = data.map(function(d){
+      return '<div style="margin:5px 0"><div style="font-size:.85rem">'+esc(d[0])+'</div>'
+        + '<div style="background:#e8f1fa;border-radius:4px;padding:2px 8px;width:'+Math.max(8,Math.round(d[1]/max*100))+'%;color:#17517f;font-size:.8rem">'+d[1]+' record'+(d[1]===1?'':'s')+'</div></div>';
+    }).join('');
+    return;
+  }
+  fb.hidden = true;
+  canvas.style.display = 'block';
+  wrap.style.height = Math.max(240, data.length*38 + 70) + 'px';
+  var labels = data.map(function(d){ return d[0]; });
+  var values = data.map(function(d){ return d[1]; });
+  if(chart){
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = values;
+    chart.update();
+  } else {
+    chart = new Chart(canvas.getContext('2d'), {
+      type:'bar',
+      data:{ labels:labels, datasets:[{ label:'Matching records', data:values, backgroundColor:'#1f6fb2', borderRadius:4 }] },
+      options:{
+        indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{ display:false },
+          tooltip:{ callbacks:{ label:function(c){ return ' ' + c.parsed.x + ' record' + (c.parsed.x===1?'':'s'); } } }
+        },
+        scales:{
+          x:{ beginAtZero:true, ticks:{ precision:0 }, title:{ display:true, text:'Matching records tagged with this theme' }, grid:{ color:'#e6ecf2' } },
+          y:{ grid:{ display:false }, ticks:{ autoSkip:false, font:{ size:13 } } }
+        }
+      }
+    });
+  }
+}
+
+/* ---------- records table ---------- */
+function firstLine(r){
+  var t = String(r.text==null?'':r.text).trim();
+  if(!t) return '(no text in this record)';
+  var nl = t.indexOf('\n');
+  var line = nl >= 0 ? t.slice(0, nl) : t;
+  if(line.length > 240) line = line.slice(0, 240).replace(/\s+\S*$/,'') + ' …';
+  return line;
+}
+function sortRecords(list){
+  return list.slice().sort(function(a,b){
+    var da = String(a.date||''), db = String(b.date||'');
+    if(da !== db) return db.localeCompare(da);
+    var ya = (typeof a.year==='number' ? a.year : -1), yb = (typeof b.year==='number' ? b.year : -1);
+    if(ya !== yb) return yb - ya;
+    return String(a.symbol||'').localeCompare(String(b.symbol||''));
+  });
+}
+function renderTable(list){
+  var tbody = $('recBody'), empty = $('tableEmpty');
+  $('matchCount').textContent = 'showing ' + list.length + ' of ' + records.length + ' records';
+  if(!list.length){ tbody.innerHTML=''; empty.hidden=false; return; }
+  empty.hidden = true;
+  tbody.innerHTML = list.map(function(r, i){
+    var url = r.doc_url || '#';
+    var sym = r.symbol || '(no symbol)';
+    var date = r.date || (typeof r.year==='number' ? String(r.year) : '—');
+    var meta = [r.mechanism, r.type].filter(Boolean).join(' · ');
+    var themes = arr(r.themes).map(function(t){ return '<span class="chip">'+esc(t)+'</span>'; }).join('');
+    var sdgs = arr(r.sdgs).map(function(n){
+      var nm = sdgNames[String(n)];
+      return '<span class="chip">SDG '+esc(n)+(nm?' — '+esc(nm):'')+'</span>';
+    }).join('');
+    var targets = arr(r.sdg_targets).map(function(t){ return '<li>'+esc(t)+'</li>'; }).join('');
+    var persons = arr(r.affected_persons).map(function(p){ return '<span class="chip">'+esc(p)+'</span>'; }).join('');
+    var countries = arr(r.countries);
+    return '<tr class="rec" data-i="'+i+'" aria-expanded="false" title="Click to show the full text">'
+      + '<td class="chev">▸</td>'
+      + '<td class="cdate">'+esc(date)+'</td>'
+      + '<td class="cbody">'+esc(r.body||'—')+(meta?'<div class="sub">'+esc(meta)+'</div>':'')+'</td>'
+      + '<td class="csym"><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(sym)+'</a></td>'
+      + '<td class="ctext">'+esc(firstLine(r))+'</td>'
+      + '</tr>'
+      + '<tr class="detail" id="d'+i+'" hidden><td colspan="5">'
+      + (r.section ? '<p class="dsec"><strong>Section:</strong> '+esc(r.section)+'</p>' : '')
+      + '<div class="fulltext">'+esc(r.text||'(no text in this record)')+'</div>'
+      + (themes ? '<p class="dline"><strong>Themes:</strong> '+themes+'</p>' : '')
+      + (sdgs ? '<p class="dline"><strong>SDGs:</strong> '+sdgs+'</p>' : '')
+      + (targets ? '<p class="dline"><strong>SDG targets:</strong></p><ul class="dlist">'+targets+'</ul>' : '')
+      + (persons ? '<p class="dline"><strong>Affected persons:</strong> '+persons+'</p>' : '')
+      + (countries.length ? '<p class="dline"><strong>Countries:</strong> '+esc(countries.join(', '))+'</p>' : '')
+      + '<p class="dline"><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Open the UN document ('+esc(sym)+') ↗</a></p>'
+      + '</td></tr>';
+  }).join('');
+}
+
+$('recBody').addEventListener('click', function(e){
+  if(e.target.closest('a')) return;
+  var tr = e.target.closest('tr.rec');
+  if(!tr) return;
+  var det = document.getElementById('d' + tr.dataset.i);
+  if(!det) return;
+  var willOpen = det.hidden;
+  det.hidden = !willOpen;
+  tr.classList.toggle('open', willOpen);
+  tr.setAttribute('aria-expanded', String(willOpen));
+});
+
+/* ---------- update ---------- */
+function update(){
+  var filtered = records.filter(matches);
+  currentList = sortRecords(filtered);
+  renderChart(filtered);
+  renderTable(currentList);
+  var parts = [];
+  if(state.mechanism) parts.push('mechanism = ' + state.mechanism);
+  if(state.body) parts.push('body/mandate = ' + state.body);
+  if(state.from || state.to) parts.push('years ' + (state.from || (yearMin!=null?yearMin:'…')) + '–' + (state.to || (yearMax!=null?yearMax:'…')));
+  if(state.sdg) parts.push('SDG ' + state.sdg + (sdgNames[state.sdg] ? ' (' + sdgNames[state.sdg] + ')' : ''));
+  if(state.q) parts.push('keyword “' + state.q + '”');
+  $('filterDesc').textContent = parts.length
+    ? 'Active filters — ' + parts.join('; ')
+    : 'No filters applied: all ' + records.length + ' records are shown.';
+  $('chartN').textContent = '· ' + filtered.length + ' matching record' + (filtered.length===1?'':'s');
+}
+
+/* ---------- filter events ---------- */
+$('fMechanism').addEventListener('change', function(e){ state.mechanism = e.target.value; update(); });
+$('fBody').addEventListener('change', function(e){ state.body = e.target.value; update(); });
+$('fSdg').addEventListener('change', function(e){ state.sdg = e.target.value; update(); });
+$('fFrom').addEventListener('change', function(e){
+  state.from = e.target.value;
+  if(state.from && state.to && parseInt(state.from,10) > parseInt(state.to,10)){ state.to = state.from; $('fTo').value = state.to; }
+  update();
+});
+$('fTo').addEventListener('change', function(e){
+  state.to = e.target.value;
+  if(state.from && state.to && parseInt(state.to,10) < parseInt(state.from,10)){ state.from = state.to; $('fFrom').value = state.from; }
+  update();
+});
+$('fQ').addEventListener('input', function(e){ state.q = e.target.value.trim().toLowerCase(); update(); });
+$('reset').addEventListener('click', function(){
+  state.mechanism = state.body = state.from = state.to = state.sdg = state.q = '';
+  ['fMechanism','fBody','fFrom','fTo','fSdg'].forEach(function(id){ $(id).value=''; });
+  $('fQ').value = '';
+  update();
+});
+
+/* ================= AI SDG suggestions ================= */
+var runs = [];
+var aiRunning = false, aiStop = false;
+
+function setStatus(t){ $('aiStatus').textContent = t; }
+
+function buildPrompt(batch){
+  return 'You are classifying UN human rights recommendations addressed to ' + country + ' by Sustainable Development Goal (SDG).\\n'
+    + 'Below are ' + batch.length + ' paragraphs, each with an "id" and its full "text". For each paragraph, decide which SDG goal numbers (integers 1 to 17 only) it relates to; use an empty array if none apply. Include every id exactly once.\\n'
+    + 'Reply with JSON only — no prose, no markdown fences — in exactly this shape: {"<id>": [16, 10], "<id>": []}\\n'
+    + 'Also add one extra key "_model" with the name/version of the model answering, if you know it.\\n\\n'
+    + JSON.stringify(batch.map(function(r){ return { id: r.id, text: String(r.text == null ? '' : r.text) }; }), null, 1);
+}
+
+function parseAnswer(ans){
+  if(ans == null) return null;
+  var s = String(ans).trim().replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
+  try { var o = JSON.parse(s); if(o && typeof o === 'object' && !Array.isArray(o)) return o; } catch(e){}
+  var m = s.match(/\{[\s\S]*\}/);
+  if(m){ try { var o2 = JSON.parse(m[0]); if(o2 && typeof o2 === 'object' && !Array.isArray(o2)) return o2; } catch(e){} }
+  return null;
+}
+function normalizeSDGs(v){
+  if(!Array.isArray(v)) return null;
+  var out = [], seen = {};
+  v.forEach(function(x){ var n = parseInt(x, 10); if(n >= 1 && n <= 17 && !seen[n]){ seen[n] = 1; out.push(n); } });
+  return out.sort(function(a,b){ return a-b; });
+}
+function unSdgs(rec){
+  var out = [], seen = {};
+  arr(rec.sdgs).forEach(function(x){ var n = parseInt(x,10); if(n>=1 && n<=17 && !seen[n]){ seen[n]=1; out.push(n); } });
+  return out.sort(function(a,b){ return a-b; });
+}
+function compareSets(a, b){
+  var A = a.slice().sort(function(x,y){return x-y;}), B = b.slice().sort(function(x,y){return x-y;});
+  if(A.join(',') === B.join(',')) return { kind:'exact' };
+  var inter = A.filter(function(x){ return B.indexOf(x) >= 0; }).length;
+  var union = {};
+  A.concat(B).forEach(function(x){ union[x]=1; });
+  return { kind: inter > 0 ? 'partial' : 'none', inter: inter, union: Object.keys(union).length };
+}
+function sdgChips(nums){
+  if(!nums.length) return '<span class="muted">— none tagged</span>';
+  return nums.map(function(n){
+    var nm = sdgNames[String(n)];
+    return '<span class="chip">SDG '+n+(nm?' — '+esc(nm):'')+'</span>';
+  }).join('');
+}
+
+async function runAI(){
+  if(aiRunning) return;
+  var list = currentList.slice(0, 50);
+  if(!list.length){ setStatus('No records match the current filters — nothing to send.'); return; }
+  if(typeof studio === 'undefined' || !studio || typeof studio.ask !== 'function'){
+    setStatus('studio.ask is not available in this environment, so no text can be sent to a model.');
+    return;
+  }
+  aiRunning = true; aiStop = false;
+  $('aiRun').disabled = true; $('aiAgain').disabled = true; $('aiAgain').hidden = true; $('aiStop').hidden = false;
+  $('aiPbar').hidden = false; $('aiPbarFill').style.width = '0%';
+  var runIndex = runs.length + 1;
+  var filterDesc = $('filterDesc').textContent;
+  var results = [];
+  var modelName = null;
+  var BATCH = 25;
+  var totalBatches = Math.ceil(list.length / BATCH);
+  for(var b = 0; b < totalBatches; b++){
+    if(aiStop) break;
+    var start = b * BATCH;
+    var batch = list.slice(start, start + BATCH);
+    setStatus('Run ' + runIndex + ' — sending batch ' + (b+1) + ' of ' + totalBatches + ': ' + batch.length + ' records (records ' + (start+1) + '–' + (start+batch.length) + ' of ' + list.length + ' selected). Their full text is leaving this browser to the external model behind studio.ask…');
+    var ans = null, err = null;
+    try { ans = await studio.ask(buildPrompt(batch), { json: true }); }
+    catch(e){ err = e; }
+    if(err){
+      batch.forEach(function(r){ results.push({ rec: r, ai: null, err: String(err && err.message || err) }); });
+      setStatus('Run ' + runIndex + ' — batch ' + (b+1) + ' failed (' + String(err && err.message || err) + '). Continuing with the next batch…');
+    } else {
+      var parsed = parseAnswer(ans);
+      if(parsed && typeof parsed._model === 'string' && !modelName) modelName = parsed._model;
+      batch.forEach(function(r){
+        var v = parsed ? parsed[r.id] : undefined;
+        var norm = Array.isArray(v) ? normalizeSDGs(v) : null;
+        results.push({ rec: r, ai: norm, err: norm ? null : (parsed ? 'no SDG list for this id' : 'the model did not return valid JSON') });
+      });
+      setStatus('Run ' + runIndex + ' — batch ' + (b+1) + ' of ' + totalBatches + ' answered (' + results.length + ' of ' + list.length + ' records processed).');
+    }
+    $('aiPbarFill').style.width = Math.round(100 * results.length / list.length) + '%';
+  }
+  var stopped = aiStop && results.length < list.length;
+  finishRun(runIndex, list, results, stopped, filterDesc, modelName);
+  aiRunning = false;
+  $('aiRun').disabled = false; $('aiAgain').disabled = false; $('aiAgain').hidden = false; $('aiStop').hidden = true;
+}
+
+function finishRun(index, list, results, stopped, filterDesc, modelName){
+  var answered = results.filter(function(r){ return r.ai; });
+  var exact = answered.filter(function(r){ return compareSets(unSdgs(r.rec), r.ai).kind === 'exact'; });
+  var noans = results.length - answered.length;
+  var rate = answered.length ? Math.round(1000 * exact.length / answered.length) / 10 : null;
+  var run = {
+    index: index, when: new Date().toLocaleString(), sent: list.length, processed: results.length,
+    batches: Math.max(1, Math.ceil(results.length / 25)), stopped: stopped, filterDesc: filterDesc,
+    modelName: modelName, answered: answered.length, exact: exact.length, noans: noans, rate: rate, results: results
+  };
+  runs.push(run);
+  renderRun(run);
+  renderSummary();
+  setStatus('Run ' + index + ' finished: ' + answered.length + ' of ' + results.length + ' records answered'
+    + (rate != null ? ', agreement rate ' + rate + '%' : '')
+    + (noans ? ', ' + noans + ' without a usable answer' : '')
+    + (stopped ? ' (stopped early by you)' : '') + '.');
+}
+
+function renderSummary(){
+  var wrap = $('runsSummaryWrap');
+  if(!runs.length){ wrap.hidden = true; return; }
+  wrap.hidden = false;
+  $('runsSummary').innerHTML = '<table><thead><tr><th>Run</th><th>When</th><th>Records sent</th><th>Answered</th><th>Exact matches</th><th>Agreement rate</th></tr></thead><tbody>'
+    + runs.map(function(r){
+      return '<tr><td>Run '+r.index+(r.stopped?' (stopped)':'')+'</td><td>'+esc(r.when)+'</td><td>'+r.sent+'</td><td>'+r.answered+'</td><td>'+r.exact+'</td><td>'+(r.rate!=null? r.rate+'%':'—')+'</td></tr>';
+    }).join('') + '</tbody></table>';
+}
+
+function renderRun(run){
+  var panel = document.createElement('div');
+  panel.className = 'run-panel';
+  var rateTxt = run.rate != null ? run.rate + '% (' + run.exact + ' of ' + run.answered + ')' : '—';
+  var html = '<h3>Run ' + run.index + ' — ' + esc(run.when) + (run.stopped ? ' <span style="color:#a33">(stopped early)</span>' : '') + '</h3>'
+    + '<p class="meta">Filters at run time: ' + esc(run.filterDesc) + ' · first ' + run.sent + ' matching record(s) selected.</p>'
+    + '<div class="ai-note"><strong>Notice:</strong> the full text of ' + run.processed + ' record(s) was sent in ' + run.batches + ' batch(es) of at most 25 to the external language model behind this workshop\'s <code>studio.ask</code> API and <strong>left this browser</strong>.'
+    + (run.modelName ? ' The model self-reported its name as <span data-source="ai">“' + esc(run.modelName) + '”</span> (AI-generated, may be inaccurate).' : ' The API does not disclose the model\'s name and the model did not self-report one.')
+    + ' The model can give different answers on each run; the values below marked <strong>AI</strong> are its output, not UN data.</div>'
+    + '<p class="note" style="margin-top:10px"><strong>Agreement rate: ' + rateTxt + '</strong>'
+    + (run.noans ? ' · ' + run.noans + ' record(s) got no usable answer and are excluded from the rate' : '')
+    + '. How this is computed: a record counts as agreeing only when the model\'s SDG set exactly equals the record\'s UN-tagged SDG set; the comparison is done exactly by this page over the model\'s returned numbers.</p>'
+    + '<table><thead><tr><th>Record</th><th>UN SDGs</th><th>AI-suggested SDGs</th><th>Agreement</th></tr></thead><tbody>';
+  run.results.forEach(function(r){
+    var rec = r.rec;
+    var url = rec.doc_url || '#';
+    var cmp = r.ai ? compareSets(unSdgs(rec), r.ai) : null;
+    var agree;
+    if(!r.ai) agree = '<span style="color:#a33">No answer</span><div class="sub">' + esc(r.err || '') + '</div>';
+    else if(cmp.kind === 'exact') agree = '<strong>Exact match</strong>';
+    else if(cmp.kind === 'partial') agree = 'Partial — ' + cmp.inter + ' of ' + cmp.union + ' distinct SDGs shared';
+    else agree = 'No overlap';
+    html += '<tr>'
+      + '<td><a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(rec.symbol || '(no symbol)') + '</a>'
+      + '<div class="sub">' + esc(rec.date || (typeof rec.year === 'number' ? rec.year : '')) + (rec.body ? ' · ' + esc(rec.body) : '') + '</div></td>'
+      + '<td>' + sdgChips(unSdgs(rec)) + '</td>'
+      + '<td data-source="ai">' + (r.ai ? sdgChips(r.ai) : '— ' + esc(r.err || 'no answer')) + '</td>'
+      + '<td>' + agree + '</td>'
+      + '</tr>';
+  });
+  html += '</tbody></table>'
+    + '<p class="legend"><span class="sw"></span>Cells with the AI badge contain values returned by the external model via studio.ask.</p>';
+  panel.innerHTML = html;
+  $('runs').appendChild(panel);
+  panel.scrollIntoView({ block: 'nearest' });
+}
+
+$('aiRun').addEventListener('click', runAI);
+$('aiAgain').addEventListener('click', runAI);
+$('aiStop').addEventListener('click', function(){ aiStop = true; setStatus('Stopping after the current batch finishes…'); });
+
+update();
+})();
+</script>
+</body>
+</html>
+```

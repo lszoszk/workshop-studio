@@ -1,0 +1,1 @@
+I built a self‑contained dashboard that lets you explore UN human‑rights recommendations for Kenya, with filters, a bar chart of the most frequent themes, and an expandable table of records.

@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>General Comments Research Wiki</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f6f8fa;color:#1c2733}
+  header{background:#fff;border-bottom:1px solid #e3e9ef;padding:18px 28px}
+  header h1{margin:0 0 4px;font-size:22px;color:#123a5c}
+  header p{margin:0;color:#4a5b6b;max-width:75em}
+  .layout{display:flex;align-items:flex-start}
+  aside{width:280px;flex:0 0 280px;background:#fff;border-right:1px solid #e3e9ef;padding:18px 14px;position:sticky;top:0;height:100vh;overflow:auto}
+  aside .nav-head{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#7a8a99;margin:14px 6px 6px}
+  a.nav-link{display:flex;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:6px;color:#1c2733;text-decoration:none;margin:2px 0}
+  a.nav-link:hover{background:#eef4fa}
+  a.nav-link.active{background:#e8f1f9;color:#1f6fb2;font-weight:600}
+  .count{color:#7a8a99;font-size:13px}
+  a.nav-link.active .count{color:#1f6fb2}
+  #addForm{display:flex;gap:6px;margin-top:16px}
+  #addInput{flex:1;min-width:0;padding:8px 10px;border:1px solid #c9d4de;border-radius:6px;font-size:14px}
+  .hint{font-size:13px;color:#7a8a99;margin:10px 6px 0}
+  main{flex:1;min-width:0;padding:24px 34px 60px;max-width:980px}
+  h1{font-size:24px;color:#123a5c;margin:0 0 8px}
+  h2{font-size:19px;color:#123a5c;margin:26px 0 8px}
+  .lede{color:#33475b;max-width:70em}
+  .how{font-size:14px;color:#5c6f80;background:#eef4fa;border-left:3px solid #1f6fb2;padding:8px 12px;border-radius:0 6px 6px 0;max-width:70em}
+  .empty{background:#fff;border:1px dashed #c9d4de;border-radius:6px;padding:14px 16px;color:#5c6f80}
+  .doc-card{background:#fff;border:1px solid #e3e9ef;border-radius:8px;padding:12px 16px;margin:10px 0}
+  .doc-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+  .doc-title{color:#33475b}
+  .doc-meta{font-size:14px;color:#7a8a99;margin:4px 0 0}
+  .doc-sec{margin-top:8px}
+  .doc-sec h2 .sym{margin-right:2px}
+  a.sym{color:#1f6fb2;font-weight:600;text-decoration:none}
+  a.sym:hover{text-decoration:underline}
+  .para{background:#fff;border:1px solid #e3e9ef;border-left:4px solid #1f6fb2;border-radius:6px;padding:10px 14px;margin:10px 0}
+  .para-head{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+  a.pg{color:#1f6fb2;font-weight:600;text-decoration:none}
+  a.pg:hover{text-decoration:underline}
+  details{margin-top:6px}
+  summary{cursor:pointer;color:#1f6fb2;font-size:14px}
+  .para-text{white-space:pre-wrap;background:#f6f8fa;border:1px solid #e3e9ef;border-radius:4px;padding:10px 12px;margin:8px 0 2px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .chip{font-size:12px;background:#eef4fa;color:#33475b;border-radius:10px;padding:2px 9px}
+  .rel-box{background:#fff;border:1px solid #e3e9ef;border-radius:8px;padding:12px 16px;margin-top:22px}
+  .rel-box a{color:#1f6fb2;text-decoration:none;font-weight:600}
+  .rel-box a:hover{text-decoration:underline}
+  .summary-sec{background:#fff;border:1px solid #e3e9ef;border-radius:8px;padding:14px 18px;margin-top:26px}
+  .sum-row{display:flex;gap:10px;align-items:center;margin:10px 0}
+  .btn{background:#1f6fb2;color:#fff;border:0;border-radius:6px;padding:9px 16px;font-size:15px;cursor:pointer}
+  .btn:hover{background:#185a92}
+  .btn:disabled{opacity:.55;cursor:default}
+  .btn.ghost{background:#fff;color:#1f6fb2;border:1px solid #1f6fb2}
+  .status{font-size:14px;color:#5c6f80;margin:6px 0}
+  .ai-note{font-size:14px;color:#7a4a12;background:#fdf3e3;border-left:3px solid #d99a2b;padding:8px 12px;border-radius:0 6px 6px 0}
+  .ai-box{margin-top:10px}
+  .ai-list{margin:8px 0;padding-left:22px}
+  .ai-list li{margin:6px 0}
+  .ai-raw{white-space:pre-wrap;background:#f6f8fa;border:1px solid #e3e9ef;border-radius:4px;padding:10px 12px}
+  [data-source="ai"]{outline:2px dashed #d99a2b;outline-offset:3px;border-radius:4px}
+  @media (max-width:820px){
+    .layout{flex-direction:column}
+    aside{position:static;width:100%;flex:none;height:auto;border-right:0;border-bottom:1px solid #e3e9ef}
+    main{padding:18px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>General Comments research wiki</h1>
+  <p id="srcLine">Loading…</p>
+</header>
+<div class="layout">
+  <aside>
+    <a class="nav-link" href="#/">Home</a>
+    <div class="nav-head">Concept pages</div>
+    <nav id="conceptNav"></nav>
+    <form id="addForm">
+      <input id="addInput" type="text" placeholder="Add a concept…" aria-label="Add a concept">
+      <button class="btn" type="submit">Add</button>
+    </form>
+    <p class="hint">Concepts are matched case-insensitively; hyphens and punctuation count as spaces (so “non-State actors” also finds “non-state actors”).</p>
+  </aside>
+  <main id="main"></main>
+</div>
+<script>
+(function(){
+"use strict";
+var DATA = window.WORKSHOP_DATA || {};
+var LIB = DATA.un_library || {};
+var docs = Array.isArray(LIB.records) ? LIB.records : [];
+var paras = [];
+docs.forEach(function(d){
+  (Array.isArray(d.paragraphs) ? d.paragraphs : []).forEach(function(p){ paras.push({doc:d, para:p}); });
+});
+var years = docs.map(function(d){return d.year;}).filter(function(y){return typeof y==="number";});
+var yMin = years.length ? Math.min.apply(null, years) : null;
+var yMax = years.length ? Math.max.apply(null, years) : null;
+
+document.getElementById('srcLine').textContent =
+  "Source: " + (LIB.source || "the UN library of nine General Comments") + " — " +
+  docs.length + " documents, " + paras.length + " numbered paragraphs" +
+  (yMin !== null ? ", years " + yMin + "–" + yMax : "") +
+  ". Loaded from WORKSHOP_DATA.un_library; everything on this page is computed from that data in your browser.";
+
+var DEFAULT_CONCEPTS = ["proportionality","legal capacity","surveillance","non-State actors","reasonable accommodation","access to information","deprivation of liberty"];
+var concepts = DEFAULT_CONCEPTS.slice();
+try{
+  var saved = JSON.parse(localStorage.getItem("gcwiki.concepts") || "[]");
+  if(Array.isArray(saved)) saved.forEach(function(c){
+    if(typeof c === "string" && c.trim() && !concepts.some(function(x){return x.toLowerCase() === c.trim().toLowerCase();}))
+      concepts.push(c.trim());
+  });
+}catch(e){}
+
+function norm(s){ return String(s==null?"":s).toLowerCase().replace(/[^a-z0-9]+/g," ").trim(); }
+function uses(text, term){ var t = norm(term); return t.length>0 && norm(text).indexOf(t) !== -1; }
+function matchesFor(term){ return paras.filter(function(m){ return uses(m.para.text, term); }); }
+var countCache = {};
+function countFor(term){ var k = norm(term); if(!(k in countCache)) countCache[k] = matchesFor(term).length; return countCache[k]; }
+
+function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
+
+function renderNav(active){
+  var nav = document.getElementById("conceptNav");
+  nav.innerHTML = "";
+  concepts.forEach(function(c){
+    var a = el("a", "nav-link" + (norm(c) === norm(active) ? " active" : ""), c + " ");
+    a.appendChild(el("span", "count", String(countFor(c))));
+    a.href = "#/c/" + encodeURIComponent(c);
+    nav.appendChild(a);
+  });
+}
+
+function renderHome(){
+  renderNav("");
+  var main = document.getElementById("main");
+  main.innerHTML = "";
+  main.appendChild(el("h1", null, "General Comments research wiki"));
+  main.appendChild(el("p", "lede",
+    "A small wiki over the " + docs.length + " General Comments in the UN library: " + paras.length + " numbered paragraphs" +
+    (yMin !== null ? ", " + yMin + "–" + yMax : "") +
+    ". Pick a concept in the sidebar to see every paragraph that uses it, grouped by document and quoted verbatim, or type your own term to add a concept page."));
+  main.appendChild(el("p", "how",
+    "How this is computed: every number on this page is a deterministic count over the paragraphs in WORKSHOP_DATA.un_library — no estimates, no sampling."));
+  main.appendChild(el("h2", null, "Documents in the library"));
+  docs.forEach(function(d){
+    var card = el("div", "doc-card");
+    var head = el("div", "doc-head");
+    var a = el("a", "sym", d.symbol || "(no symbol)");
+    a.href = d.doc_url || "#"; a.target = "_blank"; a.rel = "noopener";
+    head.appendChild(a);
+    head.appendChild(el("span", "doc-title", d.short_title || d.title || ""));
+    card.appendChild(head);
+    card.appendChild(el("p", "doc-meta",
+      [d.committee, d.year, (d.paragraphs||[]).length + " paragraphs", (d.pages != null ? d.pages + " PDF pages" : null)]
+      .filter(Boolean).join(" · ")));
+    main.appendChild(card);
+  });
+  main.appendChild(el("h2", null, "Concept pages"));
+  main.appendChild(el("p", "lede",
+    "Each concept page lists, grouped by document, every paragraph that uses the term, verbatim, with the document symbol and a “¶ n · p. m” link that opens the PDF at that page. Start with: " +
+    DEFAULT_CONCEPTS.join(", ") + " — or add your own in the sidebar."));
+}
+
+function paraCard(m){
+  var p = m.para, d = m.doc;
+  var card = el("div", "para");
+  var head = el("div", "para-head");
+  var sym = el("a", "sym", d.symbol || "(no symbol)");
+  sym.href = d.doc_url || "#"; sym.target = "_blank"; sym.rel = "noopener";
+  head.appendChild(sym);
+  var pg = el("a", "pg", "¶ " + (p.paragraph != null ? p.paragraph : "?") + " · p. " + (p.page != null ? p.page : "?"));
+  pg.href = "#";
+  pg.setAttribute("data-open", "1");
+  pg.setAttribute("data-symbol", d.symbol || "");
+  pg.setAttribute("data-page", String(p.page != null ? p.page : ""));
+  pg.title = "Open this document's PDF at that page";
+  head.appendChild(pg);
+  card.appendChild(head);
+  var det = el("details");
+  det.appendChild(el("summary", null, "Verbatim text of ¶ " + (p.paragraph != null ? p.paragraph : "?")));
+  det.appendChild(el("p", "para-text", p.text || "(no text)"));
+  card.appendChild(det);
+  if(Array.isArray(p.cited_articles) && p.cited_articles.length){
+    var chips = el("div", "chips");
+    p.cited_articles.forEach(function(c){ chips.appendChild(el("span", "chip", c)); });
+    card.appendChild(chips);
+  }
+  return card;
+}
+
+function summarySection(term, matches){
+  var sec = el("section", "summary-sec");
+  sec.appendChild(el("h2", null, "Draft a summary (AI)"));
+  sec.appendChild(el("p", "how",
+    "The button below sends at most 12 of this page's paragraphs — verbatim, with their symbols and paragraph numbers — to a language model via studio.ask, and asks for three sentences, each ending with the paragraph it rests on. The model's answer is marked as AI-written. Nothing is sent until you click, and you can stop it while it waits."));
+  var row = el("div", "sum-row");
+  var btn = el("button", "btn", "Draft a summary");
+  var cancelBtn = el("button", "btn ghost", "Stop");
+  cancelBtn.style.display = "none";
+  var status = el("p", "status", "");
+  row.appendChild(btn); row.appendChild(cancelBtn);
+  sec.appendChild(row); sec.appendChild(status);
+  var out = el("div", "ai-out");
+  sec.appendChild(out);
+  var cancelled = false;
+  btn.addEventListener("click", function(){
+    var selected = matches.slice(0, 12);
+    var n = selected.length;
+    btn.disabled = true; cancelBtn.style.display = ""; cancelled = false;
+    out.innerHTML = "";
+    status.textContent = "Sending " + n + " paragraph" + (n === 1 ? "" : "s") + " to the model — they have left your browser. Waiting for the answer…";
+    cancelBtn.onclick = function(){ cancelled = true; status.textContent = "Stopping… the answer will be discarded."; };
+    var lines = selected.map(function(m, i){
+      return "[" + (i+1) + "] " + (m.doc.symbol || "?") + ", para. " + m.para.paragraph + " (p. " + m.para.page + "): " + m.para.text;
+    });
+    var prompt = "Below are " + n + " verbatim paragraphs from UN human rights treaty-body General Comments. All of them use the concept \u201C" + term + "\u201D.\n\n" +
+      lines.join("\n\n") +
+      "\n\nTask: write exactly three sentences summarizing what these paragraphs say about \u201C" + term + "\u201D. Each sentence must end with a citation in parentheses naming the paragraph it rests on, in the form (SYMBOL, para. N) — for example (CCPR/C/GC/37, para. 40). Use only what the paragraphs say; do not invent facts, quotes or paragraph numbers. Reply with JSON only, no other text: {\"sentences\": [\"...\", \"...\", \"...\"]}";
+    (async function(){
+      var answer = "";
+      try{ answer = await studio.ask(prompt, {json:true}); }
+      catch(err){ status.textContent = "The model call failed: " + err; }
+      btn.disabled = false; cancelBtn.style.display = "none";
+      if(cancelled){ status.textContent = "Stopped — no summary was added."; return; }
+      if(!answer){ if(!status.textContent) status.textContent = "No answer came back from the model."; return; }
+      var sentences = null;
+      try{
+        var j = JSON.parse(answer);
+        if(j && Array.isArray(j.sentences)) sentences = j.sentences.map(function(s){ return String(s); });
+      }catch(e){ sentences = null; }
+      out.innerHTML = "";
+      out.appendChild(el("p", "ai-note",
+        "AI-written summary — " + n + " of the " + matches.length + " matching paragraph" + (matches.length === 1 ? "" : "s") +
+        " on this page " + (n === 1 ? "was" : "were") + " sent to the model and left your browser. The sentences below come from the model, not from the documents."));
+      var box = el("div", "ai-box");
+      box.setAttribute("data-source", "ai");
+      if(sentences && sentences.length){
+        var ol = el("ol", "ai-list");
+        sentences.slice(0, 3).forEach(function(s){
+          var li = el("li", null, s);
+          li.setAttribute("data-source", "ai");
+          ol.appendChild(li);
+        });
+        box.appendChild(ol);
+      }else{
+        var p = el("p", "ai-raw", answer);
+        p.setAttribute("data-source", "ai");
+        box.appendChild(p);
+      }
+      out.appendChild(box);
+      status.textContent = "Done — " + n + " paragraph" + (n === 1 ? "" : "s") + " sent to the model.";
+    })();
+  });
+  return sec;
+}
+
+function renderConcept(term){
+  renderNav(term);
+  var main = document.getElementById("main");
+  main.innerHTML = "";
+  var matches = matchesFor(term);
+  main.appendChild(el("h1", null, "Concept: " + term));
+  var docsHit = [];
+  matches.forEach(function(m){ if(docsHit.indexOf(m.doc) === -1) docsHit.push(m.doc); });
+  main.appendChild(el("p", "lede",
+    matches.length + " paragraph" + (matches.length === 1 ? "" : "s") + " in " + docsHit.length + " of " + docs.length +
+    " documents use \u201C" + term + "\u201D."));
+  main.appendChild(el("p", "how",
+    "How this is computed: a case-insensitive text search for \u201C" + term + "\u201D (hyphens and punctuation count as spaces) over all " +
+    paras.length + " paragraphs of the " + docs.length + " General Comments in WORKSHOP_DATA.un_library. The count is exact, not estimated. Paragraph texts are verbatim — expand each card to read them."));
+  if(!matches.length){
+    main.appendChild(el("p", "empty",
+      "No paragraph in the library uses the term \u201C" + term + "\u201D. Try another wording — for example \u201Cnon-state actors\u201D, or a shorter term like \u201Caccommodation\u201D."));
+    return;
+  }
+  docs.forEach(function(d){
+    var ms = matches.filter(function(m){ return m.doc === d; });
+    if(!ms.length) return;
+    var sec = el("section", "doc-sec");
+    var h2 = el("h2");
+    var a = el("a", "sym", d.symbol || "(no symbol)");
+    a.href = d.doc_url || "#"; a.target = "_blank"; a.rel = "noopener";
+    h2.appendChild(a);
+    h2.appendChild(document.createTextNode(" — " + (d.short_title || d.title || "")));
+    sec.appendChild(h2);
+    sec.appendChild(el("p", "doc-meta",
+      [d.committee, d.year, ms.length + " matching paragraph" + (ms.length === 1 ? "" : "s")].filter(Boolean).join(" · ")));
+    ms.forEach(function(m){ sec.appendChild(paraCard(m)); });
+    main.appendChild(sec);
+  });
+  var related = concepts.filter(function(c){
+    return norm(c) !== norm(term) && matches.some(function(m){ return uses(m.para.text, c); });
+  });
+  if(related.length){
+    var box = el("div", "rel-box");
+    box.appendChild(el("strong", null, "Related concepts (found in the same paragraphs): "));
+    related.forEach(function(c, i){
+      if(i) box.appendChild(document.createTextNode(" · "));
+      var a = el("a", null, c);
+      a.href = "#/c/" + encodeURIComponent(c);
+      box.appendChild(a);
+    });
+    main.appendChild(box);
+  }
+  main.appendChild(summarySection(term, matches));
+}
+
+function route(){
+  var m = (location.hash || "").match(/^#\/c\/(.*)$/);
+  if(m){
+    var term = decodeURIComponent(m[1]);
+    if(term) { renderConcept(term); return; }
+  }
+  renderHome();
+}
+window.addEventListener("hashchange", route);
+
+document.getElementById("addForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  var input = document.getElementById("addInput");
+  var v = input.value.trim();
+  if(!v) return;
+  if(!concepts.some(function(c){ return c.toLowerCase() === v.toLowerCase(); })){
+    concepts.push(v);
+    try{
+      localStorage.setItem("gcwiki.concepts", JSON.stringify(concepts.slice(DEFAULT_CONCEPTS.length)));
+    }catch(err){}
+  }
+  input.value = "";
+  location.hash = "#/c/" + encodeURIComponent(v);
+});
+
+document.addEventListener("click", function(e){
+  var a = e.target && e.target.closest ? e.target.closest("a[data-open]") : null;
+  if(!a) return;
+  e.preventDefault();
+  var sym = a.getAttribute("data-symbol");
+  var pg = parseInt(a.getAttribute("data-page"), 10);
+  try{
+    if(window.studio && typeof studio.openSource === "function") studio.openSource(sym, pg);
+  }catch(err){}
+});
+
+route();
+})();
+</script>
+</body>
+</html>

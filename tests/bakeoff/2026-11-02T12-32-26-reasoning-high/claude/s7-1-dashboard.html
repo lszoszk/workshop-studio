@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UN human rights recommendations</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#1d2733;background:#f5f7fa}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 24px 60px}
+  h1{margin:0 0 6px;font-size:28px;color:#14466e}
+  .sub{margin:0 0 20px;color:#4a5a6a}
+  .sub a{color:#1f6fb2}
+  .card{background:#fff;border:1px solid #dde3ea;border-radius:8px;padding:18px 20px;margin-bottom:20px}
+  .filters{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+  .filters label{display:flex;flex-direction:column;font-size:13px;font-weight:600;color:#4a5a6a;gap:4px}
+  select,input{font:inherit;padding:7px 9px;border:1px solid #b9c4d0;border-radius:6px;background:#fff;color:#1d2733}
+  select{max-width:230px}
+  input[type=number]{width:100px}
+  input[type=search]{width:200px}
+  button{font:inherit;padding:8px 16px;border-radius:6px;border:1px solid #1f6fb2;background:#1f6fb2;color:#fff;cursor:pointer}
+  button.secondary{background:#fff;color:#1f6fb2}
+  button:hover{filter:brightness(.95)}
+  .count{font-size:20px;font-weight:600;margin:0 0 2px}
+  .desc{margin:0;color:#4a5a6a}
+  .note{font-size:14px;color:#5b6b7b;margin:10px 0 0}
+  h2{font-size:19px;margin:0 0 10px;color:#14466e}
+  .chartbox{position:relative;height:460px}
+  .empty{padding:24px;text-align:center;color:#5b6b7b;font-size:18px}
+  table{width:100%;border-collapse:collapse;table-layout:fixed}
+  th{text-align:left;font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:#4a5a6a;border-bottom:2px solid #dde3ea;padding:8px}
+  td{padding:9px 8px;border-bottom:1px solid #edf0f4;vertical-align:top;overflow-wrap:anywhere}
+  tr.rec{cursor:pointer}
+  tr.rec:hover td{background:#f0f6fb}
+  tr.rec:focus{outline:2px solid #1f6fb2;outline-offset:-2px}
+  col.c1{width:120px}col.c2{width:150px}col.c3{width:210px}
+  td a{color:#1f6fb2;font-weight:600}
+  .caret{display:inline-block;width:1em;color:#1f6fb2}
+  tr.detail td{background:#f8fafc;padding:14px 18px}
+  tr.detail.hidden{display:none}
+  .full{white-space:pre-wrap;margin:0 0 10px}
+  .meta{font-size:14px;color:#3b4a59;margin:4px 0}
+  .meta b{color:#14466e}
+  .more{text-align:center;margin-top:16px}
+  .muted{color:#7a8794}
+  @media(max-width:760px){col.c2{width:90px}col.c3{width:150px}col.c1{width:90px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="title">UN human rights recommendations</h1>
+  <p class="sub" id="source"></p>
+
+  <div class="card">
+    <div class="filters">
+      <label>Mechanism<select id="fMech"></select></label>
+      <label>Body (treaty body or mandate)<select id="fBody"></select></label>
+      <label>First year<input type="number" id="fFrom" placeholder="from"></label>
+      <label>Last year<input type="number" id="fTo" placeholder="to"></label>
+      <label>SDG<select id="fSdg"></select></label>
+      <label>Keyword<input type="search" id="fKw" placeholder="search the text"></label>
+      <button class="secondary" id="reset" type="button">Reset</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="count" id="count"></p>
+    <p class="desc" id="desc"></p>
+    <p class="note">How this is computed: every record is checked against all active filters; it is shown only if it passes every one. The keyword search ignores upper/lower case and looks only in the paragraph text. Only records of type "Recommendations" or "Concerns/Observations" are counted.</p>
+  </div>
+
+  <div class="card">
+    <h2>Ten most frequent themes among the matching records</h2>
+    <div id="chartArea">
+      <div class="chartbox"><canvas id="chart"></canvas></div>
+    </div>
+    <div id="chartEmpty" class="empty" style="display:none">No records match these filters</div>
+    <p class="note">How this is computed: for each matching record, one is added to every theme listed on it; themes are sorted by count (ties alphabetically) and the top 10 are kept. A record with several items is counted once for each. Records with no theme recorded do not appear here.</p>
+  </div>
+
+  <div class="card">
+    <h2>Matching records, newest first</h2>
+    <div id="tableArea">
+      <table>
+        <colgroup><col class="c1"><col class="c2"><col class="c3"><col></colgroup>
+        <thead><tr><th>Date</th><th>Body</th><th>Symbol</th><th>Text (first line)</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="more"><button id="more" type="button">Show more</button></div>
+    </div>
+    <div id="tableEmpty" class="empty" style="display:none">No records match these filters</div>
+    <p class="note">How this is computed: records are sorted by date, newest first; records without a date come last. Click a row to read the full paragraph, exactly as in the source, and click again to close it. Click a symbol to open the UN document in a new tab. 100 rows are shown at a time.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  var D = window.WORKSHOP_DATA && window.WORKSHOP_DATA.uhri;
+  if(!D || !Array.isArray(D.records)){
+    document.getElementById('title').textContent = 'No data found';
+    document.getElementById('source').textContent = 'The file "uhri" is not attached to this page.';
+    return;
+  }
+  var OK_TYPES = {"Recommendations":1,"Concerns/Observations":1};
+  var all = D.records.filter(function(r){ return r && OK_TYPES[r.type]; });
+  var excluded = D.records.length - all.length;
+  var sdgNames = D.sdg_names || {};
+  var PAGE = 100, shown = PAGE, chart = null, matches = [];
+
+  var $ = function(id){ return document.getElementById(id); };
+  function arr(x){ return Array.isArray(x) ? x : []; }
+  function bodyOf(r){ return r.body ? r.body : 'unknown'; }
+  function mechOf(r){ return r.mechanism ? r.mechanism : 'unknown'; }
+  function sdgLabel(n){ return sdgNames[String(n)] ? n + ' – ' + sdgNames[String(n)] : 'SDG ' + n; }
+
+  // Header
+  var country = D.country || 'this country';
+  $('title').textContent = 'UN human rights recommendations to ' + country;
+  document.title = 'UN human rights recommendations to ' + country;
+  var years = all.map(function(r){ return r.year; }).filter(function(y){ return typeof y === 'number'; });
+  var minY = years.length ? Math.min.apply(null, years) : null;
+  var maxY = years.length ? Math.max.apply(null, years) : null;
+  var src = $('source');
+  src.appendChild(document.createTextNode('Source: '));
+  if(D.source_url){
+    var a = document.createElement('a'); a.href = D.source_url; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = D.source || D.source_url; src.appendChild(a);
+  } else src.appendChild(document.createTextNode(D.source || 'not stated'));
+  src.appendChild(document.createTextNode(' · ' + all.length + ' records' +
+    (minY !== null ? ' · ' + minY + '–' + maxY : '') +
+    (excluded > 0 ? ' (' + excluded + ' records of other types are not counted)' : '')));
+
+  // Filter options
+  function fillSelect(sel, firstLabel, items){
+    sel.innerHTML = '';
+    var o = document.createElement('option'); o.value = ''; o.textContent = firstLabel; sel.appendChild(o);
+    items.forEach(function(it){
+      var op = document.createElement('option'); op.value = it.value; op.textContent = it.label; sel.appendChild(op);
+    });
+  }
+  function uniqSorted(list){
+    var s = {}; list.forEach(function(x){ s[x] = 1; });
+    return Object.keys(s).sort(function(a,b){ return a.localeCompare(b); });
+  }
+  function fillMech(){
+    fillSelect($('fMech'), 'All mechanisms', uniqSorted(all.map(mechOf)).map(function(m){ return {value:m,label:m}; }));
+  }
+  function fillBody(){
+    var mech = $('fMech').value, prev = $('fBody').value;
+    var pool = all.filter(function(r){ return !mech || mechOf(r) === mech; });
+    var bodies = uniqSorted(pool.map(bodyOf));
+    fillSelect($('fBody'), 'All bodies', bodies.map(function(b){ return {value:b,label:b}; }));
+    if(bodies.indexOf(prev) >= 0) $('fBody').value = prev;
+  }
+  function fillSdg(){
+    var nums = {};
+    all.forEach(function(r){ arr(r.sdgs).forEach(function(n){ nums[String(n)] = 1; }); });
+    var list = Object.keys(nums).sort(function(a,b){ return Number(a) - Number(b); });
+    fillSelect($('fSdg'), 'All SDGs', list.map(function(n){ return {value:n,label:sdgLabel(n)}; }));
+  }
+  fillMech(); fillBody(); fillSdg();
+  if(minY !== null){ $('fFrom').placeholder = String(minY); $('fTo').placeholder = String(maxY); }
+
+  function readFilters(){
+    var f = $('fFrom').value.trim(), t = $('fTo').value.trim();
+    return {
+      mech: $('fMech').value, body: $('fBody').value, sdg: $('fSdg').value,
+      from: f === '' ? null : Number(f), to: t === '' ? null : Number(t),
+      kw: $('fKw').value.trim().toLowerCase()
+    };
+  }
+
+  function describe(f){
+    var p = [];
+    if(f.mech) p.push(f.mech);
+    if(f.body) p.push(f.body);
+    if(f.from !== null && f.to !== null) p.push(f.from + '–' + f.to);
+    else if(f.from !== null) p.push('from ' + f.from);
+    else if(f.to !== null) p.push('up to ' + f.to);
+    if(f.sdg) p.push('SDG ' + sdgLabel(f.sdg));
+    if(f.kw) p.push('keyword: ' + $('fKw').value.trim());
+    return p.length ? p.join(' · ') : 'No filters active (all records)';
+  }
+
+  function matchesFilters(r, f){
+    if(f.mech && mechOf(r) !== f.mech) return false;
+    if(f.body && bodyOf(r) !== f.body) return false;
+    if(f.from !== null && !(typeof r.year === 'number' && r.year >= f.from)) return false;
+    if(f.to !== null && !(typeof r.year === 'number' && r.year <= f.to)) return false;
+    if(f.sdg && arr(r.sdgs).map(String).indexOf(f.sdg) < 0) return false;
+    if(f.kw && String(r.text || '').toLowerCase().indexOf(f.kw) < 0) return false;
+    return true;
+  }
+
+  function firstLine(t){
+    t = String(t || '');
+    var i = t.search(/[\r\n]/);
+    if(i >= 0) t = t.slice(0, i);
+    return t.length > 160 ? t.slice(0, 160) + '…' : t;
+  }
+
+  function wrapLabel(s, n){
+    var words = s.split(' '), lines = [], cur = '';
+    words.forEach(function(w){
+      if((cur + ' ' + w).trim().length > n && cur){ lines.push(cur); cur = w; }
+      else cur = (cur + ' ' + w).trim();
+    });
+    if(cur) lines.push(cur);
+    return lines;
+  }
+
+  var countPlugin = {
+    id: 'countLabels',
+    afterDatasetsDraw: function(ch){
+      var ctx = ch.ctx, meta = ch.getDatasetMeta(0), data = ch.data.datasets[0].data;
+      ctx.save(); ctx.fillStyle = '#1d2733'; ctx.font = '600 14px system-ui,sans-serif';
+      ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      meta.data.forEach(function(bar, i){ ctx.fillText(String(data[i]), bar.x + 6, bar.y); });
+      ctx.restore();
+    }
+  };
+
+  function renderChart(){
+    var counts = {};
+    matches.forEach(function(r){ arr(r.themes).forEach(function(t){ counts[t] = (counts[t] || 0) + 1; }); });
+    var top = Object.keys(counts).sort(function(a,b){
+      return counts[b] - counts[a] || a.localeCompare(b);
+    }).slice(0, 10);
+    if(chart){ chart.destroy(); chart = null; }
+    if(!matches.length){
+      $('chartArea').style.display = 'none'; $('chartEmpty').style.display = 'block'; return;
+    }
+    $('chartEmpty').style.display = 'none'; $('chartArea').style.display = 'block';
+    if(!top.length){
+      $('chartArea').style.display = 'none';
+      $('chartEmpty').textContent = 'None of the matching records has a theme recorded';
+      $('chartEmpty').style.display = 'block'; return;
+    }
+    if(typeof window.Chart === 'undefined'){
+      $('chartArea').style.display = 'none';
+      $('chartEmpty').textContent = 'Chart library not available';
+      $('chartEmpty').style.display = 'block'; return;
+    }
+    chart = new Chart($('chart'), {
+      type: 'bar',
+      data: {
+        labels: top.map(function(t){ return wrapLabel(t, 42); }),
+        datasets: [{ data: top.map(function(t){ return counts[t]; }), backgroundColor: '#1f6fb2' }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: false,
+        layout: { padding: { right: 40 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: {
+            title: function(items){ return top[items[0].dataIndex]; },
+            label: function(item){ return item.raw + ' records'; }
+          } }
+        },
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Number of matching records' } },
+          y: { ticks: { font: { size: 13 } } }
+        }
+      },
+      plugins: [countPlugin]
+    });
+  }
+
+  function line(label, value){
+    var p = document.createElement('p'); p.className = 'meta';
+    var b = document.createElement('b'); b.textContent = label + ': ';
+    p.appendChild(b); p.appendChild(document.createTextNode(value)); return p;
+  }
+
+  function renderTable(){
+    var tb = $('tbody'); tb.innerHTML = '';
+    if(!matches.length){
+      $('tableArea').style.display = 'none'; $('tableEmpty').style.display = 'block'; return;
+    }
+    $('tableEmpty').style.display = 'none'; $('tableArea').style.display = 'block';
+    matches.slice(0, shown).forEach(function(r){
+      var tr = document.createElement('tr'); tr.className = 'rec'; tr.tabIndex = 0;
+      tr.setAttribute('aria-expanded', 'false');
+      var td1 = document.createElement('td');
+      if(r.date){ td1.textContent = r.date; } else { td1.textContent = 'date unknown'; td1.className = 'muted'; }
+      var td2 = document.createElement('td'); td2.textContent = bodyOf(r);
+      var td3 = document.createElement('td');
+      var sym = r.symbol ? r.symbol : '(no symbol)';
+      if(r.symbol && r.doc_url){
+        var a = document.createElement('a'); a.href = r.doc_url; a.target = '_blank'; a.rel = 'noopener';
+        a.textContent = sym; a.addEventListener('click', function(e){ e.stopPropagation(); });
+        td3.appendChild(a);
+      } else td3.textContent = sym;
+      var td4 = document.createElement('td');
+      var caret = document.createElement('span'); caret.className = 'caret'; caret.textContent = '▸';
+      td4.appendChild(caret); td4.appendChild(document.createTextNode(firstLine(r.text)));
+      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
+
+      var dr = document.createElement('tr'); dr.className = 'detail hidden';
+      var dtd = document.createElement('td'); dtd.colSpan = 4;
+      var full = document.createElement('p'); full.className = 'full'; full.textContent = r.text || '';
+      dtd.appendChild(full);
+      var themes = arr(r.themes), sdgs = arr(r.sdgs), aff = arr(r.affected_persons);
+      dtd.appendChild(line('Themes', themes.length ? themes.join('; ') : 'none recorded'));
+      dtd.appendChild(line('SDGs', sdgs.length ? sdgs.map(sdgLabel).join('; ') : 'none recorded'));
+      dtd.appendChild(line('Affected persons', aff.length ? aff.join('; ') : 'none recorded'));
+      dtd.appendChild(line('Mechanism · type', mechOf(r) + ' · ' + (r.type || 'unknown')));
+      dr.appendChild(dtd);
+
+      function toggle(){
+        var open = dr.classList.toggle('hidden') === false;
+        tr.setAttribute('aria-expanded', open ? 'true' : 'false');
+        caret.textContent = open ? '▾' : '▸';
+      }
+      tr.addEventListener('click', toggle);
+      tr.addEventListener('keydown', function(e){
+        if((e.key === 'Enter' || e.key === ' ') && e.target === tr){ e.preventDefault(); toggle(); }
+      });
+      tb.appendChild(tr); tb.appendChild(dr);
+    });
+    $('more').style.display = matches.length > shown ? 'inline-block' : 'none';
+    $('more').textContent = 'Show more (' + Math.min(PAGE, matches.length - shown) + ' of ' + (matches.length - shown) + ' remaining)';
+  }
+
+  function update(resetPaging){
+    if(resetPaging) shown = PAGE;
+    var f = readFilters();
+    matches = all.filter(function(r){ return matchesFilters(r, f); });
+    matches.sort(function(a,b){
+      if(!a.date && !b.date) return 0;
+      if(!a.date) return 1;
+      if(!b.date) return -1;
+      return a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
+    });
+    $('count').textContent = 'Showing ' + matches.length + ' of ' + all.length + ' records';
+    $('desc').textContent = describe(f);
+    renderChart();
+    renderTable();
+  }
+
+  ['fBody','fSdg','fFrom','fTo'].forEach(function(id){
+    $(id).addEventListener('input', function(){ update(true); });
+  });
+  $('fKw').addEventListener('input', function(){ update(true); });
+  $('fMech').addEventListener('input', function(){ fillBody(); update(true); });
+  $('reset').addEventListener('click', function(){
+    $('fMech').value = ''; fillBody(); $('fBody').value = ''; $('fSdg').value = '';
+    $('fFrom').value = ''; $('fTo').value = ''; $('fKw').value = '';
+    update(true);
+  });
+  $('more').addEventListener('click', function(){ shown += PAGE; renderTable(); });
+
+  update(true);
+})();
+</script>
+</body>
+</html>

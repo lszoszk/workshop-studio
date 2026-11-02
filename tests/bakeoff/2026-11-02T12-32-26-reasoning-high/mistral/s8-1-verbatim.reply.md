@@ -1,0 +1,1 @@
+I'll build the General Comments search app: a query box with AND/OR/NOT/quotes, committee and year filters, a per-committee bar chart, and result cards with highlighted matches and a copy-citation button.

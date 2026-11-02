@@ -1,0 +1,212 @@
+{
+  "note": "The workshop requests. Participants see `prompt` (with {country} filled in). `dataset` is the file the request needs from the file shelf; `builds_on` the request it continues (\"any\": any app). tools/bakeoff.py runs every model on every request it can score (not those with \"bakeoff\": false), chaining `builds_on`, and scores the result in headless Chromium against `checks`. `blurb` is the one line under the suggestion; `lesson` is what the facilitator stops the room for. `planning` (the four workshop apps) is the recorded planning session the request opens in plan mode (site/data/planning/<id>.json, tools/planning/FORMAT.md); `prompt` is sent as written when plan mode is off or the package is missing.",
+  "prompts": [
+    {
+      "id": "s7-1-dashboard",
+      "session": "S7",
+      "minute": 15,
+      "dataset": "uhri",
+      "builds_on": null,
+      "title": "Your country's recommendations dashboard",
+      "blurb": "Counts, filters, a chart of themes and a table of every record",
+      "prompt": "Build a dashboard of the UN human rights recommendations and observations addressed to {country}. At the top: how many records there are, and from which years. Filters: mechanism, treaty body or mandate, year range, SDG, and a keyword search. A bar chart of the 10 most frequent themes for the current filter. Below it, a table of the matching records with date, body, symbol (linked to the UN document) and the first line of the text; clicking a row shows the full text.",
+      "planning": "planning/s7-1-dashboard.json",
+      "lesson": "The model wrote the code once. Every number on the screen is computed by that code, the same way every time, from data the model never saw.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "chart": true,
+        "table_min_rows": 5,
+        "text_contains": [
+          "{country}"
+        ],
+        "controls_min": 4,
+        "links_to": "docs.un.org"
+      }
+    },
+    {
+      "id": "s7-2-who-recommends",
+      "session": "S7",
+      "minute": 40,
+      "dataset": "uhri",
+      "builds_on": "s7-1-dashboard",
+      "title": "Who recommends what",
+      "blurb": "Which States make recommendations, and on which goals",
+      "prompt": "Add a tab \"Who recommends what\". For UPR recommendations only, take the recommending State from the parentheses at the end of each recommendation. Show the 15 States that made the most recommendations to {country}, as a bar chart, and a small table of the SDGs each of them raises most. Clicking a State lists its recommendations with symbols. Say how many UPR recommendations had no State in parentheses.",
+      "lesson": "Finding the State is a fixed rule (a text pattern), not a guess. It either matches or it does not, and the app tells you how many did not.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "chart": true,
+        "table_min_rows": 5,
+        "source_matches": "\\(|match|RegExp|/\\\\\\(",
+        "text_matches": "(?i)no (state|recommending)|without|unmatched|not identified"
+      }
+    },
+    {
+      "id": "s7-3-check-ten",
+      "session": "S7",
+      "minute": 65,
+      "dataset": "uhri",
+      "builds_on": "s7-1-dashboard",
+      "title": "Check ten at random",
+      "blurb": "Draw ten records and judge the UN's labels yourself",
+      "prompt": "Add a button \"Check 10 at random\". It draws 10 random records from the current filter and shows, for each, the full text and the SDGs the UN index assigned to it. For each record I mark the SDGs as right, wrong or arguable. When all 10 are marked, show the agreement rate and the wrong and arguable examples, and let me download the 10 records with my marks as CSV. Add a \"Draw again\" button.",
+      "lesson": "Validation turns a chart into evidence. Guess your error rate before you start; the UN's own labels are a second opinion, not a marking scheme.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "button_matches": "(?i)10 at random|check 10|random",
+        "source_matches": "Math\\.random|crypto\\.getRandomValues",
+        "download": true
+      }
+    },
+    {
+      "id": "s7-4-extract",
+      "session": "S7",
+      "minute": 70,
+      "dataset": "pdf_text",
+      "builds_on": null,
+      "title": "Paragraphs out of a PDF",
+      "blurb": "Turn a UN document's raw text into numbered paragraphs, and check them",
+      "prompt": "Here is the raw text of a UN document, as a PDF converter extracted it, page by page. Build a tool that splits it into its numbered paragraphs (1, 2, 3 …). Remove the page headers and footers, and keep the footnotes out of the paragraph text. Show how many paragraphs it found next to the number the document really has, a table with each paragraph's number and first line, and mark every paragraph whose first words differ from the reference. Clicking a row shows the full paragraph. Let me download the result as CSV.",
+      "planning": "planning/s7-4-extract.json",
+      "lesson": "Give the machine the text; keep the document for the record. A converter damages text in four ways (order, breakage, loss, noise), and a script only repairs the damage you tell it about.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "table_min_rows": 30,
+        "text_contains": [
+          "90"
+        ],
+        "download": true
+      }
+    },
+    {
+      "id": "s8-1-verbatim",
+      "session": "S8",
+      "minute": 15,
+      "dataset": "gc",
+      "builds_on": null,
+      "title": "Verbatim finder for General Comments",
+      "blurb": "Find exact paragraphs and copy a correct citation",
+      "prompt": "Build a search tool over the treaty bodies' General Comments. A search box that supports AND, OR, NOT and \"exact phrases\". Filters for committee and year. Results show the matching paragraph with the search words highlighted, the committee, the General Comment's short title, and a \"Copy citation\" button that copies e.g. \"CCPR/C/GC/37, para. 12\". Show the number of hits per committee as a small bar chart. The paragraph text must be shown exactly as it is in the data, never summarised.",
+      "planning": "planning/s8-1-verbatim.json",
+      "lesson": "Retrieve, don't generate. The tool can only return paragraphs that exist, with their real symbol and number.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "chart": true,
+        "search_box": true,
+        "button_matches": "(?i)copy citation|cite",
+        "source_matches": "(?i)\\bnot\\b|\\bor\\b",
+        "text_contains_after_search": {
+          "query": "\"best interests\" AND child",
+          "expect": "best interests"
+        }
+      }
+    },
+    {
+      "id": "s8-5-wiki",
+      "session": "S8",
+      "minute": 40,
+      "dataset": "library",
+      "builds_on": null,
+      "title": "A research wiki on neurotechnology and justice",
+      "blurb": "Concept pages from nine documents of six kinds, every quotation one click from its page",
+      "prompt": "Build a small research wiki on neurotechnology in the administration of justice, from the library of nine documents (a report of the UN Secretary-General, a UNODC–INTERPOL paper, a civil-society submission, a national human rights institution's report, two journal articles and three General Comments). A sidebar lists concept pages; start with: mental privacy, freedom of thought, self-incrimination, lie detection, consent, neural data, data solidarity, proportionality. Each concept is found by a short list of terms shown on its page (for lie detection also \"deception detection\" and \"brain fingerprinting\"), and I can add a concept by typing a term. A concept page first shows how many passages use it in each kind of document, then the passages, grouped by document, each quoted verbatim with a pinpoint citation that opens the PDF at that page with `studio.openSource(id, page)`: \"A/81/351, para. 32\" where the document numbers its paragraphs, otherwise author, year and printed page, e.g. \"Szoszkiewicz & Yuste 2025, p. 3471\". Under it, the related concepts (other concepts found in the same passages) as links. A button \"Draft a summary\" sends at most 12 of the page's passages to the model with `await studio.ask(prompt)`, asking for three sentences, each ending with the pinpoint citation it rests on. Mark the summary as written by AI, and say how many passages were sent.",
+      "planning": "planning/s8-5-wiki.json",
+      "lesson": "A wiki keeps what an institution knows. The code files every passage under its concepts, the model only drafts, and every sentence points to a page you can open: click before you trust. A Secretary-General's report, a submission and an article carry different weight, and the wiki shows which is which.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "source_matches": "openSource",
+        "text_contains": [
+          "mental privacy"
+        ],
+        "controls_min": 1,
+        "calls_studio_ask": true,
+        "ask_button": "draft|summar"
+      }
+    },
+    {
+      "id": "s8-2-ai-inside",
+      "session": "S8",
+      "minute": 35,
+      "dataset": "uhri",
+      "builds_on": "s7-1-dashboard",
+      "title": "A model inside the tool",
+      "blurb": "Let a model tag 50 records, then compare with the UN",
+      "prompt": "Add a button \"Suggest SDGs with AI\" that works on the first 50 records of the current filter. Send them to the model in batches of 25 with `await studio.ask(prompt)`, asking it to return JSON: for each record id, the SDG numbers it would assign. Show a table: record, the UN's SDGs, the AI's SDGs, and whether they agree. At the top: the agreement rate, and a clear notice that these 50 texts were sent to an external model, which one, and that running it again can give different answers. Add a \"Run again\" button that keeps both runs side by side.",
+      "lesson": "Here the model is part of the tool, so the result is probabilistic: run it twice and compare. And the 50 texts left the laptop, unlike everything else in the app.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "calls_studio_ask": true,
+        "batches_max": 25,
+        "text_matches": "(?i)sent to|external|left (the|your)",
+        "button_matches": "(?i)run again"
+      }
+    },
+    {
+      "id": "s8-3-voting",
+      "session": "S8",
+      "minute": 55,
+      "dataset": "hrc",
+      "builds_on": null,
+      "title": "How two States vote at the Human Rights Council",
+      "blurb": "Compare two States' votes, year by year",
+      "prompt": "Build a tool to compare how two States vote at the Human Rights Council. Pick two States (only those that were Council members for at least one vote). Show on how many recorded votes both took part, how often they voted the same way, and a timeline by year. List the votes where they differed, with the resolution title, date, both votes and a link. Let me switch between resolutions, amendments, or both. Where the official totals differ from the roll call, show a small warning on that row.",
+      "lesson": "Same data, a different question. The interesting part is the rule you choose: what counts as agreement when one State abstains?",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "chart": true,
+        "controls_min": 2,
+        "table_min_rows": 1
+      }
+    },
+    {
+      "id": "s8-4-briefing-check",
+      "session": "S8",
+      "minute": 75,
+      "dataset": "hrc",
+      "builds_on": null,
+      "title": "Check an AI briefing",
+      "blurb": "Ask a model about a resolution, then check its claims against the vote",
+      "prompt": "Build a briefing checker for Human Rights Council resolutions. Let me pick a resolution from the recorded votes; start with A/HRC/RES/51/27. A button \"Ask AI for a briefing\" asks the model, with `await studio.ask(prompt)`, for a 250-word briefing on that resolution from what it already knows: send only the symbol and the title, none of our data. Put the answer in a text box, where I can also paste a text of my own. A \"Check\" button then finds every checkable claim in the text: the numbers in favour, against and abstaining, the date, the session, and each State said to have voted a certain way. Show a table with the claim as written, what the recorded vote says, and a verdict: matches, wrong, or cannot be checked in this data. Explain that \"cannot be checked\" is not the same as \"wrong\".",
+      "lesson": "A fluent briefing can get the tone right and the numbers wrong, and a checker can be wrong too. Test it first on a text with errors you planted yourself, and keep a third verdict: \"I could not check this here\" is not \"wrong\".",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "calls_studio_ask": true,
+        "button_matches": "(?i)check",
+        "text_contains": [
+          "51/27"
+        ],
+        "text_matches": "(?i)cannot be checked|can.t be checked|not (be )?check|not in (this|the) data"
+      }
+    },
+    {
+      "id": "any-improve",
+      "session": "any",
+      "minute": null,
+      "dataset": null,
+      "builds_on": "any",
+      "bakeoff": false,
+      "title": "Suggest improvements",
+      "blurb": "A careful review of your app, as a list to choose from",
+      "prompt": "Review my app as a careful colleague would. List five concrete improvements, numbered: to how clearly it explains its numbers, to correctness, to accessibility and to its design. One or two sentences each, saying why it matters. Do not change the code yet: I will tell you which ones to make.",
+      "lesson": null
+    }
+  ]
+}

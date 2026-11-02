@@ -1,0 +1,520 @@
+I added a "Who recommends what" tab next to the dashboard. It reads the State from the last parentheses of each UPR recommendation and charts the 15 most active States. Clicking a State, in the chart or the table, lists its recommendations with linked symbols. The tab also shows how many UPR recommendations had no State, with a list of them you can open.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UN human rights recommendations dashboard</title>
+<style>
+  :root { --accent:#1f6fb2; --ink:#1d2733; --muted:#5b6876; --line:#d9e0e7; --bg:#f5f8fb; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .wrap { max-width:1200px; margin:0 auto; padding:28px 24px 60px; }
+  h1 { margin:0 0 4px; font-size:1.8rem; color:var(--accent); }
+  h2 { margin:0 0 6px; font-size:1.2rem; }
+  .desc { color:var(--muted); margin:0 0 20px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:20px; margin-bottom:20px; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:20px; }
+  .stat { background:#fff; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; padding:14px 18px; }
+  .stat .n { font-size:1.9rem; font-weight:600; color:var(--accent); line-height:1.2; }
+  .stat .l { color:var(--muted); font-size:.9rem; }
+  .filters { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; align-items:end; }
+  label { display:block; font-size:.85rem; font-weight:600; color:var(--muted); margin-bottom:4px; }
+  select, input[type=search] { width:100%; padding:8px 10px; font-size:1rem; border:1px solid #b9c4cf; border-radius:6px; background:#fff; color:var(--ink); }
+  button { font:inherit; cursor:pointer; padding:8px 14px; border-radius:6px; border:1px solid var(--accent); background:var(--accent); color:#fff; }
+  button.ghost { background:#fff; color:var(--accent); }
+  .note { font-size:.88rem; color:var(--muted); background:#eef4fa; border-radius:6px; padding:8px 12px; margin-top:12px; }
+  .warn { background:#fff6e5; border:1px solid #f0d9a8; color:#5c4410; border-radius:6px; padding:10px 14px; margin-bottom:14px; }
+  .chartbox { position:relative; height:430px; }
+  .chip { display:inline-block; background:#e3effa; color:var(--accent); border-radius:14px; padding:2px 10px; font-size:.9rem; margin:0 6px 8px 0; }
+  .chip button { padding:0 4px; margin-left:4px; background:none; border:none; color:var(--accent); font-weight:700; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; font-size:.85rem; color:var(--muted); border-bottom:2px solid var(--line); padding:8px; }
+  td { padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tr.row { cursor:pointer; }
+  tr.row:hover td { background:#f1f6fb; }
+  tr.row:focus { outline:2px solid var(--accent); outline-offset:-2px; }
+  tr.sel td { background:#e3effa; }
+  td.date { white-space:nowrap; }
+  a { color:var(--accent); }
+  tr.full td { background:#fafcfe; padding:14px 18px; }
+  .full .txt { white-space:pre-wrap; border-left:3px solid var(--accent); padding-left:12px; margin:0 0 10px; }
+  .full .meta { font-size:.88rem; color:var(--muted); }
+  .empty { padding:24px; text-align:center; color:var(--muted); }
+  .toolbar { display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:8px; }
+  .toolbar select { width:auto; }
+  .tabs { display:flex; gap:6px; border-bottom:2px solid var(--line); margin-bottom:22px; }
+  .tabs button { background:none; color:var(--muted); border:none; border-bottom:3px solid transparent; border-radius:0; padding:10px 18px; font-weight:600; margin-bottom:-2px; }
+  .tabs button.on { color:var(--accent); border-bottom-color:var(--accent); }
+  .sdgline { display:block; margin:0 0 2px; font-size:.92rem; }
+  details summary { cursor:pointer; }
+  details .txt { white-space:pre-wrap; border-left:3px solid var(--accent); padding-left:12px; margin:8px 0 0; }
+  .sm { font-size:.9rem; }
+  @media (max-width:700px){ td.body, th.body { display:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="title">UN human rights recommendations</h1>
+  <p class="desc" id="desc"></p>
+
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" class="on" data-tab="tabDash" aria-selected="true">Dashboard</button>
+    <button type="button" role="tab" data-tab="tabWho" aria-selected="false">Who recommends what</button>
+  </div>
+
+<div id="tabDash">
+  <div class="stats">
+    <div class="stat"><div class="n" id="sTotal">–</div><div class="l">records in the dataset</div></div>
+    <div class="stat"><div class="n" id="sYears">–</div><div class="l">years covered (earliest to latest)</div></div>
+    <div class="stat"><div class="n" id="sMatch">–</div><div class="l">records matching current filters</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Filters</h2>
+    <div class="filters">
+      <div><label for="fMech">Mechanism</label><select id="fMech"></select></div>
+      <div><label for="fBody">Treaty body or mandate</label><select id="fBody"></select></div>
+      <div><label for="fFrom">Year from</label><select id="fFrom"></select></div>
+      <div><label for="fTo">Year to</label><select id="fTo"></select></div>
+      <div><label for="fSdg">SDG</label><select id="fSdg"></select></div>
+      <div><label for="fQ">Keyword search</label><input type="search" id="fQ" placeholder="e.g. detention, land, refugees"></div>
+      <div><button class="ghost" id="reset" type="button">Reset all filters</button></div>
+    </div>
+    <div class="note">How this is computed: a record is kept only if it passes every filter at once. Keyword search is not case-sensitive; with several words, each word must appear somewhere in the paragraph text, symbol, body or theme names. The list of treaty bodies/mandates follows the mechanism you choose.</div>
+  </div>
+
+  <div class="card">
+    <h2>Ten most frequent themes in the current selection</h2>
+    <div id="chips"></div>
+    <div class="chartbox"><canvas id="chart"></canvas></div>
+    <div id="chartMsg" class="empty" style="display:none"></div>
+    <div class="note" id="chartNote"></div>
+  </div>
+
+  <div class="card">
+    <div class="toolbar">
+      <h2 id="tblTitle">Matching records</h2>
+      <div><label for="fSort" style="display:inline;margin-right:6px">Sort</label>
+        <select id="fSort"><option value="desc">Newest first</option><option value="asc">Oldest first</option></select></div>
+    </div>
+    <div id="tblWrap"></div>
+    <div style="text-align:center;margin-top:12px"><button id="more" type="button" style="display:none">Show more</button></div>
+    <div class="note">How this is computed: the table lists exactly the records that pass the filters above. "First line" is the opening of the paragraph (about 160 characters). Click a row to show the full, unaltered text and its tags; click the symbol to open the UN document in a new tab.</div>
+  </div>
+</div>
+
+<div id="tabWho" style="display:none">
+  <div class="stats">
+    <div class="stat"><div class="n" id="wUpr">–</div><div class="l">UPR recommendations in the dataset</div></div>
+    <div class="stat"><div class="n" id="wWith">–</div><div class="l">with a State in parentheses</div></div>
+    <div class="stat"><div class="n" id="wNone">–</div><div class="l">with NO State in parentheses</div></div>
+    <div class="stat"><div class="n" id="wStates">–</div><div class="l">different States found</div></div>
+  </div>
+
+  <div class="card">
+    <h2>The 15 States that made the most recommendations</h2>
+    <div id="wWarn"></div>
+    <div class="chartbox"><canvas id="whoChart"></canvas></div>
+    <div id="whoMsg" class="empty" style="display:none"></div>
+    <div class="note">How this is computed: only records whose mechanism is "Universal Periodic Review" and whose type is "Recommendations" are used. The recommending State is the text inside the last parentheses at the very end of the paragraph, e.g. "(Croatia)". If the parentheses hold several States separated by commas or semicolons, each State is credited with the recommendation. Parentheses that contain a number or are very long (such as "(see para. 12)") are not treated as a State. Click a bar to list that State's recommendations.</div>
+  </div>
+
+  <div class="card">
+    <h2>Which SDGs does each State raise most?</h2>
+    <div id="whoSdgWrap"></div>
+    <div class="note">How this is computed: for each of the 15 States, we count how many of its recommendations carry each SDG tag (a recommendation can carry several SDGs, or none) and show the three most frequent. Numbers in brackets are recommendations. Click a row to list that State's recommendations.</div>
+  </div>
+
+  <div class="card" id="whoList">
+    <h2 id="whoListTitle">Recommendations by a State</h2>
+    <div id="whoListBody"><div class="empty">Click a State in the chart or the table above to list its recommendations here.</div></div>
+    <div style="text-align:center;margin-top:12px"><button id="whoMore" type="button" style="display:none">Show more</button></div>
+  </div>
+
+  <div class="card">
+    <h2 id="noStTitle">UPR recommendations without a State in parentheses</h2>
+    <details id="noStDet"><summary>Show these recommendations with their symbols</summary><div id="noStBody" class="sm" style="margin-top:10px"></div></details>
+    <div class="note">These are listed so that nothing is silently dropped: the paragraph either has no closing parentheses, or the parentheses did not look like a State name (see the rule above).</div>
+  </div>
+</div>
+</div>
+
+<script>
+(function(){
+  const D = (window.WORKSHOP_DATA && window.WORKSHOP_DATA.uhri) || {};
+  const recs = Array.isArray(D.records) ? D.records : [];
+  const sdgNames = D.sdg_names || {};
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const arr = x => Array.isArray(x) ? x : [];
+  const PAGE = 100;
+
+  const country = D.country || "the country";
+  const years = recs.map(r => r.year).filter(y => Number.isFinite(y));
+  const minY = years.length ? Math.min(...years) : null;
+  const maxY = years.length ? Math.max(...years) : null;
+
+  $("title").textContent = "UN human rights recommendations and observations: " + country;
+  document.title = $("title").textContent;
+  let d = (D.title ? D.title + ". " : "") + "Source: " + (D.source || "UHRI / OHCHR") + ". " + recs.length + " paragraphs";
+  if (minY !== null) d += ", " + minY + "–" + maxY;
+  d += D.built ? ". Dataset built " + D.built + "." : ".";
+  $("desc").textContent = d;
+  $("sTotal").textContent = recs.length.toLocaleString();
+  $("sYears").textContent = minY === null ? "–" : (minY === maxY ? String(minY) : minY + "–" + maxY);
+
+  const state = { mech:"", body:"", from:minY, to:maxY, sdg:"", q:"", theme:"", sort:"desc", limit:PAGE };
+  const expanded = new Set();
+  let chart = null;
+  let current = [];
+
+  // ---------- build static selects
+  function fillSelect(sel, items, value){
+    sel.innerHTML = items.map(i => '<option value="'+esc(i.v)+'">'+esc(i.l)+'</option>').join("");
+    sel.value = value;
+    if (sel.value !== value) sel.value = items.length ? items[0].v : "";
+  }
+  function countBy(list, fn){ const m = {}; list.forEach(r => { const k = fn(r); if (k) m[k] = (m[k]||0)+1; }); return m; }
+
+  const mechCounts = countBy(recs, r => r.mechanism);
+  fillSelect($("fMech"), [{v:"",l:"All mechanisms ("+recs.length+")"}].concat(
+    Object.keys(mechCounts).sort().map(k => ({v:k,l:k+" ("+mechCounts[k]+")"}))), "");
+
+  function fillBodies(){
+    const base = recs.filter(r => !state.mech || r.mechanism === state.mech);
+    const c = countBy(base, r => r.body);
+    const items = [{v:"",l:"All ("+base.length+")"}].concat(Object.keys(c).sort().map(k => ({v:k,l:k+" ("+c[k]+")"})));
+    if (state.body && !c[state.body]) state.body = "";
+    fillSelect($("fBody"), items, state.body);
+  }
+
+  const uniqYears = Array.from(new Set(years)).sort((a,b)=>a-b);
+  const yItems = uniqYears.map(y => ({v:String(y), l:String(y)}));
+  fillSelect($("fFrom"), yItems, minY === null ? "" : String(minY));
+  fillSelect($("fTo"), yItems, maxY === null ? "" : String(maxY));
+
+  const sdgCount = {};
+  recs.forEach(r => arr(r.sdgs).forEach(g => { sdgCount[g] = (sdgCount[g]||0)+1; }));
+  fillSelect($("fSdg"), [{v:"",l:"All SDGs / none"}].concat(
+    Object.keys(sdgCount).sort((a,b)=>a-b).map(g => ({v:g, l:"SDG "+g+(sdgNames[g]?" – "+sdgNames[g]:"")+" ("+sdgCount[g]+")"}))), "");
+
+  // ---------- filtering
+  function haystack(r){
+    if (r._h) return r._h;
+    r._h = [r.text, r.symbol, r.body, arr(r.themes).join(" ")].join(" ").toLowerCase();
+    return r._h;
+  }
+  function apply(){
+    let lo = state.from, hi = state.to;
+    if (lo !== null && hi !== null && lo > hi) { const t = lo; lo = hi; hi = t; }
+    const words = state.q.toLowerCase().split(/\s+/).filter(Boolean);
+    current = recs.filter(r => {
+      if (state.mech && r.mechanism !== state.mech) return false;
+      if (state.body && r.body !== state.body) return false;
+      if (lo !== null && Number.isFinite(r.year) && r.year < lo) return false;
+      if (hi !== null && Number.isFinite(r.year) && r.year > hi) return false;
+      if ((lo !== null || hi !== null) && !Number.isFinite(r.year)) return false;
+      if (state.sdg && !arr(r.sdgs).map(String).includes(state.sdg)) return false;
+      if (state.theme && !arr(r.themes).includes(state.theme)) return false;
+      if (words.length) { const h = haystack(r); for (const w of words) if (!h.includes(w)) return false; }
+      return true;
+    });
+    current.sort((a,b) => {
+      const x = a.date || "", y = b.date || "";
+      return state.sort === "asc" ? x.localeCompare(y) : y.localeCompare(x);
+    });
+    $("sMatch").textContent = current.length.toLocaleString();
+    renderChips(); renderChart(); renderTable();
+  }
+
+  function renderChips(){
+    const parts = [];
+    if (state.theme) parts.push('<span class="chip">Theme: '+esc(state.theme)+'<button type="button" id="clrTheme" aria-label="Remove theme filter">×</button></span>');
+    $("chips").innerHTML = parts.join("");
+    const b = $("clrTheme");
+    if (b) b.onclick = () => { state.theme = ""; state.limit = PAGE; apply(); };
+  }
+
+  // ---------- theme chart
+  function renderChart(){
+    const c = {};
+    let untagged = 0;
+    current.forEach(r => {
+      const t = Array.from(new Set(arr(r.themes)));
+      if (!t.length) untagged++;
+      t.forEach(k => { c[k] = (c[k]||0)+1; });
+    });
+    const top = Object.keys(c).map(k => [k,c[k]]).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0])).slice(0,10);
+    const msg = $("chartMsg");
+    const note = "How this is computed: each record can carry several themes (or none). For every theme we count how many matching records carry it, then show the 10 highest. Click a bar to filter the table to that theme.";
+    $("chartNote").textContent = note + " Based on " + current.length + " matching records; " + untagged + " of them have no theme tag.";
+    if (!top.length) {
+      if (chart) { chart.destroy(); chart = null; }
+      document.querySelector("#tabDash .chartbox").style.display = "none";
+      msg.style.display = "block";
+      msg.textContent = current.length ? "None of the matching records carries a theme tag." : "No records match the current filters.";
+      return;
+    }
+    msg.style.display = "none";
+    document.querySelector("#tabDash .chartbox").style.display = "block";
+    const labels = top.map(t => t[0]), vals = top.map(t => t[1]);
+    if (chart) chart.destroy();
+    chart = new Chart($("chart"), {
+      type: "bar",
+      data: { labels, datasets: [{ label: "Records", data: vals,
+        backgroundColor: labels.map(l => l === state.theme ? "#0d4373" : "#1f6fb2") }] },
+      options: {
+        indexAxis: "y", responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { title: it => it[0].label, label: it => it.parsed.x + " records" } } },
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0, font: { size: 13 } }, title: { display: true, text: "Number of records" } },
+          y: { ticks: { font: { size: 13 }, callback: function(v){ const l = this.getLabelForValue(v); return l.length > 48 ? l.slice(0,46)+"…" : l; } } }
+        },
+        onClick: (e, els) => {
+          if (!els.length) return;
+          const t = labels[els[0].index];
+          state.theme = state.theme === t ? "" : t; state.limit = PAGE; apply();
+        }
+      }
+    });
+  }
+
+  // ---------- table
+  function firstLine(t){
+    t = String(t || "").replace(/\s+/g," ").trim();
+    if (t.length <= 160) return t;
+    const cut = t.slice(0,160), i = cut.lastIndexOf(" ");
+    return (i > 100 ? cut.slice(0,i) : cut) + "…";
+  }
+  function symLink(r){
+    return r.doc_url ? '<a href="'+esc(r.doc_url)+'" target="_blank" rel="noopener">'+esc(r.symbol || "document")+'</a>' : esc(r.symbol || "");
+  }
+  function renderTable(){
+    const n = current.length;
+    $("tblTitle").textContent = "Matching records (" + n.toLocaleString() + " of " + recs.length.toLocaleString() + ")";
+    if (!n) { $("tblWrap").innerHTML = '<div class="empty">No records match the current filters.</div>'; $("more").style.display = "none"; return; }
+    const shown = current.slice(0, state.limit);
+    let h = '<table><thead><tr><th>Date</th><th class="body">Body</th><th>Symbol</th><th>Text (first line)</th></tr></thead><tbody>';
+    shown.forEach(r => {
+      const open = expanded.has(r.id);
+      h += '<tr class="row" tabindex="0" data-id="'+esc(r.id)+'" aria-expanded="'+open+'">'
+        + '<td class="date">'+esc(r.date || r.year || "")+'</td>'
+        + '<td class="body">'+esc(r.body || "")+'</td>'
+        + '<td>'+symLink(r)+'</td>'
+        + '<td>'+(open ? "▾ " : "▸ ")+esc(firstLine(r.text))+'</td></tr>';
+      if (open) {
+        const meta = [];
+        meta.push("Mechanism: " + esc(r.mechanism || "n/a") + " · Type: " + esc(r.type || "n/a") + (r.section ? " · Section: " + esc(r.section) : ""));
+        if (arr(r.themes).length) meta.push("Themes: " + arr(r.themes).map(esc).join("; "));
+        if (arr(r.affected_persons).length) meta.push("Affected persons: " + arr(r.affected_persons).map(esc).join("; "));
+        if (arr(r.sdgs).length) meta.push("SDGs: " + arr(r.sdgs).map(g => "SDG "+esc(g)+(sdgNames[g]?" ("+esc(sdgNames[g])+")":"")).join("; "));
+        h += '<tr class="full"><td colspan="4"><p class="txt">'+esc(r.text || "(no text)")+'</p><div class="meta">'+meta.join("<br>")+'</div></td></tr>';
+      }
+    });
+    h += '</tbody></table>';
+    if (shown.length < n) h += '<p class="desc" style="margin-top:10px">Showing the first '+shown.length+' of '+n+' matching records.</p>';
+    $("tblWrap").innerHTML = h;
+    $("more").style.display = shown.length < n ? "inline-block" : "none";
+    $("more").textContent = "Show " + Math.min(PAGE, n - shown.length) + " more";
+  }
+  $("tblWrap").addEventListener("click", e => {
+    if (e.target.closest("a")) return;
+    const tr = e.target.closest("tr.row"); if (!tr) return;
+    toggle(tr.dataset.id);
+  });
+  $("tblWrap").addEventListener("keydown", e => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const tr = e.target.closest && e.target.closest("tr.row");
+    if (!tr || e.target.closest("a")) return;
+    e.preventDefault(); toggle(tr.dataset.id);
+  });
+  function toggle(id){
+    if (expanded.has(id)) expanded.delete(id); else expanded.add(id);
+    renderTable();
+    const el = document.querySelector('#tblWrap tr.row[data-id="'+(window.CSS && CSS.escape ? CSS.escape(id) : id)+'"]');
+    if (el) el.focus({preventScroll:true});
+  }
+  $("more").onclick = () => { state.limit += PAGE; renderTable(); };
+
+  // ---------- events
+  function changed(){ state.limit = PAGE; apply(); }
+  $("fMech").onchange = e => { state.mech = e.target.value; fillBodies(); changed(); };
+  $("fBody").onchange = e => { state.body = e.target.value; changed(); };
+  $("fFrom").onchange = e => { state.from = e.target.value === "" ? null : +e.target.value; changed(); };
+  $("fTo").onchange = e => { state.to = e.target.value === "" ? null : +e.target.value; changed(); };
+  $("fSdg").onchange = e => { state.sdg = e.target.value; changed(); };
+  $("fSort").onchange = e => { state.sort = e.target.value; changed(); };
+  let timer = null;
+  $("fQ").oninput = e => { clearTimeout(timer); const v = e.target.value; timer = setTimeout(() => { state.q = v; changed(); }, 200); };
+  $("reset").onclick = () => {
+    Object.assign(state, { mech:"", body:"", from:minY, to:maxY, sdg:"", q:"", theme:"", limit:PAGE });
+    $("fMech").value = ""; fillBodies();
+    $("fFrom").value = minY === null ? "" : String(minY);
+    $("fTo").value = maxY === null ? "" : String(maxY);
+    $("fSdg").value = ""; $("fQ").value = "";
+    apply();
+  };
+
+  // =====================================================
+  // Tab 2: Who recommends what (UPR only)
+  // =====================================================
+  const UPR = "Universal Periodic Review";
+  const who = { built:false, chart:null, byState:{}, top:[], sel:"", limit:PAGE, noState:[] };
+
+  // Returns an array of State names from the final parentheses, or null if there is none.
+  function parseStates(text){
+    const t = String(text || "").trim();
+    const m = t.match(/\(((?:[^()]|\([^()]*\))*)\)\s*[.;,]?\s*$/);
+    if (!m) return null;
+    const inner = m[1].trim();
+    if (!inner || inner.length > 80 || /\d/.test(inner)) return null;
+    const parts = []; let depth = 0, cur = "";
+    for (const ch of inner) {
+      if (ch === "(") depth++;
+      if (ch === ")") depth--;
+      if ((ch === "," || ch === ";") && depth === 0) { parts.push(cur); cur = ""; } else cur += ch;
+    }
+    parts.push(cur);
+    const out = parts.map(p => p.trim()).filter(Boolean);
+    return out.length ? out : null;
+  }
+
+  function buildWho(){
+    const upr = recs.filter(r => r.mechanism === UPR);
+    const uprRec = upr.filter(r => r.type === "Recommendations");
+    const otherType = upr.length - uprRec.length;
+    who.byState = {}; who.noState = [];
+    let withState = 0;
+    uprRec.forEach(r => {
+      const st = parseStates(r.text);
+      if (!st) { who.noState.push(r); return; }
+      withState++;
+      Array.from(new Set(st)).forEach(s => { (who.byState[s] = who.byState[s] || []).push(r); });
+    });
+    const names = Object.keys(who.byState);
+    who.top = names.map(n => [n, who.byState[n].length])
+      .sort((a,b) => b[1]-a[1] || a[0].localeCompare(b[0])).slice(0,15);
+    $("wUpr").textContent = uprRec.length.toLocaleString();
+    $("wWith").textContent = withState.toLocaleString();
+    $("wNone").textContent = who.noState.length.toLocaleString();
+    $("wStates").textContent = names.length.toLocaleString();
+    let w = "";
+    if (otherType) w += '<div class="warn">' + otherType + ' further record(s) from the Universal Periodic Review have a type other than "Recommendations" and are left out of this tab.</div>';
+    if (who.noState.length) w += '<div class="warn"><strong>' + who.noState.length + ' of ' + uprRec.length + ' UPR recommendations</strong> (' + (uprRec.length ? (100*who.noState.length/uprRec.length).toFixed(1) : 0) + '%) had no State in parentheses at the end, so they are not counted for any State.</div>';
+    else if (uprRec.length) w += '<div class="warn">All ' + uprRec.length + ' UPR recommendations had a State in parentheses.</div>';
+    $("wWarn").innerHTML = w;
+    $("noStTitle").textContent = "UPR recommendations without a State in parentheses (" + who.noState.length + ")";
+  }
+
+  function whoChart(){
+    const box = document.querySelector("#tabWho .chartbox"), msg = $("whoMsg");
+    if (who.chart) { who.chart.destroy(); who.chart = null; }
+    if (!who.top.length) {
+      box.style.display = "none"; msg.style.display = "block";
+      msg.textContent = "No UPR recommendations with a recognisable State were found in the data.";
+      return;
+    }
+    box.style.display = "block"; msg.style.display = "none";
+    const labels = who.top.map(t => t[0]), vals = who.top.map(t => t[1]);
+    who.chart = new Chart($("whoChart"), {
+      type: "bar",
+      data: { labels, datasets: [{ label: "Recommendations", data: vals,
+        backgroundColor: labels.map(l => l === who.sel ? "#0d4373" : "#1f6fb2") }] },
+      options: {
+        indexAxis: "y", responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { label: it => it.parsed.x + " recommendations to " + country } } },
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0, font: { size: 13 } }, title: { display: true, text: "Number of UPR recommendations" } },
+          y: { ticks: { font: { size: 13 } } }
+        },
+        onClick: (e, els) => { if (els.length) pickState(labels[els[0].index]); }
+      }
+    });
+  }
+
+  function whoSdgTable(){
+    if (!who.top.length) { $("whoSdgWrap").innerHTML = '<div class="empty">No data.</div>'; return; }
+    let h = '<table><thead><tr><th>State</th><th>Recs</th><th>SDGs raised most (number of its recommendations)</th><th>No SDG tag</th></tr></thead><tbody>';
+    who.top.forEach(([name, n]) => {
+      const list = who.byState[name], c = {}; let none = 0;
+      list.forEach(r => { const g = Array.from(new Set(arr(r.sdgs).map(String))); if (!g.length) none++; g.forEach(x => { c[x] = (c[x]||0)+1; }); });
+      const top3 = Object.keys(c).sort((a,b) => c[b]-c[a] || (+a)-(+b)).slice(0,3);
+      const cell = top3.length ? top3.map(g => '<span class="sdgline">SDG '+esc(g)+(sdgNames[g] ? ' – '+esc(sdgNames[g]) : '')+' ('+c[g]+')</span>').join("") : '<span class="sdgline">none of its recommendations carries an SDG tag</span>';
+      h += '<tr class="row'+(name === who.sel ? ' sel' : '')+'" tabindex="0" data-state="'+esc(name)+'"><td><strong>'+esc(name)+'</strong></td><td>'+n+'</td><td>'+cell+'</td><td>'+none+'</td></tr>';
+    });
+    $("whoSdgWrap").innerHTML = h + '</tbody></table>';
+  }
+
+  function whoList(){
+    const body = $("whoListBody"), s = who.sel;
+    if (!s || !who.byState[s]) {
+      $("whoListTitle").textContent = "Recommendations by a State";
+      body.innerHTML = '<div class="empty">Click a State in the chart or the table above to list its recommendations here.</div>';
+      $("whoMore").style.display = "none"; return;
+    }
+    const list = who.byState[s].slice().sort((a,b) => (b.date||"").localeCompare(a.date||""));
+    $("whoListTitle").textContent = "Recommendations by " + s + " (" + list.length + ")";
+    const shown = list.slice(0, who.limit);
+    let h = '<table><thead><tr><th>Date</th><th>Symbol</th><th>Recommendation (click to read in full)</th></tr></thead><tbody>';
+    shown.forEach(r => {
+      h += '<tr><td class="date">'+esc(r.date || r.year || "")+'</td><td>'+symLink(r)+'</td><td><details><summary>'+esc(firstLine(r.text))+'</summary><p class="txt">'+esc(r.text || "")+'</p></details></td></tr>';
+    });
+    h += '</tbody></table><p class="desc sm" style="margin:10px 0 0">Filter applied: UPR recommendations whose final parentheses name ' + esc(s) + '. Showing ' + shown.length + ' of ' + list.length + '.</p>';
+    body.innerHTML = h;
+    $("whoMore").style.display = shown.length < list.length ? "inline-block" : "none";
+    $("whoMore").textContent = "Show " + Math.min(PAGE, list.length - shown.length) + " more";
+  }
+
+  function pickState(name){
+    who.sel = who.sel === name ? "" : name; who.limit = PAGE;
+    whoChart(); whoSdgTable(); whoList();
+    if (who.sel) $("whoList").scrollIntoView({behavior:"auto", block:"nearest"});
+  }
+  $("whoMore").onclick = () => { who.limit += PAGE; whoList(); };
+  $("whoSdgWrap").addEventListener("click", e => { const tr = e.target.closest("tr.row"); if (tr) pickState(tr.dataset.state); });
+  $("whoSdgWrap").addEventListener("keydown", e => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const tr = e.target.closest && e.target.closest("tr.row");
+    if (tr) { e.preventDefault(); pickState(tr.dataset.state); }
+  });
+  $("noStDet").addEventListener("toggle", () => {
+    if (!$("noStDet").open || $("noStBody").dataset.done) return;
+    $("noStBody").dataset.done = "1";
+    if (!who.noState.length) { $("noStBody").textContent = "None."; return; }
+    const lim = 200;
+    let h = '<table><thead><tr><th>Date</th><th>Symbol</th><th>Text</th></tr></thead><tbody>';
+    who.noState.slice(0, lim).forEach(r => {
+      h += '<tr><td class="date">'+esc(r.date || r.year || "")+'</td><td>'+symLink(r)+'</td><td><details><summary>'+esc(firstLine(r.text))+'</summary><p class="txt">'+esc(r.text || "")+'</p></details></td></tr>';
+    });
+    h += '</tbody></table>';
+    if (who.noState.length > lim) h += '<p>Showing the first ' + lim + ' of ' + who.noState.length + '.</p>';
+    $("noStBody").innerHTML = h;
+  });
+
+  // ---------- tabs
+  document.querySelectorAll(".tabs button").forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll(".tabs button").forEach(x => { const on = x === b; x.classList.toggle("on", on); x.setAttribute("aria-selected", on); });
+      ["tabDash","tabWho"].forEach(id => { $(id).style.display = id === b.dataset.tab ? "block" : "none"; });
+      if (b.dataset.tab === "tabWho") {
+        if (!who.built) { who.built = true; buildWho(); whoChart(); whoSdgTable(); whoList(); }
+        else if (who.chart) who.chart.resize();
+      } else if (chart) chart.resize();
+    };
+  });
+
+  if (!recs.length) {
+    $("desc").textContent = "No records were found in the dataset (WORKSHOP_DATA.uhri is empty).";
+  }
+  fillBodies();
+  apply();
+})();
+</script>
+</body>
+</html>
+```

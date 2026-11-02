@@ -1,0 +1,264 @@
+I built the checker for E/C.12/GC/27: it splits the page text into numbered paragraphs, removes headers, footers and footnotes, and compares each paragraph's opening words with the reference. I could only see one page of the file, so I have not run it on the full document. Check the counters against the reference when you open it.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Paragraph split checker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#f5f7fa;color:#1d2733;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  main{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
+  h1{font-size:26px;margin:0 0 4px}
+  a{color:#1f6fb2}
+  .lead{color:#44525f;margin:0 0 22px}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .card{background:#fff;border:1px solid #d9e0e7;border-radius:8px;padding:16px 18px}
+  .card .big{font-size:32px;font-weight:700;color:#1f6fb2;line-height:1.1}
+  .card .big.warn{color:#b25a00}
+  .card .lbl{margin-top:6px;color:#44525f;font-size:15px}
+  .note{color:#5a6773;font-size:14px;margin:10px 0 22px}
+  .bar{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin:8px 0 12px}
+  button{background:#1f6fb2;color:#fff;border:0;border-radius:6px;padding:9px 16px;font-size:16px;cursor:pointer}
+  button:hover{background:#185a93}
+  label{cursor:pointer}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #d9e0e7;border-radius:8px;table-layout:fixed}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #e5eaf0;vertical-align:top;overflow-wrap:anywhere}
+  th{background:#eaf1f8;font-size:14px}
+  tr.row{cursor:pointer}
+  tr.row:hover{background:#f0f6fc}
+  tr.row:focus{outline:2px solid #1f6fb2;outline-offset:-2px}
+  .badge{display:inline-block;background:#fdeacc;color:#8a4600;border-radius:4px;padding:1px 8px;font-size:14px;font-weight:600}
+  .noref{color:#6b7783;font-size:14px}
+  .refw{display:block;font-size:13px;color:#5a6773;margin-top:3px}
+  tr.detail td{background:#fafcfe}
+  .dgrid{display:grid;grid-template-columns:2fr 1fr;gap:20px}
+  .full{white-space:pre-wrap;font-size:16px}
+  .side{font-size:14px;color:#33414e;border-left:3px solid #1f6fb2;padding-left:12px}
+  .side b{display:block;margin-top:8px}
+  details{background:#fff;border:1px solid #d9e0e7;border-radius:8px;padding:12px 16px;margin-top:24px}
+  summary{cursor:pointer;font-weight:600}
+  .rm{max-height:340px;overflow:auto;font-size:14px;margin-top:10px}
+  .rm table{border:0}
+  .empty{padding:30px;background:#fff;border:1px solid #d9e0e7;border-radius:8px}
+  @media(max-width:760px){.cards{grid-template-columns:1fr}.dgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+(function(){
+  var app=document.getElementById('app');
+  var D=window.WORKSHOP_DATA&&window.WORKSHOP_DATA.pdf_text;
+  function el(tag,attrs,kids){
+    var e=document.createElement(tag);
+    if(attrs)for(var k in attrs){
+      if(k==='text')e.textContent=attrs[k];
+      else if(k==='class')e.className=attrs[k];
+      else e.setAttribute(k,attrs[k]);
+    }
+    (kids||[]).forEach(function(c){if(c!=null)e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+    return e;
+  }
+  if(!D||!Array.isArray(D.records)||!D.records.length){
+    app.appendChild(el('div',{class:'empty',text:'No PDF text found in the data. Attach the file "CESCR General comment No. 27 (PDF)" and try again.'}));
+    return;
+  }
+
+  /* ---------- parsing ---------- */
+  var symbol=D.symbol||'';
+  var ref=D.reference||{};
+  var refWords=ref.first_words||{};
+  var removed=[];           // {cat,page,text}
+  var paras=[];
+  var cur=null, expP=1, expF=1, footCount=0, starCount=0;
+
+  D.records.forEach(function(rec){
+    var page=rec.page;
+    var lines=String(rec.text||'').split(/\r?\n/).map(function(s){return s.trim();}).filter(function(s){return s;});
+    var inFoot=false;
+    lines.forEach(function(t,i){
+      var n,m,nxt=lines[i+1];
+      // 1. distribution code
+      if(/^GE\.\s?\d/.test(t)){removed.push({cat:'Distribution code',page:page,text:t});return;}
+      // 2. document symbol (optionally with a page number beside it)
+      if(symbol&&t.indexOf(symbol)>=0&&/^\d*$/.test(t.split(symbol).join('').trim())){
+        removed.push({cat:'Document symbol',page:page,text:t});return;}
+      // 3. lines that are only digits: footnote number or page number
+      if(/^\d{1,3}$/.test(t)){
+        n=+t;
+        if(n===expF&&nxt&&!/^\d+$/.test(nxt)){
+          inFoot=true;footCount++;expF++;removed.push({cat:'Footnote',page:page,text:t});return;}
+        if(n===page||i<2||i>=lines.length-2){removed.push({cat:'Page number',page:page,text:t});return;}
+      }
+      // 4. footnote starting with the next expected footnote number
+      m=/^(\d{1,3})\s+(\S.*)$/.exec(t);
+      if(m&&+m[1]===expF){
+        inFoot=true;footCount++;expF++;removed.push({cat:'Footnote',page:page,text:t});return;}
+      // asterisk note (title footnote), counted separately
+      if(!inFoot&&/^\*\s*\S/.test(t)){
+        inFoot=true;starCount++;removed.push({cat:'Asterisk note (not in the footnote count)',page:page,text:t});return;}
+      // rest of a page foot is footnote text
+      if(inFoot){removed.push({cat:'Footnote',page:page,text:t});return;}
+      // 5. paragraph start: next expected number, full stop
+      m=/^(\d{1,3})\.(?:\s+(.*))?$/.exec(t);
+      if(m&&+m[1]===expP){
+        cur={n:expP,page:page,lines:[]};
+        paras.push(cur);expP++;
+        if(m[2])cur.lines.push(m[2]);
+        return;
+      }
+      // 6. ordinary text
+      if(cur)cur.lines.push(t);
+      else removed.push({cat:'Text before paragraph 1',page:page,text:t});
+    });
+  });
+
+  function words(s){
+    return String(s||'').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(function(w){return w;});
+  }
+  paras.forEach(function(p){
+    var s='';
+    p.lines.forEach(function(l,i){
+      if(i===0)s=l;
+      else if(/^\([a-z]{1,4}\)\s/.test(l))s+='\n'+l;
+      else s+=' '+l;
+    });
+    p.text=s;
+    p.first=s.replace(/\s+/g,' ').trim();
+    var r=refWords[String(p.n)];
+    p.refText=(r==null)?null:String(r);
+    p.mine=words(s).slice(0,6).join(' ');
+    if(p.refText==null)p.status='noref';
+    else{
+      var rw=words(p.refText).slice(0,6), mw=words(s).slice(0,6);
+      var same=rw.length>0&&mw.length>=rw.length;
+      for(var i=0;same&&i<rw.length;i++)if(rw[i]!==mw[i])same=false;
+      p.status=same?'ok':'differs';
+    }
+  });
+  var nDiff=paras.filter(function(p){return p.status==='differs';}).length;
+  var nNoRef=paras.filter(function(p){return p.status==='noref';}).length;
+
+  /* ---------- page ---------- */
+  var h1=el('h1',null,[(D.title||'Document')+' — ',el('a',{href:D.doc_url||'#',target:'_blank',rel:'noopener',text:symbol||'document'})]);
+  app.appendChild(h1);
+  app.appendChild(el('p',{class:'lead',text:'Raw PDF text, '+D.records.length+' pages, source: '+(D.source||'not stated')}));
+
+  function card(big,label,warn){
+    return el('div',{class:'card'},[el('div',{class:'big'+(warn?' warn':''),text:big}),el('div',{class:'lbl',text:label})]);
+  }
+  var refP=(ref.paragraphs!=null)?ref.paragraphs:null, refF=(ref.footnotes!=null)?ref.footnotes:null;
+  var cards=el('div',{class:'cards'});
+  cards.appendChild(card(paras.length+' of '+(refP!=null?refP:'?'),'paragraphs found / paragraphs in the reference',refP!=null&&paras.length!==refP));
+  cards.appendChild(card(footCount+' of '+(refF!=null?refF:'?'),'footnotes removed / footnotes in the reference',refF!=null&&footCount!==refF));
+  cards.appendChild(card(String(nDiff),'paragraphs whose opening words differ from the reference',nDiff>0));
+  app.appendChild(cards);
+  var noteTxt='Found by the code from the page text; reference figures come from the file.';
+  if(starCount)noteTxt+=' The asterisk note on the title ('+starCount+') is removed but not counted as a footnote.';
+  if(nNoRef)noteTxt+=' '+nNoRef+' paragraph(s) have no entry in the reference and are not compared.';
+  app.appendChild(el('p',{class:'note',text:noteTxt}));
+
+  var cb=el('input',{type:'checkbox',id:'diffFirst'});
+  var btn=el('button',{type:'button',text:'Download CSV'});
+  app.appendChild(el('div',{class:'bar'},[
+    el('label',null,[cb,' Show differences first']),
+    btn,
+    el('span',{class:'note',text:'Click a row to read the full paragraph as extracted.'})
+  ]));
+
+  var table=el('table');
+  var thead=el('thead');
+  var hr=el('tr');
+  [['No.','7%'],['Page','7%'],['First line (about 90 characters)','50%'],['Symbol','18%'],['Opening words','18%']].forEach(function(c){
+    hr.appendChild(el('th',{text:c[0],style:'width:'+c[1]}));
+  });
+  thead.appendChild(hr);table.appendChild(thead);
+  var tbody=el('tbody');table.appendChild(tbody);
+  app.appendChild(table);
+  app.appendChild(el('p',{class:'note',text:'How this is computed: pages are joined in order; page numbers, the document symbol and "GE." codes are dropped; once a footnote number (1, 2, 3 …) appears, the rest of that page foot is counted as footnote text. A paragraph starts at a line beginning with the next expected number and a full stop. "Differs" = the first six words (ignoring case, punctuation, spacing) are not the reference\'s. Section headings between paragraphs stay attached to the end of the paragraph before them; line breaks inside a paragraph are shown as spaces, with a new line before (a), (b) … items. Nothing is reworded.'}));
+
+  var openSet={};
+  function render(){
+    var list=paras.slice();
+    if(cb.checked)list.sort(function(a,b){
+      var x=a.status==='differs'?0:1,y=b.status==='differs'?0:1;
+      return x-y||a.n-b.n;
+    });
+    tbody.textContent='';
+    list.forEach(function(p){
+      var first=p.first.length>90?p.first.slice(0,90)+'…':p.first;
+      var c5=el('td');
+      if(p.status==='differs'){
+        c5.appendChild(el('span',{class:'badge',text:'Differs'}));
+        c5.appendChild(el('span',{class:'refw',text:'Reference: '+p.refText}));
+      }else if(p.status==='noref')c5.appendChild(el('span',{class:'noref',text:'no reference'}));
+      else c5.appendChild(el('span',{class:'noref',text:'matches'}));
+      var tr=el('tr',{class:'row',tabindex:'0'},[
+        el('td',{text:String(p.n)}),
+        el('td',{text:String(p.page)}),
+        el('td',{text:first||'(empty)'}),
+        el('td',null,[el('a',{href:D.doc_url||'#',target:'_blank',rel:'noopener',text:symbol,onclick:'event.stopPropagation()'})]),
+        c5
+      ]);
+      function toggle(){openSet[p.n]=!openSet[p.n];render();}
+      tr.addEventListener('click',toggle);
+      tr.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}});
+      tbody.appendChild(tr);
+      if(openSet[p.n]){
+        var side=el('div',{class:'side'},[
+          el('b',{text:'Reference first words'}),
+          el('span',{text:p.refText!=null?p.refText:'no reference for this number'}),
+          el('b',{text:'First six words found by the code'}),
+          el('span',{text:p.mine||'(none)'}),
+          el('b',{text:'Starts on page'}),
+          el('span',{text:String(p.page)})
+        ]);
+        var td=el('td',{colspan:'5'},[el('div',{class:'dgrid'},[el('div',{class:'full',text:p.text}),side])]);
+        tbody.appendChild(el('tr',{class:'detail'},[td]));
+      }
+    });
+  }
+  cb.addEventListener('change',render);
+  render();
+
+  /* ---------- CSV ---------- */
+  function q(v){return '"'+String(v).replace(/"/g,'""')+'"';}
+  btn.addEventListener('click',function(){
+    var rows=[['number','page','matches_reference','text']];
+    paras.forEach(function(p){
+      rows.push([p.n,p.page,p.status==='ok'?'yes':(p.status==='differs'?'no':'no reference'),p.text]);
+    });
+    var csv='\ufeff'+rows.map(function(r){return r.map(q).join(',');}).join('\r\n');
+    var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;a.download=(symbol||'document').replace(/[^\w.-]+/g,'_')+'_paragraphs.csv';
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  });
+
+  /* ---------- removed lines ---------- */
+  var counts={};
+  removed.forEach(function(r){counts[r.cat]=(counts[r.cat]||0)+1;});
+  var summ=Object.keys(counts).map(function(k){return k+': '+counts[k];}).join(' · ');
+  var det=el('details',null,[el('summary',{text:'Lines removed as headers, footers and footnotes ('+removed.length+' lines)'})]);
+  det.appendChild(el('p',{class:'note',text:removed.length?summ:'No lines were removed.'}));
+  if(removed.length){
+    var rt=el('table'),rb=el('tbody');
+    var rh=el('tr');['Page','Kind','Line'].forEach(function(h,i){rh.appendChild(el('th',{text:h,style:'width:'+['8%','27%','65%'][i]}));});
+    rt.appendChild(el('thead',null,[rh]));
+    removed.forEach(function(r){
+      rb.appendChild(el('tr',null,[el('td',{text:String(r.page)}),el('td',{text:r.cat}),el('td',{text:r.text})]));
+    });
+    rt.appendChild(rb);
+    det.appendChild(el('div',{class:'rm'},[rt]));
+  }
+  app.appendChild(det);
+})();
+</script>
+</body>
+</html>
+```

@@ -1,0 +1,324 @@
+I built the research wiki on the nine-document library. Each concept page has a sidebar count, a table by kind of document, passages grouped by document with highlighted terms and citation links that open the PDF page, related concepts, and a "Draft a summary" button. Nothing is sent to the model until you click that button, and the page says so before you do.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neurotechnology and justice: research wiki</title>
+<style>
+  :root { --accent:#1f6fb2; --ink:#1d2733; --muted:#5d6b79; --line:#dbe3ea; --bg:#f5f8fb; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:20px 28px; }
+  header h1 { margin:0 0 4px; font-size:1.6rem; color:var(--accent); }
+  header p { margin:0; color:var(--muted); }
+  .layout { display:grid; grid-template-columns:270px minmax(0,1fr); gap:24px; padding:24px 28px; max-width:1300px; margin:0 auto; }
+  @media (max-width:820px){ .layout{ grid-template-columns:1fr; } }
+  nav { background:#fff; border:1px solid var(--line); border-radius:8px; padding:14px; align-self:start; }
+  nav h2 { font-size:.85rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:0 0 8px; }
+  nav button.c { display:flex; justify-content:space-between; width:100%; text-align:left; border:0; background:none; padding:8px 10px; border-radius:6px; font:inherit; color:var(--ink); cursor:pointer; }
+  nav button.c:hover { background:#eaf2fa; }
+  nav button.c.on { background:var(--accent); color:#fff; }
+  nav button.c .n { opacity:.8; font-variant-numeric:tabular-nums; }
+  nav .add { margin-top:14px; border-top:1px solid var(--line); padding-top:12px; }
+  nav input { width:100%; font:inherit; padding:8px 10px; border:1px solid #b9c6d3; border-radius:6px; }
+  nav small { color:var(--muted); display:block; margin-top:6px; }
+  main section { background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px 22px; margin-bottom:20px; }
+  main h2 { margin:0 0 8px; font-size:1.25rem; }
+  h1.concept { margin:0 0 6px; font-size:1.9rem; }
+  .chip { display:inline-block; background:#eaf2fa; color:#164f80; border-radius:14px; padding:2px 11px; margin:2px 4px 2px 0; font-size:.95rem; }
+  .note { color:var(--muted); font-size:.92rem; margin:8px 0 0; }
+  table { border-collapse:collapse; width:100%; max-width:640px; }
+  th, td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--line); }
+  th.r, td.r { text-align:right; font-variant-numeric:tabular-nums; }
+  tr.zero td { color:#8996a3; }
+  tr.total td { font-weight:700; border-top:2px solid var(--ink); }
+  .group { border-top:1px solid var(--line); padding-top:14px; margin-top:16px; }
+  .group h3 { margin:0 0 2px; font-size:1.08rem; }
+  .group .meta { color:var(--muted); font-size:.93rem; margin-bottom:8px; }
+  .group .meta a { color:var(--accent); }
+  .passage { padding:10px 0 10px 14px; border-left:3px solid var(--line); margin:10px 0; }
+  .cite { font-weight:600; color:var(--accent); cursor:pointer; text-decoration:underline; }
+  .sec { color:var(--muted); font-size:.92rem; margin-left:8px; }
+  .txt { margin-top:4px; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .txt.clamped { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; line-clamp:3; overflow:hidden; }
+  mark { background:#fff1a8; padding:0 1px; }
+  .fold { border:0; background:none; color:var(--accent); font:inherit; cursor:pointer; padding:2px 0; text-decoration:underline; }
+  .link { border:0; background:none; color:var(--accent); font:inherit; cursor:pointer; text-decoration:underline; padding:0; margin-right:14px; }
+  button.primary { background:var(--accent); color:#fff; border:0; border-radius:6px; padding:10px 18px; font:inherit; cursor:pointer; }
+  button.secondary { background:#fff; color:var(--accent); border:1px solid var(--accent); border-radius:6px; padding:9px 16px; font:inherit; cursor:pointer; margin-left:8px; }
+  .aibox { border:2px solid var(--accent); border-radius:8px; padding:12px 16px; margin-top:12px; background:#f3f8fd; }
+  .aibox .lab { font-weight:700; color:#164f80; margin-bottom:6px; }
+  .warn { color:#8a4b00; font-size:.92rem; margin-top:8px; }
+  .empty { color:var(--muted); font-style:italic; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Neurotechnology and justice: research wiki</h1>
+  <p id="desc"></p>
+</header>
+<div class="layout">
+  <nav>
+    <h2>Concepts</h2>
+    <div id="side"></div>
+    <div class="add">
+      <h2>Add a concept</h2>
+      <input id="newTerm" type="text" placeholder="Type a term, press Enter" aria-label="Add a concept">
+      <small>An added concept is found by that exact term only, and is lost when the page is reloaded.</small>
+    </div>
+  </nav>
+  <main id="main"></main>
+</div>
+
+<script>
+(function () {
+  const lib = (window.WORKSHOP_DATA && window.WORKSHOP_DATA.library) || {};
+  const docs = Array.isArray(lib.records) ? lib.records : [];
+
+  // ---- every passage, in library order ----
+  const ALL = [];
+  docs.forEach(d => (d.passages || []).forEach(p => { if (p && typeof p.text === 'string') ALL.push({ d, p }); }));
+  const kinds = [];
+  docs.forEach(d => { if (d.kind && !kinds.includes(d.kind)) kinds.push(d.kind); });
+
+  // ---- concepts ----
+  const concepts = [
+    ['mental privacy'], ['freedom of thought'], ['self-incrimination'],
+    ['lie detection', 'deception detection', 'brain fingerprinting'],
+    ['consent'], ['neural data'], ['data solidarity'], ['proportionality']
+  ].map(t => makeConcept(t[0], t));
+  let current = 0;
+
+  function esc(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  // One pattern per term: spaces match any run of white space (line breaks included),
+  // a hyphen may be followed by a line break.
+  function termPattern(term) {
+    return Array.from(term.trim()).map(ch => {
+      if (/\s/.test(ch)) return '[\\s\\u00ad]+';
+      if (/[-\u2010\u2011]/.test(ch)) return '[-\\u2010\\u2011]\\s*';
+      return esc(ch);
+    }).join('');
+  }
+  function makeConcept(name, terms) {
+    const src = terms.filter(t => t && t.trim()).map(termPattern).join('|');
+    const re = new RegExp(src, 'i');
+    const hits = ALL.filter(e => re.test(e.p.text));
+    return { name, terms, src, hits };
+  }
+
+  // ---- citations ----
+  function surnames(a) {
+    const names = String(a || '').split(/\s*(?:,|;|&|\band\b)\s*/).map(s => s.trim()).filter(Boolean).map(n => {
+      const w = n.split(/\s+/);
+      const last = w[w.length - 1];
+      return (/^[A-Z]{1,3}\.?$/.test(last) && w.length > 1) ? w[0] : last;
+    });
+    if (!names.length) return String(a || '');
+    if (names.length >= 3) return names[0] + ' et al.';
+    return names.join(' & ');
+  }
+  function authorLabel(d) { return d.kind === 'Journal article' ? surnames(d.author) : (d.author || ''); }
+  function cite(d, p) {
+    const hasPara = p.paragraph !== null && p.paragraph !== undefined && String(p.paragraph).trim() !== '';
+    if (hasPara) return (d.symbol || authorLabel(d)) + ', para. ' + p.paragraph;
+    return authorLabel(d) + ' ' + d.year + ', p. ' + (p.page_label != null ? p.page_label : p.page);
+  }
+
+  // ---- tiny DOM helper ----
+  function h(tag, attrs, ...kids) {
+    const el = document.createElement(tag);
+    for (const k in (attrs || {})) {
+      if (k === 'class') el.className = attrs[k];
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2), attrs[k]);
+      else el.setAttribute(k, attrs[k]);
+    }
+    kids.flat().forEach(c => { if (c != null) el.append(c); });
+    return el;
+  }
+  function fillHighlighted(el, text, src) {
+    const re = new RegExp(src, 'gi');
+    let last = 0, m;
+    while ((m = re.exec(text))) {
+      if (m[0] === '') { re.lastIndex++; continue; }
+      if (m.index > last) el.append(text.slice(last, m.index));
+      el.append(h('mark', {}, m[0]));
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) el.append(text.slice(last));
+  }
+
+  // ---- header ----
+  (function () {
+    const years = docs.map(d => d.year).filter(y => typeof y === 'number');
+    const range = years.length ? (Math.min(...years) === Math.max(...years) ? years[0] : Math.min(...years) + '–' + Math.max(...years)) : 'years unknown';
+    document.getElementById('desc').textContent =
+      (lib.title || 'Research library') + (lib.source ? ' (' + lib.source + ')' : '') + ': ' +
+      docs.length + ' documents, ' + ALL.length + ' passages, ' + range + '.';
+  })();
+
+  // ---- sidebar ----
+  function renderSide() {
+    const side = document.getElementById('side');
+    side.replaceChildren(...concepts.map((c, i) =>
+      h('button', { class: 'c' + (i === current ? ' on' : ''), onclick: () => select(i) },
+        h('span', {}, c.name), h('span', { class: 'n' }, String(c.hits.length)))));
+  }
+  function select(i) { current = i; renderSide(); renderMain(); window.scrollTo(0, 0); }
+
+  document.getElementById('newTerm').addEventListener('keydown', ev => {
+    if (ev.key !== 'Enter') return;
+    const t = ev.target.value.trim().replace(/\s+/g, ' ');
+    if (!t) return;
+    let i = concepts.findIndex(c => c.name.toLowerCase() === t.toLowerCase());
+    if (i < 0) { concepts.push(makeConcept(t, [t])); i = concepts.length - 1; }
+    ev.target.value = '';
+    select(i);
+  });
+
+  // ---- main page ----
+  let askToken = 0;
+  function renderMain() {
+    askToken++;
+    const c = concepts[current];
+    const main = document.getElementById('main');
+    main.replaceChildren();
+
+    if (!docs.length) {
+      main.append(h('section', {}, h('p', { class: 'empty' }, 'The library is empty: no documents were loaded.')));
+      return;
+    }
+
+    // 2. heading
+    main.append(h('section', {},
+      h('h1', { class: 'concept' }, c.name),
+      h('div', {}, 'Terms that find it: ', c.terms.map(t => h('span', { class: 'chip' }, t))),
+      h('p', { class: 'note' }, 'A passage belongs to this page when its text contains one of these terms, ignoring capitals and line breaks. Part of a word counts (“consent” also finds “consented”). Matches are highlighted.')));
+
+    // 3. table
+    const rows = kinds.map(k => {
+      const hits = c.hits.filter(e => e.d.kind === k);
+      const nd = new Set(hits.map(e => e.d.id)).size;
+      return h('tr', { class: hits.length ? '' : 'zero' },
+        h('td', {}, k), h('td', { class: 'r' }, String(nd)), h('td', { class: 'r' }, String(hits.length)));
+    });
+    main.append(h('section', {},
+      h('h2', {}, 'Passages by kind of document'),
+      h('table', {},
+        h('thead', {}, h('tr', {}, h('th', {}, 'Kind of document'), h('th', { class: 'r' }, 'Documents'), h('th', { class: 'r' }, 'Passages'))),
+        h('tbody', {}, rows,
+          h('tr', { class: 'total' }, h('td', {}, 'Total'),
+            h('td', { class: 'r' }, String(new Set(c.hits.map(e => e.d.id)).size)),
+            h('td', { class: 'r' }, String(c.hits.length))))),
+      h('p', { class: 'note' }, 'How this is computed: your browser tests every one of the ' + ALL.length + ' passages in the ' + docs.length + ' documents for the terms above and counts the matches by the document’s kind. The rows add up to the total.')));
+
+    // 4. passages
+    const sec = h('section', {}, h('h2', {}, 'Passages'));
+    main.append(sec);
+    if (!c.hits.length) {
+      sec.append(h('p', { class: 'empty' }, 'No passage uses this term.'));
+    } else {
+      const clamps = [];
+      docs.forEach(d => {
+        const hits = c.hits.filter(e => e.d === d);
+        if (!hits.length) return;
+        const head = d.symbol
+          ? h('a', { href: d.url || '#', target: '_blank', rel: 'noopener' }, d.symbol)
+          : h('span', {}, d.author || '');
+        const g = h('div', { class: 'group' },
+          h('h3', {}, d.short_title || d.title || d.id),
+          h('div', { class: 'meta' }, d.kind + ' · ' + d.year + ' · ', head, ' · ' + hits.length + (hits.length === 1 ? ' passage' : ' passages')));
+        hits.forEach(e => {
+          const p = e.p;
+          const txt = h('div', { class: 'txt clamped' });
+          fillHighlighted(txt, p.text, c.src);
+          const foldBtn = h('button', { class: 'fold', style: 'display:none' }, 'Show the full passage');
+          foldBtn.addEventListener('click', () => {
+            const folded = txt.classList.toggle('clamped');
+            foldBtn.textContent = folded ? 'Show the full passage' : 'Fold';
+          });
+          clamps.push([txt, foldBtn]);
+          g.append(h('div', { class: 'passage' },
+            h('div', {},
+              h('a', { class: 'cite', href: '#', title: 'Open the PDF at page ' + p.page,
+                onclick: ev => { ev.preventDefault(); openSrc(d.id, p.page); } }, cite(d, p)),
+              p.section ? h('span', { class: 'sec' }, p.section) : null),
+            txt, foldBtn));
+        });
+        sec.append(g);
+      });
+      sec.append(h('p', { class: 'note' }, 'Each reference opens the original PDF at the page where the paragraph starts. Passage text is shown exactly as in the source; folding only hides lines.'));
+      clamps.forEach(([t, b]) => { if (t.scrollHeight > t.clientHeight + 1) b.style.display = ''; });
+    }
+
+    // 5. related concepts
+    const related = concepts.map((o, i) => ({ o, i, n: i === current ? 0 : c.hits.filter(e => o.hits.includes(e)).length }))
+      .filter(r => r.n > 0).sort((a, b) => b.n - a.n);
+    main.append(h('section', {},
+      h('h2', {}, 'Related concepts'),
+      related.length
+        ? h('div', {}, related.map(r => h('button', { class: 'link', onclick: () => select(r.i) }, r.o.name + ' (' + r.n + ')')))
+        : h('p', { class: 'empty' }, 'No other concept appears in the same passages.'),
+      h('p', { class: 'note' }, 'How this is computed: the number is how many of this page’s passages also use the other concept’s terms.')));
+
+    // 6. summary
+    if (c.hits.length) {
+      const area = h('div', {});
+      const nSend = Math.min(12, c.hits.length);
+      const btn = h('button', { class: 'primary' }, 'Draft a summary');
+      btn.addEventListener('click', () => draftSummary(c, area, btn, nSend));
+      main.append(h('section', {},
+        h('h2', {}, 'AI summary'),
+        h('p', { class: 'note', style: 'margin:0 0 10px' }, 'Clicking the button sends the text of the first ' + nSend + ' passage' + (nSend === 1 ? '' : 's') + ' on this page (of ' + c.hits.length + ') to a language model. They leave your browser. Nothing is sent before you click.'),
+        btn, area));
+    }
+  }
+
+  function openSrc(id, page) {
+    try {
+      if (window.studio && typeof studio.openSource === 'function') studio.openSource(id, page);
+      else alert('The PDF viewer is not available in this preview.');
+    } catch (e) { alert('Could not open the PDF: ' + e.message); }
+  }
+
+  async function draftSummary(c, area, btn, nSend) {
+    const sent = c.hits.slice(0, nSend).map(e => ({ cite: cite(e.d, e.p), text: e.p.text }));
+    const prompt =
+      'You are helping a human rights professional. Below are ' + sent.length + ' numbered passages from documents on neurotechnology and justice. Each uses the concept "' + c.name + '".\n\n' +
+      'Write exactly three sentences summarising what these passages say about "' + c.name + '". Rely only on the passages below; add nothing from outside them. ' +
+      'End each sentence with the citation of the passage it rests on, copied exactly as given and placed in parentheses, for example (' + sent[0].cite + ').\n\n' +
+      sent.map((s, i) => '[' + (i + 1) + '] Citation: ' + s.cite + '\n' + s.text).join('\n\n');
+
+    const my = ++askToken;
+    btn.disabled = true;
+    const stop = h('button', { class: 'secondary' }, 'Stop');
+    stop.addEventListener('click', () => { askToken++; btn.disabled = false; area.replaceChildren(h('p', { class: 'note' }, 'Stopped. Any answer will be ignored.')); });
+    area.replaceChildren(h('p', { class: 'note' }, 'Waiting for the model… (' + sent.length + ' passages sent) '), stop);
+    try {
+      if (!window.studio || typeof studio.ask !== 'function') throw new Error('The model is not available in this preview.');
+      const answer = String(await studio.ask(prompt));
+      if (my !== askToken) return;
+      const sentences = answer.split(/(?<=[.!?)\]])\s+/).map(s => s.trim()).filter(Boolean);
+      const ok = sentences.filter(s => sent.some(x => s.includes(x.cite))).length;
+      const box = h('div', { class: 'aibox' },
+        h('div', { class: 'lab' }, 'Written by AI. ' + sent.length + (sent.length === 1 ? ' passage was' : ' passages were') + ' sent to the model and left the browser'),
+        h('div', { 'data-source': 'ai' }, answer));
+      if (ok < sentences.length) box.append(h('div', { class: 'warn' }, 'Check: only ' + ok + ' of ' + sentences.length + ' sentences end with a citation from the passages sent. Verify the rest against the passages above.'));
+      else box.append(h('div', { class: 'note' }, 'Check: every sentence contains a citation from the passages sent. Click the references above to verify each one.'));
+      area.replaceChildren(box);
+    } catch (err) {
+      if (my !== askToken) return;
+      area.replaceChildren(h('p', { class: 'warn' }, 'The summary could not be written: ' + err.message));
+    }
+    btn.disabled = false;
+  }
+
+  renderSide();
+  renderMain();
+})();
+</script>
+</body>
+</html>
+```

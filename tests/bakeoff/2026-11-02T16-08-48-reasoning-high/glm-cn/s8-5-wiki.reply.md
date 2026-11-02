@@ -1,0 +1,421 @@
+Here's the concept wiki. It reads the nine attached documents, groups every matching passage under its source, opens the original PDF at the right page when you click a citation, and can draft an AI summary from the first twelve passages on demand.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neurotechnology &amp; Justice — Concept Wiki</title>
+<style>
+  :root{ --accent:#1f6fb2; --line:#d9e1e8; }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:16px; line-height:1.55; background:#f5f7f9; color:#1d2833;
+  }
+  a{ color:var(--accent); }
+  header.site{
+    background:#fff; border-bottom:1px solid var(--line); padding:20px 30px;
+  }
+  header.site h1{ margin:0 0 4px 0; font-size:24px; }
+  header.site .sub{ margin:0; color:#4d5b68; font-size:14px; }
+
+  .layout{ display:flex; align-items:stretch; min-height:calc(100vh - 90px); }
+  nav.side{
+    width:280px; flex:0 0 280px; background:#fff; border-right:1px solid var(--line);
+    padding:18px 14px;
+  }
+  nav.side h2{ font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:#6a7885; margin:6px 6px 10px; }
+  .concept{
+    display:flex; justify-content:space-between; align-items:baseline; gap:8px;
+    width:100%; text-align:left; background:none; border:0; font:inherit;
+    padding:8px 10px; margin:0 0 2px; border-radius:6px; cursor:pointer; color:#1d2833;
+  }
+  .concept:hover{ background:#eef4f9; }
+  .concept.active{ background:var(--accent); color:#fff; }
+  .concept .cnt{ font-size:13px; color:#7b8894; white-space:nowrap; }
+  .concept.active .cnt{ color:#d7e7f4; }
+  .addbox{ margin-top:22px; padding:0 6px; }
+  .addbox label{ display:block; font-size:13px; color:#6a7885; margin-bottom:6px; }
+  .addbox input{
+    width:100%; padding:8px 10px; font:inherit; border:1px solid var(--line); border-radius:6px;
+  }
+  .addbox input:focus{ outline:2px solid #b9d4ea; border-color:var(--accent); }
+  .sidefoot{ margin:20px 6px 0; font-size:12.5px; color:#8b98a4; }
+
+  main.main{ flex:1; padding:26px 34px 60px; max-width:100%; overflow-wrap:break-word; }
+  main h2.concept-title{ margin:0 0 4px; font-size:26px; }
+  p.terms{ margin:0 0 20px; color:#4d5b68; font-size:14.5px; }
+  p.terms code{ background:#e9eff5; border-radius:4px; padding:1px 6px; font-size:13.5px; }
+
+  section.block{ margin:0 0 30px; }
+  h3.blockhead{ font-size:17px; margin:0 0 4px; }
+  p.note{ margin:0 0 10px; font-size:13.5px; color:#6a7885; }
+
+  table.kindtable{ border-collapse:collapse; background:#fff; border:1px solid var(--line); min-width:340px; }
+  table.kindtable th, table.kindtable td{ padding:8px 14px; border:1px solid var(--line); text-align:left; }
+  table.kindtable th{ background:#eef3f7; font-size:14px; }
+  table.kindtable td.num, table.kindtable th.num{ text-align:right; }
+  table.kindtable tr.total td{ font-weight:600; background:#f7fafc; }
+
+  .relwrap{ display:flex; flex-wrap:wrap; gap:8px; }
+  .relbtn{
+    background:#fff; border:1px solid var(--accent); color:var(--accent); font:inherit; font-size:14px;
+    padding:5px 14px; border-radius:999px; cursor:pointer;
+  }
+  .relbtn:hover{ background:#eef4f9; }
+
+  .docgroup{ background:#fff; border:1px solid var(--line); border-radius:8px; padding:16px 20px; margin:0 0 18px; }
+  .docgroup > h3{ margin:0 0 2px; font-size:18px; }
+  .dmeta{ margin:0 0 14px; font-size:14px; color:#5a6875; }
+
+  .passage{ border-top:1px solid #eaeff3; padding:12px 0 10px; }
+  .passage:first-of-type{ border-top:0; }
+  .pcite{ font-size:14px; margin-bottom:2px; }
+  .pcite a{ text-decoration:none; border-bottom:1px dotted var(--accent); }
+  .psec{ font-size:13px; color:#6a7885; font-style:italic; margin-bottom:4px; }
+  .ptext{ margin:2px 0 0; white-space:pre-wrap; }
+  .ptext.folded{
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; line-clamp:3;
+    overflow:hidden; cursor:pointer;
+  }
+  .ptext.folded::after{ content:" … click to expand"; color:var(--accent); font-size:13px; }
+  .foldhint{ font-size:12.5px; color:#8b98a4; margin:26px 0 0; }
+
+  p.empty{ background:#fff; border:1px dashed var(--line); border-radius:8px; padding:18px 20px; color:#5a6875; }
+
+  .btn{
+    background:var(--accent); color:#fff; border:0; font:inherit; font-size:15px;
+    padding:9px 18px; border-radius:6px; cursor:pointer;
+  }
+  .btn:hover{ background:#195d96; }
+  .btn:disabled{ background:#9db8cf; cursor:default; }
+  .btn.stop{ background:#fff; color:#a33; border:1px solid #d8a0a0; margin-left:8px; }
+  .aistatus{ font-size:14px; color:#5a6875; margin-top:10px; }
+  .ailabel{ font-size:14px; color:#5a6875; margin:16px 0 6px; font-weight:600; }
+  .aibox{
+    background:#fdfaf3; border:1px solid #e5d9b8; border-left:4px solid #c9a84c;
+    border-radius:6px; padding:14px 18px; max-width:820px;
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <h1>Neurotechnology &amp; Justice — Concept Wiki</h1>
+  <p class="sub" id="subtitle"></p>
+</header>
+
+<div class="layout">
+  <nav class="side" id="sidebar"></nav>
+  <main class="main" id="page"></main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var lib = WORKSHOP_DATA.library;
+  var docs = (lib && lib.records) ? lib.records : [];
+
+  /* ---------- helpers ---------- */
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function norm(s){ return String(s || "").toLowerCase().replace(/\s+/g, " "); }
+  function uses(passage, terms){
+    var t = norm(passage.text);
+    for (var i = 0; i < terms.length; i++){
+      if (t.indexOf(norm(terms[i])) !== -1) return true;
+    }
+    return false;
+  }
+  function passagesFor(concept){
+    var out = [];
+    docs.forEach(function(d){
+      (d.passages || []).forEach(function(p){
+        if (uses(p, concept.terms)) out.push({ doc: d, p: p });
+      });
+    });
+    return out;
+  }
+
+  /* ---------- citations ---------- */
+  function journalCite(doc){
+    // Surnames of the authors: "Szoszkiewicz & Yuste"; 3+ -> "Prainsack et al."
+    var names = String(doc.author || "").split(/,| and |;|&/)
+      .map(function(s){ return s.trim(); }).filter(Boolean);
+    var surnames = names.map(function(n){ return n.split(/\s+/).pop(); });
+    if (!surnames.length) return doc.author || doc.short_title;
+    if (surnames.length === 1) return surnames[0];
+    if (surnames.length === 2) return surnames[0] + " & " + surnames[1];
+    return surnames[0] + " et al.";
+  }
+  function citation(doc, p){
+    if (doc.symbol && p.paragraph !== null && p.paragraph !== undefined && p.paragraph !== ""){
+      return doc.symbol + ", para. " + p.paragraph;
+    }
+    var who = (doc.kind === "Journal article") ? journalCite(doc) : (doc.author || doc.short_title);
+    return who + " " + doc.year + ", p. " + p.page_label;
+  }
+
+  /* ---------- state ---------- */
+  var DEFAULTS = [
+    ["Mental privacy", ["mental privacy"]],
+    ["Freedom of thought", ["freedom of thought"]],
+    ["Self-incrimination", ["self-incrimination"]],
+    ["Lie detection", ["lie detection", "deception detection", "brain fingerprinting"]],
+    ["Consent", ["consent"]],
+    ["Neural data", ["neural data"]],
+    ["Data solidarity", ["data solidarity"]],
+    ["Proportionality", ["proportionality"]]
+  ];
+  var concepts = DEFAULTS.map(function(d){ return { name: d[0], terms: d[1].slice() }; });
+  var current = concepts.length ? concepts[0].name : null;
+  var aiCancelled = false;
+
+  function conceptByName(n){
+    var ln = n.toLowerCase();
+    for (var i = 0; i < concepts.length; i++){
+      if (concepts[i].name.toLowerCase() === ln) return concepts[i];
+    }
+    return null;
+  }
+
+  /* ---------- subtitle ---------- */
+  (function(){
+    var years = docs.map(function(d){ return d.year; }).filter(function(y){ return y; });
+    var yrs = years.length
+      ? (Math.min.apply(null, years) === Math.max.apply(null, years)
+          ? String(Math.min.apply(null, years))
+          : Math.min.apply(null, years) + "–" + Math.max.apply(null, years))
+      : "";
+    var totalPassages = docs.reduce(function(a, d){ return a + (d.passages || []).length; }, 0);
+    var el = document.getElementById("subtitle");
+    el.textContent = "Source: " + (lib.title || "research library") + " — " + docs.length +
+      " document" + (docs.length === 1 ? "" : "s") + (yrs ? ", " + yrs : "") + ", " +
+      totalPassages + " passages. Every citation opens the original PDF at the page where the passage starts.";
+  })();
+
+  /* ---------- sidebar ---------- */
+  function renderSidebar(focusInput){
+    var html = '<h2>Concepts</h2>';
+    concepts.forEach(function(c){
+      var n = passagesFor(c).length;
+      html += '<button class="concept' + (c.name === current ? " active" : "") + '" data-name="' + esc(c.name) + '">' +
+        '<span>' + esc(c.name) + '</span><span class="cnt">' + n + '</span></button>';
+    });
+    html += '<div class="addbox"><label for="addconcept">Add a concept</label>' +
+      '<input id="addconcept" type="text" placeholder="Type a term, press Enter"></div>' +
+      '<p class="sidefoot">Counts are passages whose text contains the concept\u2019s terms, ignoring case and line breaks. Added concepts are lost on reload.</p>';
+    var side = document.getElementById("sidebar");
+    side.innerHTML = html;
+
+    side.querySelectorAll(".concept").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        current = btn.getAttribute("data-name");
+        renderSidebar(false);
+        renderPage();
+      });
+    });
+    var input = side.querySelector("#addconcept");
+    input.addEventListener("keydown", function(e){
+      if (e.key === "Enter"){
+        var v = input.value.trim();
+        if (!v) return;
+        var ex = conceptByName(v);
+        if (!ex){ concepts.push({ name: v, terms: [v] }); }
+        current = v;
+        renderSidebar(true);
+        renderPage();
+      }
+    });
+    if (focusInput){
+      var inp = side.querySelector("#addconcept");
+      if (inp) inp.focus();
+    }
+  }
+
+  /* ---------- main page ---------- */
+  function renderPage(){
+    var main = document.getElementById("page");
+    var c = conceptByName(current);
+    if (!c){ main.innerHTML = ""; return; }
+
+    var cur = passagesFor(c);
+    var libraryTotal = docs.reduce(function(a, d){ return a + (d.passages || []).length; }, 0);
+
+    var html = "<h2 class=\"concept-title\">" + esc(c.name) + "</h2>";
+    html += "<p class=\"terms\">Found by the term" + (c.terms.length > 1 ? "s" : "") + ": " +
+      c.terms.map(function(t){ return "<code>" + esc(t) + "</code>"; }).join(" ") + "</p>";
+
+    /* Table: passages by kind of document */
+    var kinds = [];
+    docs.forEach(function(d){
+      if (kinds.indexOf(d.kind) === -1) kinds.push(d.kind);
+    });
+    var byKind = {};
+    kinds.forEach(function(k){ byKind[k] = 0; });
+    cur.forEach(function(it){ byKind[it.doc.kind] = (byKind[it.doc.kind] || 0) + 1; });
+
+    html += '<section class="block"><h3 class="blockhead">Passages by kind of document</h3>' +
+      '<p class="note">How this is computed: a passage counts when its text contains any of the terms above, ' +
+      'ignoring case and line breaks. ' + cur.length + " of " + libraryTotal + " passages in the library match.</p>" +
+      '<table class="kindtable"><thead><tr><th>Kind of document</th><th class="num">Passages</th></tr></thead><tbody>';
+    kinds.forEach(function(k){
+      html += "<tr><td>" + esc(k) + '</td><td class="num">' + byKind[k] + "</td></tr>";
+    });
+    html += '<tr class="total"><td>Total</td><td class="num">' + cur.length + "</td></tr>";
+    html += "</tbody></table></section>";
+
+    /* Related concepts */
+    var curIds = {};
+    cur.forEach(function(it){ curIds[it.p.id] = true; });
+    var related = [];
+    concepts.forEach(function(o){
+      if (o.name.toLowerCase() === c.name.toLowerCase()) return;
+      var hit = false;
+      docs.forEach(function(d){
+        (d.passages || []).forEach(function(p){
+          if (!hit && curIds[p.id] && uses(p, o.terms)) hit = true;
+        });
+      });
+      if (hit) related.push(o);
+    });
+    html += '<section class="block"><h3 class="blockhead">Related concepts</h3>' +
+      '<p class="note">Other concepts whose terms also appear in at least one of the passages above.</p>';
+    if (related.length){
+      html += '<div class="relwrap">' + related.map(function(o){
+        return '<button class="relbtn" data-name="' + esc(o.name) + '">' + esc(o.name) + "</button>";
+      }).join("") + "</div>";
+    } else {
+      html += '<p class="note">None of the other concepts appears in these passages.</p>';
+    }
+    html += "</section>";
+
+    /* Passages grouped by document, in library order */
+    html += '<section class="block"><h3 class="blockhead">Passages</h3>';
+    if (!cur.length){
+      html += '<p class="empty">No passage uses this term.</p>';
+    } else {
+      var shown = 0;
+      docs.forEach(function(d){
+        var matches = (d.passages || []).filter(function(p){ return uses(p, c.terms); });
+        if (!matches.length) return;
+        html += '<div class="docgroup"><h3>' + esc(d.short_title || d.title) + "</h3>" +
+          '<p class="dmeta">' + esc(d.kind) + " &middot; " + esc(d.year) + " &middot; ";
+        if (d.symbol){
+          html += '<a href="' + esc(d.url || "#") + '" target="_blank" rel="noopener">' + esc(d.symbol) + "</a>";
+        } else if (d.url){
+          html += '<a href="' + esc(d.url) + '" target="_blank" rel="noopener">' + esc(d.author || d.short_title) + "</a>";
+        } else {
+          html += esc(d.author || d.short_title);
+        }
+        html += " &middot; " + matches.length + " passage" + (matches.length === 1 ? "" : "s") + "</p>";
+        matches.forEach(function(p){
+          html += '<div class="passage">' +
+            '<div class="pcite"><a href="#" class="srclink" data-doc="' + esc(d.id) + '" data-page="' + p.page + '">' +
+            esc(citation(d, p)) + "</a></div>" +
+            (p.section ? '<div class="psec">' + esc(p.section) + "</div>" : "") +
+            '<div class="ptext folded">' + esc(p.text) + "</div></div>";
+        });
+        html += "</div>";
+        shown += matches.length;
+      });
+      html += '<p class="foldhint">Passage text is quoted character for character; it is folded after three lines — click the text to read it in full. Click a citation to open the source PDF at that page.</p>';
+
+      /* AI summary */
+      html += '<section class="block"><button class="btn" id="draftBtn">Draft a summary</button>' +
+        '<div class="aistatus" id="aistatus"></div><div id="aiout"></div></section>';
+    }
+    html += "</section>";
+
+    main.innerHTML = html;
+
+    /* handlers */
+    main.querySelectorAll(".relbtn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        current = btn.getAttribute("data-name");
+        renderSidebar(false);
+        renderPage();
+      });
+    });
+    main.querySelectorAll(".srclink").forEach(function(a){
+      a.addEventListener("click", function(e){
+        e.preventDefault();
+        var id = a.getAttribute("data-doc");
+        var page = parseInt(a.getAttribute("data-page"), 10);
+        if (window.studio && studio.openSource) studio.openSource(id, page);
+      });
+    });
+    main.querySelectorAll(".ptext.folded").forEach(function(el){
+      el.addEventListener("click", function(){
+        el.classList.remove("folded");
+        el.style.cursor = "default";
+      });
+    });
+    var draft = main.querySelector("#draftBtn");
+    if (draft) draft.addEventListener("click", draftSummary);
+  }
+
+  /* ---------- AI summary ---------- */
+  function draftSummary(){
+    var c = conceptByName(current);
+    if (!c) return;
+    var list = passagesFor(c).slice(0, 12);
+    if (!list.length) return;
+
+    var prompt =
+      'You are helping diplomats and human rights staff study the concept "' + c.name +
+      '" in neurotechnology and the administration of justice.\n\n' +
+      "Below are " + list.length + " passages quoted verbatim from UN and other documents. " +
+      'Write exactly three sentences summarising what these passages say about "' + c.name + '". ' +
+      "Each sentence must end with the citation, in parentheses, of the passage it rests on. " +
+      "Use only the passages below; do not rely on any outside knowledge.\n\n" +
+      list.map(function(it, i){
+        return "[" + (i + 1) + "] " + citation(it.doc, it.p) + ": " + it.p.text;
+      }).join("\n\n") +
+      "\n\nAnswer with the three sentences only.";
+
+    aiCancelled = false;
+    var btn = document.getElementById("draftBtn");
+    var status = document.getElementById("aistatus");
+    var out = document.getElementById("aiout");
+    btn.disabled = true;
+    status.innerHTML = "Contacting the model — " + list.length +
+      " passages were sent to the model and left the browser. This can take a moment. " +
+      '<button class="btn stop" id="stopBtn">Stop</button>';
+    out.innerHTML = "";
+    var stop = document.getElementById("stopBtn");
+    if (stop) stop.addEventListener("click", function(){
+      aiCancelled = true;
+      status.textContent = "Stopped. Nothing was shown.";
+      btn.disabled = false;
+    });
+
+    window.studio.ask(prompt).then(function(ans){
+      if (aiCancelled) return;
+      btn.disabled = false;
+      status.textContent = "";
+      out.innerHTML = '<p class="ailabel">Written by AI. ' + list.length +
+        ' passages were sent to the model and left the browser.</p>' +
+        '<div class="aibox" data-source="ai">' + esc(ans) + "</div>";
+    }, function(err){
+      if (aiCancelled) return;
+      btn.disabled = false;
+      status.textContent = "The model could not be reached. Please try again.";
+    });
+  }
+
+  /* ---------- go ---------- */
+  renderSidebar(false);
+  renderPage();
+})();
+</script>
+</body>
+</html>
+```
+
+A note on how it works: matching lowercases the text and collapses line breaks, so "deception detection" is found inside wrapped paragraphs; journal citations are built from author surnames ("Szoszkiewicz & Yuste", "Prainsack et al."), and every other document cites as `symbol, para. N`. Clicking a citation calls `studio.openSource` with the PDF page, and folded passages hide lines with CSS rather than trimming text, so nothing is altered.

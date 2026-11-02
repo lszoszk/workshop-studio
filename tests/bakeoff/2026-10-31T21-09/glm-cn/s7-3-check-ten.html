@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Human rights recommendations dashboard</title>
+<style>
+  :root{
+    --accent:#1f6fb2; --accent-dark:#175a91; --accent-soft:#e8f1f8;
+    --ink:#1c2733; --muted:#5b6b7b; --line:#dce3ec; --bg:#f4f6f9; --card:#ffffff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  .wrap{max-width:1200px;margin:0 auto;padding:30px 26px 70px}
+  a{color:var(--accent)}
+  h1{font-size:27px;line-height:1.25;margin:0 0 6px}
+  h2{font-size:18px;margin:0}
+  h3{font-size:16px;margin:0 0 6px}
+  .desc{margin:0;color:var(--muted)}
+  .desc a{font-weight:600}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-top:18px}
+  .note{font-size:13.5px;color:var(--muted);margin:10px 0 0}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:18px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .kpi .n{font-size:30px;font-weight:700;color:var(--accent);line-height:1.2}
+  .kpi .lbl{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:2px}
+  .kpi .sub{font-size:13px;color:var(--muted);margin-top:4px}
+  .card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+  .field-wide{grid-column:1 / -1}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:4px}
+  .field select,.field input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;font:inherit;color:var(--ink)}
+  .btn{border:1px solid var(--accent);background:var(--accent);color:#fff;font:inherit;font-weight:600;padding:8px 14px;border-radius:6px;cursor:pointer}
+  .btn:hover{background:var(--accent-dark)}
+  .btn-ghost{border:1px solid var(--line);background:#fff;color:var(--muted);font:inherit;padding:7px 12px;border-radius:6px;cursor:pointer}
+  .btn-ghost:hover:not([disabled]){border-color:var(--accent);color:var(--accent)}
+  .btn-ghost[disabled]{opacity:.55;cursor:not-allowed}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+  .chip{display:inline-flex;align-items:center;gap:7px;background:var(--accent-soft);color:var(--accent-dark);border:1px solid #bcd6ea;border-radius:999px;padding:3px 6px 3px 11px;font-size:13px;cursor:pointer}
+  .chip:hover{background:#dbeaf6}
+  .chip .x{font-weight:700;padding:0 4px}
+  .chips .lbl{font-size:13.5px;color:var(--muted)}
+  .chart-box{position:relative;height:400px;margin-top:8px}
+  .placeholder{display:none;padding:34px 10px;text-align:center;color:var(--muted);background:#f8fafc;border:1px dashed var(--line);border-radius:8px}
+  .summary-line{font-size:15px;margin:0}
+  .summary-line strong{color:var(--accent);font-size:17px}
+  .sort-field{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted)}
+  .sort-field select{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:13.5px;background:#fff;color:var(--ink)}
+  .table-scroll{overflow-x:auto;margin-top:4px}
+  table.tbl{width:100%;border-collapse:collapse;font-size:15px}
+  .tbl th{text-align:left;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:2px solid var(--line);padding:9px 10px;white-space:nowrap}
+  .tbl td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tbl .nowrap{white-space:nowrap}
+  .tbl .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+  tr.doc{cursor:pointer}
+  tr.doc:hover{background:#f2f7fb}
+  tr.doc:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  tr.doc.open{background:#eef5fb}
+  .hint{color:var(--muted);font-size:12px;white-space:nowrap}
+  tr.detail td{background:#f7fafd;padding:14px 16px 16px}
+  .dlabel{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}
+  .fulltext{white-space:pre-wrap;margin:0 0 12px;font-size:15px}
+  .meta-row{display:flex;gap:10px;margin-top:6px;font-size:13.5px}
+  .meta-row .mlbl{flex:0 0 130px;color:var(--muted);font-weight:600}
+  .tags{display:inline-flex;flex-wrap:wrap;gap:5px}
+  .tag{background:var(--accent-soft);color:var(--accent-dark);border-radius:4px;padding:1px 7px;font-size:12.5px}
+  .targets{margin:4px 0 0;padding-left:18px;font-size:13px;color:var(--ink)}
+  .targets li{margin:1px 0}
+  .table-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:13.5px;color:var(--muted)}
+  .warn{background:#fdf6e7;border:1px solid #ecd9ad;border-radius:10px;padding:14px 18px;margin-top:18px;color:#6b5615}
+  /* --- SDG spot-check --- */
+  .rev-status{font-size:14.5px;margin:8px 0 4px}
+  .rev-rec{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:8px;padding:14px 16px;margin-top:14px;background:#fdfefe}
+  .rev-rec.done{border-left-color:#2c7a4b}
+  .rev-head{font-size:13.5px;color:var(--muted);margin:0 0 8px}
+  .rev-text{white-space:pre-wrap;margin:0 0 12px;font-size:15px}
+  .sdg-sub{font-size:12.5px;color:var(--muted);margin:2px 0 6px}
+  .sdg-list .sdg-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:7px 0}
+  .sdg-list .sdg-row + .sdg-row{border-top:1px solid #eef2f7}
+  .sdg-tag{background:var(--accent-soft);color:var(--accent-dark);border-radius:4px;padding:2px 8px;font-size:13.5px;font-weight:600}
+  .mk-group{display:flex;gap:6px}
+  .mk{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:999px;padding:3px 13px;font:inherit;font-size:13px;cursor:pointer}
+  .mk:hover{border-color:var(--accent);color:var(--accent)}
+  .mk[aria-pressed="true"]{color:#fff;border-color:transparent}
+  .mk.right[aria-pressed="true"]{background:#2c7a4b}
+  .mk.wrong[aria-pressed="true"]{background:#b23a3a}
+  .mk.arguable[aria-pressed="true"]{background:#b07c1f}
+  .sdg-none{font-size:13.5px;color:var(--muted);margin:4px 0 0}
+  .res-panel{margin-top:16px;border:1px solid #bcd6ea;background:var(--accent-soft);border-radius:8px;padding:14px 16px}
+  .ex-row{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;padding:7px 0;border-top:1px solid #d7e4f0;font-size:14px}
+  .ex-chip{border-radius:4px;padding:1px 8px;font-size:12.5px;font-weight:700;color:#fff;white-space:nowrap}
+  .ex-chip.wrong{background:#b23a3a}
+  .ex-chip.arguable{background:#b07c1f}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="pageTitle">Human rights recommendations &amp; observations</h1>
+    <p class="desc" id="pageDesc"></p>
+  </header>
+
+  <div id="noDataWarn" class="warn" style="display:none"></div>
+
+  <section class="kpis" id="kpis"></section>
+  <p class="note" id="kpiNote"></p>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Filters</h2>
+      <button id="resetBtn" class="btn-ghost" type="button">Reset all filters</button>
+    </div>
+    <div class="filters">
+      <div class="field"><label for="fMech">Mechanism</label><select id="fMech"></select></div>
+      <div class="field"><label for="fBody">Treaty body / mandate</label><select id="fBody"></select></div>
+      <div class="field"><label for="fFrom">From year</label><select id="fFrom"></select></div>
+      <div class="field"><label for="fTo">To year</label><select id="fTo"></select></div>
+      <div class="field"><label for="fSdg">SDG</label><select id="fSdg"></select></div>
+      <div class="field field-wide"><label for="fQ">Keyword search (paragraph text &amp; document symbol)</label>
+        <input id="fQ" type="search" placeholder="e.g. education, detention, birth registration…" autocomplete="off"></div>
+    </div>
+    <p class="note">Filters combine: a record must match all of them. The keyword search is case-insensitive and looks only at the paragraph text and the document symbol.</p>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Most frequent themes</h2></div>
+    <div class="chart-box"><canvas id="themeChart" aria-label="Bar chart of the ten most frequent themes"></canvas></div>
+    <div id="chartEmpty" class="placeholder"></div>
+    <p class="note" id="chartNote"></p>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Matching records</h2>
+      <div class="sort-field">
+        <label for="fSort">Sort by</label>
+        <select id="fSort">
+          <option value="date-desc">Date, newest first</option>
+          <option value="date-asc">Date, oldest first</option>
+          <option value="body">Body / mandate (A–Z)</option>
+        </select>
+      </div>
+    </div>
+    <p class="summary-line" id="resultSummary"></p>
+    <div class="chips" id="chips"></div>
+    <div class="table-scroll">
+      <table class="tbl">
+        <thead><tr>
+          <th>Date</th><th>Body / mandate</th><th>Symbol</th><th>Text (first line)</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="table-foot" id="tableFoot"></div>
+    <p class="note">Each row is one paragraph from a UN document. The last column shows only the first line — click any row to read the full, unedited paragraph. The symbol links to the official document, opened in a new tab.</p>
+  </section>
+
+  <section class="card" id="reviewCard">
+    <div class="card-head">
+      <h2>Spot-check: do the SDG tags fit?</h2>
+      <div class="btn-row">
+        <button id="drawBtn" class="btn" type="button">Check 10 at random</button>
+        <button id="redrawBtn" class="btn" type="button" hidden>Draw again</button>
+        <button id="csvBtn" class="btn-ghost" type="button" hidden disabled
+                title="Available once every SDG of all drawn records is marked">Download marks (CSV)</button>
+      </div>
+    </div>
+    <p class="note">Draws 10 records at random from those matching the filters above and shows each full paragraph with the SDGs the UN index assigned to it. Judge each tag as <strong>Right</strong> (clearly fits), <strong>Wrong</strong> (does not fit) or <strong>Arguable</strong> (debatable); click a button again to undo a mark. Once every tag is marked you get the agreement rate, the wrong and arguable examples, and a CSV of the 10 records with your marks. Everything is counted in your browser from your own clicks — nothing is estimated and nothing leaves this page.</p>
+    <div id="reviewBody"></div>
+  </section>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- data ---------- */
+var U = (window.WORKSHOP_DATA && window.WORKSHOP_DATA.uhri) ? window.WORKSHOP_DATA.uhri : {};
+var REC = Array.isArray(U.records) ? U.records : [];
+var SDG_NAMES = (U.sdg_names && typeof U.sdg_names === 'object') ? U.sdg_names : {};
+var COUNTRY = U.country || 'the country';
+
+/* ---------- small helpers ---------- */
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function fmtDate(d){
+  if(!d) return '—';
+  var s = String(d), m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(m){
+    var mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return parseInt(m[3],10) + ' ' + mo[parseInt(m[2],10)-1] + ' ' + m[1];
+  }
+  return s;
+}
+function firstLine(t){
+  if(!t) return '—';
+  var line = String(t).trim().split(/\r?\n/)[0].trim();
+  if(line.length > 170) line = line.slice(0,170).replace(/\s+\S*$/,'') + '…';
+  return line || '—';
+}
+function tally(fn){
+  var m = new Map();
+  REC.forEach(function(r){
+    var v = fn(r);
+    if(v === null || v === undefined || v === '') return;
+    m.set(v, (m.get(v)||0) + 1);
+  });
+  return m;
+}
+function byCountThenAlpha(a,b){ return b[1]-a[1] || String(a[0]).localeCompare(String(b[0])); }
+function plural(n, w){ return n + ' ' + w + (n === 1 ? '' : 's'); }
+function wrapLabel(s, max){
+  var words = String(s).split(' '), lines = [], cur = '';
+  words.forEach(function(w){
+    if((cur ? cur + ' ' + w : w).length > max && cur){ lines.push(cur); cur = w; }
+    else cur = cur ? cur + ' ' + w : w;
+  });
+  if(cur) lines.push(cur);
+  return lines;
+}
+function docLink(r){
+  if(!r.symbol) return '—';
+  return r.doc_url
+    ? '<a href="' + esc(r.doc_url) + '" target="_blank" rel="noopener">' + esc(r.symbol) + '</a>'
+    : esc(r.symbol);
+}
+
+/* ---------- dataset-level facts (all computed, never hard-coded) ---------- */
+var yearsAll = REC.map(function(r){ return typeof r.year === 'number' ? r.year : null; })
+                  .filter(function(v){ return v !== null; });
+var minYear = yearsAll.length ? Math.min.apply(null, yearsAll) : null;
+var maxYear = yearsAll.length ? Math.max.apply(null, yearsAll) : null;
+var nDocs = new Set(REC.map(function(r){ return r.symbol || null; }).filter(Boolean)).size;
+var bodyTally = tally(function(r){ return r.body; });
+var nBodies = bodyTally.size;
+var typeTally = tally(function(r){ return r.type; });
+var nRecs = typeTally.get('Recommendations') || 0;
+var nObs = typeTally.get('Concerns/Observations') || 0;
+var nOtherType = REC.length - nRecs - nObs;
+
+/* ---------- header & KPIs ---------- */
+document.getElementById('pageTitle').textContent =
+  'Human rights recommendations & observations addressed to ' + COUNTRY;
+document.title = 'UN recommendations — ' + COUNTRY;
+
+(function(){
+  var bits = [];
+  if(U.title) bits.push(esc(U.title));
+  if(U.source){
+    bits.push('Source: ' + (U.source_url
+      ? '<a href="' + esc(U.source_url) + '" target="_blank" rel="noopener">' + esc(U.source) + '</a>'
+      : esc(U.source)));
+  }
+  bits.push('n = ' + plural(REC.length, 'record'));
+  if(minYear !== null) bits.push(minYear === maxYear ? String(minYear) : minYear + '–' + maxYear);
+  if(U.built) bits.push('dataset built ' + esc(U.built));
+  document.getElementById('pageDesc').innerHTML = bits.join(' &middot; ');
+})();
+
+(function(){
+  var typeSub = plural(nRecs,'recommendation') + ' &middot; ' + plural(nObs,'concern / observation');
+  if(nOtherType > 0) typeSub += ' &middot; ' + plural(nOtherType,'other type');
+  var period = minYear === null ? '—' : (minYear === maxYear ? String(minYear) : minYear + '–' + maxYear);
+  document.getElementById('kpis').innerHTML =
+    '<div class="kpi"><div class="n">' + REC.length + '</div><div class="lbl">Paragraph records</div><div class="sub">' + typeSub + '</div></div>' +
+    '<div class="kpi"><div class="n">' + nDocs + '</div><div class="lbl">UN documents</div><div class="sub">distinct symbols</div></div>' +
+    '<div class="kpi"><div class="n">' + nBodies + '</div><div class="lbl">Bodies &amp; mandates</div><div class="sub">treaty bodies, UPR, Special Procedures</div></div>' +
+    '<div class="kpi"><div class="n">' + period + '</div><div class="lbl">Period covered</div><div class="sub">years of the records</div></div>';
+  document.getElementById('kpiNote').textContent =
+    'How this is computed: every number above is counted directly from the loaded records — one record is one paragraph of a UN document (a recommendation or an observation). Nothing is estimated.';
+})();
+
+var noDataWarn = document.getElementById('noDataWarn');
+if(!REC.length){
+  noDataWarn.style.display = 'block';
+  noDataWarn.textContent = 'No records were found in WORKSHOP_DATA.uhri for this country, so there is nothing to filter, chart or list below.';
+}
+
+/* ---------- filter state & controls ---------- */
+var state = { mechanism:'', body:'', sdg:'', yearFrom:minYear, yearTo:maxYear, q:'', theme:'' };
+var visible = 50;
+var expanded = new Set();
+var lastFiltered = [];
+
+var fMech = document.getElementById('fMech'),
+    fBody = document.getElementById('fBody'),
+    fFrom = document.getElementById('fFrom'),
+    fTo   = document.getElementById('fTo'),
+    fSdg  = document.getElementById('fSdg'),
+    fQ    = document.getElementById('fQ'),
+    fSort = document.getElementById('fSort');
+
+function fillSelect(sel, entries, placeholder){
+  sel.innerHTML = '';
+  sel.add(new Option(placeholder, ''));
+  entries.forEach(function(e){ sel.add(new Option(e[1], String(e[0]))); });
+}
+
+fillSelect(fMech, Array.from(tally(function(r){ return r.mechanism; })).sort(byCountThenAlpha)
+    .map(function(e){ return [e[0], e[0] + ' (' + e[1] + ')']; }), 'All mechanisms');
+fillSelect(fBody, Array.from(bodyTally).sort(byCountThenAlpha)
+    .map(function(e){ return [e[0], e[0] + ' (' + e[1] + ')']; }), 'All bodies & mandates');
+
+(function(){
+  var sdgSet = new Set();
+  REC.forEach(function(r){ (Array.isArray(r.sdgs) ? r.sdgs : []).forEach(function(n){ if(n != null) sdgSet.add(Number(n)); }); });
+  fillSelect(fSdg, Array.from(sdgSet).sort(function(a,b){ return a-b; }).map(function(n){
+    var name = SDG_NAMES[String(n)] || SDG_NAMES[n];
+    return [n, 'SDG ' + n + (name ? ' — ' + name : '')];
+  }), 'All SDGs');
+})();
+
+(function(){
+  if(minYear === null){
+    fFrom.disabled = fTo.disabled = true;
+    fFrom.innerHTML = fTo.innerHTML = '<option value="">—</option>';
+    return;
+  }
+  yearsAll.slice().sort(function(a,b){ return a-b; }).forEach(function(y){
+    fFrom.add(new Option(String(y), String(y))); fTo.add(new Option(String(y), String(y)));
+  });
+  fFrom.value = String(minYear); fTo.value = String(maxYear);
+})();
+
+/* ---------- filtering ---------- */
+function getFiltered(){
+  var q = state.q ? state.q.toLowerCase() : '';
+  var fullRange = (state.yearFrom === minYear && state.yearTo === maxYear);
+  return REC.filter(function(r){
+    if(state.mechanism && r.mechanism !== state.mechanism) return false;
+    if(state.body && r.body !== state.body) return false;
+    if(state.sdg !== ''){
+      var want = Number(state.sdg);
+      if((Array.isArray(r.sdgs) ? r.sdgs : []).indexOf(want) === -1) return false;
+    }
+    if(!fullRange){
+      if(typeof r.year !== 'number') return false; /* undated records only pass an unfiltered range */
+      if(r.year < state.yearFrom || r.year > state.yearTo) return false;
+    }
+    if(state.theme && (Array.isArray(r.themes) ? r.themes : []).indexOf(state.theme) === -1) return false;
+    if(q && (((r.text || '') + ' ' + (r.symbol || '')).toLowerCase().indexOf(q) === -1)) return false;
+    return true;
+  });
+}
+function sortList(list){
+  var out = list.slice();
+  var dateKey = function(r){ return String(r.date || r.year || ''); };
+  if(fSort.value === 'date-asc') out.sort(function(a,b){ return dateKey(a).localeCompare(dateKey(b)); });
+  else if(fSort.value === 'body') out.sort(function(a,b){
+    return String(a.body || '').localeCompare(String(b.body || '')) || dateKey(b).localeCompare(dateKey(a));
+  });
+  else out.sort(function(a,b){ return dateKey(b).localeCompare(dateKey(a)); });
+  return out;
+}
+
+/* ---------- chart ---------- */
+var chart = null, plainLabels = [];
+var chartBox = document.querySelector('.chart-box'), chartEmpty = document.getElementById('chartEmpty');
+var chartNote = document.getElementById('chartNote');
+
+if(typeof window.Chart === 'undefined'){
+  chartBox.innerHTML = '<div class="placeholder" style="display:block">The charts library (Chart.js) is not available in this page, so the theme chart cannot be drawn. The table below still works.</div>';
+}
+
+function makeChart(){
+  chart = new window.Chart(document.getElementById('themeChart'), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ label: 'Records', data: [], backgroundColor: [], borderWidth: 0, maxBarThickness: 26 }] },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: false,
+      scales: {
+        x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#e6ebf1' },
+             title: { display: true, text: 'Number of records', color: '#5b6b7b', font: { size: 12 } } },
+        y: { ticks: { autoSkip: false, font: { size: 13 } }, grid: { display: false } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: function(c){ return ' ' + plural(c.parsed.x, 'record'); } } }
+      },
+      onClick: function(evt, els){
+        if(!els.length || !plainLabels.length) return;
+        var t = plainLabels[els[0].index];
+        state.theme = (state.theme === t) ? '' : t;
+        visible = 50; render();
+      },
+      onHover: function(evt, els){ evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; }
+    }
+  });
+}
+
+function renderChart(list){
+  var counts = new Map(), noTheme = 0;
+  list.forEach(function(r){
+    var th = (Array.isArray(r.themes) ? r.themes : []).filter(Boolean);
+    if(!th.length){ noTheme++; return; }
+    th.forEach(function(t){ counts.set(t, (counts.get(t)||0) + 1); });
+  });
+  var top = Array.from(counts).sort(byCountThenAlpha).slice(0, 10);
+  plainLabels = top.map(function(e){ return e[0]; });
+
+  if(!top.length){
+    if(typeof window.Chart !== 'undefined' && !chart) makeChart();
+    if(chart){ chart.data.labels = []; chart.data.datasets[0].data = []; chart.update(); }
+    chartBox.style.display = 'none';
+    chartEmpty.style.display = 'block';
+    chartEmpty.textContent = 'No themed records in the current selection — there is nothing to chart.';
+  } else {
+    if(typeof window.Chart !== 'undefined' && !chart) makeChart();
+    if(chart){
+      chart.data.labels = plainLabels.map(function(l){ return wrapLabel(l, 30); });
+      chart.data.datasets[0].data = top.map(function(e){ return e[1]; });
+      chart.data.datasets[0].backgroundColor = plainLabels.map(function(t){
+        return t === state.theme ? '#1f6fb2' : 'rgba(31,111,178,0.45)';
+      });
+      chart.update();
+    }
+    chartBox.style.display = 'block';
+    chartEmpty.style.display = 'none';
+  }
+  var note = 'How this is computed: each matching record is counted once for every theme it carries, so a record with three themes appears in three bars. ' +
+    plural(noTheme, 'matching record') + ' carry no theme and cannot appear here. Top 10 themes shown; bars with the lighter shade are not selected.';
+  if(state.theme) note += ' A theme filter is active (“' + state.theme + '”): click its bar again, or its chip below, to clear it.';
+  else note += ' Click a bar to filter the table to that theme.';
+  chartNote.textContent = note;
+}
+
+/* ---------- chips ---------- */
+function renderChips(){
+  var chips = [];
+  if(state.mechanism) chips.push(['mechanism', 'Mechanism: ' + state.mechanism]);
+  if(state.body) chips.push(['body', 'Body / mandate: ' + state.body]);
+  if(state.sdg !== ''){
+    var nm = SDG_NAMES[String(state.sdg)] || SDG_NAMES[state.sdg];
+    chips.push(['sdg', 'SDG ' + state.sdg + (nm ? ' — ' + nm : '')]);
+  }
+  if(minYear !== null && (state.yearFrom !== minYear || state.yearTo !== maxYear))
+    chips.push(['years', 'Years: ' + state.yearFrom + '–' + state.yearTo]);
+  if(state.q) chips.push(['q', 'Keyword: \u201C' + state.q + '\u201D']);
+  if(state.theme) chips.push(['theme', 'Theme: ' + state.theme]);
+  var box = document.getElementById('chips');
+  box.innerHTML = chips.length
+    ? '<span class="lbl">Filters applied:</span>' + chips.map(function(c){
+        return '<button type="button" class="chip" data-key="' + c[0] + '">' + esc(c[1]) + '<span class="x" aria-hidden="true">&times;</span></button>';
+      }).join('')
+    : '<span class="lbl">No filters applied — showing the full dataset.</span>';
+}
+
+function clearFilter(key){
+  if(key === 'mechanism'){ state.mechanism = ''; fMech.value = ''; }
+  if(key === 'body'){ state.body = ''; fBody.value = ''; }
+  if(key === 'sdg'){ state.sdg = ''; fSdg.value = ''; }
+  if(key === 'years'){ state.yearFrom = minYear; state.yearTo = maxYear; fFrom.value = String(minYear); fTo.value = String(maxYear); }
+  if(key === 'q'){ state.q = ''; fQ.value = ''; }
+  if(key === 'theme'){ state.theme = ''; }
+  visible = 50; render();
+}
+document.getElementById('chips').addEventListener('click', function(e){
+  var chip = e.target.closest('.chip');
+  if(chip) clearFilter(chip.getAttribute('data-key'));
+});
+document.getElementById('resetBtn').addEventListener('click', function(){
+  ['mechanism','body','sdg','years','q','theme'].forEach(clearFilter);
+});
+
+/* ---------- table ---------- */
+function tags(list){
+  return '<span class="tags">' + list.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</span>';
+}
+function detailRowHtml(r){
+  var themes = (Array.isArray(r.themes) ? r.themes : []).filter(Boolean);
+  var sdgs = (Array.isArray(r.sdgs) ? r.sdgs : []).filter(function(n){ return n != null; });
+  var targets = (Array.isArray(r.sdg_targets) ? r.sdg_targets : []).filter(Boolean);
+  var persons = (Array.isArray(r.affected_persons) ? r.affected_persons : []).filter(Boolean);
+
+  var sdgHtml = sdgs.map(function(n){
+    var nm = SDG_NAMES[String(n)] || SDG_NAMES[n];
+    return '<span class="tag">SDG ' + esc(n) + (nm ? ' · ' + esc(nm) : '') + '</span>';
+  }).join(' ');
+  if(sdgHtml) sdgHtml = '<span class="tags">' + sdgHtml + '</span>';
+  if(targets.length) sdgHtml += '<ul class="targets">' + targets.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>';
+
+  var details = [r.mechanism, r.type, r.section ? 'Section: ' + r.section : null, fmtDate(r.date)]
+    .filter(Boolean).map(esc).join(' &middot; ');
+
+  return '<tr class="detail"><td colspan="4">' +
+    '<div class="dlabel">Full text &mdash; ' + docLink(r) + '</div>' +
+    '<p class="fulltext">' + (r.text ? esc(r.text) : '<em>No text was provided in the source data for this record.</em>') + '</p>' +
+    '<div class="meta-row"><span class="mlbl">Themes</span><span>' + (themes.length ? tags(themes) : '—') + '</span></div>' +
+    (sdgHtml ? '<div class="meta-row"><span class="mlbl">SDGs &amp; targets</span><span>' + sdgHtml + '</span></div>' : '') +
+    (persons.length ? '<div class="meta-row"><span class="mlbl">Affected persons</span><span>' + tags(persons) + '</span></div>' : '') +
+    '<div class="meta-row"><span class="mlbl">Details</span><span>' + (details || '—') +
+      (r.doc_url ? ' &middot; <a href="' + esc(r.doc_url) + '" target="_blank" rel="noopener">Open document &nearr;</a>' : '') + '</span></div>' +
+    '</td></tr>';
+}
+function rowHtml(r){
+  var open = expanded.has(r.id);
+  var sub = [r.mechanism, r.type].filter(Boolean).join(' · ');
+  return '<tr class="doc' + (open ? ' open' : '') + '" data-id="' + esc(r.id) + '" tabindex="0" aria-expanded="' + open + '">' +
+    '<td class="nowrap">' + esc(fmtDate(r.date)) + '</td>' +
+    '<td><strong>' + esc(r.body || '—') + '</strong>' + (sub ? '<div class="sub">' + esc(sub) + '</div>' : '') + '</td>' +
+    '<td class="nowrap">' + docLink(r) + '</td>' +
+    '<td>' + esc(firstLine(r.text)) + (open ? '' : ' <span class="hint">&#9662; full text</span>') + '</td>' +
+    '</tr>' + (open ? detailRowHtml(r) : '');
+}
+
+var tbody = document.getElementById('tbody');
+var tableFoot = document.getElementById('tableFoot');
+
+function renderTable(list){
+  if(!list.length){
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:26px 10px;text-align:center;color:var(--muted)">No records match the current filters. Try removing a filter chip above or clicking “Reset all filters”.</td></tr>';
+    tableFoot.innerHTML = '';
+    return;
+  }
+  var shown = list.slice(0, visible);
+  tbody.innerHTML = shown.map(rowHtml).join('');
+  var remaining = list.length - shown.length;
+  tableFoot.innerHTML =
+    '<span>Showing 1–' + shown.length + ' of ' + plural(list.length, 'record') + '.</span>' +
+    (remaining > 0 ? '<button type="button" class="btn-ghost" id="showMore">Show 50 more (' + remaining + ' remaining)</button>' : '');
+}
+tableFoot.addEventListener('click', function(e){
+  if(e.target.id === 'showMore'){ visible += 50; renderTable(lastFiltered); }
+});
+
+function toggle(id){
+  if(expanded.has(id)) expanded.delete(id); else expanded.add(id);
+  renderTable(lastFiltered);
+  var el = tbody.querySelector('tr[data-id="' + id + '"]');
+  if(el) el.focus();
+}
+tbody.addEventListener('click', function(e){
+  if(e.target.closest('a')) return; /* let document links work */
+  var tr = e.target.closest('tr.doc');
+  if(tr) toggle(tr.getAttribute('data-id'));
+});
+tbody.addEventListener('keydown', function(e){
+  if(e.key !== 'Enter' && e.key !== ' ') return;
+  var tr = e.target.closest('tr.doc');
+  if(tr){ e.preventDefault(); toggle(tr.getAttribute('data-id')); }
+});
+
+function renderSummary(){
+  document.getElementById('resultSummary').innerHTML =
+    '<strong>' + lastFiltered.length + '</strong> of ' + REC.length + ' records match the current filters.';
+}
+
+/* ---------- SDG spot-check ---------- */
+var MARK_LABEL = { right:'Right', wrong:'Wrong', arguable:'Arguable' };
+var review = { drawn: [], marks: {}, drawCount: 0, sourceN: 0, short: false, complete: false, completeShown: false };
+
+function sdgListOf(r){
+  var seen = {}, out = [];
+  (Array.isArray(r.sdgs) ? r.sdgs : []).forEach(function(n){
+    if(n == null || seen[n]) return;
+    seen[n] = true; out.push(Number(n));
+  });
+  return out;
+}
+function sdgNameOf(n){ return SDG_NAMES[String(n)] || SDG_NAMES[n] || ''; }
+
+function drawSample(){
+  var pool = getFiltered();
+  review.sourceN = pool.length;
+  review.marks = {};
+  review.complete = false;
+  review.completeShown = false;
+  if(!pool.length){
+    review.drawn = []; review.short = false;
+  } else {
+    var arr = pool.slice();
+    for(var i = arr.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1)), t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    review.short = arr.length < 10;
+    review.drawn = arr.slice(0, Math.min(10, arr.length));
+  }
+  review.drawCount++;
+  renderReview();
+}
+
+function reviewTotals(){
+  var t = { records:0, done:0, tags:0, marked:0, right:0, wrong:0, arguable:0, noSdg:0 };
+  review.drawn.forEach(function(r, idx){
+    t.records++;
+    var list = sdgListOf(r), m = review.marks[idx] || {};
+    if(!list.length){ t.noSdg++; t.done++; return; }
+    var all = true;
+    list.forEach(function(s){
+      t.tags++;
+      var v = m[s];
+      if(v){ t.marked++; t[v]++; } else all = false;
+    });
+    if(all) t.done++;
+  });
+  return t;
+}
+
+function reviewRecHtml(r, idx){
+  var list = sdgListOf(r), m = review.marks[idx] || {};
+  var allMarked = !list.length || list.every(function(s){ return m[s]; });
+  var targets = (Array.isArray(r.sdg_targets) ? r.sdg_targets : []).filter(Boolean);
+  var head = '<p class="rev-head"><strong>Record ' + (idx + 1) + ' of ' + review.drawn.length + '</strong> &middot; ' +
+    esc(fmtDate(r.date)) + ' &middot; ' + esc(r.body || '—') + ' &middot; ' + docLink(r) +
+    (r.mechanism ? ' &middot; ' + esc(r.mechanism) : '') + (r.type ? ' &middot; ' + esc(r.type) : '') + '</p>';
+  var rows;
+  if(!list.length){
+    rows = '<p class="sdg-none">No SDGs were assigned to this record — nothing to mark (it counts as done).</p>';
+  } else {
+    rows = (targets.length ? '<div class="sdg-sub">' + esc('Targets assigned by the index: ' + targets.join('; ')) + '</div>' : '') +
+      '<div class="sdg-list">' + list.map(function(s){
+        var name = sdgNameOf(s);
+        return '<div class="sdg-row"><span class="sdg-tag">SDG ' + s + (name ? ' — ' + esc(name) : '') + '</span>' +
+          '<div class="mk-group">' + ['right','wrong','arguable'].map(function(v){
+            return '<button type="button" class="mk ' + v + '" data-rec="' + idx + '" data-sdg="' + s +
+              '" data-val="' + v + '" aria-pressed="' + (m[s] === v) + '">' + MARK_LABEL[v] + '</button>';
+          }).join('') + '</div></div>';
+      }).join('') + '</div>';
+  }
+  return '<div class="rev-rec' + (allMarked ? ' done' : '') + '">' + head +
+    '<p class="rev-text">' + (r.text ? esc(r.text) : '<em>No text was provided in the source data for this record.</em>') + '</p>' +
+    '<div class="dlabel">SDGs assigned by the UN index — mark each</div>' + rows + '</div>';
+}
+
+function renderReview(){
+  var body = document.getElementById('reviewBody');
+  var hasDraw = review.drawn.length > 0;
+  document.getElementById('drawBtn').hidden = hasDraw;
+  document.getElementById('redrawBtn').hidden = !hasDraw;
+  var csvBtn = document.getElementById('csvBtn');
+  csvBtn.hidden = !hasDraw;
+
+  if(!hasDraw){
+    csvBtn.disabled = true;
+    body.innerHTML = '<p class="rev-status">' + (REC.length === 0
+      ? 'There are no records in this dataset, so there is nothing to check.'
+      : 'The current filters match <strong>0 records</strong> — there is nothing to draw. Adjust the filters above, then try again.') + '</p>';
+    return;
+  }
+
+  var t = reviewTotals();
+  review.complete = (t.done === t.records);
+  csvBtn.disabled = !review.complete;
+
+  var status = '<p class="rev-status"><strong>Draw ' + review.drawCount + ':</strong> ' + plural(review.drawn.length, 'record') +
+    ' drawn at random from the ' + plural(review.sourceN, 'record') + ' matching the filters when you clicked' +
+    (review.short ? ' (fewer than 10 matched, so all of them are shown)' : '') + '. ';
+  status += review.complete
+    ? 'All records are fully marked.'
+    : 'Marked <strong>' + t.done + ' of ' + t.records + '</strong> records fully — ' + t.marked + ' of ' + t.tags + ' SDG tags judged so far.';
+  status += '</p>';
+
+  var result = '';
+  if(review.complete){
+    result = '<div class="res-panel" id="revResult"><h3>Agreement with the UN index tagging</h3>';
+    if(t.tags === 0){
+      result += '<p style="margin:0">None of the drawn records carried SDG tags, so there was nothing to judge and no agreement rate can be computed.</p>';
+    } else {
+      var pct = Math.round(100 * t.right / t.tags);
+      result += '<p style="margin:0 0 4px"><strong>' + t.right + ' of ' + t.tags + ' SDG tags (' + pct + '%) marked “right”.</strong></p>' +
+        '<p style="margin:0">Wrong: ' + t.wrong + ' &middot; Arguable: ' + t.arguable +
+        (t.noSdg ? ' &middot; ' + plural(t.noSdg, 'record') + ' carried no SDG tags' : '') + '.</p>';
+      var exs = [];
+      review.drawn.forEach(function(r, idx){
+        var m = review.marks[idx] || {};
+        sdgListOf(r).forEach(function(s){
+          var v = m[s];
+          if(v === 'wrong' || v === 'arguable'){
+            var nm = sdgNameOf(s);
+            exs.push('<div class="ex-row"><span class="ex-chip ' + v + '">' + MARK_LABEL[v] + '</span>' +
+              '<span><strong>SDG ' + s + (nm ? ' — ' + esc(nm) : '') + '</strong> &middot; record ' + (idx + 1) +
+              ' &middot; ' + docLink(r) + ' &middot; ' + esc(firstLine(r.text)) + '</span></div>');
+          }
+        });
+      });
+      result += '<p style="margin:10px 0 2px"><strong>Tags marked wrong or arguable:</strong></p>' +
+        (exs.length ? exs.join('') : '<p style="margin:4px 0 0">None — every tag was marked right.</p>');
+    }
+    result += '<p class="note" style="margin:10px 0 0">How this is computed: the agreement rate is your “right” marks divided by all SDG tags you judged, counted in your browser from your own clicks. It is not an estimate and no model is involved.</p></div>';
+  }
+
+  body.innerHTML = status + result + review.drawn.map(reviewRecHtml).join('');
+
+  if(review.complete && !review.completeShown){
+    review.completeShown = true;
+    var res = document.getElementById('revResult');
+    if(res && res.scrollIntoView){ try { res.scrollIntoView({ block: 'nearest' }); } catch(err){} }
+  }
+}
+
+function csvCell(v){
+  var s = v == null ? '' : String(v);
+  if(/["\r\n,]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+function slug(s){
+  return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'country';
+}
+function downloadCsv(){
+  var rows = [['record_no','record_id','symbol','doc_url','date','year','body','mechanism','type','text','sdg','sdg_name','sdg_targets','mark']];
+  review.drawn.forEach(function(r, idx){
+    var m = review.marks[idx] || {};
+    var targets = (Array.isArray(r.sdg_targets) ? r.sdg_targets : []).join('; ');
+    var base = [idx + 1, r.id || '', r.symbol || '', r.doc_url || '', r.date || '',
+                typeof r.year === 'number' ? r.year : '', r.body || '', r.mechanism || '', r.type || '', r.text || ''];
+    var list = sdgListOf(r);
+    if(!list.length) rows.push(base.concat(['', '', targets, '']));
+    else list.forEach(function(s){ rows.push(base.concat([s, sdgNameOf(s), targets, m[s] || ''])); });
+  });
+  var csv = rows.map(function(row){ return row.map(csvCell).join(','); }).join('\r\n');
+  var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'sdg-check-' + slug(COUNTRY) + '-draw-' + review.drawCount + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+}
+
+document.getElementById('drawBtn').addEventListener('click', drawSample);
+document.getElementById('redrawBtn').addEventListener('click', drawSample);
+document.getElementById('csvBtn').addEventListener('click', downloadCsv);
+document.getElementById('reviewBody').addEventListener('click', function(e){
+  var b = e.target.closest('.mk');
+  if(!b) return;
+  var idx = Number(b.getAttribute('data-rec')), s = Number(b.getAttribute('data-sdg')), v = b.getAttribute('data-val');
+  var m = review.marks[idx] || (review.marks[idx] = {});
+  if(m[s] === v) delete m[s]; else m[s] = v;
+  renderReview();
+});
+
+/* ---------- master render ---------- */
+function render(){
+  lastFiltered = sortList(getFiltered());
+  renderChips();
+  renderSummary();
+  renderChart(lastFiltered);
+  renderTable(lastFiltered);
+}
+
+/* ---------- control events ---------- */
+fMech.addEventListener('change', function(){ state.mechanism = fMech.value; visible = 50; render(); });
+fBody.addEventListener('change', function(){ state.body = fBody.value; visible = 50; render(); });
+fSdg.addEventListener('change', function(){ state.sdg = fSdg.value; visible = 50; render(); });
+fSort.addEventListener('change', function(){ visible = 50; render(); });
+
+fFrom.addEventListener('change', function(){
+  if(minYear === null) return;
+  state.yearFrom = Number(fFrom.value);
+  if(state.yearFrom > state.yearTo){ state.yearTo = state.yearFrom; fTo.value = fFrom.value; }
+  visible = 50; render();
+});
+fTo.addEventListener('change', function(){
+  if(minYear === null) return;
+  state.yearTo = Number(fTo.value);
+  if(state.yearTo < state.yearFrom){ state.yearFrom = state.yearTo; fFrom.value = fTo.value; }
+  visible = 50; render();
+});
+
+var qTimer = null;
+fQ.addEventListener('input', function(){
+  clearTimeout(qTimer);
+  qTimer = setTimeout(function(){ state.q = fQ.value.trim(); visible = 50; render(); }, 180);
+});
+
+render();
+})();
+</script>
+</body>
+</html>

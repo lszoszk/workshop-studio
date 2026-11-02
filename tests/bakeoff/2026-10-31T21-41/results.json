@@ -1,0 +1,164 @@
+[
+ {
+  "model": "glm-eu",
+  "label": "GLM-5.3 · China · Mistral (EU)",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "chart": false,
+   "table_min_rows": false,
+   "text_contains": false,
+   "controls_min": false,
+   "links_to": false
+  },
+  "passed": 0,
+  "total": 8,
+  "errors": [
+   "no html in reply"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 116.0,
+  "first_token": 109.1,
+  "prompt_tokens": 5371,
+  "completion_tokens": 32000,
+  "cost": 0.1483194,
+  "provider": "Mistral"
+ },
+ {
+  "model": "glm-eu",
+  "label": "GLM-5.3 · China · Mistral (EU)",
+  "prompt": "s7-2-who-recommends",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "chart": false,
+   "table_min_rows": false,
+   "source_matches": false,
+   "text_matches": false
+  },
+  "passed": 0,
+  "total": 7,
+  "errors": [
+   "no html in reply"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 107.9,
+  "first_token": null,
+  "prompt_tokens": 5350,
+  "completion_tokens": 32000,
+  "cost": 0.14175816,
+  "provider": "Mistral"
+ },
+ {
+  "model": "glm-eu",
+  "label": "GLM-5.3 · China · Mistral (EU)",
+  "prompt": "s7-3-check-ten",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "button_matches": false,
+   "source_matches": false,
+   "download": false
+  },
+  "passed": 0,
+  "total": 6,
+  "errors": [
+   "402 b'{\"error\":{\"message\":\"This request would exceed your available credits given your current in-flight requests. Retry after in-flight requests settle, or add credits.\",\"code\":402,\"metadata\":{\"reason\":\"in_flight_budget_exhausted\",\"limit_source\":\"openrouter_in_flight_budget\",\"remedy_hint\":\"Retry after yo'"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 0.4,
+  "first_token": null,
+  "prompt_tokens": null,
+  "completion_tokens": null,
+  "cost": null,
+  "provider": null
+ },
+ {
+  "model": "glm-eu",
+  "label": "GLM-5.3 · China · Mistral (EU)",
+  "prompt": "s8-1-verbatim",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "chart": false,
+   "search_box": false,
+   "button_matches": false,
+   "source_matches": false,
+   "text_contains_after_search": false
+  },
+  "passed": 0,
+  "total": 8,
+  "errors": [
+   "402 b'{\"error\":{\"message\":\"This request would exceed your available credits given your current in-flight requests. Retry after in-flight requests settle, or add credits.\",\"code\":402,\"metadata\":{\"reason\":\"in_flight_budget_exhausted\",\"limit_source\":\"openrouter_in_flight_budget\",\"remedy_hint\":\"Retry after yo'"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 0.2,
+  "first_token": null,
+  "prompt_tokens": null,
+  "completion_tokens": null,
+  "cost": null,
+  "provider": null
+ },
+ {
+  "model": "glm-eu",
+  "label": "GLM-5.3 · China · Mistral (EU)",
+  "prompt": "s8-2-ai-inside",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "calls_studio_ask": false,
+   "batches_max": false,
+   "text_matches": false,
+   "button_matches": false
+  },
+  "passed": 0,
+  "total": 7,
+  "errors": [
+   "402 b'{\"error\":{\"message\":\"This request would exceed your available credits given your current in-flight requests. Retry after in-flight requests settle, or add credits.\",\"code\":402,\"metadata\":{\"reason\":\"in_flight_budget_exhausted\",\"limit_source\":\"openrouter_in_flight_budget\",\"remedy_hint\":\"Retry after yo'"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 0.2,
+  "first_token": null,
+  "prompt_tokens": null,
+  "completion_tokens": null,
+  "cost": null,
+  "provider": null
+ },
+ {
+  "model": "glm-eu",
+  "label": "GLM-5.3 · China · Mistral (EU)",
+  "prompt": "s8-3-voting",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "chart": false,
+   "controls_min": false,
+   "table_min_rows": false
+  },
+  "passed": 0,
+  "total": 6,
+  "errors": [
+   "402 b'{\"error\":{\"message\":\"This request would exceed your available credits given your current in-flight requests. Retry after in-flight requests settle, or add credits.\",\"code\":402,\"metadata\":{\"reason\":\"in_flight_budget_exhausted\",\"limit_source\":\"openrouter_in_flight_budget\",\"remedy_hint\":\"Retry after yo'"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 0.3,
+  "first_token": null,
+  "prompt_tokens": null,
+  "completion_tokens": null,
+  "cost": null,
+  "provider": null
+ }
+]

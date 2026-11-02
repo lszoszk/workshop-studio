@@ -1,0 +1,30 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s8-4-briefing-check",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "calls_studio_ask": true,
+   "batches_max": true,
+   "button_matches": true,
+   "text_contains": true,
+   "text_matches": true
+  },
+  "passed": 8,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 399,
+  "seconds": 61.5,
+  "first_token": 12.4,
+  "first_thought": 1.2,
+  "reasoning_chars": 3320,
+  "prompt_tokens": 5904,
+  "completion_tokens": 7216,
+  "cost": 0.040016,
+  "provider": "Z.AI"
+ }
+]

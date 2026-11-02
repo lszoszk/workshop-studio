@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Human Rights Council voting comparison</title>
+  <style>
+    :root {
+      --accent: #1f6fb2;
+      --ink: #172b3a;
+      --muted: #5b6b78;
+      --line: #dce4ea;
+      --bg: #f4f7f9;
+      --card: #fff;
+      --yes: #18794e;
+      --no: #b42318;
+      --abstain: #8a6100;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    header {
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      padding: 28px 24px 24px;
+    }
+    .wrap { max-width: 1180px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 1.75rem; line-height: 1.25; }
+    h2 { margin: 0 0 6px; font-size: 1.2rem; }
+    p { margin: 0 0 10px; }
+    a { color: var(--accent); text-underline-offset: 2px; }
+    .subtitle, .note, .small { color: var(--muted); }
+    .note { font-size: .9rem; }
+    main { padding: 24px; }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) 34px minmax(180px, 1fr);
+      gap: 12px;
+      align-items: end;
+    }
+    label { display: block; font-weight: 650; margin-bottom: 6px; }
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #aebbc5;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+    }
+    .versus { text-align: center; color: var(--muted); padding-bottom: 10px; font-weight: 650; }
+    .filter-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .filter-row > span { font-weight: 650; margin-right: 3px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 6px; }
+    button {
+      border: 1px solid #b8c4cd;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      padding: 8px 14px;
+      font: inherit;
+      cursor: pointer;
+    }
+    button[aria-pressed="true"] {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    button:focus-visible, select:focus-visible, a:focus-visible {
+      outline: 3px solid #f2b84b;
+      outline-offset: 2px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin: 18px 0 12px;
+    }
+    .stat {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 16px 18px;
+    }
+    .stat .value { font-size: 1.75rem; font-weight: 750; color: var(--accent); line-height: 1.2; }
+    .stat .label { font-weight: 650; margin-top: 4px; }
+    .stat .detail { color: var(--muted); font-size: .87rem; margin-top: 3px; }
+    .section-head { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; }
+    .chart-box { height: 310px; margin-top: 12px; position: relative; }
+    .legend-note { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
+    .vote {
+      display: inline-flex;
+      min-width: 30px;
+      justify-content: center;
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-weight: 750;
+      background: #eef2f5;
+    }
+    .Y { color: var(--yes); background: #e8f5ee; }
+    .N { color: var(--no); background: #fdecea; }
+    .A { color: var(--abstain); background: #fff5d9; }
+    .vote-list { display: grid; gap: 12px; margin-top: 16px; }
+    .vote-row {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 15px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 115px 130px 130px;
+      gap: 14px;
+      align-items: start;
+    }
+    .vote-title { font-weight: 650; margin-bottom: 5px; }
+    .meta { font-size: .88rem; color: var(--muted); }
+    .kind {
+      display: inline-block;
+      text-transform: capitalize;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 0 5px;
+      margin-left: 5px;
+      background: #f7f9fa;
+    }
+    .cell-label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: 3px; }
+    .warning {
+      grid-column: 1 / -1;
+      background: #fff7e0;
+      border-left: 4px solid #d69e00;
+      padding: 7px 10px;
+      font-size: .85rem;
+      color: #654b00;
+    }
+    .empty {
+      padding: 24px 12px;
+      text-align: center;
+      color: var(--muted);
+      background: #f8fafb;
+      border-radius: 7px;
+    }
+    .screen-reader {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+    @media (max-width: 850px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .vote-row { grid-template-columns: 1fr 1fr; }
+      .vote-main { grid-column: 1 / -1; }
+      .vote-date { grid-column: 1 / -1; }
+    }
+    @media (max-width: 560px) {
+      header, main { padding-left: 15px; padding-right: 15px; }
+      .controls { grid-template-columns: 1fr; }
+      .versus { padding: 0; }
+      .stats { grid-template-columns: 1fr; }
+      .vote-row { grid-template-columns: 1fr; }
+      .vote-main, .vote-date { grid-column: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>How do two States vote at the Human Rights Council?</h1>
+      <p class="subtitle" id="datasetDescription">Human Rights Council recorded votes</p>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="panel" aria-labelledby="chooseHeading">
+      <h2 id="chooseHeading">Choose two States</h2>
+      <p class="note">Only States appearing in at least one roll call in this dataset are listed. The number in parentheses is their total appearances across all record types.</p>
+      <div class="controls">
+        <div>
+          <label for="stateA">First State</label>
+          <select id="stateA"></select>
+        </div>
+        <div class="versus" aria-hidden="true">and</div>
+        <div>
+          <label for="stateB">Second State</label>
+          <select id="stateB"></select>
+        </div>
+      </div>
+      <div class="filter-row">
+        <span>Include:</span>
+        <div class="filters" role="group" aria-label="Type of recorded vote">
+          <button type="button" data-kind="both" aria-pressed="true">Resolutions and amendments</button>
+          <button type="button" data-kind="resolution" aria-pressed="false">Resolutions only</button>
+          <button type="button" data-kind="amendment" aria-pressed="false">Amendments only</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="message" class="empty" hidden></div>
+    <section id="results" aria-live="polite">
+      <h2 id="comparisonTitle">Voting comparison</h2>
+      <div class="stats">
+        <div class="stat">
+          <div class="value" id="sharedValue">0</div>
+          <div class="label">Votes in which both took part</div>
+          <div class="detail" id="sharedDetail"></div>
+        </div>
+        <div class="stat">
+          <div class="value" id="sameValue">0</div>
+          <div class="label">Voted the same way</div>
+          <div class="detail">Yes/Yes, No/No, or Abstain/Abstain</div>
+        </div>
+        <div class="stat">
+          <div class="value" id="rateValue">—</div>
+          <div class="label">Agreement rate</div>
+          <div class="detail" id="rateDetail">Same votes ÷ shared votes</div>
+        </div>
+        <div class="stat">
+          <div class="value" id="differentValue">0</div>
+          <div class="label">Voted differently</div>
+          <div class="detail">Listed below</div>
+        </div>
+      </div>
+      <p class="note" id="methodNote"></p>
+
+      <section class="panel" aria-labelledby="timelineHeading">
+        <div class="section-head">
+          <h2 id="timelineHeading">Timeline by year</h2>
+        </div>
+        <p class="note">Bars count shared votes on which the States agreed or differed. The line shows agreement as a percentage of shared votes in each year; years without a shared vote are omitted.</p>
+        <div class="chart-box" id="chartBox"><canvas id="timeline" aria-label="Yearly voting agreement chart"></canvas></div>
+      </section>
+
+      <section class="panel" aria-labelledby="differencesHeading">
+        <div class="section-head">
+          <h2 id="differencesHeading">Votes where they differed</h2>
+          <span class="small" id="differenceCount"></span>
+        </div>
+        <p class="note">Newest votes first. Vote codes: <span class="vote Y">Y</span> Yes, <span class="vote N">N</span> No, <span class="vote A">A</span> Abstain. A warning appears when the source’s official Yes/No/Abstain totals do not match totals counted from its roll call.</p>
+        <div class="vote-list" id="voteList"></div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+      const source = (window.WORKSHOP_DATA && window.WORKSHOP_DATA.hrc) || {};
+      const records = Array.isArray(source.records) ? source.records : [];
+      const names = source.countries || {};
+      const validCodes = new Set(["Y", "N", "A"]);
+      const $ = id => document.getElementById(id);
+      const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"' : "&quot;", "'" : "&#39;"
+      }[c]));
+      const state = { a: "", b: "", kind: "both" };
+      let chart = null;
+
+      const years = records.map(r => Number(r.year)).filter(Number.isFinite);
+      const yearText = years.length
+        ? `${Math.min(...years)}–${Math.max(...years)}`
+        : "no dated votes";
+      $("datasetDescription").textContent =
+        `${source.title || "Human Rights Council recorded votes"} · ${records.length.toLocaleString()} records · ${yearText}. Counts are calculated from the supplied roll calls.`;
+
+      const appearances = new Map();
+      records.forEach(r => {
+        Object.entries(r.votes || {}).forEach(([code, vote]) => {
+          if (validCodes.has(vote)) appearances.set(code, (appearances.get(code) || 0) + 1);
+        });
+      });
+      const members = [...appearances.keys()].map(code => ({
+        code, name: names[code] || code, count: appearances.get(code)
+      })).sort((a, b) => a.name.localeCompare(b.name));
+
+      function fillSelect(select) {
+        select.innerHTML = members.map(m =>
+          `<option value="${esc(m.code)}">${esc(m.name)} (${m.count})</option>`
+        ).join("");
+      }
+      fillSelect($("stateA"));
+      fillSelect($("stateB"));
+
+      const defaults = [...members].sort((a, b) =>
+        b.count - a.count || a.name.localeCompare(b.name));
+      state.a = defaults[0]?.code || "";
+      state.b = defaults[1]?.code || "";
+      $("stateA").value = state.a;
+      $("stateB").value = state.b;
+
+      function label(code) {
+        return names[code] || code;
+      }
+      function voteFor(record, code) {
+        const vote = record.votes && record.votes[code];
+        return validCodes.has(vote) ? vote : "";
+      }
+      function rollCall(record) {
+        const totals = { Y: 0, N: 0, A: 0 };
+        Object.values(record.votes || {}).forEach(v => {
+          if (validCodes.has(v)) totals[v]++;
+        });
+        return totals;
+      }
+      function totalWarning(record) {
+        const counted = rollCall(record);
+        const fields = { Y: "yes", N: "no", A: "abstain" };
+        const mismatch = Object.keys(fields).some(code =>
+          Number.isFinite(Number(record[fields[code]])) &&
+          Number(record[fields[code]]) !== counted[code]
+        );
+        if (!mismatch) return "";
+        const format = t => `Y ${t.Y} / N ${t.N} / A ${t.A}`;
+        return `<div class="warning" role="note"><strong>Official totals differ from roll call.</strong> Official: ${format({Y: record.yes, N: record.no, A: record.abstain})}; counted roll call: ${format(counted)}.</div>`;
+      }
+      function recordLink(record) {
+        if (record.doc_url) {
+          return `<a href="${esc(record.doc_url)}" target="_blank" rel="noopener noreferrer">${esc(record.symbol || "UN document")}</a>`;
+        }
+        if (record.record_url) {
+          return `<span>${esc(record.symbol || "Vote record")}</span> · <a href="${esc(record.record_url)}" target="_blank" rel="noopener noreferrer">Library record (no document URL supplied)</a>`;
+        }
+        return esc(record.symbol || "Symbol not supplied");
+      }
+      function row(record) {
+        return `<article class="vote-row">
+          <div class="vote-main">
+            <div class="vote-title">${esc(record.title || "Title not supplied")}</div>
+            <div class="meta">${recordLink(record)}<span class="kind">${esc(record.kind || "vote")}</span></div>
+          </div>
+          <div class="vote-date"><span class="cell-label">Date</span>${esc(record.date || record.year || "Not supplied")}</div>
+          <div><span class="cell-label">${esc(label(state.a))}</span><span class="vote ${voteFor(record, state.a)}">${voteFor(record, state.a)}</span></div>
+          <div><span class="cell-label">${esc(label(state.b))}</span><span class="vote ${voteFor(record, state.b)}">${voteFor(record, state.b)}</span></div>
+          ${totalWarning(record)}
+        </article>`;
+      }
+
+      function drawTimeline(shared) {
+        const byYear = new Map();
+        shared.forEach(r => {
+          const year = Number(r.year);
+          if (!Number.isFinite(year)) return;
+          if (!byYear.has(year)) byYear.set(year, { same: 0, different: 0 });
+          const group = byYear.get(year);
+          if (voteFor(r, state.a) === voteFor(r, state.b)) group.same++;
+          else group.different++;
+        });
+        const labels = [...byYear.keys()].sort((a, b) => a - b);
+        const same = labels.map(y => byYear.get(y).same);
+        const different = labels.map(y => byYear.get(y).different);
+        const rates = labels.map((y, i) => {
+          const total = same[i] + different[i];
+          return total ? Math.round(same[i] / total * 1000) / 10 : 0;
+        });
+        if (chart) chart.destroy();
+        chart = null;
+        if (!labels.length || !window.Chart) {
+          $("chartBox").innerHTML = '<div class="empty">No yearly timeline is available for this selection.</div>';
+          return;
+        }
+        if (!$("timeline")) $("chartBox").innerHTML = '<canvas id="timeline" aria-label="Yearly voting agreement chart"></canvas>';
+        chart = new Chart($("timeline"), {
+          data: {
+            labels,
+            datasets: [
+              { type: "bar", label: "Same vote", data: same, backgroundColor: "#1f6fb2", stack: "votes" },
+              { type: "bar", label: "Different vote", data: different, backgroundColor: "#d7a13b", stack: "votes" },
+              { type: "line", label: "Agreement rate (%)", data: rates, yAxisID: "percentage", borderColor: "#172b3a", backgroundColor: "#172b3a", pointRadius: 4, tension: 0 }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+              legend: { position: "bottom" },
+              tooltip: {
+                callbacks: {
+                  label: ctx => ctx.dataset.yAxisID === "percentage"
+                    ? ` Agreement rate: ${ctx.parsed.y}%`
+                    : ` ${ctx.dataset.label}: ${ctx.parsed.y}`
+                }
+              }
+            },
+            scales: {
+              x: { title: { display: true, text: "Year" } },
+              y: { stacked: true, beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: "Shared votes" } },
+              percentage: { position: "right", min: 0, max: 100, grid: { drawOnChartArea: false }, title: { display: true, text: "Agreement (%)" }, ticks: { callback: value => value + "%" } }
+            }
+          }
+        });
+      }
+
+      function render() {
+        const kindLabel = state.kind === "both" ? "resolutions and amendments" : `${state.kind}s only`;
+        const filtered = records.filter(r => state.kind === "both" || r.kind === state.kind);
+        const shared = filtered.filter(r => voteFor(r, state.a) && voteFor(r, state.b));
+        const same = shared.filter(r => voteFor(r, state.a) === voteFor(r, state.b));
+        const different = shared.filter(r => voteFor(r, state.a) !== voteFor(r, state.b))
+          .sort((a, b) => String(b.date || b.year).localeCompare(String(a.date || a.year)) || String(a.symbol).localeCompare(String(b.symbol)));
+
+        $("comparisonTitle").textContent = `${label(state.a)} compared with ${label(state.b)}`;
+        $("sharedValue").textContent = shared.length.toLocaleString();
+        $("sameValue").textContent = same.length.toLocaleString();
+        $("differentValue").textContent = different.length.toLocaleString();
+        $("rateValue").textContent = shared.length ? (same.length / shared.length * 100).toFixed(1) + "%" : "—";
+        $("sharedDetail").textContent = `${filtered.length.toLocaleString()} source records match: ${kindLabel}`;
+        $("rateDetail").textContent = shared.length ? `${same.length} ÷ ${shared.length} shared votes` : "No shared votes in this selection";
+        $("methodNote").textContent = `How this is computed: only records where both selected States have Y, N, or A are included. Missing participation by either State is excluded. This filter currently covers ${filtered.length.toLocaleString()} of ${records.length.toLocaleString()} records; agreement uses shared votes as its denominator.`;
+        $("differenceCount").textContent = `${different.length.toLocaleString()} record${different.length === 1 ? "" : "s"}`;
+        $("voteList").innerHTML = different.length
+          ? different.map(row).join("")
+          : '<div class="empty">No differing votes in this selection. This can mean the States agreed on every shared vote, or that they had no shared votes.</div>';
+        drawTimeline(shared);
+      }
+
+      function validateAndRender() {
+        const invalid = !state.a || !state.b || state.a === state.b;
+        $("message").hidden = !invalid;
+        $("results").hidden = invalid;
+        if (invalid) {
+          $("message").textContent = members.length < 2
+            ? "At least two States with recorded votes are needed for a comparison."
+            : "Please select two different States.";
+          if (chart) { chart.destroy(); chart = null; }
+          return;
+        }
+        render();
+      }
+
+      $("stateA").addEventListener("change", e => { state.a = e.target.value; validateAndRender(); });
+      $("stateB").addEventListener("change", e => { state.b = e.target.value; validateAndRender(); });
+      document.querySelectorAll("[data-kind]").forEach(button => {
+        button.addEventListener("click", () => {
+          state.kind = button.dataset.kind;
+          document.querySelectorAll("[data-kind]").forEach(b =>
+            b.setAttribute("aria-pressed", String(b === button)));
+          validateAndRender();
+        });
+      });
+      validateAndRender();
+    })();
+  </script>
+</body>
+</html>

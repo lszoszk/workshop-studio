@@ -1,0 +1,1 @@
+Built an offline paragraph-level search with Boolean operators, exact phrases, committee/year filters, highlighted matches, and one-click UN citations. The committee bar chart and result counts update with the search, while every result retains the full original paragraph text.

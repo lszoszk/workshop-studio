@@ -1,0 +1,1 @@
+I added a “Who recommends what” tab that shows the 15 states that made the most UPR recommendations to Kenya, a bar chart, a table of the most frequent SDG each state raises, and a clickable list of each state’s recommendations. It also reports how many UPR recommendations had no state in parentheses.

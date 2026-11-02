@@ -1,0 +1,58 @@
+[
+ {
+  "model": "mistral",
+  "label": "Mistral Large 4 · France · Mistral (EU)",
+  "prompt": "s8-5-wiki",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "source_matches": true,
+   "text_contains": true,
+   "controls_min": true,
+   "calls_studio_ask": false,
+   "batches_max": false
+  },
+  "passed": 6,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 352,
+  "seconds": 81.7,
+  "first_token": 59.3,
+  "first_thought": 2.5,
+  "reasoning_chars": 32976,
+  "prompt_tokens": 7252,
+  "completion_tokens": 13882,
+  "cost": 0.03765146,
+  "provider": "Mistral"
+ },
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · USA · Amazon Bedrock",
+  "prompt": "s8-5-wiki",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "source_matches": true,
+   "text_contains": true,
+   "controls_min": true,
+   "calls_studio_ask": true,
+   "batches_max": true
+  },
+  "passed": 8,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 391,
+  "seconds": 85.9,
+  "first_token": 42.6,
+  "first_thought": 4.1,
+  "reasoning_chars": 5843,
+  "prompt_tokens": 10399,
+  "completion_tokens": 13434,
+  "cost": 0.1706518,
+  "provider": "Amazon Bedrock"
+ }
+]

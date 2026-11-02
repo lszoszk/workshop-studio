@@ -1,0 +1,72 @@
+---
+title: The privilege against self-incrimination
+type: concept
+tags: [self-incrimination, art-14-3-g, fair-trial, coercion, exclusionary-rule, lie-detection]
+register: [b, c, d, e, f]
+status: reviewed
+updated: 2026-11-02
+links: [[iccpr-art-14-3-g]], [[general-comment-32]], [[ccpr-c-gc-32]], [[brain-based-lie-detection]], [[consent-in-custody]], [[reliability-and-admissibility]], [[iccpr-art-7]], [[freedom-of-thought]], [[selvi-v-state-of-karnataka]], [[a-81-351]], [[unodc-interpol-2025]], [[ahrc-2025]], [[futures-lab-2026]], [[szoszkiewicz-yuste-2025]], [[can-a-suspect-consent-to-lie-detection]]
+sources: [CCPR/C/GC/32, CCPR/C/21/Rev.1/Add.4, A/81/351, UNODC-INTERPOL-2025, AHRC-2025, FuturesLab-2026, Szoszkiewicz-Yuste-2025]
+---
+
+# The privilege against self-incrimination
+
+**One-liner.** Article 14(3)(g) of the ICCPR guarantees that no one charged with a criminal offence is compelled to testify against himself or to confess guilt. The Human Rights Committee reads this as the absence of any direct or indirect physical or undue psychological pressure, with exclusion of evidence obtained contrary to article 7. The Secretary-General and the Australian Human Rights Commission apply that reading to brain-based lie detection; the Committee itself has never addressed neurotechnology.
+
+Terms this page covers: self-incrimination, article 14(3)(g), "not to be compelled to testify against oneself or to confess guilt", the right to silence (to remain silent), confession, the exclusionary rule. The UN reports say "privilege against self-incrimination"; the AHRC adds "right to remain silent".
+
+## What the library says
+
+### (a) Treaty text
+
+Article 14(3)(g) entitles everyone charged with a criminal offence "not to be compelled to testify against himself or to confess guilt" ([ICCPR art. 14(3)(g)](https://www.ohchr.org/en/instruments-mechanisms/instruments/international-covenant-civil-and-political-rights), not in the library). The provision has its own page: [[iccpr-art-14-3-g]].
+
+### (b) The Human Rights Committee, General Comment No. 32 (2007)
+
+The Committee's standard is broad. The guarantee "must be understood in terms of the absence of any direct or indirect physical or undue psychological pressure from the investigating authorities on the accused, with a view to obtaining a confession of guilt" [General Comment No. 32, para. 41](pin:CCPR/C/GC/32#p13 "must be understood in terms of the absence of any direct or indirect physical or undue psychological pressure from the investigating authorities on the accused, with a view to obtaining a confession of guilt") ✓. Where the pressure amounts to treatment contrary to article 7, the same paragraph adds an evidentiary rule: "Domestic law must ensure that statements or confessions obtained in violation of article 7 of the Covenant are excluded from the evidence", and "the burden is on the State to prove that statements made by the accused have been given of their own free will" [General Comment No. 32, para. 41](pin:CCPR/C/GC/32#p13 "Domestic law must ensure that statements or confessions obtained in violation of article 7 of the Covenant are excluded from the evidence … the burden is on the State to prove that statements made by the accused have been given of their own free will") ✓. Forcing a confession under duress "violates both article 7 of the Covenant … and article 14, paragraph 3 (g) prohibiting compulsion to testify against oneself or confess guilt" [General Comment No. 32, para. 60](pin:CCPR/C/GC/32#p17 "violates both article 7 of the Covenant … and article 14, paragraph 3 (g) prohibiting compulsion to testify against oneself or confess guilt") ✓. The exclusion holds in emergencies too: "no statements or confessions or, in principle, other evidence obtained in violation of this provision may be invoked as evidence in any proceedings covered by article 14, including during a state of emergency" [General Comment No. 32, para. 6](pin:CCPR/C/GC/32#p2 "no statements or confessions or, in principle, other evidence obtained in violation of this provision may be invoked as evidence in any proceedings covered by article 14, including during a state of emergency") ✓. Disclosure to the defence must cover "indications that a confession was not voluntary" [General Comment No. 32, para. 33](pin:CCPR/C/GC/32#p10 "other evidence that could assist the defence (e.g. indications that a confession was not voluntary)") ✓.
+
+General Comment No. 32 says nothing about neurotechnology, lie detection or neural data. Every application below is a report's, not the Committee's. See [[general-comment-32]] (who relies on it) and [[ccpr-c-gc-32]] (what it says).
+
+A neighbouring guarantee is not the same thing. Under articles 18(2) and 17, "no one can be compelled to reveal his thoughts or adherence to a religion or belief" [General Comment No. 22, para. 3](pin:CCPR/C/21/Rev.1/Add.4#p2 "no one can be compelled to reveal his thoughts or adherence to a religion or belief") ✓. That protects thought as such, not testimony in a criminal charge; see [[freedom-of-thought]].
+
+### (c) The Secretary-General (A/81/351) and UNODC–INTERPOL 2025
+
+The Secretary-General applies the Committee's standard to neurotechnology: "The coercive use of brain-based lie detection could call into question the privilege against self-incrimination, protected under article 14 (3) (g) of the Covenant" [A/81/351, para. 32](pin:A/81/351#p10 "The coercive use of brain-based lie detection could call into question the privilege against self-incrimination, protected under article 14 (3) (g) of the Covenant") ✓. The report calls the privilege "an absolute guarantee" and states that "any direct or indirect physical or psychological pressure on the accused with a view to obtaining a confession of guilt is prohibited" [A/81/351, para. 32](pin:A/81/351#p10 "This privilege is an absolute guarantee and any direct or indirect physical or psychological pressure on the accused with a view to obtaining a confession of guilt is prohibited") ✓ (its footnote 62, on the same PDF page, cites General Comment No. 32). Two things are the report's own: the word "absolute", which para. 41 of the General Comment does not use, and the dropping of "undue" before "psychological pressure".
+
+The report then relies on a domestic court: the Supreme Court of India "held that the involuntary administration of brain electrical oscillation signature profiling tests, a form of brain-based lie detection, violates the constitutional protection against self-incrimination" [A/81/351, para. 32](pin:A/81/351#p10 "held that the involuntary administration of brain electrical oscillation signature profiling tests, a form of brain-based lie detection, violates the constitutional protection against self-incrimination") ✓ (its footnote 63, on PDF p. 11, cites the judgment of 5 May 2010, paras. 215–224); see [[selvi-v-state-of-karnataka]]. On the exclusionary rule the report keeps a conditional: "statements or other evidence obtained in violation of the prohibition of torture or ill-treatment may not be invoked as evidence in any proceedings. This could apply to evidence obtained through the coercive use of neurotechnologies" [A/81/351, para. 32](pin:A/81/351#p10 "statements or other evidence obtained in violation of the prohibition of torture or ill-treatment may not be invoked as evidence in any proceedings. This could apply to evidence obtained through the coercive use of neurotechnologies") ✓.
+
+Earlier, the report lists the privilege among four concerns raised by deception detection, "consent, coercion, reliability, and the privilege against self-incrimination" [A/81/351, para. 9](pin:A/81/351#p4 "raise serious concerns regarding consent, coercion, reliability, and the privilege against self-incrimination") ✓, and notes that after the Indian judgment "voluntary use appears to have continued in practice" [A/81/351, para. 9](pin:A/81/351#p4 "voluntary use appears to have continued in practice") ✓. Its recommendations ask States to "Prohibit the compulsory or coercive use of neurotechnologies in the administration of justice, including brain-based deception detection" [A/81/351, para. 50 (c)](pin:A/81/351#p15 "Prohibit the compulsory or coercive use of neurotechnologies in the administration of justice, including brain-based deception detection") ✓ and to "Prohibit the use of neural data obtained through torture or ill-treatment, or in violation of the rights to freedom of thought and opinion, as evidence in any proceedings" [A/81/351, para. 50 (d)](pin:A/81/351#p15 "Prohibit the use of neural data obtained through torture or ill-treatment, or in violation of the rights to freedom of thought and opinion, as evidence in any proceedings") ✓. The second ground of exclusion (freedom of thought and opinion) goes beyond the Committee's article 7 rule; it is a recommendation, not a restatement.
+
+UNODC and INTERPOL list the privilege among the due process rights "at stake" [UNODC–INTERPOL 2025, p. 4](pin:UNODC-INTERPOL-2025#p7 "Due process rights are also at stake, including the right to appear before a competent judicial authority, the presumption of innocence, the privilege against self-incrimination, and the right to appeal") ✓, and leave a question open rather than answer it: "Can courts legally order a criminal defendant, even in narrow circumstances, to cooperate with law enforcement in the use of neurotechnologies?" [UNODC–INTERPOL 2025, p. 5](pin:UNODC-INTERPOL-2025#p8 "Can courts legally order a criminal defendant, even in narrow circumstances, to cooperate with law enforcement in the use of neurotechnologies?") ✓.
+
+### (d) The Australian Human Rights Commission (2025)
+
+The AHRC restates the standard and applies it to pressure to take a test: "The use of neurotechnology as a means of lie detection may threaten this human right if alleged offenders are pressured into complying with neurotechnological tests" [AHRC 2025, p. 31](pin:AHRC-2025#p31 "Under international human rights law all people charged with a criminal offence have a right not to be compelled to testify against themselves or to confess guilt … The use of neurotechnology as a means of lie detection may threaten this human right if alleged offenders are pressured into complying with neurotechnological tests") ✓. It folds the right to silence into the privilege and adds Australian law: "The right to remain silent and not to selfincriminate is a right afforded to anyone charged with a criminal offence. This right is found in art 14.3(g) ICCPR" [AHRC 2025, p. 32](pin:AHRC-2025#p32 "The right to remain silent and not to selfincriminate is a right afforded to anyone charged with a criminal offence. This right is found in art 14.3(g) ICCPR") ✓. The words it then quotes, evidence "obtained through methods of coercion or oppression in defiance of the will of the accused", are a quotation from its own sources (its endnote 160, on PDF p. 78, cites Ligthart 2022 and Ibrahim and Others v. the United Kingdom), not from the Covenant or the Committee. Its distinctive contribution is the indirect-pressure scenario: a reduced sentence or immunity offered for consent [AHRC 2025, p. 32](pin:AHRC-2025#p32 "if an accused was offered the opportunity for a reduced sentence or some level of immunity in exchange for consenting to the use of neurotechnology during questioning by police, it would be difficult to argue that any consent given was entirely voluntary") ✓, developed on [[consent-in-custody]]. On trial processes it pairs the privilege with the presumption of innocence: "Both of these rights require that no direct or indirect physical or psychological pressure be exerted by authorities to secure a confession or testimony" [AHRC 2025, p. 33](pin:AHRC-2025#p33 "Both of these rights require that no direct or indirect physical or psychological pressure be exerted by authorities to secure a confession or testimony") ✓.
+
+### (e) Civil society
+
+The Futures Lab submission does not name the privilege. Its nearest point is a warning that policing use "could expand into brain-reading of suspects or witnesses" [Futures Lab 2026, p. 6](pin:FuturesLab-2026#p7 "its use in policing could expand into brain-reading of suspects or witnesses") ✓.
+
+### (f) Scholarship
+
+Szoszkiewicz and Yuste tie the privilege to consumer wearables rather than to interrogation: whether their data should be admitted in criminal proceedings "is already provoking intense debate among legal experts … underlining the urgent need to strengthen protections for the right against self-incrimination in the era of neurotechnology" [Szoszkiewicz & Yuste 2025, p. 3470](pin:Szoszkiewicz-Yuste-2025#p2 "is already provoking intense debate among legal experts … underlining the urgent need to strengthen protections for the right against self-incrimination in the era of neurotechnology") ✓. Prainsack et al. do not discuss it.
+
+## Open questions
+
+- Is the output of a brain-based test "testimony" or a "confession" at all? No document in the library discusses the distinction between testimonial and physical evidence; the Secretary-General reports the Indian holding without its reasoning.
+- The Committee speaks of "the accused" and "investigating authorities"; the reports speak of suspects, detainees and interrogation. Whether the guarantee attaches before charge is not discussed.
+- Does a suspect's consent remove compulsion? See [[consent-in-custody]] and [[can-a-suspect-consent-to-lie-detection]].
+- Exculpatory use: the AHRC's R v Murray example concerns a test tendered by the accused; the privilege does not answer that case. See [[reliability-and-admissibility]].
+
+## Related
+
+- [[iccpr-art-14-3-g]] (the provision itself)
+- [[general-comment-32]] (who in the library relies on para. 41) and [[ccpr-c-gc-32]] (what the General Comment says)
+- [[brain-based-lie-detection]] (the technique the privilege is applied to)
+- [[consent-in-custody]] (whether consent removes compulsion)
+- [[reliability-and-admissibility]] (where the exclusionary rule meets the reliability question)
+- [[iccpr-art-7]] (the article 7 trigger for exclusion)
+- [[freedom-of-thought]] (the separate guarantee not to reveal one's thoughts)
+- [[selvi-v-state-of-karnataka]] (the domestic case the Secretary-General relies on)
+- [[a-81-351]], [[unodc-interpol-2025]], [[ahrc-2025]], [[futures-lab-2026]], [[szoszkiewicz-yuste-2025]] (source pages)
+- [[can-a-suspect-consent-to-lie-detection]] (the question page)

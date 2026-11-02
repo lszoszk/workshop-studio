@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HRC Voting Comparison Tool</title>
+<style>
+  body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+       margin:0;padding:0;background:#f9f9f9;color:#333;font-size:16px;}
+  .container{max-width:1200px;margin:auto;padding:1rem;}
+  h1{font-size:1.8rem;margin-bottom:.5rem;}
+  h2{font-size:1.4rem;margin-top:1.5rem;margin-bottom:.5rem;}
+  .controls{display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;}
+  .controls label{display:flex;flex-direction:column;font-weight:bold;}
+  .stats{display:flex;gap:1rem;margin-bottom:1rem;}
+  .stat{background:#fff;border:1px solid #ddd;padding:.5rem 1rem;border-radius:4px;}
+  .stat .value{font-size:1.2rem;font-weight:bold;color:#1f6fb2;}
+  .warning{color:#d00;font-size:.9rem;margin-left:.5rem;}
+  table{width:100%;border-collapse:collapse;background:#fff;margin-top:1rem;}
+  th,td{border:1px solid #ddd;padding:.5rem;text-align:left;}
+  th{background:#eee;}
+  .chart-container{position:relative;height:400px;margin-top:1rem;}
+  .note{font-size:.9rem;color:#555;margin-top:.5rem;}
+  a{color:#1f6fb2;text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  .loader{font-style:italic;color:#666;}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Human Rights Council Voting Comparison</h1>
+  <p id="description"></p>
+
+  <div class="controls">
+    <label>
+      State 1
+      <select id="state1"></select>
+    </label>
+    <label>
+      State 2
+      <select id="state2"></select>
+    </label>
+    <label>
+      Record type
+      <select id="recordType">
+        <option value="both">Both</option>
+        <option value="resolution">Resolutions</option>
+        <option value="amendment">Amendments</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="value" id="totalVotes">0</div>
+      <div>Votes both participated</div>
+    </div>
+    <div class="stat">
+      <div class="value" id="sameVotes">0</div>
+      <div>Same vote</div>
+    </div>
+    <div class="stat">
+      <div class="value" id="diffVotes">0</div>
+      <div>Different vote</div>
+    </div>
+  </div>
+
+  <div class="note">How this is computed: records where both states have a vote entry.</div>
+
+  <div class="chart-container">
+    <canvas id="timelineChart"></canvas>
+  </div>
+
+  <h2>Votes where the states differed</h2>
+  <div id="diffTableContainer"></div>
+  <div id="noDiff" class="loader" style="display:none;">No differing votes found.</div>
+</div>
+
+<script>
+(function(){
+  const data = window.WORKSHOP_DATA.hrc;
+  const records = data.records || [];
+  const allStates = new Set();
+  records.forEach(r=>{
+    if(r.votes) Object.keys(r.votes).forEach(k=>allStates.add(k));
+  });
+  const stateList = Array.from(allStates).sort();
+
+  const state1Sel = document.getElementById('state1');
+  const state2Sel = document.getElementById('state2');
+  const typeSel = document.getElementById('recordType');
+  const totalVotesEl = document.getElementById('totalVotes');
+  const sameVotesEl = document.getElementById('sameVotes');
+  const diffVotesEl = document.getElementById('diffVotes');
+  const diffTableContainer = document.getElementById('diffTableContainer');
+  const noDiffEl = document.getElementById('noDiff');
+  const descriptionEl = document.getElementById('description');
+
+  // Populate state selects
+  stateList.forEach(code=>{
+    const opt1 = document.createElement('option');
+    opt1.value = code;
+    opt1.textContent = `${code} (${data.countries[code]||'Unknown'})`;
+    state1Sel.appendChild(opt1);
+    const opt2 = document.createElement('option');
+    opt2.value = code;
+    opt2.textContent = `${code} (${data.countries[code]||'Unknown'})`;
+    state2Sel.appendChild(opt2);
+  });
+  // Default selections
+  if(stateList.length>=2){
+    state1Sel.value = stateList[0];
+    state2Sel.value = stateList[1];
+  }
+
+  // Description
+  const years = records.map(r=>r.year);
+  const minYear = Math.min(...years);
+  const maxYear = Math.max(...years);
+  descriptionEl.textContent = `Source: HRC recorded votes, ${records.length} records, years ${minYear}–${maxYear}.`;
+
+  // Chart
+  let chart;
+  function initChart(){
+    const ctx = document.getElementById('timelineChart').getContext('2d');
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {labels: [], datasets: []},
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {position: 'top'},
+          tooltip: {mode: 'index', intersect: false}
+        },
+        scales: {
+          x: {title:{display:true,text:'Year'}},
+          y: {title:{display:true,text:'Number of Votes'}, beginAtZero:true}
+        }
+      }
+    });
+  }
+  initChart();
+
+  function update(){
+    const s1 = state1Sel.value;
+    const s2 = state2Sel.value;
+    const type = typeSel.value;
+    if(!s1 || !s2) return;
+
+    // Filter records by type
+    let filtered = records.filter(r=>{
+      if(type==='resolution') return r.kind==='resolution';
+      if(type==='amendment') return r.kind==='amendment';
+      return true;
+    });
+
+    // Filter records where both states voted
+    const bothVoted = filtered.filter(r=>{
+      return r.votes && r.votes[s1] && r.votes[s2];
+    });
+
+    const total = bothVoted.length;
+    const same = bothVoted.filter(r=>r.votes[s1]===r.votes[s2]).length;
+    const diff = total - same;
+
+    totalVotesEl.textContent = total;
+    sameVotesEl.textContent = same;
+    diffVotesEl.textContent = diff;
+
+    // Timeline data
+    const timeline = {};
+    bothVoted.forEach(r=>{
+      const y = r.year;
+      if(!timeline[y]) timeline[y] = {same:0,diff:0};
+      if(r.votes[s1]===r.votes[s2]) timeline[y].same++;
+      else timeline[y].diff++;
+    });
+    const yearsSorted = Object.keys(timeline).map(Number).sort((a,b)=>a-b);
+    const labels = yearsSorted;
+    const sameData = yearsSorted.map(y=>timeline[y].same);
+    const diffData = yearsSorted.map(y=>timeline[y].diff);
+    chart.data.labels = labels;
+    chart.data.datasets = [
+      {label:'Same vote', data:sameData, backgroundColor:'#1f6fb2'},
+      {label:'Different vote', data:diffData, backgroundColor:'#d9534f'}
+    ];
+    chart.update();
+
+    // Differences table
+    const diffRecords = bothVoted.filter(r=>r.votes[s1]!==r.votes[s2]);
+    if(diffRecords.length===0){
+      diffTableContainer.innerHTML='';
+      noDiffEl.style.display='block';
+    }else{
+      noDiffEl.style.display='none';
+      const tbl = document.createElement('table');
+      const thead = document.createElement('thead');
+      thead.innerHTML='<tr><th>Symbol</th><th>Title</th><th>Date</th><th>'+s1+'</th><th>'+s2+'</th><th>Link</th></tr>';
+      tbl.appendChild(thead);
+      const tbody = document.createElement('tbody');
+      diffRecords.forEach(r=>{
+        const tr = document.createElement('tr');
+        // Symbol with link
+        const symLink = document.createElement('a');
+        symLink.href = r.doc_url || r.record_url || '#';
+        symLink.target='_blank';
+        symLink.rel='noopener';
+        symLink.textContent = r.symbol;
+        const tdSym = document.createElement('td');
+        tdSym.appendChild(symLink);
+        tr.appendChild(tdSym);
+        // Title
+        const tdTitle = document.createElement('td');
+        tdTitle.textContent = r.title;
+        tr.appendChild(tdTitle);
+        // Date
+        const tdDate = document.createElement('td');
+        tdDate.textContent = r.date;
+        tr.appendChild(tdDate);
+        // Votes
+        const tdV1 = document.createElement('td');
+        tdV1.textContent = r.votes[s1];
+        tr.appendChild(tdV1);
+        const tdV2 = document.createElement('td');
+        tdV2.textContent = r.votes[s2];
+        tr.appendChild(tdV2);
+        // Link
+        const tdLink = document.createElement('td');
+        const link = document.createElement('a');
+        link.href = r.doc_url || r.record_url || '#';
+        link.target='_blank';
+        link.rel='noopener';
+        link.textContent = 'View';
+        tdLink.appendChild(link);
+        tr.appendChild(tdLink);
+        // Warning if totals differ
+        const rollYes = Object.values(r.votes).filter(v=>v==='Y').length;
+        const rollNo = Object.values(r.votes).filter(v=>v==='N').length;
+        const rollA = Object.values(r.votes).filter(v=>v==='A').length;
+        if(rollYes!==r.yes || rollNo!==r.no || rollA!==r.abstain){
+          const warn = document.createElement('td');
+          warn.colSpan='6';
+          warn.className='warning';
+          warn.textContent='⚠️ Official totals differ from roll‑call';
+          tr.appendChild(warn);
+        }
+        tbody.appendChild(tr);
+      });
+      tbl.appendChild(tbody);
+      diffTableContainer.innerHTML='';
+      diffTableContainer.appendChild(tbl);
+    }
+  }
+
+  state1Sel.addEventListener('change',update);
+  state2Sel.addEventListener('change',update);
+  typeSel.addEventListener('change',update);
+  update();
+})();
+</script>
+</body>
+</html>

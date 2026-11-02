@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gallery app</title>
+<meta name="robots" content="noindex, nofollow">
+<script src="../gate.js"></script>
+<link rel="stylesheet" href="../studio.css?v=2026-11-02k">
+<style>
+  body { display: flex; flex-direction: column; }
+  .bar { display: flex; gap: 14px; align-items: center; padding: 8px 14px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .bar a { color: var(--accent); }
+  #frame { flex: 1; border: 0; width: 100%; background: var(--surface); }
+</style>
+</head>
+<body>
+<div class="bar"><a href="./">← Gallery</a><span id="what">Loading…</span></div>
+<iframe id="frame" title="App" sandbox="allow-scripts allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox" allow="clipboard-write"></iframe>
+<script src="../preview-doc.js?v=2026-11-02k"></script>
+<script>
+(async function () {
+  const app = new URLSearchParams(location.search).get('app') || '';
+  if (!/^[a-z0-9-]+\/[a-z0-9-]+$/.test(app)) { document.getElementById('what').textContent = 'Unknown app.'; return; }
+  const text = (u) => fetch(u, { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(u + ': ' + r.status); return r.text(); });
+  const [g, index, html, chart, runtime] = await Promise.all([
+    text('gallery.json').then(JSON.parse), text('../data/index.json').then(JSON.parse),
+    text('apps/' + app + '.html'), text('../vendor/chart.umd.min.js'), text('../runtime.js'),
+  ]);
+  const [model, prompt] = app.split('/');
+  const m = g.models[model] || { name: model };
+  const p = g.prompts.find((x) => x.id === prompt) || { title: prompt };
+  document.getElementById('what').innerHTML = `<b>${m.name}</b> · ${p.title} · ${g.country}`;
+  document.title = `${p.title} · ${m.name}`;
+  const file = (k) => k === 'uhri' ? index.countries.find((c) => c.name === g.country).file : index.datasets[k].file;
+  const dataText = async (k) => PreviewDoc.escapeScript(await text('../data/' + file(k)));
+  document.getElementById('frame').srcdoc = PreviewDoc.forFrame(await PreviewDoc.build(html, { chart, runtime, dataText }));
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,369 @@
+{
+ "id": "s7-1-dashboard",
+ "title": "Your country's recommendations dashboard",
+ "dataset": "uhri",
+ "problem": "I need to see what UN human rights mechanisms have told my country, and find the exact paragraphs fast.",
+ "facilitator_brief": "A dashboard on the participant's country's file from the Universal Human Rights Index. It should be trustworthy enough for a diplomat preparing a meeting: every number explained, every paragraph one click from its UN document, and a way to check the UN's own labels on a random sample.",
+ "planner": "Claude Fable 5.1",
+ "recorded": "2026-11-02",
+ "notes": "The problem, as I read it: someone preparing a meeting wants to know what the UN human rights mechanisms have said to their country, how much, about what, and then jump to the exact paragraph in the UN document. The facilitator adds the hard part: every number explained, every paragraph one click from its document, and a way to check the UN's own labels on a random sample. A dashboard that looks good but cannot be checked is worse than a spreadsheet, so I planned the checks before the charts.\n\nI used the Kenya file as my working example; each participant has a different country, so the plan says {country} and the app must compute every number from its own file.\n\n The overview: 2,264 records and 15 fields. `symbol`, `doc_url`, `date`, `year`, `body`, `mechanism`, `type` and `text` are filled in every record. Only 31 distinct symbols, so 31 documents, dated 2007 to 2026. `section` is filled in just 450 records; `themes` in 2,249; `sdgs` in 1,816; `affected_persons` in 1,856. One trap for the builder: the top-level `count` is the string \"2264\", not a number.\n\n `body` has 16 values. UPR alone is 1,061 records, almost half; then CESCR 201, CAT 171, CRC 161, CEDAW 155, CERD 133, CCPR 96, CRPD 61. The Special Procedures appear under mandate names (\"IE Albinism\" 60, \"SR Indigenous\" 42, down to \"SR Minorities\" with one record). So the \"treaty body or mandate\" filter is simply `body`, and it needs a count next to each name, or people will pick empty ones.  `type`: 1,791 Recommendations, 471 Concerns/Observations and 2 \"Other\". Whether a committee's concern counts as something the UN \"told\" the country is a judgement, not a programming question; it became my first question.\n\n Themes: 90 distinct labels. The most frequent is \"Reservations\", 691 records, ahead of \"Legal & institutional reform\" at 479. That looked wrong for a country with few treaty reservations.  I then searched for the UPR pattern the schema describes, a State in parentheses at the end of the text: 28 matches, against 1,061 UPR records. Something about the real text differs from the description.  Paragraph numbers: 681 texts begin with a number and a full stop, the treaty-body habit; the others begin mid-paragraph or with a lettered item.  Three sampled \"Reservations\" records, from 2007, 2009 and 2013, are about the Millennium Development Goals, legal aid and redress for torture. None concerns a reservation. The label is an artefact of older index entries, and it is exactly why the facilitator wants a random-sample check: a chart that ranks \"Reservations\" first would mislead a diplomat, and the app cannot know that on its own.  Special Procedures records are often lettered sub-paragraphs, \"(g) Develop a clear legal framework…\", with no paragraph number, so a citation must be able to fall back to the symbol alone.  The UPR sample explained the 28: UPR texts end with a semicolon, not a full stop; the State can be written \"( Slovenia )\" with spaces inside; several States can follow one another, \"(Cabo Verde) (Slovenia) (Togo);\"; and some names nest parentheses, \"(Venezuela (Bolivarian Republic of))\". They also start with a UPR paragraph number such as \"144.43\", which is the number to cite.\n\nThen the shelf.  A search on bar charts led to the UK Government Analysis Function pages and the Chart.js bar chart documentation.  A search on citing UN documents found the Dag Hammarskjöld Library's answer.  A search on quality assurance found the Analysis Function's page on testing code: arrange, act, assert; a visible check panel is the app's test suite, run in front of the user.  Back to the data: 1,370 records end with a closing parenthesis, which includes treaty-body endings such as \"(art. 15).\", so the State extraction must be limited to UPR records or it will report articles as States.  A search on accessible tables returned the A11Y Project checklist, the Analysis Function's tables page, the W3C tutorial and the GOV.UK table component.  A search on a human rights-based approach to data found OHCHR's guidance note.\n\n The Library page lists what a citation should carry: symbol, date, pinpoint, URL and access date, and recommends storing the parts and formatting them at the end in the reader's style. That settled the shape of the \"Copy citation\" button, and the style became a question.  The charts page: rank bars by value, use horizontal bars for long category names, a single colour, horizontal text, at most ten light gridlines, and the reminder that a well-structured table can be as powerful as a chart. The theme chart therefore gets a small table under it with the same ten rows and each theme's year range, which is how a legacy label shows itself.  The tables page: right-align numbers, thousands separators, marked-up headers, source under the table, no shading as the only signal.  OHCHR's note: transparency about method, disaggregation where the data supports it (`affected_persons`), and saying plainly when a breakdown is missing; 448 records carry no SDG, and the app must show them as \"not labelled\", not as zero.  Last, the regex I will give the builder: UPR-numbered records that end with a parenthesised group match 1,061 times, every UPR record. The rule holds.\n\nTrade-offs. One page, not tabs: a diplomat scans from the top. Two charts, not six: the ten themes for the current filter, and a timeline by mechanism, because the year gaps and the UPR cycles are the first thing a reader asks about. The random-sample check sits on the page from the start, not behind a menu. No model calls: counting, filtering and matching are deterministic, and nothing leaves the browser. The questions are the decisions I should not make for a human rights professional: what counts, whether to extract the recommending State, whose citation style, what to show first, and which labels the sample check should ask them to judge.",
+ "steps": [
+  {
+   "at": 671,
+   "kind": "look",
+   "label": "Looked at the data: {country}, {count} records, {years}",
+   "detail": "UN recommendations and observations",
+   "live": "uhri_overview"
+  },
+  {
+   "at": 1073,
+   "kind": "look",
+   "label": "Looked at the data: the values of body in uhri",
+   "detail": "16 distinct values of body"
+  },
+  {
+   "at": 1470,
+   "kind": "look",
+   "label": "Looked at the data: the values of type in uhri",
+   "detail": "3 distinct values of type"
+  },
+  {
+   "at": 1693,
+   "kind": "look",
+   "label": "Looked at the data: the values of themes in uhri",
+   "detail": "90 distinct values of themes"
+  },
+  {
+   "at": 1882,
+   "kind": "look",
+   "label": "Looked at the data: every match of /\\(([A-Z][^()]{2,60})\\)\\.?\\s*$/ in uhri",
+   "detail": "28 matches of /\\(([A-Z][^()]{2,60})\\)\\.?\\s*$/"
+  },
+  {
+   "at": 2087,
+   "kind": "look",
+   "label": "Looked at the data: every match of /^\\d{1,3}\\.\\s/ in uhri",
+   "detail": "681 matches of /^\\d{1,3}\\.\\s/"
+  },
+  {
+   "at": 2233,
+   "kind": "look",
+   "label": "Looked at the data: sample records in uhri",
+   "detail": "3 sample records where themes=Reservations"
+  },
+  {
+   "at": 2629,
+   "kind": "look",
+   "label": "Looked at the data: sample records in uhri",
+   "detail": "2 sample records where mechanism=Special Procedures"
+  },
+  {
+   "at": 2819,
+   "kind": "look",
+   "label": "Looked at the data: sample records in uhri",
+   "detail": "3 sample records where mechanism=Universal Periodic Review"
+  },
+  {
+   "at": 3217,
+   "kind": "search",
+   "label": "Searched the reference shelf: \"accessible bar chart colours labels sorted horizontal\"",
+   "detail": "5 results",
+   "results": [
+    "uk-af-charts-formatting-and-bar-charts",
+    "chartjs-bar-chart",
+    "uk-af-colours-in-charts",
+    "uk-af-charts-choosing-and-supplying",
+    "vega-lite-getting-started"
+   ]
+  },
+  {
+   "at": 3332,
+   "kind": "search",
+   "label": "Searched the reference shelf: \"cite UN document symbol paragraph concluding observations UPR\"",
+   "detail": "5 results",
+   "results": [
+    "dhl-how-to-cite-a-un-document",
+    "dhl-un-document-symbols",
+    "claude-cookbook-citations",
+    "own-llm-wiki-schema-method",
+    "govuk-content-guidance-clear-language"
+   ]
+  },
+  {
+   "at": 3410,
+   "kind": "search",
+   "label": "Searched the reference shelf: \"quality assurance checks verify numbers random sample code\"",
+   "detail": "5 results",
+   "results": [
+    "uk-af-qa-code-testing",
+    "uk-af-qa-code-generative-ai",
+    "claude-code-explore-plan-code",
+    "chartjs-bar-chart",
+    "claude-cookbook-citations"
+   ]
+  },
+  {
+   "at": 3588,
+   "kind": "look",
+   "label": "Looked at the data: every match of /\\)\\s*[;.]?\\s*$/ in uhri",
+   "detail": "1,370 matches of /\\)\\s*[;.]?\\s*$/"
+  },
+  {
+   "at": 3803,
+   "kind": "search",
+   "label": "Searched the reference shelf: \"data table sortable headers expand row keyboard focus accessible\"",
+   "detail": "5 results",
+   "results": [
+    "a11y-project-checklist",
+    "uk-af-tables",
+    "w3c-wai-tables-tutorial",
+    "govuk-design-system-table",
+    "wcag22-keyboard-and-focus"
+   ]
+  },
+  {
+   "at": 3957,
+   "kind": "search",
+   "label": "Searched the reference shelf: \"human rights based approach to data disaggregation transparency participation\"",
+   "detail": "3 results",
+   "results": [
+    "ohchr-human-rights-based-approach-to-data",
+    "uk-af-charts-choosing-and-supplying",
+    "chartability-workbook"
+   ]
+  },
+  {
+   "at": 4038,
+   "kind": "read",
+   "label": "Read: Dag Hammarskjöld Library, Ask DAG: how should I cite a UN document? (summary)",
+   "detail": "https://ask.un.org/faq/401380",
+   "shelf_id": "dhl-how-to-cite-a-un-document"
+  },
+  {
+   "at": 4311,
+   "kind": "read",
+   "label": "Read: Data visualisation: charts (formatting, labels, bar charts)",
+   "detail": "https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-charts/",
+   "shelf_id": "uk-af-charts-formatting-and-bar-charts"
+  },
+  {
+   "at": 4682,
+   "kind": "read",
+   "label": "Read: Data visualisation: tables (layout, headers, titles, HTML markup)",
+   "detail": "https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-tables/",
+   "shelf_id": "uk-af-tables"
+  },
+  {
+   "at": 4817,
+   "kind": "read",
+   "label": "Read: OHCHR: A Human Rights-Based Approach to Data, guidance note on data collection and disaggregation (summary)",
+   "detail": "https://www.ohchr.org/sites/default/files/Documents/Issues/HRIndicators/GuidanceNoteonApproachtoData.pdf",
+   "shelf_id": "ohchr-human-rights-based-approach-to-data"
+  },
+  {
+   "at": 5056,
+   "kind": "look",
+   "label": "Looked at the data: every match of /^\\d{1,3}\\.\\d{1,3}\\.?\\s.*\\)\\s*[;.]?\\s*$/ in uhri",
+   "detail": "1,061 matches of /^\\d{1,3}\\.\\d{1,3}\\.?\\s.*\\)\\s*[;.]?\\s*$/"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "header": "Records",
+   "question": "Which records should the headline numbers and the chart count?",
+   "options": [
+    {
+     "label": "All records",
+     "description": "Recommendations, concerns/observations and any other type all count; a Type filter lets you narrow.",
+     "default": true,
+     "fragments": [
+      {
+       "section": "q1",
+       "text": "The first tile counts **all records** in the file: recommendations, concerns/observations and any other `type`. Under the number, one line gives the breakdown per `type`, spelled as in the data. The Type filter (all / each `type` value present) starts on \"all\"."
+      },
+      {
+       "section": "q1.compute",
+       "text": "- **Headline total** = `records.length`. The breakdown counts records per `type`, using the values exactly as spelled in the data (there may be a small \"Other\" group)."
+      },
+      {
+       "section": "q1.checks",
+       "text": "- **Type partition.** The counts per `type` sum to the headline total."
+      }
+     ]
+    },
+    {
+     "label": "Recommendations only",
+     "description": "Only records whose type is Recommendations count; concerns and observations stay in the file but are switched off until you turn them on.",
+     "fragments": [
+      {
+       "section": "q1",
+       "text": "The first tile counts only records whose `type` is exactly \"Recommendations\". A smaller tile beside it says how many concerns/observations and other records are in the file and not counted. The Type filter starts on \"Recommendations\"; choosing \"all\" or another `type` recomputes everything on the page, including the charts."
+      },
+      {
+       "section": "q1.compute",
+       "text": "- **Headline total** = records whose `type` === \"Recommendations\". Every tile, chart and table follows the Type filter; the file total appears once next to the headline as \"of N in the file\"."
+      },
+      {
+       "section": "q1.checks",
+       "text": "- **Type partition.** Recommendations + concerns/observations + other = file total, and the headline equals the recommendations count while the Type filter is on its default."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "header": "UPR States",
+   "question": "Should the app extract which State made each UPR recommendation?",
+   "options": [
+    {
+     "label": "Extract and show",
+     "description": "A State column, a State filter and a list of the ten States that recommended most, all computed from the end of each UPR text.",
+     "default": true,
+     "fragments": [
+      {
+       "section": "q2",
+       "text": "**Recommending State** (UPR rows only): the State or States named in parentheses at the end of the text, as a column in the table and as a filter (a select listing every State found, with counts). Under the timeline, a short list \"Ten States that made most recommendations to {country}\" with counts, for the current filter. Treaty-body and Special Procedures rows show a dash in this column."
+      },
+      {
+       "section": "q2.compute",
+       "text": "- **Recommending State.** Only for `mechanism` === \"Universal Periodic Review\". Take the trailing run of parenthesised groups with the regular expression `/((?:\\s*\\((?:[^()]|\\([^()]*\\))*\\))+)\\s*[;.]?\\s*$/` on `text`, then split that run into groups with `/\\((?:[^()]|\\([^()]*\\))*\\)/g`, strip the outer parentheses and trim. One group may hold a nested name such as \"Venezuela (Bolivarian Republic of)\"; several groups mean several States, and the record counts once for each. A group is accepted as a State only if it has no comma and at most 60 characters; otherwise the record gets \"State not found\". The text itself is never altered."
+      },
+      {
+       "section": "q2.checks",
+       "text": "- **States found.** Number of UPR records with at least one State found, against the number of UPR records; the records without one are listed with their symbol, so the reader can see what the parentheses held instead."
+      },
+      {
+       "section": "q2.risks",
+       "text": "- A few UPR texts end with a parenthesis that is not a State (a list of examples, an article). The comma-and-length rule catches most; the check panel lists the rest. The State list is a count of recommendations, not of influence; two States can co-sponsor one line."
+      }
+     ]
+    },
+    {
+     "label": "Keep verbatim",
+     "description": "No extraction; the State stays where it is, at the end of the verbatim text, and nothing is parsed.",
+     "fragments": [
+      {
+       "section": "q2",
+       "text": "No State column and no State filter. The recommending State stays where the UN put it, at the end of the verbatim UPR text, and the first-line column is wider instead."
+      },
+      {
+       "section": "q2.compute",
+       "text": "- **Recommending State.** Not extracted. The app does not parse the parentheses at the end of UPR texts."
+      },
+      {
+       "section": "q2.checks",
+       "text": "- **States.** Not extracted, so there is nothing to reconcile; the panel says so in one line."
+      },
+      {
+       "section": "q2.risks",
+       "text": "- A reader who wants to know which State said what reads it in the expanded text. The keyword box finds a State's name, but it also matches that name inside the wording of a recommendation about that State."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "header": "Citation",
+   "question": "How should the \"Copy citation\" button format a paragraph?",
+   "options": [
+    {
+     "label": "Symbol and paragraph",
+     "description": "The short form used in UN practice: symbol, then \"para.\" and the number, for example CEDAW/C/AFG/CO/4, para. 54.",
+     "default": true,
+     "fragments": [
+      {
+       "section": "q3",
+       "text": "**Copy citation** copies the short form `symbol, para. N` (for example \"CEDAW/C/AFG/CO/4, para. 54\"). When no paragraph number was found in the text, it copies the symbol alone and the button's label says \"(no paragraph number in this extract)\"."
+      },
+      {
+       "section": "q3.compute",
+       "text": "- **Citation** = `symbol` + \", para. \" + paragraph number when one was found; otherwise `symbol`. UPR numbers keep their two-part form (\"para. 144.43\"). A small \"Copied\" confirmation appears for two seconds; the clipboard write is the only thing that leaves the page."
+      }
+     ]
+    },
+    {
+     "label": "Full reference",
+     "description": "Everything the UN Library recommends: symbol, date, paragraph, the UN link and the date you accessed it.",
+     "fragments": [
+      {
+       "section": "q3",
+       "text": "**Copy citation** copies a full reference: `symbol (date), para. N, doc_url (accessed today's date)`, for example \"CEDAW/C/AFG/CO/4 (10 July 2025), para. 54, https://docs.un.org/en/CEDAW/C/AFG/CO/4 (accessed 2 November 2026)\". When no paragraph number was found, the \"para.\" part is left out and the button says so."
+      },
+      {
+       "section": "q3.compute",
+       "text": "- **Citation** = `symbol` + \" (\" + `date` written as day, month name, year + \")\" + \", para. \" + paragraph number when one was found + \", \" + `doc_url` + \" (accessed \" + today's date from the browser clock + \")\". A small \"Copied\" confirmation appears for two seconds; the clipboard write is the only thing that leaves the page."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "header": "Order",
+   "question": "Which records should the table show first?",
+   "options": [
+    {
+     "label": "Newest first",
+     "description": "Most recent document on top, so the latest round of recommendations is the first thing you read.",
+     "default": true,
+     "fragments": [
+      {
+       "section": "q4",
+       "text": "Rows are sorted by `date` descending, then `body`, then paragraph number ascending (numeric, so 10 follows 9), then the order in the file. The caption says \"newest first\"; clicking the Date header reverses it."
+      }
+     ]
+    },
+    {
+     "label": "By document",
+     "description": "Rows grouped under each document, newest document first, in the paragraph order of the document.",
+     "fragments": [
+      {
+       "section": "q4",
+       "text": "Rows are grouped by document: a group header row (symbol linked to `doc_url`, `body`, `date`, number of matching rows) for each distinct `symbol`, documents ordered by `date` descending, and inside a document the rows in paragraph order (numeric, so 10 follows 9; rows without a number keep their order in the file). The caption says \"grouped by document, newest document first\"."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "header": "Label check",
+   "question": "Which UN labels should the random-sample check ask you to judge?",
+   "options": [
+    {
+     "label": "Themes only",
+     "description": "Each sampled paragraph shows its themes; you say whether they fit. Ten verdicts, two minutes.",
+     "default": true,
+     "fragments": [
+      {
+       "section": "q5",
+       "text": "Each card shows the paragraph's `themes` as chips under the verbatim text and three buttons: **Fits**, **Doesn't fit**, **Unsure**. One verdict per card is about the themes as a set."
+      },
+      {
+       "section": "q5.checks",
+       "text": "- **Sample tally.** \"Themes: x fit, y don't, z unsure of 10 judged\", updated as the reader clicks, with the seed used, so a colleague can draw the same ten. The tally is the reader's judgement, labelled as such; the app never changes a UN label."
+      }
+     ]
+    },
+    {
+     "label": "Themes, SDGs, groups",
+     "description": "Each card asks three verdicts: themes, SDG targets and affected persons, so the check covers every label set the chart and filters rely on.",
+     "fragments": [
+      {
+       "section": "q5",
+       "text": "Each card shows three labelled rows under the verbatim text, `themes`, `sdg_targets` (or `sdgs` with their names when there are no targets) and `affected_persons`, each row with its own **Fits**, **Doesn't fit**, **Unsure** buttons. An empty label set is shown as \"not labelled\" and needs no verdict."
+      },
+      {
+       "section": "q5.checks",
+       "text": "- **Sample tally.** Three lines, \"Themes: x fit, y don't, z unsure of 10\", the same for SDGs and for affected persons, updated as the reader clicks, with the seed used, so a colleague can draw the same ten. The tally is the reader's judgement, labelled as such; the app never changes a UN label."
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "plan_base": "# UN human rights recommendations dashboard: {country}\n\n## Context\n\nThe user is a diplomat, an NGO officer or a staff member of a national human rights institution preparing a meeting, a briefing or a report on {country}. They need three things in a row: how much the UN mechanisms have said, about what, and the exact paragraph with its UN document symbol. Today they open the Universal Human Rights Index, export to a spreadsheet and lose an hour; or they quote from memory. The dashboard must be trustworthy enough to be read out in a meeting: every number says how it was computed, every row links to the UN document, and the UN's own labels can be checked on a random sample, because the labels are the weakest part of the data. The data is `WORKSHOP_DATA.uhri`; the country is `WORKSHOP_DATA.uhri.country`, never hard-coded.\n\n## What I found in the data\n\nThe numbers below come from the file I examined while planning; the participant's file differs, and the app must compute all of its own numbers.\n\n- 2,264 records from 31 documents (18 treaty-body, 9 Special Procedures, 4 UPR), dated 2007–2026, with no records in some years. The top-level `count` is a **string** (\"2264\"): compare with `Number(count)`.\n- `symbol`, `doc_url`, `date`, `year`, `body`, `mechanism`, `type` and `text` are filled in every record. `section` only in 450 (treaty bodies and one mandate); `themes` in 2,249; `sdgs` in 1,816 (448 have none); `affected_persons` in 1,856.\n- `body` has 16 values; UPR is nearly half the records; some mandates have a handful (one has a single record).\n- `type`: 1,791 Recommendations, 471 Concerns/Observations, 2 Other.\n- 90 theme labels; a record carries several, so theme counts sum to more than the record count. The most frequent theme (\"Reservations\", 691) is a legacy label: sampled records under it, all from 2007–2013, had nothing to do with reservations. The app must show, not hide, this: a year range per theme and the sample check.\n- Paragraph numbers sit at the start of `text`: \"71. The Committee…\" in treaty-body records (681 records in the file start that way), \"144.43 Abolish…\" in every UPR record; many Special Procedures records are lettered items \"(g) Develop…\" with no number.\n- UPR texts end with a semicolon and one or more States in parentheses, sometimes with spaces inside, sometimes nested (\"(Venezuela (Bolivarian Republic of))\"), sometimes several (\"(Cabo Verde) (Slovenia) (Togo);\"). 1,370 records end with a parenthesis, but treaty-body texts end with \"(art. 15).\", so State extraction must be limited to UPR.\n- Texts run from 18 to about 2,500 characters (median about 230); a few 2007 records are chopped fragments joined with letters (\"r) … r) …\"). Two texts are exact duplicates of another record.\n\n## The app, screen by screen\n\n1. **Header.** Title \"UN human rights recommendations and observations: {country}\" and one line: source (`source`, linked to `source_url`), n records, n documents, first–last year, `built` date.\n2. **Headline tiles.** {{q1}} Next to it: documents (distinct `symbol`), years (min–max of `year`), and one tile per `mechanism` (records, documents, latest year) so the three mechanisms can be compared at a glance. Every tile has a one-line \"How this is computed\" note.\n3. **Filters** in one bar, all combined with AND, with a live line \"Showing n of N records\" (`aria-live`) and the active filters as removable chips: Mechanism (all / each value); Body or mandate (a select of `body` values present in the chosen mechanism, each with its count); Year from / to (two selects of the distinct `year` values); SDG (goal number and name from `sdg_names`, only goals present in the data); Type; Keyword (text box, applied 300 ms after typing, with \"literal match, not synonyms\" under it); {{q2}} A **Reset** button clears everything.\n4. **Chart 1: ten most frequent themes** for the current filter. A horizontal Chart.js bar chart, one colour (#1f6fb2), bars ranked by value, count at the end of each bar, title \"Ten most frequent themes among n filtered records\". Clicking a bar adds that theme as a filter chip. Under the chart, a small table with the same ten rows: Theme | Records | % of filtered | Years (first–last year of the records carrying it). The note says that a record can carry several themes, so bars add up to more than n.\n5. **Chart 2: timeline.** Records per year, stacked by `mechanism`, for the current filter; every year from the first to the last appears, so empty years are visible gaps.\n6. **Table of matching records.** Columns: Date | Body | Symbol (linked to `doc_url`, opens in a new tab) | Para. | First line (the first 120 characters, cut at a word, with \"…\"), and the State column when it exists. {{q4}} Keyword matches are highlighted with `<mark>`. Fifty rows at a time with \"Show 50 more\"; the caption gives the rows shown of rows matching. Clicking a row (or pressing Enter on it) expands it: the full `text` verbatim, never shortened or paraphrased; the labels (`themes`, `sdgs` with names, `sdg_targets`, `affected_persons`, `section` when present); the \"Copy citation\" button; and \"Open the UN document\". {{q3}}\n7. **Check this dashboard** panel, always visible below the table (section \"How the app checks itself\").\n8. **Export.** \"Download CSV of the current filter\": the visible columns plus the full text and labels, preceded by comment lines with the country, source, build date, the filters applied and the row count, generated in the browser with a Blob URL. Also \"Copy summary\": a plain-text paragraph with the headline numbers and the ten themes, for pasting into notes.\n9. **Footer.** Data source and licence line, build date, and a \"Credits\" line if any shelf code was used.\n\n## How every number is computed\n\n{{q1.compute}}\n- **Documents** = number of distinct `symbol`. **Years** = minimum and maximum `year`.\n- **Filters.** Mechanism, body, type: exact match on the field. Year: `year` inclusive between the two selects. SDG: `sdgs.includes(goal)` with `goal` a number. Keyword: trimmed, lower-cased; every word must occur as a substring of `text` or `symbol`. The filtered set feeds the tiles, both charts, the table and the export.\n- **Theme counts.** For each record in the filtered set, each value in `themes` counts once. Top ten by count, ties alphabetical. Percentage = count / filtered records, one decimal. Year range = min and max `year` of the filtered records carrying that theme.\n- **Timeline** = records per `year` per `mechanism` in the filtered set, with zero for missing combinations.\n- **Paragraph number** = the first match of `/^(\\d{1,3}(?:\\.\\d{1,3})?)\\.?\\s/` on `text`; the captured group is the number (\"71\" or \"144.43\"); no match means no number.\n{{q2.compute}}\n{{q3.compute}}\n- **First line** = `text` up to 120 characters, cut at the last space before the limit, plus \"…\"; the full text is shown unchanged on expand.\n- Nothing is estimated and no model is called. Every count is a loop over the records in JavaScript.\n\n## How the app checks itself\n\nThe \"Check this dashboard\" panel lists each check as one line: what was compared, the two values, and a pass mark or a red \"check failed\" with the values, never a hidden failure.\n\n- **Record count.** `records.length` against `Number(uhri.count)`.\n- **Partitions.** Counts per `mechanism`, per `body` and per `year` each sum to the record count.\n{{q1.checks}}\n- **Chart against table.** Each bar's value equals the count recomputed by a second loop over the filtered records; the ten rows under the chart show the same values; the largest bar is not larger than the filtered count.\n- **Links.** Every record's `doc_url` starts with \"https://docs.un.org/\" and ends with its `symbol` (compared case-insensitively after decoding); the records that fail are listed.\n- **Paragraph numbers.** Share of records with a number found, per mechanism; UPR is expected at 100%, and a lower figure is shown as a warning, not an error.\n{{q2.checks}}\n- **Duplicates and gaps.** Distinct `id` equals the record count; the number of duplicate `text` values; records with no `themes`, no `sdgs`, no `affected_persons`, each shown as \"not labelled\".\n- **Random-sample label check.** Ten records drawn from the current filter with a seeded generator (mulberry32; the seed is shown in a box, default 1, with \"Draw again\" and \"Draw with this seed\"), each as a card: symbol linked to `doc_url`, paragraph number, the full verbatim text. {{q5}} A line above the cards says: \"This is your judgement of the UN's labels; nothing is sent anywhere.\"\n{{q5.checks}}\n\n## Edge cases and risks\n\n- A filter that matches nothing: tiles show 0, the chart area shows \"No records match\" as text, the table caption says so; no error in the console.\n- Years with no records appear as gaps on the timeline and are absent from the year selects; the from/to selects reject a reversed range by swapping it.\n- `count` is a string; `sdgs` may be empty or missing; `section` is usually empty and is shown only when present; `type` may hold a small \"Other\" group.\n- Theme bars add up to more than the record count; the note under the chart says so, and the percentages are of records, not of labels.\n- A top theme may be a legacy label (in the file examined, the most frequent theme was wrong in every sampled record). The app never removes or renames a UN label; it shows the year range per theme and lets the reader judge a sample.\n{{q2.risks}}\n- Very short or chopped texts (2007 records) are shown as they are; the first-line column may then be the whole text.\n- `date` is the document's date, not the date a recommendation was made or accepted; the header note says \"dated by document\".\n- Keyword search is literal: \"torture\" does not find \"ill-treatment\". The hint under the box says so.\n- Nothing leaves the browser except the clipboard write on \"Copy\"; there is no model call and no network request.\n\n## Design and accessibility\n\n- One column, maximum width 1,200 px, system font stack at 16 px, light background, one accent (#1f6fb2), readable from a projector.\n- Charts follow \"Data visualisation: charts (formatting, labels, bar charts)\" (UK Government Analysis Function): horizontal bars for long labels, ranked by value, a single colour, horizontal text, at most ten light-grey gridlines, no shading, borders or 3D, value labels at the end of each bar, and a table under the chart because a well-structured table can be as powerful as a chart. Each chart has a title that states what is counted and for which filter, and a \"Source\" line under it.\n- Tables follow \"Data visualisation: tables\" (Analysis Function): `<caption>`, `<th scope=\"col\">`, numbers right-aligned with thousands separators, the same precision in a column, the source under the table, no colour as the only signal.\n- Keyboard: expandable rows are buttons with `aria-expanded`; visible focus on every control; the filter count line is `aria-live=\"polite\"`.\n- Citations follow the Dag Hammarskjöld Library's advice: symbol as the key, pinpoint kept, parts stored separately and formatted on copy.\n- Transparency follows OHCHR's \"Human Rights-Based Approach to Data\": method stated at the point of use, breakdown by `affected_persons` available on expand, missing labels shown as missing.\n- Plain language: every \"How this is computed\" note is at most two sentences.\n\n## Out of scope\n\nNo model calls and no summaries of what the UN \"wants\". No comparison with other countries (the file holds one). No follow-up or acceptance status of UPR recommendations (not in the data). No full names of bodies or mandates beyond the `body` label. No regional groups of recommending States. No server, no login, no PDF rendering.\n\n## Sources consulted\n\n- Dag Hammarskjöld Library, Ask DAG: how should I cite a UN document? — https://ask.un.org/faq/401380\n- UK Government Analysis Function, Data visualisation: charts (formatting, labels, bar charts) — https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-charts/\n- UK Government Analysis Function, Data visualisation: tables — https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-tables/\n- OHCHR, A Human Rights-Based Approach to Data (guidance note) — https://www.ohchr.org/sites/default/files/Documents/Issues/HRIndicators/GuidanceNoteonApproachtoData.pdf"
+}
