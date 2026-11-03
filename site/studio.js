@@ -1303,7 +1303,7 @@
   // goes on the stage. What follows is live: changes to the plan, and the build.
   const PLAN_HEAD = 'Build this app. Follow the plan below; where it says nothing, keep it simple.';
   const CHANGE = 'Change the plan: ';
-  const PACE = Math.max(0.2, Number(params.get('planpace')) || 120);   // seconds the notes take; ?planpace=20 for a rehearsal
+  const PACE = Math.max(0.2, Number(params.get('planpace')) || 80);   // seconds the notes take (120 felt slow, 3.11); ?planpace=20 for a rehearsal
   const plannable = (p) => !!(p && p.planning && S.packs[p.id] !== null);
   const defaultOf = (q) => Math.max(0, q.options.findIndex((o) => o.default));
   const plain = (s) => s.replace(/\*\*|`/g, '').replace(/^#{1,6}\s*/gm, '');
