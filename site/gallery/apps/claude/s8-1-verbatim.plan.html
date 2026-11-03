@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plan · Verbatim finder for General Comments · Claude Sonnet 5.5</title>
+<meta name="robots" content="noindex, nofollow"><script src="../../../gate.js"></script>
+<style>
+body { margin: 0; background: #f4f0e8; color: #1d1b18; font: 17px/1.6 Georgia, "Times New Roman", serif; }
+main { max-width: 46em; margin: 0 auto; padding: 28px 20px 60px; }
+.kicker { font: 12px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; color: #5b564c; }
+h1, h2, h3 { font-weight: 400; } h2 { border-top: 1px solid #d9d2c3; padding-top: 18px; margin-top: 32px; }
+code { font: 14px ui-monospace, Menlo, Consolas, monospace; background: #ebe5d8; padding: 1px 4px; }
+table { border-collapse: collapse; } td, th { border-bottom: 1px solid #d9d2c3; padding: 4px 8px; text-align: left; }
+</style></head><body><main>
+<p class="kicker">The plan this app was built from · Claude Sonnet 5.5</p>
+<h2>Goal</h2>
+<p>A search tool for people drafting submissions, reports or briefs who need to find and cite exactly what a treaty body said in a General Comment. Type a search, find the real paragraph, copy a correct citation.</p>
+<h2>The data</h2>
+<p><code>WORKSHOP_DATA.gc</code>, one record per paragraph. Fields used: <code>text</code> (searched and displayed), <code>committee</code>, <code>year</code>, <code>symbol</code>, <code>paragraph</code>, <code>short_title</code>, <code>doc_url</code>. <code>title</code> is used only when <code>short_title</code> is empty. <code>id</code> and <code>cited_articles</code> are not used.</p>
+<h2>What the app shows</h2>
+<ol>
+<li>Title "General Comments search" and one line: source, number of paragraphs, year range, all read from the data.</li>
+<li>Search box with a Search button (Enter also searches) and a one-line help: words are combined with AND unless you write OR; NOT excludes a word; "quotes" find an exact phrase. Example: <code>"best interests" AND child</code>.</li>
+<li>Two filters: committee (every committee in the data, plus "All") and year (from–to). Changing a filter re-runs the search.</li>
+<li>A count line: "N paragraphs match out of M, filters: …".</li>
+<li>A small bar chart: matching paragraphs per committee for the current search, with a "How this is computed" note.</li>
+<li>Results, sorted newest General Comment first. Each card: committee, short title, year, the symbol linked to <code>doc_url</code> (new tab); then the full paragraph, with the search words highlighted; and a "Copy citation" button that copies the symbol and paragraph only, e.g. "CCPR/C/GC/37, para. 12". The button reads "Copied" for two seconds.</li>
+<li>If nothing matches: "No paragraph contains these words" and a tip to try OR or fewer words.</li>
+</ol>
+<h2>Rules for the code</h2>
+<ul>
+<li>The search looks at the paragraph text only. Matching is case-insensitive. A plain word matches a whole word ("right" does not match "rights"); a quoted phrase matches that exact sequence of words. Words separated by spaces are ANDed; OR joins alternatives; NOT before a word or phrase excludes it.</li>
+<li>Filters are applied first, then the search. N, the chart bars and the cards come from the same list, so the bars add up to N.</li>
+<li><code>text</code> is shown character for character; highlighting only wraps the matched words and never changes, trims or summarises them.</li>
+<li>The citation is <code>symbol</code> + ", para. " + <code>paragraph</code>, nothing invented.</li>
+<li>Missing values: no <code>short_title</code> → show <code>title</code>, else the symbol; no <code>year</code> → show "year unknown", included when the year filter is open, excluded by a from–to range; no <code>doc_url</code> → symbol unlinked; empty <code>text</code> → never matches but still counted in M.</li>
+</ul>
+<h2>How we will know it works</h2>
+<ol>
+<li>Search <code>"best interests" AND child</code>: every card highlights both "best interests" and "child"; the number of cards equals N.</li>
+<li>Search <code>torture NOT detention</code>: no card contains the word "detention".</li>
+<li>Choose CRC in the committee filter: the chart shows a single bar whose height equals N.</li>
+<li>Click Copy citation, paste into a text editor: you get the card's own symbol and paragraph, e.g. <code>CRC/C/GC/14, para. 6</code>.</li>
+<li>Click a symbol: the UN document opens in a new tab.</li>
+</ol>
+<h2>Not in this version</h2>
+<ul>
+<li>No brackets for grouping searches, no wildcards, no stemming ("right" and "rights" are different words).</li>
+<li>No export of all results to a file.</li>
+<li>No saved or shared searches.</li>
+</ul>
+</main></body></html>

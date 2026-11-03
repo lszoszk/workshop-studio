@@ -40,7 +40,7 @@
   <h1>Same request, different models</h1>
   <p class="lead">Each model got exactly what the studio sends: the request, the studio's instructions, a description of the data and three sample records. The apps run here on the full data for <span id="country"></span>. Checks are automatic (runs without errors, sends nothing out, uses the data, has the chart, table or buttons the request asked for); how good the app is remains your call.</p>
   <div class="tabs" id="tabs" role="tablist"></div>
-  <div class="prompt"><div class="who">Request</div><div id="promptText"></div></div>
+  <div class="prompt"><div class="who" id="promptWho">Request</div><div id="promptText"></div></div>
   <div class="cards" id="cards"></div>
 </div>
 <script>
@@ -63,7 +63,10 @@
     document.getElementById('tabs').innerHTML = g.prompts.map((p) =>
       `<button role="tab" aria-selected="${p.id === current}" data-id="${p.id}">${esc(p.session)} · ${esc(p.title)}</button>`).join('');
     document.querySelectorAll('#tabs button').forEach((b) => { b.onclick = () => { current = b.dataset.id; history.replaceState(null, '', '?prompt=' + current); render(); }; });
-    document.getElementById('promptText').textContent = g.prompts.find((p) => p.id === current).prompt;
+    // with a planning session the participant asks in a sentence and each model builds from a plan, linked on its card
+    const cur = g.prompts.find((p) => p.id === current);
+    document.getElementById('promptWho').textContent = cur.problem ? 'What the participant asks · each card links the plan its app was built from' : 'Request';
+    document.getElementById('promptText').textContent = cur.problem || cur.prompt;
     const rows = g.results.filter((r) => r.prompt === current);
     document.getElementById('cards').innerHTML = rows.map((r) => {
       const m = g.models[r.model] || { name: r.model };
@@ -82,6 +85,7 @@
           ${r.attempts > 1 ? `<div class="checks ${r.full === r.attempts ? 'ok' : 'bad'}">${r.attempts} attempts: an app came back ${r.returned}×, passed every check ${r.full}×. Shown: the best one.</div>` : ''}
           ${m.note ? `<div class="note">${esc(m.note)}</div>` : ''}
           ${r.app ? `<a class="tool open" href="${view}" target="_blank">Open the app</a>` : '<span class="checks bad">No app returned</span>'}
+          ${r.plan ? `<a class="tool" href="${r.plan}" target="_blank">Read the plan</a>` : ''}
         </div></div>`;
     }).join('');
   }

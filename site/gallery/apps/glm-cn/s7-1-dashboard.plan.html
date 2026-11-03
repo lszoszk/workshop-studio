@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plan · Your country&#x27;s recommendations dashboard · GLM-5.3</title>
+<meta name="robots" content="noindex, nofollow"><script src="../../../gate.js"></script>
+<style>
+body { margin: 0; background: #f4f0e8; color: #1d1b18; font: 17px/1.6 Georgia, "Times New Roman", serif; }
+main { max-width: 46em; margin: 0 auto; padding: 28px 20px 60px; }
+.kicker { font: 12px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; color: #5b564c; }
+h1, h2, h3 { font-weight: 400; } h2 { border-top: 1px solid #d9d2c3; padding-top: 18px; margin-top: 32px; }
+code { font: 14px ui-monospace, Menlo, Consolas, monospace; background: #ebe5d8; padding: 1px 4px; }
+table { border-collapse: collapse; } td, th { border-bottom: 1px solid #d9d2c3; padding: 4px 8px; text-align: left; }
+</style></head><body><main>
+<p class="kicker">The plan this app was built from · GLM-5.3</p>
+<h2>Goal</h2>
+<p>A dashboard for a diplomat, NGO or NHRI staff member to see at a glance what UN human rights mechanisms have said to Kenya: how much, when, on which themes, and to find the exact paragraphs quickly.</p>
+<h2>The data</h2>
+<p>File <code>WORKSHOP_DATA.uhri</code>; the country name is read from its <code>country</code> field, never typed in. Fields used: <code>date</code>, <code>year</code>, <code>body</code>, <code>mechanism</code>, <code>type</code>, <code>symbol</code>, <code>doc_url</code>, <code>text</code>, <code>themes</code>, <code>sdgs</code>, <code>affected_persons</code>, plus <code>sdg_names</code> for the SDG filter labels.</p>
+<h2>What the app shows</h2>
+<ol>
+<li>Title "UN human rights recommendations to [country]", then one line: source, total number of records, earliest–latest year, all read from the file.</li>
+<li>A filter bar: dropdown for mechanism; dropdown for body (treaty body or mandate); two boxes for first and last year; dropdown for SDG (number and name); a keyword box; a "Reset" button. Any change updates everything below at once.</li>
+<li>A line "Showing X of Y records" plus a plain description of the active filters (e.g. "Treaty bodies · 2015–2020 · keyword: torture").</li>
+<li>A horizontal bar chart of the 10 most frequent themes among the matching records, longest bar on top, each labelled with its count. Note below: "A record with several items is counted once for each."</li>
+<li>A table of matching records, newest first: date, body, symbol (linked to the UN document, new tab), first line of the text. The recommending State is not shown as a separate column. Clicking a row expands it to show the full paragraph with its themes and SDGs; clicking again closes it. 100 rows at a time, with "Show more".</li>
+</ol>
+<h2>Rules for the code</h2>
+<ul>
+<li>Total and year range come from counting all records and taking the smallest and largest <code>year</code>.</li>
+<li>A record matches when it passes every active filter; keyword search is case-insensitive on <code>text</code>. Only recommendations and concerns/observations are counted anywhere.</li>
+<li>Chart: for each matching record add one per item in its list; sort by count, keep the top 10, break ties alphabetically.</li>
+<li>Text stays verbatim: the first line is <code>text</code> up to its first line break or 160 characters plus "…"; the expanded view is the full <code>text</code>, unchanged.</li>
+<li>Every row links <code>symbol</code> to <code>doc_url</code>. Missing <code>doc_url</code>: symbol shown unlinked. Missing <code>symbol</code>: "(no symbol)".</li>
+<li>Missing <code>date</code>: "date unknown", sorted last. Missing <code>body</code>: "unknown". Empty <code>themes</code> or <code>sdgs</code>: "none recorded" in the expanded row; such records simply do not appear in the chart.</li>
+<li>No matches: show "No records match these filters" instead of an empty chart.</li>
+</ul>
+<h2>How we will know it works</h2>
+<ol>
+<li>On load, the title names your country and "Showing X of Y" has X equal to Y.</li>
+<li>Choose "Universal Periodic Review": the count, chart and table change together, and no row shows a treaty body like CEDAW or CRC.</li>
+<li>Type a rare word: the count drops and every visible row contains that word when expanded.</li>
+<li>Click a symbol: a docs.un.org page opens in a new tab with the same symbol.</li>
+<li>Click a row: the full paragraph appears word for word, including its paragraph number.</li>
+</ol>
+<h2>Not in this version</h2>
+<ul>
+<li>No comparison with other countries or with the global average.</li>
+<li>No tracking of whether a recommendation was accepted, noted or implemented.</li>
+<li>No AI summaries or translations; every word on screen comes from the file.</li>
+<li>No export to Excel or PDF.</li>
+</ul>
+</main></body></html>
