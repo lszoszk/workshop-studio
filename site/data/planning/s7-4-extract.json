@@ -2,74 +2,74 @@
  "id": "s7-4-extract",
  "title": "Paragraphs out of a PDF",
  "dataset": "pdf_text",
- "problem": "Our office copies paragraphs out of UN PDFs by hand. Can a tool split a General Comment into its numbered paragraphs, and show me where it got things wrong?",
+ "problem": "Our office copies paragraphs out of UN PDFs by hand. Can a tool split a General Comment into its numbered paragraphs and footnotes, and show me where it got things wrong?",
  "facilitator_brief": "The file is the raw text of CESCR General comment No. 27 as a PDF converter produced it, page by page, with a reference (paragraph and footnote counts, first words of each paragraph). The tool must check itself against the reference and make every repair it makes visible.",
  "planner": "Claude Fable 5.1",
  "recorded": "2026-11-02",
- "notes": "The problem, as I read it: an office copies paragraphs out of UN PDFs by hand and wants a tool that does the splitting and, just as important, shows where it went wrong. The facilitator sets the standard: check the result against the reference, and make every repair visible. The data is one document, CESCR General comment No. 27, as 20 pages of raw converter output, plus a reference block with the paragraph count, the footnote count and the first six words of each paragraph.\n\n The overview: 20 records, one per page, two fields, `page` and `text`; the top-level `count` is the string \"20\". The reference says 90 paragraphs, 141 footnotes, adopted 26 September 2025.  Page 1 shows the converter's habits at once. A paragraph number stands alone on its line (\"1.\", a line break, then \"A clean, healthy…\"); a section heading is split into \"I.\", a blank line and \"Introduction\"; footnote references are glued to the word before them (\"waste.2\") or set off by a space (\"”. 3\"); the footnote block at the foot of the page opens with a bare \"1\" on its own line, then the text, while the next footnotes read \"2 Summary for policymakers…\".  Page 2 opens with the header \"E/C.12/GC/27\" and the rest of paragraph 2, so paragraphs cross pages and the pages must be joined before the text is split. Its footnotes held a surprise: footnote 6 reads \"A/42/427, p. 24.\" with no number, and a bare \"6\" turns up at the very end of the page, next to the page number.\n\n Counting: 88 lines are a number and a full stop alone.  Allowing any whitespace after the stop gives 90, the document's count,  and the two extra are paragraphs 23 and 87, whose number and text share a line (\"23. The full realization…\"). A rule for one form alone misses two or finds two.  Bare numbers on a line: 51, of three kinds: the page number in the footer (2 to 20), the first footnote on each page, and displaced footnote numbers like that \"6\". The footer comes in two orders, \"page, GE code\" and \"GE code, page\".  The last page ends with paragraph 90, footnotes 139 to 141 and the footer, nothing after.  Lines that start with a number and a space: 110; one is \"6 November 2025\" on the cover, the rest are footnotes.  No lettered sub-paragraphs \"(a)\": the paragraphs are plain prose, 43 to 254 words each.\n\nI then ran these rules in a short script of my own. Dropping each page's header line, footer lines and footnote block, joining the rest and splitting at the paragraph numbers gives exactly 90 paragraphs, numbered 1 to 90 without a gap, and all 90 first six words match the reference once curly quotes and spacing are normalised. Footnotes: 129 start with their number; the 12 missing numbers (6, 14, 45, 51, 67, 76, 87, 96, 101, 115, 118, 131) are exactly the bare numbers displaced to the page foot, one per page, so 129 + 12 = 141. Inside the paragraphs, all 141 footnote marks can be recovered only with a sequential rule: walk through the text and accept a number when it is the next one expected. A rule based on punctuation alone finds 134 and misses marks after a comma (\"equity, 17 common\"); the sequential rule rejects four real numbers (\"Articles 1 (2) and 25\", \"article 11\", \"arts. 13 and 14\"), all correctly. Two more traps: 23 unlabelled headings such as \"Right to work (art. 6)\" and \"Children\" stand on the line just before a paragraph number and are glued to the end of the previous paragraph unless a rule catches them; and the labelled headings wrap (\"III.\" has a two-line title). Nineteen paragraphs span a page break.\n\nThen the shelf.  A search on PDF cleaning found nothing on the subject; the shelf is about presenting results, not converters.  A search on quality assurance led to the Analysis Function's page on testing code.  Accessible tables: four pages, the Analysis Function's first.  Citing UN documents: the Dag Hammarskjöld Library's answer.  The testing page gave the check panel its shape: tests that tell a story, \"given this data, having run this code, we expect this output\", and a new test for every bug found, which here means a named check for every repair the script makes.  The clear-language page: short sentences, explain a specialist term the first time, \"must\" for a requirement.  The tables page: right-aligned numbers, a title that states the message, the source under the table, no footnotes in data cells.  A search on working with AI assistants brought back the testing page and the Claude Code best practices, whose fifth point is the same lesson: give the machine a check that returns pass or fail.  The Library's page lists what a citation carries, the symbol first and the paragraph as the pinpoint; the citation form became a question.\n\nTrade-offs. The script repairs only the damage I found, names each repair on screen and guesses nothing. The reference is the yardstick, not the truth: the app shows its own count next to the document's and never adjusts a result to match. No model calls; nothing leaves the browser. The five questions are the office's choices, not mine: footnote marks, headings, footnote text, citation form, line breaks.",
+ "notes": "The problem, as I read it: an office copies paragraphs out of UN PDFs by hand and wants a tool that splits a document into its paragraphs and footnotes and, just as important, shows where it went wrong. The facilitator sets the standard: check the result against the reference, and make every repair visible. The data is one document, CESCR General comment No. 27, as 20 pages of raw converter output, plus a reference block with the paragraph count, the footnote count and the first six words of each paragraph.\n\n The overview: 20 records, one per page, two fields, `page` and `text`; the top-level `count` is the string \"20\". The reference says 90 paragraphs, 141 footnotes, adopted 26 September 2025.  Page 1 shows the converter's habits at once. A paragraph number stands alone on its line (\"1.\", a line break, then \"A clean, healthy…\"); a section heading is split into \"I.\", a blank line and \"Introduction\"; footnote references are glued to the word before them (\"waste.2\") or set off by a space (\"”. 3\"); the footnote block at the foot of the page opens with a bare \"1\" on its own line, then the text, while the next footnotes read \"2 Summary for policymakers…\".  Page 2 opens with the header \"E/C.12/GC/27\" and the rest of paragraph 2, so paragraphs cross pages and the pages must be joined before the text is split. Its footnotes held a surprise: footnote 6 reads \"A/42/427, p. 24.\" with no number, and a bare \"6\" turns up at the very end of the page, next to the page number.\n\n Counting: 88 lines are a number and a full stop alone.  Allowing any whitespace after the stop gives 90, the document's count,  and the two extra are paragraphs 23 and 87, whose number and text share a line (\"23. The full realization…\"). A rule for one form alone misses two or finds two.  Bare numbers on a line: 51, of three kinds: the page number in the footer (2 to 20), the first footnote on each page, and displaced footnote numbers like that \"6\". The footer comes in two orders, \"page, GE code\" and \"GE code, page\".  The last page ends with paragraph 90, footnotes 139 to 141 and the footer, nothing after.  Lines that start with a number and a space: 110; one is \"6 November 2025\" on the cover, the rest are footnotes.  No lettered sub-paragraphs \"(a)\": the paragraphs are plain prose, 43 to 254 words each.\n\nI then ran these rules in a short script of my own. Dropping each page's header line, footer lines and footnote block, joining the rest and splitting at the paragraph numbers gives exactly 90 paragraphs, numbered 1 to 90 without a gap, and all 90 first six words match the reference once curly quotes and spacing are normalised. Footnotes: 129 start with their number; the 12 missing numbers (6, 14, 45, 51, 67, 76, 87, 96, 101, 115, 118, 131) are exactly the bare numbers displaced to the page foot, one per page, so 129 + 12 = 141. Inside the paragraphs, all 141 footnote marks can be recovered only with a sequential rule: walk through the text and accept a number when it is the next one expected. A rule based on punctuation alone finds 134 and misses marks after a comma (\"equity, 17 common\"); the sequential rule rejects four real numbers (\"Articles 1 (2) and 25\", \"article 11\", \"arts. 13 and 14\"), all correctly. Two more traps: 23 unlabelled headings such as \"Right to work (art. 6)\" and \"Children\" stand on the line just before a paragraph number and are glued to the end of the previous paragraph unless a rule catches them; and the labelled headings wrap (\"III.\" has a two-line title). Nineteen paragraphs span a page break.\n\nThen the shelf.  A search on PDF cleaning found nothing on the subject; the shelf is about presenting results, not converters.  A search on quality assurance led to the Analysis Function's page on testing code.  Accessible tables: four pages, the Analysis Function's first.  Citing UN documents: the Dag Hammarskjöld Library's answer.  The testing page gave the check panel its shape: tests that tell a story, \"given this data, having run this code, we expect this output\", and a new test for every bug found, which here means a named check for every repair the script makes.  The clear-language page: short sentences, explain a specialist term the first time, \"must\" for a requirement.  The tables page: right-aligned numbers, a title that states the message, the source under the table, no footnotes in data cells.  A search on working with AI assistants brought back the testing page and the Claude Code best practices, whose fifth point is the same lesson: give the machine a check that returns pass or fail.  The Library's page lists what a citation carries, the symbol first and the paragraph as the pinpoint; the citation form became a question.\n\nTrade-offs. The script repairs only the damage I found, names each repair on screen and guesses nothing. The reference is the yardstick, not the truth: the app shows its own count next to the document's and never adjusts a result to match. No model calls; nothing leaves the browser. The five questions are the office's choices, not mine: footnote marks, headings, footnote text, citation form, line breaks.",
  "steps": [
   {
-   "at": 481,
+   "at": 514,
    "kind": "look",
    "label": "Looked at the data: the fields in pdf_text",
    "detail": "20 records, 2 fields"
   },
   {
-   "at": 671,
+   "at": 704,
    "kind": "look",
    "label": "Looked at the data: the raw text in pdf_text, page 1",
    "detail": "raw text of page 1"
   },
   {
-   "at": 1136,
+   "at": 1169,
    "kind": "look",
    "label": "Looked at the data: the raw text in pdf_text, page 2",
    "detail": "raw text of page 2"
   },
   {
-   "at": 1453,
+   "at": 1486,
    "kind": "look",
    "label": "Looked at the data: every match of /^\\d{1,3}\\.$/ in pdf_text",
    "detail": "88 matches of /^\\d{1,3}\\.$/"
   },
   {
-   "at": 1509,
+   "at": 1542,
    "kind": "look",
    "label": "Looked at the data: every match of /^\\d{1,3}\\.\\s\\S/ in pdf_text",
    "detail": "90 matches of /^\\d{1,3}\\.\\s\\S/"
   },
   {
-   "at": 1581,
+   "at": 1614,
    "kind": "look",
    "label": "Looked at the data: every match of /^\\d{1,3}\\. \\S/ in pdf_text",
    "detail": "2 matches of /^\\d{1,3}\\. \\S/"
   },
   {
-   "at": 1743,
+   "at": 1776,
    "kind": "look",
    "label": "Looked at the data: every match of /^\\d{1,3}$/ in pdf_text",
    "detail": "51 matches of /^\\d{1,3}$/"
   },
   {
-   "at": 1977,
+   "at": 2010,
    "kind": "look",
    "label": "Looked at the data: the raw text in pdf_text, page 20",
    "detail": "raw text of page 20"
   },
   {
-   "at": 2068,
+   "at": 2101,
    "kind": "look",
    "label": "Looked at the data: every match of /^\\d{1,3} \\S/ in pdf_text",
    "detail": "110 matches of /^\\d{1,3} \\S/"
   },
   {
-   "at": 2181,
+   "at": 2214,
    "kind": "look",
    "label": "Looked at the data: every match of /^\\([a-z]\\)/ in pdf_text",
    "detail": "0 matches of /^\\([a-z]\\)/"
   },
   {
-   "at": 3525,
+   "at": 3558,
    "kind": "search",
    "label": "Searched the reference shelf: \"PDF text extraction clean paragraphs footnotes page headers converter\"",
    "detail": "5 results",
@@ -82,7 +82,7 @@
    ]
   },
   {
-   "at": 3636,
+   "at": 3669,
    "kind": "search",
    "label": "Searched the reference shelf: \"quality assurance verify output against reference tests checks code\"",
    "detail": "5 results",
@@ -95,7 +95,7 @@
    ]
   },
   {
-   "at": 3720,
+   "at": 3753,
    "kind": "search",
    "label": "Searched the reference shelf: \"accessible table expand row keyboard status messages\"",
    "detail": "5 results",
@@ -108,7 +108,7 @@
    ]
   },
   {
-   "at": 3783,
+   "at": 3816,
    "kind": "search",
    "label": "Searched the reference shelf: \"cite UN document symbol paragraph general comment\"",
    "detail": "5 results",
@@ -121,28 +121,28 @@
    ]
   },
   {
-   "at": 3844,
+   "at": 3877,
    "kind": "read",
    "label": "Read: Quality assurance of code for analysis and research: Testing code",
    "detail": "https://github.com/best-practice-and-impact/qa-of-code-guidance/blob/fa39f2089905fe07c08ae4d66671736a1becd3c5/book/testing_code.md",
    "shelf_id": "uk-af-qa-code-testing"
   },
   {
-   "at": 4085,
+   "at": 4118,
    "kind": "read",
    "label": "Read: GOV.UK content guidance: Clear language (plain English)",
    "detail": "https://guidance.publishing.service.gov.uk/writing-to-gov-uk-standards/writing-guidelines/clear-language/",
    "shelf_id": "govuk-content-guidance-clear-language"
   },
   {
-   "at": 4196,
+   "at": 4229,
    "kind": "read",
    "label": "Read: Data visualisation: tables (layout, headers, titles, HTML markup)",
    "detail": "https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-tables/",
    "shelf_id": "uk-af-tables"
   },
   {
-   "at": 4326,
+   "at": 4359,
    "kind": "search",
    "label": "Searched the reference shelf: \"working with AI assistant verify output do not trust repair visible\"",
    "detail": "5 results",
@@ -155,7 +155,7 @@
    ]
   },
   {
-   "at": 4522,
+   "at": 4555,
    "kind": "read",
    "label": "Read: Dag Hammarskjöld Library, Ask DAG: how should I cite a UN document? (summary)",
    "detail": "https://ask.un.org/faq/401380",

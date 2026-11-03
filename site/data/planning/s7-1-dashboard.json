@@ -2,69 +2,69 @@
  "id": "s7-1-dashboard",
  "title": "Your country's recommendations dashboard",
  "dataset": "uhri",
- "problem": "I need to see what UN human rights mechanisms have told my country, and find the exact paragraphs fast.",
+ "problem": "I need to see what UN human rights mechanisms have told my country, on which themes and when, find the exact paragraphs fast, and know whether I can trust the numbers.",
  "facilitator_brief": "A dashboard on the participant's country's file from the Universal Human Rights Index. It should be trustworthy enough for a diplomat preparing a meeting: every number explained, every paragraph one click from its UN document, and a way to check the UN's own labels on a random sample.",
  "planner": "Claude Fable 5.1",
  "recorded": "2026-11-02",
- "notes": "The problem, as I read it: someone preparing a meeting wants to know what the UN human rights mechanisms have said to their country, how much, about what, and then jump to the exact paragraph in the UN document. The facilitator adds the hard part: every number explained, every paragraph one click from its document, and a way to check the UN's own labels on a random sample.\n\nI used the Kenya file as my working example; each participant has a different country, so the plan says {country} and the app must compute every number from its own file.\n\n The overview: 2,264 records and 15 fields. `symbol`, `doc_url`, `date`, `year`, `body`, `mechanism`, `type` and `text` are filled in every record. Only 31 distinct symbols, so 31 documents, dated 2007 to 2026. `section` is filled in just 450 records; `themes` in 2,249; `sdgs` in 1,816; `affected_persons` in 1,856. One trap for the builder: the top-level `count` is the string \"2264\", not a number.\n\n `body` has 16 values. UPR alone is 1,061 records, almost half; then CESCR 201, CAT 171, CRC 161, CEDAW 155, CERD 133, CCPR 96, CRPD 61. The Special Procedures appear under mandate names (\"IE Albinism\" 60, \"SR Indigenous\" 42, down to \"SR Minorities\" with one record). So the \"treaty body or mandate\" filter is simply `body`, and it needs a count next to each name, or people will pick empty ones.  `type`: 1,791 Recommendations, 471 Concerns/Observations and 2 \"Other\". Whether a committee's concern counts as something the UN \"told\" the country is a judgement, not a programming question; it became my first question.\n\n Themes: 90 distinct labels. The most frequent is \"Reservations\", 691 records, ahead of \"Legal & institutional reform\" at 479. That looked wrong for a country with few treaty reservations.  I then searched for the UPR pattern the schema describes, a State in parentheses at the end of the text: 28 matches, against 1,061 UPR records.  Paragraph numbers: 681 texts begin with a number and a full stop, the treaty-body habit; the others begin mid-paragraph or with a lettered item.  Three sampled \"Reservations\" records, from 2007, 2009 and 2013, are about the Millennium Development Goals, legal aid and redress for torture. None concerns a reservation. The label is an artefact of older index entries, and the reason the facilitator wants a random-sample check: the app cannot know this on its own.  Special Procedures records are often lettered sub-paragraphs, \"(g) Develop a clear legal framework…\", with no paragraph number, so a citation must be able to fall back to the symbol alone.  The UPR sample explained the 28: UPR texts end with a semicolon, not a full stop; the State can be written \"( Slovenia )\" with spaces inside; several States can follow one another, \"(Cabo Verde) (Slovenia) (Togo);\"; and some names nest parentheses, \"(Venezuela (Bolivarian Republic of))\". They also start with a UPR paragraph number such as \"144.43\", which is the number to cite.\n\nThen the shelf.  A search on bar charts led to the UK Government Analysis Function pages and the Chart.js bar chart documentation.  A search on citing UN documents found the Dag Hammarskjöld Library's answer.  A search on quality assurance found the Analysis Function's page on testing code: arrange, act, assert; a visible check panel is the app's test suite, run in front of the user.  Back to the data: 1,370 records end with a closing parenthesis, which includes treaty-body endings such as \"(art. 15).\", so the State extraction must be limited to UPR records or it will report articles as States.  A search on accessible tables returned the A11Y Project checklist, the Analysis Function's tables page and the W3C tutorial.  A search on a human rights-based approach to data found OHCHR's guidance note.\n\n The Library page lists what a citation should carry: symbol, date, pinpoint, URL and access date, and recommends storing the parts and formatting them at the end in the reader's style. That settled the shape of the \"Copy citation\" button, and the style became a question.  The charts page: rank bars by value, use horizontal bars for long category names, a single colour, horizontal text, at most ten light gridlines, and the reminder that a well-structured table can be as powerful as a chart. The theme chart therefore gets a small table under it with the same ten rows and each theme's year range, which is how a legacy label shows itself.  The tables page: right-align numbers, thousands separators, marked-up headers, source under the table, no shading as the only signal.  OHCHR's note: transparency about method, disaggregation where the data supports it (`affected_persons`), and saying plainly when a breakdown is missing; 448 records carry no SDG, and the app must show them as \"not labelled\", not as zero.  Last, the regex I will give the builder: UPR-numbered records that end with a parenthesised group match 1,061 times, every UPR record. The rule holds.\n\nTrade-offs. Four tabs, one question each, so no view offers more than about seven things to click. Two charts on the first tab: the ten themes for the current filter and a timeline by mechanism, because year gaps and UPR cycles are the first thing a reader asks about. The sample check gets its own tab, one click away. No model calls; nothing leaves the browser. The questions are the decisions I should not make for a human rights professional: what counts, whether to extract the recommending State, whose citation style, what to show first, and which labels the sample check should ask them to judge.",
+ "notes": "The problem, as I read it: someone preparing a meeting wants to know what the UN human rights mechanisms have said to their country, how much, about what and when, jump to the exact paragraph in the UN document, and know whether the numbers can be trusted. The facilitator adds the hard part: every number explained, every paragraph one click from its document, and a way to check the UN's own labels on a random sample.\n\nI used the Kenya file as my working example; each participant has a different country, so the plan says {country} and the app must compute every number from its own file.\n\n The overview: 2,264 records and 15 fields. `symbol`, `doc_url`, `date`, `year`, `body`, `mechanism`, `type` and `text` are filled in every record. Only 31 distinct symbols, so 31 documents, dated 2007 to 2026. `section` is filled in just 450 records; `themes` in 2,249; `sdgs` in 1,816; `affected_persons` in 1,856. One trap for the builder: the top-level `count` is the string \"2264\", not a number.\n\n `body` has 16 values. UPR alone is 1,061 records, almost half; then CESCR 201, CAT 171, CRC 161, CEDAW 155, CERD 133, CCPR 96, CRPD 61. The Special Procedures appear under mandate names (\"IE Albinism\" 60, \"SR Indigenous\" 42, down to \"SR Minorities\" with one record). So the \"treaty body or mandate\" filter is simply `body`, and it needs a count next to each name, or people will pick empty ones.  `type`: 1,791 Recommendations, 471 Concerns/Observations and 2 \"Other\". Whether a committee's concern counts as something the UN \"told\" the country is a judgement, not a programming question; it became my first question.\n\n Themes: 90 distinct labels. The most frequent is \"Reservations\", 691 records, ahead of \"Legal & institutional reform\" at 479. That looked wrong for a country with few treaty reservations.  I then searched for the UPR pattern the schema describes, a State in parentheses at the end of the text: 28 matches, against 1,061 UPR records.  Paragraph numbers: 681 texts begin with a number and a full stop, the treaty-body habit; the others begin mid-paragraph or with a lettered item.  Three sampled \"Reservations\" records, from 2007, 2009 and 2013, are about the Millennium Development Goals, legal aid and redress for torture. None concerns a reservation. The label is an artefact of older index entries, and the reason the facilitator wants a random-sample check: the app cannot know this on its own.  Special Procedures records are often lettered sub-paragraphs, \"(g) Develop a clear legal framework…\", with no paragraph number, so a citation must be able to fall back to the symbol alone.  The UPR sample explained the 28: UPR texts end with a semicolon, not a full stop; the State can be written \"( Slovenia )\" with spaces inside; several States can follow one another, \"(Cabo Verde) (Slovenia) (Togo);\"; and some names nest parentheses, \"(Venezuela (Bolivarian Republic of))\". They also start with a UPR paragraph number such as \"144.43\", which is the number to cite.\n\nThen the shelf.  A search on bar charts led to the UK Government Analysis Function pages and the Chart.js bar chart documentation.  A search on citing UN documents found the Dag Hammarskjöld Library's answer.  A search on quality assurance found the Analysis Function's page on testing code: arrange, act, assert; a visible check panel is the app's test suite, run in front of the user.  Back to the data: 1,370 records end with a closing parenthesis, which includes treaty-body endings such as \"(art. 15).\", so the State extraction must be limited to UPR records or it will report articles as States.  A search on accessible tables returned the A11Y Project checklist, the Analysis Function's tables page and the W3C tutorial.  A search on a human rights-based approach to data found OHCHR's guidance note.\n\n The Library page lists what a citation should carry: symbol, date, pinpoint, URL and access date, and recommends storing the parts and formatting them at the end in the reader's style. That settled the shape of the \"Copy citation\" button, and the style became a question.  The charts page: rank bars by value, use horizontal bars for long category names, a single colour, horizontal text, at most ten light gridlines, and the reminder that a well-structured table can be as powerful as a chart. The theme chart therefore gets a small table under it with the same ten rows and each theme's year range, which is how a legacy label shows itself.  The tables page: right-align numbers, thousands separators, marked-up headers, source under the table, no shading as the only signal.  OHCHR's note: transparency about method, disaggregation where the data supports it (`affected_persons`), and saying plainly when a breakdown is missing; 448 records carry no SDG, and the app must show them as \"not labelled\", not as zero.  Last, the regex I will give the builder: UPR-numbered records that end with a parenthesised group match 1,061 times, every UPR record. The rule holds.\n\nTrade-offs. Four tabs, one question each, so no view offers more than about seven things to click. Two charts on the first tab: the ten themes for the current filter and a timeline by mechanism, because year gaps and UPR cycles are the first thing a reader asks about. The sample check gets its own tab, one click away. No model calls; nothing leaves the browser. The questions are the decisions I should not make for a human rights professional: what counts, whether to extract the recommending State, whose citation style, what to show first, and which labels the sample check should ask them to judge.",
  "steps": [
   {
-   "at": 549,
+   "at": 594,
    "kind": "look",
    "label": "Looked at the data: {country}, {count} records, {years}",
    "detail": "UN recommendations and observations",
    "live": "uhri_overview"
   },
   {
-   "at": 951,
+   "at": 996,
    "kind": "look",
    "label": "Looked at the data: the values of body in uhri",
    "detail": "16 distinct values of body"
   },
   {
-   "at": 1348,
+   "at": 1393,
    "kind": "look",
    "label": "Looked at the data: the values of type in uhri",
    "detail": "3 distinct values of type"
   },
   {
-   "at": 1571,
+   "at": 1616,
    "kind": "look",
    "label": "Looked at the data: the values of themes in uhri",
    "detail": "90 distinct values of themes"
   },
   {
-   "at": 1760,
+   "at": 1805,
    "kind": "look",
    "label": "Looked at the data: every match of /\\(([A-Z][^()]{2,60})\\)\\.?\\s*$/ in uhri",
    "detail": "28 matches of /\\(([A-Z][^()]{2,60})\\)\\.?\\s*$/"
   },
   {
-   "at": 1905,
+   "at": 1950,
    "kind": "look",
    "label": "Looked at the data: every match of /^\\d{1,3}\\.\\s/ in uhri",
    "detail": "681 matches of /^\\d{1,3}\\.\\s/"
   },
   {
-   "at": 2051,
+   "at": 2096,
    "kind": "look",
    "label": "Looked at the data: sample records in uhri",
    "detail": "3 sample records where themes=Reservations"
   },
   {
-   "at": 2370,
+   "at": 2415,
    "kind": "look",
    "label": "Looked at the data: sample records in uhri",
    "detail": "2 sample records where mechanism=Special Procedures"
   },
   {
-   "at": 2560,
+   "at": 2605,
    "kind": "look",
    "label": "Looked at the data: sample records in uhri",
    "detail": "3 sample records where mechanism=Universal Periodic Review"
   },
   {
-   "at": 2958,
+   "at": 3003,
    "kind": "search",
    "label": "Searched the reference shelf: \"accessible bar chart colours labels sorted horizontal\"",
    "detail": "5 results",
@@ -77,7 +77,7 @@
    ]
   },
   {
-   "at": 3073,
+   "at": 3118,
    "kind": "search",
    "label": "Searched the reference shelf: \"cite UN document symbol paragraph concluding observations UPR\"",
    "detail": "5 results",
@@ -90,7 +90,7 @@
    ]
   },
   {
-   "at": 3151,
+   "at": 3196,
    "kind": "search",
    "label": "Searched the reference shelf: \"quality assurance checks verify numbers random sample code\"",
    "detail": "5 results",
@@ -103,13 +103,13 @@
    ]
   },
   {
-   "at": 3329,
+   "at": 3374,
    "kind": "look",
    "label": "Looked at the data: every match of /\\)\\s*[;.]?\\s*$/ in uhri",
    "detail": "1,370 matches of /\\)\\s*[;.]?\\s*$/"
   },
   {
-   "at": 3544,
+   "at": 3589,
    "kind": "search",
    "label": "Searched the reference shelf: \"data table sortable headers expand row keyboard focus accessible\"",
    "detail": "5 results",
@@ -122,7 +122,7 @@
    ]
   },
   {
-   "at": 3670,
+   "at": 3715,
    "kind": "search",
    "label": "Searched the reference shelf: \"human rights based approach to data disaggregation transparency participation\"",
    "detail": "3 results",
@@ -133,35 +133,35 @@
    ]
   },
   {
-   "at": 3751,
+   "at": 3796,
    "kind": "read",
    "label": "Read: Dag Hammarskjöld Library, Ask DAG: how should I cite a UN document? (summary)",
    "detail": "https://ask.un.org/faq/401380",
    "shelf_id": "dhl-how-to-cite-a-un-document"
   },
   {
-   "at": 4024,
+   "at": 4069,
    "kind": "read",
    "label": "Read: Data visualisation: charts (formatting, labels, bar charts)",
    "detail": "https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-charts/",
    "shelf_id": "uk-af-charts-formatting-and-bar-charts"
   },
   {
-   "at": 4395,
+   "at": 4440,
    "kind": "read",
    "label": "Read: Data visualisation: tables (layout, headers, titles, HTML markup)",
    "detail": "https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-tables/",
    "shelf_id": "uk-af-tables"
   },
   {
-   "at": 4530,
+   "at": 4575,
    "kind": "read",
    "label": "Read: OHCHR: A Human Rights-Based Approach to Data, guidance note on data collection and disaggregation (summary)",
    "detail": "https://www.ohchr.org/sites/default/files/Documents/Issues/HRIndicators/GuidanceNoteonApproachtoData.pdf",
    "shelf_id": "ohchr-human-rights-based-approach-to-data"
   },
   {
-   "at": 4769,
+   "at": 4814,
    "kind": "look",
    "label": "Looked at the data: every match of /^\\d{1,3}\\.\\d{1,3}\\.?\\s.*\\)\\s*[;.]?\\s*$/ in uhri",
    "detail": "1,061 matches of /^\\d{1,3}\\.\\d{1,3}\\.?\\s.*\\)\\s*[;.]?\\s*$/"

@@ -2,68 +2,68 @@
  "id": "s8-5-wiki",
  "title": "A research wiki on neurotechnology and justice",
  "dataset": "wiki",
- "problem": "Our team keeps losing track of what each report says about neurotechnology in the justice system. Build us a research wiki we can trust and keep up to date.",
+ "problem": "Our team keeps losing track of what each report says about neurotechnology in the justice system. Build us a research wiki we can ask questions of, add new reports to, and trust: every quote checked against its source.",
  "facilitator_brief": "The wiki is already compiled from nine sources (WORKSHOP_DATA.wiki), following Karpathy's LLM-wiki pattern as kept in a book project: source, concept, entity and question pages, verified pins that open the PDF page, registers and contested claims. The app is the team's workspace for it: read and navigate, Ask the wiki and file good answers back, Ingest the waiting source A/HRC/57/61 with a human approving each change, and Lint. The model drafts; the code verifies every quotation.",
  "planner": "Claude Fable 5.1",
  "recorded": "2026-11-03",
- "notes": "The problem as I read it: a team reads the same ten documents on neurotechnology in the justice system and keeps losing what each one says. The facilitator's brief turns that into a division of labour that already exists in the data: a wiki written by models from nine documents, where the model drafts and files, the code checks every quotation against the library, and a person approves each change. The app is the workspace around that wiki, so I began with the wiki itself.\n\n The wiki: 40 pages, each with `slug`, `type`, `title`, `frontmatter` and `body`, and four markdown documents at the top level: the schema (1,972 words), the index (1,065 words), the log (738) and the tensions register (721).  The library: ten documents. `symbol` is filled for 5 of 10 (the NHRI report, the submission and the two articles have none) and `paragraph` is set only in the UN reports and the General Comments, so a citation reads \"para. 41\" for half the library and \"p. 3471\" or \"p. e773\" for the rest. `status` is \"ingested\" for nine and \"inbox\" for A/HRC/57/61.\n\n A source page (AHRC 2025): full cite, register with a warning never to cite it as (b), a one-liner, key takeaways with a pin on every sentence, 28 links in the frontmatter.  A concept page (self-incrimination) walks the registers from the top: (a) treaty text with a plain link, because the ICCPR is not in the library, then (b), (c) and down.  An entity page (the UNESCO Recommendation) follows one thing through four documents by date, and already links to [[a-hrc-57-61]]: the inbox document has a page. It is an entity stub, `status` \"stub\", with 11 pins all to other documents and a list of ten things the ingest should check. 16 pages link to it.\n\n The contested blocks: six, each on a concept page, with `claim:`, `verdict:`, `note:` and position lines (sign, register, pin, gloss, page); the verdicts are three leans-contest, two contested, one leans-support.  Pins: 707, exactly the index's number, all marked ✓. I then ran the schema's verification rule in a script of my own. 625 quotes sit whole in one passage of the named PDF page; 82 contain \"…\" and join fragments of one passage, so a plain substring check would fail 82 of 707. With the fragments matched in order inside one passage, capitals kept, curly quotes straightened, dashes made hyphens and a hyphen followed by a space removed, all 707 verify, and every label's \"para.\" or \"p.\" matches a passage on that page. Pins per document run from 227 (A/81/351) to 17 (Prainsack); none to A/HRC/57/61.  The inbox document: 100 passages on PDF pages 2 to 20, 61,737 characters, paragraphs 1 to 84 with sub-paragraphs as separate passages (\"78 (a)\"); the passage labelled \"5 (a)\" carries (b) and (c) inside its text, and `section` is broken in two places (\"risks\", and a sentence fragment) where a heading crossed a page. 13 passages mention justice, courts, police or prisons; 29 once evidence, torture and the recommendations are added. The report is about all human rights; the wiki is about one setting.  A question page: short answer, reasoning with pins, what the library cannot answer, related pages.\n\nMy own counts, for the lint: no dangling link, no orphan, `sources` equals the pinned documents on every page; frontmatter `links` and body links differ on 5 entries. Bodies run from 3,980 to 23,216 characters, 347,911 in all, roughly 87,000 tokens: an Ask cannot send the wiki, so the index is the entry, as the schema says. The bodies use headings, bullets, numbered lists, plain links and pins, no tables or images, so a small renderer is enough.\n\nOn the shelf, five searches.  The LLM-wiki pattern.  The author's own schema.  Human review of AI-generated changes.  Accessible status messages and focus.  Citing UN documents, which I did not read further: the wiki's schema already fixes the citation form of every pin.  Karpathy's summary gives the frame: raw sources are never edited, the index is read first, the log is append-only, ingest one source at a time and stay involved.  The author's schema adds what the wiki already follows: the direct-link rule, ✓ and ⚠, registers never blurred, a contested block whose authored verdict leads the bar, a lint for orphans, dangling links and unverified pins.  The quality-assurance guidance on generative AI gives the two rules the app enforces: never use what a model generated without reviewing it, and treat the model's input as a public website, hence a running count of what has left the browser.  The A11Y checklist: visible focus, unique button labels, labelled inputs, a 4.5:1 contrast, captions on tables.\n\nThe trade-offs are cost and size. A `studio.ask` answer is capped at about 8,000 tokens and each call costs money. The source page needs about 900 words and the touched pages, five to fifteen by the schema, about 300 words each, so the ingest runs in steps: takeaways from the passages, then the source page, then one call per touched page, each verified by the code before a person sees it. 100 passages exceed the 25-per-call rule, hence batches; what to send is a human decision (q1), as are the grain of approval (q2), what to do with a quotation the code cannot find (q3), whether Ask also sends library passages (q4) and whether an answer separates the law from the commentary (q5). The page has no storage, so changes live in memory with a download button, and the model is never called on load.",
+ "notes": "The problem as I read it: a team reads the same ten documents on neurotechnology in the justice system, keeps losing what each one says, and wants a wiki it can question, extend with new reports and trust quotation by quotation. The facilitator's brief turns that into a division of labour that already exists in the data: a wiki written by models from nine documents, where the model drafts and files, the code checks every quotation against the library, and a person approves each change. The app is the workspace around that wiki, so I began with the wiki itself.\n\n The wiki: 40 pages, each with `slug`, `type`, `title`, `frontmatter` and `body`, and four markdown documents at the top level: the schema (1,972 words), the index (1,065 words), the log (738) and the tensions register (721).  The library: ten documents. `symbol` is filled for 5 of 10 (the NHRI report, the submission and the two articles have none) and `paragraph` is set only in the UN reports and the General Comments, so a citation reads \"para. 41\" for half the library and \"p. 3471\" or \"p. e773\" for the rest. `status` is \"ingested\" for nine and \"inbox\" for A/HRC/57/61.\n\n A source page (AHRC 2025): full cite, register with a warning never to cite it as (b), a one-liner, key takeaways with a pin on every sentence, 28 links in the frontmatter.  A concept page (self-incrimination) walks the registers from the top: (a) treaty text with a plain link, because the ICCPR is not in the library, then (b), (c) and down.  An entity page (the UNESCO Recommendation) follows one thing through four documents by date, and already links to [[a-hrc-57-61]]: the inbox document has a page. It is an entity stub, `status` \"stub\", with 11 pins all to other documents and a list of ten things the ingest should check. 16 pages link to it.\n\n The contested blocks: six, each on a concept page, with `claim:`, `verdict:`, `note:` and position lines (sign, register, pin, gloss, page); the verdicts are three leans-contest, two contested, one leans-support.  Pins: 707, exactly the index's number, all marked ✓. I then ran the schema's verification rule in a script of my own. 625 quotes sit whole in one passage of the named PDF page; 82 contain \"…\" and join fragments of one passage, so a plain substring check would fail 82 of 707. With the fragments matched in order inside one passage, capitals kept, curly quotes straightened, dashes made hyphens and a hyphen followed by a space removed, all 707 verify, and every label's \"para.\" or \"p.\" matches a passage on that page. Pins per document run from 227 (A/81/351) to 17 (Prainsack); none to A/HRC/57/61.  The inbox document: 100 passages on PDF pages 2 to 20, 61,737 characters, paragraphs 1 to 84 with sub-paragraphs as separate passages (\"78 (a)\"); the passage labelled \"5 (a)\" carries (b) and (c) inside its text, and `section` is broken in two places (\"risks\", and a sentence fragment) where a heading crossed a page. 13 passages mention justice, courts, police or prisons; 29 once evidence, torture and the recommendations are added. The report is about all human rights; the wiki is about one setting.  A question page: short answer, reasoning with pins, what the library cannot answer, related pages.\n\nMy own counts, for the lint: no dangling link, no orphan, `sources` equals the pinned documents on every page; frontmatter `links` and body links differ on 5 entries. Bodies run from 3,980 to 23,216 characters, 347,911 in all, roughly 87,000 tokens: an Ask cannot send the wiki, so the index is the entry, as the schema says. The bodies use headings, bullets, numbered lists, plain links and pins, no tables or images, so a small renderer is enough.\n\nOn the shelf, five searches.  The LLM-wiki pattern.  The author's own schema.  Human review of AI-generated changes.  Accessible status messages and focus.  Citing UN documents, which I did not read further: the wiki's schema already fixes the citation form of every pin.  Karpathy's summary gives the frame: raw sources are never edited, the index is read first, the log is append-only, ingest one source at a time and stay involved.  The author's schema adds what the wiki already follows: the direct-link rule, ✓ and ⚠, registers never blurred, a contested block whose authored verdict leads the bar, a lint for orphans, dangling links and unverified pins.  The quality-assurance guidance on generative AI gives the two rules the app enforces: never use what a model generated without reviewing it, and treat the model's input as a public website, hence a running count of what has left the browser.  The A11Y checklist: visible focus, unique button labels, labelled inputs, a 4.5:1 contrast, captions on tables.\n\nThe trade-offs are cost and size. A `studio.ask` answer is capped at about 8,000 tokens and each call costs money. The source page needs about 900 words and the touched pages, five to fifteen by the schema, about 300 words each, so the ingest runs in steps: takeaways from the passages, then the source page, then one call per touched page, each verified by the code before a person sees it. 100 passages exceed the 25-per-call rule, hence batches; what to send is a human decision (q1), as are the grain of approval (q2), what to do with a quotation the code cannot find (q3), whether Ask also sends library passages (q4) and whether an answer separates the law from the commentary (q5). The page has no storage, so changes live in memory with a download button, and the model is never called on load.",
  "steps": [
   {
-   "at": 479,
+   "at": 568,
    "kind": "look",
    "label": "Looked at the data: the fields in wiki",
    "detail": "40 records, 5 fields"
   },
   {
-   "at": 705,
+   "at": 794,
    "kind": "look",
    "label": "Looked at the data: the fields in library",
    "detail": "10 records, 15 fields"
   },
   {
-   "at": 1057,
+   "at": 1146,
    "kind": "look",
    "label": "Looked at the data: sample records in wiki",
    "detail": "1 sample records where type=source"
   },
   {
-   "at": 1231,
+   "at": 1320,
    "kind": "look",
    "label": "Looked at the data: sample records in wiki",
    "detail": "1 sample records where type=concept"
   },
   {
-   "at": 1402,
+   "at": 1491,
    "kind": "look",
    "label": "Looked at the data: sample records in wiki",
    "detail": "1 sample records where type=entity"
   },
   {
-   "at": 1712,
+   "at": 1801,
    "kind": "look",
    "label": "Looked at the data: every match of /^(claim|verdict|[+~-] [a-f] ):?/ in wiki",
    "detail": "43 matches of /^(claim|verdict|[+~-] [a-f] ):?/"
   },
   {
-   "at": 1926,
+   "at": 2015,
    "kind": "look",
    "label": "Looked at the data: every match of /\\]\\(pin:[^#\\s)]+#p\\d+(?: \"[^\"]*\")?\\) ?(✓|⚠)/ in wiki",
    "detail": "707 matches of /\\]\\(pin:[^#\\s)]+#p\\d+(?: \"[^\"]*\")?\\) ?(✓|⚠)/"
   },
   {
-   "at": 2527,
+   "at": 2616,
    "kind": "look",
    "label": "Looked at the data: the raw text in library (A/HRC/57/61)",
    "detail": "A/HRC/57/61: 100 passages"
   },
   {
-   "at": 3031,
+   "at": 3120,
    "kind": "look",
    "label": "Looked at the data: sample records in wiki",
    "detail": "1 sample records where type=question"
   },
   {
-   "at": 3612,
+   "at": 3701,
    "kind": "search",
    "label": "Searched the reference shelf: \"LLM wiki pattern ingest lint index log\"",
    "detail": "5 results",
@@ -76,7 +76,7 @@
    ]
   },
   {
-   "at": 3635,
+   "at": 3724,
    "kind": "search",
    "label": "Searched the reference shelf: \"wiki schema pins verified quote registers contested\"",
    "detail": "5 results",
@@ -89,7 +89,7 @@
    ]
   },
   {
-   "at": 3661,
+   "at": 3750,
    "kind": "search",
    "label": "Searched the reference shelf: \"human review approve AI generated changes quality assurance\"",
    "detail": "5 results",
@@ -102,7 +102,7 @@
    ]
   },
   {
-   "at": 3700,
+   "at": 3789,
    "kind": "search",
    "label": "Searched the reference shelf: \"status messages focus dialog keyboard accessible\"",
    "detail": "5 results",
@@ -115,7 +115,7 @@
    ]
   },
   {
-   "at": 3739,
+   "at": 3828,
    "kind": "search",
    "label": "Searched the reference shelf: \"cite UN document symbol paragraph\"",
    "detail": "5 results",
@@ -128,28 +128,28 @@
    ]
   },
   {
-   "at": 3855,
+   "at": 3944,
    "kind": "read",
    "label": "Read: Andrej Karpathy: \"LLM Wiki\", a pattern for LLM-maintained knowledge bases (summary)",
    "detail": "https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f",
    "shelf_id": "karpathy-llm-wiki-gist"
   },
   {
-   "at": 4018,
+   "at": 4107,
    "kind": "read",
    "label": "Read: Own work: a schema for an LLM-maintained research wiki (page types, frontmatter, direct links, pin verification, registers, contested claims)",
    "detail": "n/a",
    "shelf_id": "own-llm-wiki-schema-method"
   },
   {
-   "at": 4243,
+   "at": 4332,
    "kind": "read",
    "label": "Read: Quality assurance of code for analysis and research: Generative AI and \"vibe coding\" (golden rules, benefits, risks)",
    "detail": "https://github.com/best-practice-and-impact/qa-of-code-guidance/blob/fa39f2089905fe07c08ae4d66671736a1becd3c5/book/generative_ai.md",
    "shelf_id": "uk-af-qa-code-generative-ai"
   },
   {
-   "at": 4486,
+   "at": 4575,
    "kind": "read",
    "label": "Read: The A11Y Project checklist (content, keyboard, images, tables, colour contrast, forms)",
    "detail": "https://github.com/a11yproject/a11yproject.com/blob/090a026713ea81676a03e9b0381a10850d7c955f/src/_data/checklists.json",

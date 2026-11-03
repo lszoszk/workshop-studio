@@ -2,68 +2,68 @@
  "id": "s8-1-verbatim",
  "title": "Verbatim finder for General Comments",
  "dataset": "gc",
- "problem": "When I draft a submission I need the exact words of a General Comment and a correct citation. Help me find them.",
+ "problem": "When I draft a submission I need the exact words of General Comments on my topic, a correct citation, and a place to collect the passages I want. Help me find them.",
  "facilitator_brief": "A search tool over every General Comment paragraph of the treaty bodies: it retrieves, it never generates. Boolean search and exact phrases, citations ready to paste, and a way to collect quotations for a draft.",
  "planner": "Claude Fable 5.1",
  "recorded": "2026-11-03",
- "notes": "The problem as I read it: someone drafting a submission needs the exact words of a General Comment and a citation a reader can check. The facilitator's line is the design rule: the tool retrieves and never generates. The data is `WORKSHOP_DATA.gc`, every paragraph of the treaty bodies' General Comments and General Recommendations.\n\n The overview: 7,304 records, ten fields, all filled except `cited_articles` (2,398 of 7,304). 159 distinct `symbol`s but 188 distinct `title`s and 139 `doc_url`s, so a symbol is not a document; `paragraph` runs from 0 to 135; `year` from 1972 to 2026; the top-level `count` is the string \"7304\".  Ten committees, from CRC with 2,091 paragraphs to CED with 56; \"CAT-OP\" is the Subcommittee on Prevention of Torture, 59 paragraphs.  Three random paragraphs showed the text's habits: curly quotes (“actions”), and a footnote mark written as [[fn:13]] in the middle of a sentence, so the phrase \"Education For All. By virtue\" does not exist as a string in the data.  Paragraph 0: 33 records, all early CEDAW and CERD General Recommendations published inside annual reports (A/57/18, A/46/38). They are preambles (\"The Committee…, Recalling…\"), one with the PDF's line breaks kept. \"A/46/38, para. 0\" would be wrong twice over: a preamble has no number, and A/46/38 holds three General Recommendations.\n\n Footnote marks: 3,238 in 1,857 paragraphs.  Quotation marks: 7,706 occurrences, and my own count split them: 3,169 curly double quotes against 82 straight, 2,938 curly apostrophes against 78 straight. A query typed as State's misses State’s unless the app treats the two as one.  Lettered sub-paragraphs at the start of a line: 160 matches, most inside one paragraph after a line break; 22 records are themselves a sub-paragraph (\"(a) To take note of the situation;\"), numbered 1, 2, 3 by the file although the document letters them.  Line breaks inside the text: 299, in 40 paragraphs.  The symbols: the longest documents are CRC/C/GC/12 with 135 paragraphs and CRC/C/GC/25 with 125; three joint General Comments carry two symbols joined by an en dash (\"CMW/C/GC/7–CERD/C/GC/38\") but one `committee`.\n\nI then counted a few things in a script of my own. 4,258 of the 7,304 texts begin with their own paragraph number (\"12. The Committee…\"), 3,046 do not; in five the number differs from `paragraph`, three of them in CCPR General Comment 23, whose paragraphs are numbered 3.1, 3.2 in the original. 28 symbols are annual reports and 14 symbols hold more than one General Comment (A/48/18 holds seven). Two pinpoints are duplicated (CEDAW/C/GC/27, para. 9, and the joint GR 31/GC 18, para. 31). 208 paragraphs end with a colon: the list that follows is in the next records. Paragraphs run from 4 to 1,287 words. En dashes 248, non-breaking spaces 107, one soft hyphen. The test query from the checks, \"best interests\" AND child, matches 279 paragraphs once marks and quotes are normalised, 246 of them CRC.\n\nThen the shelf.  Citing: the Dag Hammarskjöld Library's answer and its guide to document symbols.  Search and highlighting brought Wikipedia's help page on search operators, MDN on regular expressions and the keyboard pages.  Charts: the Analysis Function's pages and Chart.js's note on canvas accessibility.  Retrieval: the Claude citations cookbook and the Analysis Function's page on generative AI, which calls hallucination a feature of the method, not a failure; my answer is to call no model at all.  The Library lists the parts of a citation and says styles differ in order and punctuation, so the app stores the parts and formats them on copy; the form became a question.  Wikipedia's conventions are what most people already know: double quotes for a phrase, a hyphen for exclusion, capital OR, a star for word endings. I adopt them, but the help text is the app's own wording, since that page is share-alike.  Chart.js: a canvas is invisible to a screen reader unless it has role=\"img\" and a label, or fallback content; the chart gets both and a table.  The charts page: horizontal bars for long names, rank by value, gaps narrower than bars, never a broken axis.\n\nTrade-offs. Matching runs on a normalised copy of each text; display and copying use the stored text. That is the only way an exact phrase can cross a footnote mark and still be shown verbatim. Whole words, not substrings: \"child\" does not match \"children\" unless typed child*. The leading \"12.\" is kept on screen, because it is in the data, and dropped from the copied quotation, because the citation carries the number; the check panel says when the two numbers disagree. Nothing leaves the browser. The five questions are the drafter's calls: citation form, footnote marks, strictness of matching, order of results, and how joint General Comments count.",
+ "notes": "The problem as I read it: someone drafting a submission needs the exact words of General Comments on a topic, a citation a reader can check, and somewhere to collect the passages they will use. The facilitator's line is the design rule: the tool retrieves and never generates. The data is `WORKSHOP_DATA.gc`, every paragraph of the treaty bodies' General Comments and General Recommendations.\n\n The overview: 7,304 records, ten fields, all filled except `cited_articles` (2,398 of 7,304). 159 distinct `symbol`s but 188 distinct `title`s and 139 `doc_url`s, so a symbol is not a document; `paragraph` runs from 0 to 135; `year` from 1972 to 2026; the top-level `count` is the string \"7304\".  Ten committees, from CRC with 2,091 paragraphs to CED with 56; \"CAT-OP\" is the Subcommittee on Prevention of Torture, 59 paragraphs.  Three random paragraphs showed the text's habits: curly quotes (“actions”), and a footnote mark written as [[fn:13]] in the middle of a sentence, so the phrase \"Education For All. By virtue\" does not exist as a string in the data.  Paragraph 0: 33 records, all early CEDAW and CERD General Recommendations published inside annual reports (A/57/18, A/46/38). They are preambles (\"The Committee…, Recalling…\"), one with the PDF's line breaks kept. \"A/46/38, para. 0\" would be wrong twice over: a preamble has no number, and A/46/38 holds three General Recommendations.\n\n Footnote marks: 3,238 in 1,857 paragraphs.  Quotation marks: 7,706 occurrences, and my own count split them: 3,169 curly double quotes against 82 straight, 2,938 curly apostrophes against 78 straight. A query typed as State's misses State’s unless the app treats the two as one.  Lettered sub-paragraphs at the start of a line: 160 matches, most inside one paragraph after a line break; 22 records are themselves a sub-paragraph (\"(a) To take note of the situation;\"), numbered 1, 2, 3 by the file although the document letters them.  Line breaks inside the text: 299, in 40 paragraphs.  The symbols: the longest documents are CRC/C/GC/12 with 135 paragraphs and CRC/C/GC/25 with 125; three joint General Comments carry two symbols joined by an en dash (\"CMW/C/GC/7–CERD/C/GC/38\") but one `committee`.\n\nI then counted a few things in a script of my own. 4,258 of the 7,304 texts begin with their own paragraph number (\"12. The Committee…\"), 3,046 do not; in five the number differs from `paragraph`, three of them in CCPR General Comment 23, whose paragraphs are numbered 3.1, 3.2 in the original. 28 symbols are annual reports and 14 symbols hold more than one General Comment (A/48/18 holds seven). Two pinpoints are duplicated (CEDAW/C/GC/27, para. 9, and the joint GR 31/GC 18, para. 31). 208 paragraphs end with a colon: the list that follows is in the next records. Paragraphs run from 4 to 1,287 words. En dashes 248, non-breaking spaces 107, one soft hyphen. The test query from the checks, \"best interests\" AND child, matches 279 paragraphs once marks and quotes are normalised, 246 of them CRC.\n\nThen the shelf.  Citing: the Dag Hammarskjöld Library's answer and its guide to document symbols.  Search and highlighting brought Wikipedia's help page on search operators, MDN on regular expressions and the keyboard pages.  Charts: the Analysis Function's pages and Chart.js's note on canvas accessibility.  Retrieval: the Claude citations cookbook and the Analysis Function's page on generative AI, which calls hallucination a feature of the method, not a failure; my answer is to call no model at all.  The Library lists the parts of a citation and says styles differ in order and punctuation, so the app stores the parts and formats them on copy; the form became a question.  Wikipedia's conventions are what most people already know: double quotes for a phrase, a hyphen for exclusion, capital OR, a star for word endings. I adopt them, but the help text is the app's own wording, since that page is share-alike.  Chart.js: a canvas is invisible to a screen reader unless it has role=\"img\" and a label, or fallback content; the chart gets both and a table.  The charts page: horizontal bars for long names, rank by value, gaps narrower than bars, never a broken axis.\n\nTrade-offs. Matching runs on a normalised copy of each text; display and copying use the stored text. That is the only way an exact phrase can cross a footnote mark and still be shown verbatim. Whole words, not substrings: \"child\" does not match \"children\" unless typed child*. The leading \"12.\" is kept on screen, because it is in the data, and dropped from the copied quotation, because the citation carries the number; the check panel says when the two numbers disagree. Nothing leaves the browser. The five questions are the drafter's calls: citation form, footnote marks, strictness of matching, order of results, and how joint General Comments count.",
  "steps": [
   {
-   "at": 334,
+   "at": 394,
    "kind": "look",
    "label": "Looked at the data: the fields in gc",
    "detail": "7,304 records, 10 fields"
   },
   {
-   "at": 631,
+   "at": 691,
    "kind": "look",
    "label": "Looked at the data: the values of committee in gc",
    "detail": "10 distinct values of committee"
   },
   {
-   "at": 765,
+   "at": 825,
    "kind": "look",
    "label": "Looked at the data: sample records in gc",
    "detail": "3 sample records"
   },
   {
-   "at": 997,
+   "at": 1057,
    "kind": "look",
    "label": "Looked at the data: sample records in gc",
    "detail": "3 sample records where paragraph=0"
   },
   {
-   "at": 1334,
+   "at": 1394,
    "kind": "look",
    "label": "Looked at the data: every match of /\\[\\[fn:\\d+\\]\\]/ in gc",
    "detail": "3,238 matches of /\\[\\[fn:\\d+\\]\\]/"
   },
   {
-   "at": 1378,
+   "at": 1438,
    "kind": "look",
    "label": "Looked at the data: every match of /[“”‘’\"]/ in gc",
    "detail": "7,706 matches of /[“”‘’\"]/"
   },
   {
-   "at": 1614,
+   "at": 1674,
    "kind": "look",
    "label": "Looked at the data: every match of /^\\s*\\([a-z]{1,4}\\)/ in gc",
    "detail": "160 matches of /^\\s*\\([a-z]{1,4}\\)/"
   },
   {
-   "at": 1869,
+   "at": 1929,
    "kind": "look",
    "label": "Looked at the data: every match of /\\n/ in gc",
    "detail": "299 matches of /\\n/"
   },
   {
-   "at": 1922,
+   "at": 1982,
    "kind": "look",
    "label": "Looked at the data: the values of symbol in gc",
    "detail": "159 distinct values of symbol"
   },
   {
-   "at": 2957,
+   "at": 3017,
    "kind": "search",
    "label": "Searched the reference shelf: \"cite UN document symbol paragraph general comment\"",
    "detail": "5 results",
@@ -76,7 +76,7 @@
    ]
   },
   {
-   "at": 3039,
+   "at": 3099,
    "kind": "search",
    "label": "Searched the reference shelf: \"search results highlight matches status message keyboard accessible\"",
    "detail": "5 results",
@@ -89,7 +89,7 @@
    ]
   },
   {
-   "at": 3166,
+   "at": 3226,
    "kind": "search",
    "label": "Searched the reference shelf: \"bar chart colours labels accessible\"",
    "detail": "5 results",
@@ -102,7 +102,7 @@
    ]
   },
   {
-   "at": 3250,
+   "at": 3310,
    "kind": "search",
    "label": "Searched the reference shelf: \"retrieval verbatim quotes citations model never generates\"",
    "detail": "5 results",
@@ -115,28 +115,28 @@
    ]
   },
   {
-   "at": 3447,
+   "at": 3507,
    "kind": "read",
    "label": "Read: Dag Hammarskjöld Library, Ask DAG: how should I cite a UN document? (summary)",
    "detail": "https://ask.un.org/faq/401380",
    "shelf_id": "dhl-how-to-cite-a-un-document"
   },
   {
-   "at": 3621,
+   "at": 3681,
    "kind": "read",
    "label": "Read: Wikipedia Help:Searching: exact phrase, exclusion, wildcards, AND / OR / NOT and field operators",
    "detail": "https://en.wikipedia.org/w/index.php?title=Help:Searching&oldid=1379184667",
    "shelf_id": "wikipedia-help-searching-operators"
   },
   {
-   "at": 3860,
+   "at": 3920,
    "kind": "read",
    "label": "Read: Chart.js: Accessibility of canvas charts",
    "detail": "https://github.com/chartjs/Chart.js/blob/71d44219e79e3ac41e6f9dc907022eebf574868d/docs/general/accessibility.md",
    "shelf_id": "chartjs-accessibility"
   },
   {
-   "at": 4004,
+   "at": 4064,
    "kind": "read",
    "label": "Read: Data visualisation: charts (formatting, labels, bar charts)",
    "detail": "https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-charts/",
