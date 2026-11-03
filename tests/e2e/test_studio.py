@@ -12,7 +12,7 @@ for a live model to test what recorded mode cannot: switching country, asking th
 model directly (with the paragraph that does not exist), changing a plan, and the
 reference shelf's excerpts going out with a message.
 
-?planpace=1 plays a planning session's notes in one second instead of 80.
+?planpace=1 plays a planning session's notes in one second instead of 80 seconds.
 """
 import functools
 import http.server
