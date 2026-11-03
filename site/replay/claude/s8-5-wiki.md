@@ -1,898 +1,927 @@
-I built the research wiki workspace in five tabs: Pages, Ask, Ingest, Check and Record. Every quotation is re-checked by the page's own code against the library passages. Nothing goes to the model until you press Ask or Ingest, and nothing enters the wiki until a person approves it.
+I built the research wiki workspace with five tabs: Pages, Ask, Ingest, Check and Record. Every quotation is checked by the page's own code against the library passages, nothing is sent to a model until you press a button, and every change waits for a person to approve it. Pins are shown as the quoted words in place, followed by a small citation chip that opens the PDF.
 
 ```html
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Research wiki: neurotechnology in the administration of justice</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research wiki: neurotechnology and justice</title>
 <style>
-:root{--bg:#f4f0e8;--ink:#1d1b18;--mute:#5c574d;--rule:#d9d2c3;--red:#9b2335;--grn:#1f6b3a;--amb:#8a5a00;--ins:#fbf0b8;--serif:Georgia,"Times New Roman",serif;--mono:ui-monospace,Menlo,Consolas,monospace}
+:root{--paper:#f4f0e8;--ink:#1d1b18;--rule:#d9d2c3;--red:#9b2335;--mute:#5a554c;--ok:#1d6a38;--amb:#8a5400;--ins:#fbf0c0;--grey:#ece7db;--serif:Georgia,"Times New Roman",serif;--mono:ui-monospace,Menlo,Consolas,monospace}
 *{box-sizing:border-box}
-html{background:var(--bg)}
-body{margin:0;color:var(--ink);background:var(--bg);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+[hidden]{display:none!important}
 a{color:var(--red)}
 :focus-visible{outline:3px solid var(--red);outline-offset:2px}
-button,input,textarea{font:inherit;color:inherit}
-.lab,.mono{font:11.5px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase}
-.hint{font:12px/1.45 var(--mono);color:var(--mute)}
-.top{display:flex;gap:24px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;padding:20px 28px 14px;border-bottom:1px solid var(--rule)}
-h1{font:400 30px/1.15 var(--serif);margin:4px 0 6px}
-.strip{text-align:right;font:11.5px/1.5 var(--mono);color:var(--mute);max-width:430px}
-[role=tablist]{display:flex;flex-wrap:wrap;gap:0 4px;padding:0 28px;border-bottom:1px solid var(--rule)}
-.tab{background:none;border:0;border-bottom:3px solid transparent;padding:12px 14px 9px;font:12px var(--mono);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
-.tab.on{color:var(--red);border-bottom-color:var(--red)}
-main{padding:20px 28px 36px;max-width:1280px}
-[role=tabpanel][hidden]{display:none}
-h2.q{font:400 24px/1.25 var(--serif);margin:0 0 14px}
-h2.ptitle{font:400 30px/1.2 var(--serif);margin:4px 0 8px}
-.body h2{font:400 26px/1.2 var(--serif);margin:22px 0 8px}
-.body h3,h3.s{font:400 21px/1.25 var(--serif);margin:22px 0 6px;border-top:1px solid var(--rule);padding-top:12px}
-.body h4,.body h5{font:italic 400 18px/1.3 var(--serif);margin:16px 0 4px}
-.cols{display:grid;grid-template-columns:320px minmax(0,1fr);gap:32px}
-.cols>aside{position:sticky;top:8px;align-self:start;max-height:calc(100vh - 16px);overflow:auto;padding-right:8px}
-.cols>div{max-width:900px}
-@media(max-width:900px){.cols{grid-template-columns:1fr}.cols>aside{position:static;max-height:none}.top,main{padding-left:14px;padding-right:14px}[role=tablist]{padding:0 6px}.strip{text-align:left}}
-.big{font:400 48px/1 var(--serif)}
-.grp{font:11.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:16px 0 4px;border-bottom:1px solid var(--rule)}
-ul.plist{list-style:none;margin:0;padding:0}
-ul.plist li{padding:5px 0;border-bottom:1px solid var(--rule)}
-ul.plist a{display:block}
-ul.plist a[aria-current]{font-weight:700}
-.stubtag{color:var(--red)}
-input[type=search],input[type=text],textarea{width:100%;border:1px solid var(--ink);background:#fffdf8;padding:8px 10px;border-radius:2px}
-textarea{resize:vertical}
-.btn{border:1px solid var(--ink);background:transparent;padding:8px 14px;cursor:pointer;border-radius:2px}
+h1,h2,h3,h4{font-family:var(--serif);font-weight:400;line-height:1.2;margin:1.2em 0 .4em}
+h1{font-size:30px;margin:.2em 0 .3em}h2{font-size:30px;margin-top:.3em}h3{font-size:22px}h4{font-size:18px}
+.lab,.hint,.how,.meta,.rg,.st,.badge,th,caption,.stub,.run,.sess,footer,.stepper,.says{font-family:var(--mono)}
+.lab{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:0}
+.hint,.how,.meta{font-size:12px;color:var(--mute);margin:.3em 0}
+.big{font-family:var(--serif);font-size:48px;line-height:1;color:var(--ink)}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;padding:20px 24px 12px;border-bottom:1px solid var(--rule)}
+.hl{flex:1 1 520px}.hr{flex:0 1 460px;text-align:right}.hr .lab{margin-bottom:6px;text-transform:none;letter-spacing:.02em}
+.sub{margin:0;font-size:15px;color:var(--mute)}
+#tabs{display:flex;flex-wrap:wrap;gap:4px 22px;padding:0 24px;border-bottom:1px solid var(--rule)}
+#tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:12px 2px 9px;font:12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);cursor:pointer}
+#tabs button[aria-selected=true]{color:var(--red);border-bottom-color:var(--red)}
+.panel{padding:20px 24px 40px}
+.two{display:grid;grid-template-columns:320px minmax(0,900px);gap:32px;align-items:start}
+.rail{border-right:1px solid var(--rule);padding-right:20px}
+.rail input{width:100%}
+.cnt{margin:.6em 0 0;font-size:16px}.cnt .big{font-size:48px}
+.grp{margin:16px 0 4px}
+.plist{list-style:none;margin:0;padding:0}.plist li{padding:5px 0;border-bottom:1px solid var(--rule)}
+.plist a{text-decoration:none;color:var(--ink)}.plist a[aria-current=page]{color:var(--red);font-weight:600}.plist a:hover{text-decoration:underline}
+.stub{background:var(--ink);color:var(--paper);font-size:10.5px;padding:0 5px;text-transform:uppercase;border-radius:2px}
+.narrow{max-width:900px}
+input[type=text],input[type=search],textarea{width:100%;font:16px system-ui,sans-serif;padding:8px 10px;border:1px solid #8a8274;background:#fffdf8;color:var(--ink);border-radius:2px}
+.lbl{display:block;font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 4px}
+.btn{font:13px var(--mono);letter-spacing:.04em;padding:8px 14px;border:1px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;border-radius:2px}
 .btn.pri{background:var(--red);border-color:var(--red);color:#fff}
 .btn:disabled{opacity:.55;cursor:not-allowed}
-.lnk{background:none;border:0;padding:0;color:var(--red);text-decoration:underline;cursor:pointer}
-.grey{border-left:3px solid var(--rule);background:#ece7db;padding:8px 12px;margin:0 0 12px;font:12.5px/1.5 var(--mono)}
-.badge{display:inline-block;border:1px solid var(--rule);padding:0 6px;margin:0 4px 4px 0;font:11.5px var(--mono)}
-table{border-collapse:collapse;width:100%;margin:10px 0;font-size:15px}
-caption{text-align:left;font:italic 18px var(--serif);padding:6px 0}
-th{font:11.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;text-align:left;border-bottom:2px solid var(--ink);padding:6px 8px 6px 0;vertical-align:bottom}
-td{border-bottom:1px solid var(--rule);padding:6px 8px 6px 0;vertical-align:top}
-td.n,th.n{text-align:right}
-.pin{display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:4px;border:1px solid var(--rule);border-radius:3px;padding:0 4px;margin:0 1px;background:#fbf8f1;font-size:14px;max-width:100%}
-.pin.no{border-color:var(--amb)}
-.pl{background:none;border:0;padding:0;color:var(--red);text-decoration:underline;cursor:pointer;font-size:14px;text-align:left}
-.rg,.vw{font:11px var(--mono)}
-.pin.ok .vw{color:var(--grn)}
-.pin.no .vw{color:var(--amb)}
-.px{border:0;background:none;cursor:pointer;padding:0 3px}
-.pd{flex-basis:100%;display:block;font-size:13px;border-top:1px solid var(--rule);padding:4px 0}
-.pd[hidden]{display:none}
-.dangle{color:var(--red);font:12px var(--mono)}
-.con{border:1px solid var(--rule);border-left:4px solid var(--red);padding:10px 14px;margin:14px 0;background:#faf7f0}
-.con h4{font:400 19px/1.35 var(--serif);margin:4px 0}
-.verdict{font:400 34px/1.1 var(--serif);margin:6px 0}
-.bar{height:10px;background:var(--rule);margin:4px 0;max-width:420px}
-.bar i{display:block;height:100%;background:var(--red)}
-.ins{background:var(--ins);border-left:4px solid var(--amb);padding:2px 10px;margin:6px 0}
-.dim{color:var(--mute)}
-.dim .ins{color:var(--ink)}
-.st{display:inline-block;min-width:54px;font:11.5px var(--mono);text-transform:uppercase;letter-spacing:.06em}
-.st.ok{color:var(--grn)}
-.st.no{color:var(--red);font-weight:700}
-.st.na{color:var(--mute)}
-.tag{font:11px var(--mono);color:var(--red);text-transform:uppercase;letter-spacing:.06em;margin-left:6px}
-.err{border:1px solid var(--red);padding:10px 14px;margin:10px 0}
-pre{white-space:pre-wrap;word-break:break-word;font:12px/1.4 var(--mono);background:#ece7db;padding:8px;max-height:220px;overflow:auto}
-fieldset.chg{border:1px solid var(--ink);padding:10px 16px 14px;margin:10px 0}
-legend{font:italic 19px var(--serif);padding:0 6px}
-.prev{max-height:60vh;overflow:auto;border-top:1px solid var(--rule);margin:8px 0;padding-top:6px}
-.steps{list-style:none;display:flex;flex-wrap:wrap;gap:6px 22px;margin:0 0 12px;padding:0;font:11.5px var(--mono);letter-spacing:.08em;color:var(--mute)}
-.steps li.on{color:var(--red);border-bottom:2px solid var(--red)}
-.nums{display:flex;gap:40px;margin:6px 0 10px}
-.inb{display:flex;gap:16px;align-items:center;justify-content:space-between;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:10px 0;margin:10px 0}
-details{margin:6px 0}
-summary{cursor:pointer}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
-.chip{border:1px solid var(--rule);padding:1px 8px;border-radius:10px;font-size:14px;background:#fbf8f1}
-.row2{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
-footer{border-top:1px solid var(--rule);padding:12px 28px 24px}
+.lk{background:none;border:0;padding:0;color:var(--red);text-decoration:underline;cursor:pointer;font:inherit}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+.grey{background:var(--grey);border-left:3px solid var(--mute);padding:8px 12px;margin:10px 0;font-size:14px}
+.prog{font-family:var(--mono);font-size:12.5px;color:var(--mute);min-height:1.4em;margin:6px 0}
+.warn{border:1px solid var(--amb);padding:8px 12px;margin:10px 0}.warn pre{white-space:pre-wrap;max-height:220px;overflow:auto}
+.pmain{min-width:0;max-width:900px}.page p,.page li{max-width:75ch}
+.page h3{border-top:1px solid var(--rule);padding-top:.7em}
+.page .dim{color:#6b665c}.page .ins{background:var(--ins);border-left:3px solid var(--red);padding:4px 10px}
+.page ul.ins,.page ol.ins{padding-left:28px}
+.dang{color:var(--red);border-bottom:1px dotted var(--red)}.dang small{font-family:var(--mono);font-size:10.5px}
+.badge{display:inline-block;border:1px solid var(--mute);font-size:11px;padding:1px 7px;margin:0 6px 4px 0;text-transform:uppercase;letter-spacing:.04em}
+.pq{font-family:var(--serif);font-style:italic}.pq.x{text-decoration:line-through;color:var(--mute)}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--ok);padding:0 6px;margin:0 2px;font-size:11.5px;line-height:1.7;vertical-align:baseline;background:#fffdf8}
+.chip.bad{border-color:var(--amb)}.chip.struck{border-color:var(--red)}.chip.struck .cl{text-decoration:line-through}
+.cl{background:none;border:0;padding:0;font:12px var(--mono);color:var(--red);text-decoration:underline;cursor:pointer}
+.rg{color:var(--mute)}.st{font-size:11px}.chip .st{color:var(--ok)}.chip.bad .st{color:var(--amb)}.chip.struck .st{color:var(--red)}
+.says{font-size:10.5px;color:var(--amb)}
+.tg{background:none;border:0;cursor:pointer;color:var(--ink);font-size:12px;padding:0 2px}
+.pd{display:block;margin:4px 0 8px;padding:6px 10px;border-left:3px solid var(--rule);font-size:14px;max-width:70ch}
+.card{border:0;border-top:2px solid var(--ink);border-bottom:1px solid var(--rule);padding:10px 0;margin:18px 0;min-width:0}
+.card legend{font-family:var(--mono);font-size:12px;text-transform:uppercase;padding:0 8px 0 0}
+.claim{margin:.2em 0}.verdict{font-family:var(--serif);font-size:40px;line-height:1.1;margin:.2em 0;color:var(--red)}
+.bar{height:12px;background:var(--grey);border:1px solid var(--rule);max-width:420px}.bar i{display:block;height:100%;background:var(--red)}
+.tw{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%}
+caption{text-align:left;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);padding:6px 0}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;text-align:left;border-bottom:1px solid var(--ink);padding:6px 8px 6px 0}
+td,th[scope=row]{border-bottom:1px solid var(--rule);padding:7px 8px 7px 0;vertical-align:top;font-size:16px}
+th[scope=row]{font:inherit;text-transform:none;letter-spacing:0}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.pass{color:var(--ok);font-weight:600}.chk{color:var(--red);font-weight:600}.na{color:var(--mute)}
+.sess{background:var(--red);color:#fff;font-size:10.5px;padding:0 6px;text-transform:uppercase}
+.stepper{display:flex;flex-wrap:wrap;gap:6px 24px;list-style:none;padding:0;margin:8px 0;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
+.stepper [aria-current=step]{color:var(--red);border-bottom:2px solid var(--red)}.stepper .done{color:var(--ok)}
+.runline{margin:10px 0}.runline .big{font-size:40px}
+.sec{border-top:1px solid var(--rule);margin-top:16px;padding-top:6px}.sec summary{cursor:pointer;font-family:var(--serif);font-size:20px}
+.chg{border:1px solid var(--rule);padding:10px 16px;margin:14px 0}.chg legend{font-family:var(--serif);font-size:20px;padding:0 6px}
+.pick{max-height:220px;overflow:auto;border:1px solid var(--rule);margin:8px 0}.ck{display:block;padding:2px 8px}
+.pgchip{display:inline-block;border:1px solid var(--red);padding:0 8px;margin:2px 4px 2px 0;text-decoration:none;font-size:14px}
+.prev{white-space:pre-wrap;background:var(--grey);padding:10px;max-height:260px;overflow:auto;font:12px/1.4 var(--mono)}
+.answer{border-top:2px solid var(--ink);margin-top:16px}
+.kv{margin:2px 0}.kv .lab{display:inline-block;min-width:70px}
+.tens{border-top:1px solid var(--rule);padding:6px 0}.tens.sel{background:var(--ins)}
+.le{border-bottom:1px solid var(--rule);padding:6px 0}.le summary{cursor:pointer;font-family:var(--mono);font-size:13px}
+.chkl{list-style:none;padding:0}.chkl li{padding:6px 0;border-bottom:1px solid var(--rule)}
+button[role=switch]{font:12px var(--mono);padding:4px 10px;border:1px solid var(--ink);background:transparent;cursor:pointer}
+button[role=switch][aria-checked=true]{background:var(--ink);color:var(--paper)}
+footer{padding:14px 24px;border-top:1px solid var(--rule);font-size:11.5px;color:var(--mute)}
+@media(max-width:900px){.two{grid-template-columns:1fr}.rail{border-right:0;padding-right:0}.hr{text-align:left}.panel{padding:16px}}
 </style>
 </head>
 <body>
 <header class="top">
- <div>
-  <div class="lab">WIKI · neurotechnology and justice</div>
+ <div class="hl">
+  <p class="lab">WIKI · neurotechnology and justice</p>
   <h1>Research wiki: neurotechnology in the administration of justice</h1>
-  <p class="hint" id="hline"></p>
+  <p id="hsub" class="sub"></p>
  </div>
- <div class="strip"><div id="strip" aria-live="polite"></div><div>This page has no storage: changes live in it until you download them (tab 05)</div></div>
+ <div class="hr">
+  <p id="strip" class="lab" aria-live="polite"></p>
+  <p class="lab">This page has no storage: changes live in it until you download them (tab 05)</p>
+ </div>
 </header>
-<div id="tabs" role="tablist" aria-label="Workspace"></div>
+<div id="tabs" role="tablist" aria-label="Wiki workspace, five tabs"></div>
 <main>
- <section id="p1" role="tabpanel" aria-labelledby="t1">
-  <div class="cols">
-   <aside>
+ <section id="pan0" class="panel" role="tabpanel" aria-labelledby="tab0">
+  <div class="two">
+   <aside class="rail" aria-label="List of pages">
     <label for="flt" class="lab">title, tag or slug</label>
     <input id="flt" type="search" autocomplete="off">
-    <div id="cnt" style="margin:12px 0 4px"></div>
+    <p id="cnt" class="cnt"></p>
+    <p class="how">How this is computed: pages whose title, slug or tags contain the text, counted by this page.</p>
+    <p><a href="#index" class="lab">Show the index</a></p>
     <div id="plist"></div>
    </aside>
-   <div id="pview"></div>
+   <article id="pmain" class="pmain"></article>
   </div>
  </section>
- <section id="p2" role="tabpanel" aria-labelledby="t2" hidden>
-  <h2 class="q">What does the wiki answer, and is it worth filing?</h2>
-  <div class="grey" id="askNote"></div>
-  <label for="askQ" class="lab">Your question</label>
-  <textarea id="askQ" rows="3"></textarea>
-  <div class="row2"><button id="askBtn" class="btn pri" data-act="ask" type="button">Ask the wiki</button><button id="askStop" class="btn" data-act="ask-stop" type="button" hidden>Stop</button><span id="askProg" class="hint" aria-live="polite"></span></div>
-  <div id="askOut"></div>
+ <section id="pan1" class="panel" role="tabpanel" aria-labelledby="tab1" hidden>
+  <p class="lab">02 · What does the wiki answer, and is it worth filing?</p>
+  <div class="narrow">
+   <label for="q" class="lbl">Your question about the wiki</label>
+   <textarea id="q" rows="3" placeholder="For example: does anything in the library say existing rights are enough?"></textarea>
+   <p class="row"><button id="askBtn" type="button" class="btn pri">Ask the wiki</button><button id="askStop" type="button" class="btn" hidden>Stop</button><span class="hint">Enter sends · Shift+Enter makes a new line</span></p>
+   <div id="askSend" class="grey" aria-live="polite"></div>
+   <p id="askProg" class="prog" aria-live="polite"></p>
+   <div id="askErr"></div><div id="askPages"></div><div id="askOut"></div><div id="askFile"></div>
+  </div>
  </section>
- <section id="p3" role="tabpanel" aria-labelledby="t3" hidden>
-  <h2 class="q">What would the waiting document change?</h2>
-  <div id="ingOut"></div>
+ <section id="pan2" class="panel" role="tabpanel" aria-labelledby="tab2" hidden>
+  <p class="lab">03 · What would the waiting document change?</p>
+  <div id="ingBox" class="narrow"></div>
  </section>
- <section id="p4" role="tabpanel" aria-labelledby="t4" hidden>
-  <h2 class="q">Can I trust this?</h2>
-  <div id="chkOut"></div>
- </section>
- <section id="p5" role="tabpanel" aria-labelledby="t5" hidden>
-  <h2 class="q">What has changed, where do the sources disagree, and how do I take it away?</h2>
-  <div id="recOut"></div>
- </section>
+ <section id="pan3" class="panel" role="tabpanel" aria-labelledby="tab3" hidden><div id="chkBox" class="narrow"></div></section>
+ <section id="pan4" class="panel" role="tabpanel" aria-labelledby="tab4" hidden><div id="recBox" class="narrow"></div></section>
 </main>
-<footer class="hint" id="foot"></footer>
+<footer id="foot"></footer>
 <script>
 (function(){
 'use strict';
-const WD=window.WORKSHOP_DATA||{}, WK=WD.wiki||{}, LIBR=(WD.library&&WD.library.records)||[];
-const FENCE='`'.repeat(3);
+const WD=window.WORKSHOP_DATA||{};
+const $=(s,r)=>(r||document).querySelector(s);
+const $$=(s,r)=>Array.from((r||document).querySelectorAll(s));
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+if(!WD.wiki||!WD.library){document.body.innerHTML='<main style="padding:24px;max-width:640px"><p class="lab">NO WIKI ATTACHED</p><p>This workspace needs the research wiki and the library. Drag "Research wiki: neurotechnology and justice" from "Your files" into the chat, then ask again.</p></main>';return;}
+const WIKI=WD.wiki,LIB=WD.library.records||[];
+const FENCE=String.fromCharCode(96).repeat(3);
+const INS0='<'+'!--ins-->',INS1='<'+'!--/ins-->';
+const INS0_RE=new RegExp('^'+INS0+'\\s*$'),INS1_RE=new RegExp('^'+INS1+'\\s*$'),INS_ALL=new RegExp(INS0+'([\\s\\S]*?)'+INS1,'g');
 const PIN_SRC='\\[([^\\]]+)\\]\\(pin:([^#\\s)]+)#p(\\d+)(?: "([^"]*)")?\\) ?(✓|⚠)';
-const PIN_LOOSE=PIN_SRC.replace('(✓|⚠)','(✓|⚠)?');
+const INL_SRC=PIN_SRC+'|\\[\\[([^\\]|#]+)(?:[|#][^\\]]*)?\\]\\]|\\[([^\\]]+)\\]\\((https?:[^)\\s]+)\\)';
 const REGN={a:'treaty law',b:'General Comments',c:'UN, agency and soft-law reports',d:'national human rights institution',e:'civil society',f:'scholarship'};
 const REGS={a:'treaty law',b:'General Comment',c:'UN report',d:'NHRI report',e:'civil society',f:'scholarship'};
-const WT={a:5,b:4,c:3,d:2,e:1,f:.5};
-const SEC={source:'Sources',concept:'Concepts',entity:'Entities',question:'Questions'};
-const BASE=['01 PAGES','02 ASK','03 INGEST','04 CHECK','05 RECORD'];
-const $=(s,r)=>(r||document).querySelector(s);
-const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const rx=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-const nf=n=>Number(n).toLocaleString('en-GB');
-const uniq=a=>[...new Set(a)];
-const sum=(a,f)=>a.reduce((x,y)=>x+f(y),0);
-const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
-const slugify=s=>String(s||'').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,70);
-const norm=s=>String(s==null?'':s).normalize('NFKC').replace(/­/g,'').replace(/-\s+/g,'').replace(/[“”„]/g,'"').replace(/[‘’]/g,"'").replace(/[–—]/g,'-').replace(/\s+/g,' ').trim();
-const tryJ=s=>{try{return JSON.parse(s);}catch(e){return undefined;}};
-const humanise=s=>{s=String(s).replace(/-/g,' ');return s.charAt(0).toUpperCase()+s.slice(1);};
-const cleanMk=s=>String(s).replace(/^<<(?:ins|end)>>\n?/gm,'').replace(/\n{3,}/g,'\n\n');
+const REGW={a:5,b:4,c:3,d:2,e:1,f:.5};
+const PLU={source:'sources',concept:'concepts',entity:'entities',question:'questions'};
+const SEC={source:/^#{1,4}\s*sources?\b/i,concept:/^#{1,4}\s*concepts?\b/i,entity:/^#{1,4}\s*(entity|entities)\b/i,question:/^#{1,4}\s*questions?\b/i};
+const PIN_RULE='A pin has the form [label](pin:DOCUMENT_ID#pPDFPAGE "verbatim quote") ✓ and is a quotation that stands inside the sentence. Quote only words that stand in the passages given; the code will check every quote against the library and strike out what does not match. Never put a straight double quote inside a quote. Name the register where it matters and keep the document\'s own verb; never present what a (c) to (f) document says as what the treaty requires.';
 
-let pages=[],bySlug={},docs={},orig={},index=WK.index||'',log=WK.log||'',tensions=WK.tensions||'';
-let curPage='',curTab=0,loadedWarn=0,lintRan=false,lastFiling=null,logNewest=true,ing=null;
-const S={calls:0,chars:0,passages:0,changes:[],filings:0,logAdded:new Set(),tensAdded:new Set(),callLog:[],approved:new Set()};
-const running={2:false,3:false};
-const pinReg=[];
-const ask={q:'',stage:'idle',chosen:[],changing:false,answer:null,run:null,prog:'',err:null,file:null,filed:null,fTitle:'',fTags:''};
+const fmt=n=>Number(n||0).toLocaleString('en-US');
+const today=()=>new Date().toISOString().slice(0,10);
+const clone=o=>JSON.parse(JSON.stringify(o));
+const uniq=a=>Array.from(new Set(a));
+const slugify=s=>String(s).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+const escRe=s=>String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const sameSet=(a,b)=>{a=new Set(a);b=new Set(b);return a.size===b.size&&Array.from(a).every(x=>b.has(x));};
 
-/* ---------- parsing and verification ---------- */
-function parsePins(body){const re=new RegExp(PIN_SRC,'g'),o=[];let m;while((m=re.exec(body)))o.push({label:m[1],id:m[2],page:+m[3],quote:m[4]||'',mark:m[5]});return o;}
-function conBlocks(body){const re=new RegExp(FENCE+'contested[ \\t]*\\n([\\s\\S]*?)\\n'+FENCE,'g'),o=[];let m;while((m=re.exec(body)))o.push(m[1]);return o;}
-function frags(q){return String(q).split(/…|\.\.\./).map(norm).filter(Boolean);}
-function inText(text,q){const fr=frags(q);if(!fr.length)return false;const t=norm(text);let pos=0;for(const f of fr){const k=t.indexOf(f,pos);if(k<0)return false;pos=k+f.length;}return true;}
-function verify(pin,allow){
-  const d=docs[pin.id];
-  if(!d)return {ok:false,why:'no document '+pin.id+' in the library'};
-  if(d.status==='inbox'&&allow!==pin.id)return {ok:false,why:'the document is in the inbox: not yet read into the wiki'};
-  if(!pin.quote)return {ok:false,why:'the pin has no quote'};
-  const fr=frags(pin.quote);if(!fr.length)return {ok:false,why:'the quote is empty'};
-  const cands=(d.passages||[]).filter(x=>x.page===pin.page);
-  if(!cands.length)return {ok:false,why:'no passage of '+pin.id+' starts on PDF page '+pin.page+' (footnotes, tables and captions are not in the passages)'};
-  let bad=null;
-  for(const x of cands){
-    const t=x._n||(x._n=norm(x.text));let pos=0,ok=true;
-    for(const f of fr){const k=t.indexOf(f,pos);if(k<0){ok=false;break;}pos=k+f.length;}
+/* ---------- data ---------- */
+const DOC={};LIB.forEach(d=>{DOC[d.id]=Object.assign({},d,{passages:d.passages||[]});});
+const P=[],PM=new Map(),ORIG={};
+const addPage=p=>{p.fm=p.fm||{};['tags','register','links','sources'].forEach(k=>{p.fm[k]=p.fm[k]||[];});P.push(p);PM.set(p.slug,p);return p;};
+(WIKI.pages||[]).forEach(p=>{addPage({slug:p.slug,type:p.type,title:p.title,fm:clone(p.frontmatter||{}),body:p.body||''});ORIG[p.slug]=p.body||'';});
+const pg=s=>PM.get(s);
+const S={tab:0,cur:null,flt:'',calls:0,passages:0,changes:[],callLog:[],running:null,stop:false,index:WIKI.index||'',log:WIKI.log||'',tens:WIKI.tensions||'',logBase:0,logAdded:0,op:0,order:'new',lintPressed:false,filing:null,tensNew:[],sel:null,warn0:0};
+
+function parsePins(t){return Array.from(String(t).matchAll(new RegExp(PIN_SRC,'g')),m=>({label:m[1],id:m[2],page:+m[3],quote:m[4],mark:m[5],raw:m[0]}));}
+function an(p){if(p._k!==p.body){p._k=p.body;p._links=Array.from(p.body.matchAll(/\[\[([^\]|#]+)/g),m=>m[1].trim());p._pins=parsePins(p.body);}return p;}
+const backlinks=slug=>P.filter(p=>p.slug!==slug&&an(p)._links.includes(slug));
+const pinKey=x=>x.id+'#p'+x.page+'|'+(x.quote||'');
+const pinDocs=p=>uniq(an(p)._pins.map(x=>x.id));
+
+/* ---------- verification ---------- */
+function norm(s){return String(s==null?'':s).normalize('NFKC').replace(/[\u201C\u201D\u201E]/g,'"').replace(/[\u2018\u2019]/g,"'").replace(/[\u2013\u2014]/g,'-').replace(/\u00AD/g,'').replace(/-\s+/g,'').replace(/\s+/g,' ').trim();}
+const VC=new Map();
+function verify(pin,inbox){
+  const k=(inbox?'i|':'n|')+pinKey(pin)+'|'+pin.label;
+  if(!VC.has(k))VC.set(k,verify0(pin,inbox));
+  return VC.get(k);
+}
+function verify0(pin,inbox){
+  const d=DOC[pin.id];
+  if(!d)return{ok:false,reason:'unknown document "'+pin.id+'"'};
+  if(d.status==='inbox'&&!inbox)return{ok:false,reason:'the document is still in the inbox, not read into the wiki'};
+  if(!pin.quote)return{ok:false,reason:'the pin has no quote'};
+  const fr=String(pin.quote).split(/…|\.\.\./).map(norm).filter(Boolean);
+  if(!fr.length)return{ok:false,reason:'the quote is empty'};
+  const cand=d.passages.filter(x=>x.page===pin.page);
+  if(!cand.length)return{ok:false,reason:'no passage of '+pin.id+' starts on PDF page '+pin.page};
+  let lm=null;
+  for(const x of cand){
+    const t=norm(x.text);let pos=0,ok=true;
+    for(const f of fr){const i=t.indexOf(f,pos);if(i<0){ok=false;break;}pos=i+f.length;}
     if(!ok)continue;
     const want=x.paragraph?'para. '+x.paragraph:'p. '+x.page_label;
-    if(new RegExp(rx(want)+'(?![\\w])').test(pin.label))return {ok:true,passage:x};
-    bad={ok:false,labelBad:true,why:'quote found, but the label should say "'+want+'"',passage:x};
+    if(new RegExp(escRe(want)+'(?!\\w)').test(pin.label))return{ok:true,passage:x};
+    lm={ok:false,label:true,reason:'the quote is in '+want+' but the label says "'+pin.label+'"',passage:x};
   }
-  return bad||{ok:false,why:'quote not found in a passage that starts on PDF page '+pin.page};
+  return lm||{ok:false,reason:'the quote is not in any passage that starts on PDF page '+pin.page};
 }
-function rebuild(){
-  bySlug={};pages.forEach(p=>{bySlug[p.slug]=p;});
-  pages.forEach(p=>{p._links=[...p.body.matchAll(/\[\[([^\]|#]+)/g)].map(m=>m[1].trim());p._pins=parsePins(p.body);p._v=p._pins.map(x=>verify(x));p._con=conBlocks(p.body);p._back=[];});
-  pages.forEach(p=>uniq(p._links).forEach(l=>{if(bySlug[l]&&l!==p.slug)bySlug[l]._back.push(p.slug);}));
-}
-function vcount(p){return p._v.filter(v=>v.ok).length;}
-function citeAs(d){
-  const c={};pages.forEach(p=>p._pins.forEach(x=>{if(x.id===d.id){const m=x.label.match(/^(.*?), (?:para\.|p\.) /);if(m)c[m[1]]=(c[m[1]]||0)+1;}}));
-  const b=Object.entries(c).sort((x,y)=>y[1]-x[1])[0];
-  return b?b[0]:(d.symbol||((d.author||'')+' '+d.year));
+const pinCount=p=>an(p)._pins.filter(x=>verify(x).ok).length;
+function pinStats(){
+  let total=0,ok=0,failMarked=0,warn=0,label=0;const fp=new Set();
+  P.forEach(p=>an(p)._pins.forEach(x=>{total++;const v=verify(x);if(v.ok)ok++;else{if(x.mark==='✓'){failMarked++;fp.add(p.slug);}if(v.label)label++;}if(x.mark==='⚠')warn++;}));
+  return{total,ok,failMarked,warn,label,failPages:Array.from(fp)};
 }
 function docReg(id){
-  const d=docs[id];
-  let p=pages.find(x=>x.type==='source'&&(x.frontmatter.sources||[]).length===1&&x.frontmatter.sources[0]===id);
-  if(!p&&d)p=pages.find(x=>x.frontmatter.status==='stub'&&((x.frontmatter.sources||[]).includes(id)||x.slug===slugify(d.symbol||d.id)));
-  return (p&&p.frontmatter.register)||[];
+  const s=P.find(p=>p.type==='source'&&sameSet(p.fm.sources,[id]))||pg(slugify(id))||P.find(p=>p.fm.status==='stub'&&p.fm.sources.includes(id));
+  return s&&s.fm.register&&s.fm.register.length?s.fm.register:[];
 }
-const regTxt=id=>{const r=docReg(id);return r.length?'('+r.join('')+')':'(?)';};
-function mkPin(d,ps,quote){
-  const q=quote.replace(/\s+/g,' ').replace(/"([^"]*)"/g,'“$1”').replace(/"/g,'”');
-  return '['+citeAs(d)+(ps.paragraph?', para. '+ps.paragraph:', p. '+ps.page_label)+'](pin:'+d.id+'#p'+ps.page+' "'+q+'") ✓';
+function citeAs(id){
+  const d=DOC[id],cnt={};
+  P.forEach(p=>an(p)._pins.forEach(x=>{if(x.id===id){const m=x.label.match(/^(.*?),\s*(?:para\.|p\.)/);if(m)cnt[m[1]]=(cnt[m[1]]||0)+1;}}));
+  const best=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
+  return best||(d&&d.symbol)||(d?d.author+' '+d.year:id);
 }
-function fixPins(text,id){
-  let ok=0,removed=0;const keep=[];
-  let out=String(text).replace(new RegExp(PIN_LOOSE,'g'),(m,label,did,pg,quote)=>{
-    const v=verify({label,id:did,page:+pg,quote:quote||''},id);
-    if(v.ok){ok++;return '\u0001'+(keep.push('['+label+'](pin:'+did+'#p'+pg+' "'+quote+'") ✓')-1)+'\u0002';}
-    removed++;return label+' (pin removed: not verified)';
-  });
-  out=out.replace(/\[([^\]]+)\]\(pin:[^)]*\)/g,(m,l)=>{removed++;return l+' (pin removed: malformed)';});
-  out=out.replace(/\u0001(\d+)\u0002/g,(m,i)=>keep[+i]);
-  return {text:out,ok,removed};
+const curly=q=>String(q).replace(/"([^"]*)"/g,'\u201C$1\u201D').replace(/"/g,'\u201D');
+function makePin(doc,p,quote,cite){
+  const label=cite+(p.paragraph?', para. '+p.paragraph:', p. '+p.page_label),q=curly(quote);
+  return{label,id:doc.id,page:p.page,quote:q,mark:'✓',raw:'['+label+'](pin:'+doc.id+'#p'+p.page+' "'+q+'") ✓'};
 }
 
-/* ---------- markdown ---------- */
-function inline(s,ctx){
-  const re=new RegExp(PIN_SRC+'|\\[\\[([^\\]|#]+)(?:[|#][^\\]]*)?\\]\\]|\\[([^\\]]+)\\]\\((https?:\\/\\/[^)\\s]+)\\)|\\*\\*(.+?)\\*\\*|\\*([^*\\s][^*]*?)\\*','g');
-  let o='',last=0,m;
-  while((m=re.exec(s))){
-    o+=esc(s.slice(last,m.index));
-    if(m[1]!==undefined)o+=pinChip({label:m[1],id:m[2],page:+m[3],quote:m[4]||'',mark:m[5]},ctx);
-    else if(m[6]!==undefined)o+=wlink(m[6].trim());
-    else if(m[7]!==undefined)o+='<a href="'+esc(m[8])+'" target="_blank" rel="noopener">'+esc(m[7])+'</a>';
-    else if(m[9]!==undefined)o+='<strong>'+inline(m[9],ctx)+'</strong>';
-    else o+='<em>'+esc(m[10])+'</em>';
+/* ---------- rendering of pins, markdown, contested cards ---------- */
+const PR=[];
+function pinHtml(pin,ctx){
+  ctx=ctx||{};
+  const v=verify(pin,ctx.inbox);let ok=v.ok,why=v.reason,struck=false;
+  if(ctx.sent&&!ctx.sent.has(pinKey(pin))){ok=false;struck=true;why='not on the pages sent';}
+  const k=PR.push({pin,v})-1,reg=docReg(pin.id)[0]||'?';
+  const says=!struck&&((ok&&pin.mark==='⚠')||(!ok&&pin.mark==='✓'));
+  const x=v.passage;
+  let det=x?'<b>'+(x.paragraph?'para. '+esc(x.paragraph):'p. '+esc(x.page_label))+'</b> (PDF page '+x.page+'): '+esc(x.text.slice(0,300))+(x.text.length>300?'…':''):'';
+  if(!ok)det=(det?det+'<br>':'')+'<b>Not verified:</b> '+esc(why||'')+'. Footnotes, tables and captions are not in the passages, so a pin on them cannot verify.';
+  det+=' <button type="button" class="lk" data-act="open" data-k="'+k+'">Open the PDF page</button>';
+  const q=pin.quote?'\u201C'+esc(pin.quote)+'\u201D':'(this pin has no quote)';
+  return '<span class="pq'+(struck?' x':'')+'">'+q+'</span><span class="chip '+(struck?'struck':ok?'':'bad')+'"><button type="button" class="cl" data-act="open" data-k="'+k+'" aria-label="Open '+esc(pin.label)+' at PDF page '+pin.page+'">'+esc(pin.label)+'</button><span class="rg" title="'+esc(REGN[reg]||'register unknown')+'">('+esc(reg)+')</span><span class="st">'+(struck?'not on the pages sent':ok?'✓ verified':'⚠ not found')+'</span>'+(says?'<span class="says">page says '+esc(pin.mark)+'</span>':'')+'<button type="button" class="tg" data-act="tg" data-k="'+k+'" aria-expanded="false" aria-label="Show the passage behind '+esc(pin.label)+'">▸</button></span><span class="pd" id="pd'+k+'" hidden>'+det+'</span>';
+}
+function wikiLink(s,ctx){const t=pg(s);if(t||(ctx.known&&ctx.known.has(s)))return '<a href="#'+encodeURIComponent(s)+'">'+esc(t?t.title:s)+'</a>';return '<span class="dang">'+esc(s)+' <small>no page</small></span>';}
+function fmtText(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/(^|[^*])\*([^*\s][^*]*?)\*(?!\*)/g,'$1<em>$2</em>');}
+function inline(t,ctx){
+  ctx=ctx||{};const re=new RegExp(INL_SRC,'g');let out='',last=0,m;t=String(t==null?'':t);
+  while((m=re.exec(t))){
+    out+=fmtText(t.slice(last,m.index));
+    if(m[1]!==undefined)out+=pinHtml({label:m[1],id:m[2],page:+m[3],quote:m[4],mark:m[5]},ctx);
+    else if(m[6]!==undefined)out+=wikiLink(m[6].trim(),ctx);
+    else out+='<a href="'+esc(m[8])+'" target="_blank" rel="noopener">'+esc(m[7])+'</a>';
     last=re.lastIndex;
   }
-  return o+esc(s.slice(last));
+  return out+fmtText(t.slice(last));
 }
-function wlink(s){const p=bySlug[s];if(!p)return '<span class="dangle">[['+esc(s)+']] · no page</span>';return '<a href="#'+esc(s)+'" data-act="open-page" data-slug="'+esc(s)+'">'+esc(p.title)+'</a>';}
-function pinChip(pin,ctx){
-  const key=pin.id+'#p'+pin.page+'|'+norm(pin.quote);
-  if(ctx&&ctx.allowed&&!ctx.allowed.has(key))return '<span class="pin no"><s>'+esc(pin.label)+'</s> <span class="vw">not on the pages sent</span></span>';
-  const v=verify(pin,ctx&&ctx.allow),d=docs[pin.id];
-  const i=pinReg.push({id:pin.id,page:pin.page,quote:pin.quote})-1;
-  const diff=(pin.mark==='✓'&&!v.ok)?'page says ✓':(pin.mark==='⚠'&&v.ok)?'page says ⚠':'';
-  const det=(pin.quote?'“'+esc(pin.quote)+'”':'<i>no quote</i>')+'<br>'+(v.passage?'Passage: '+(v.passage.paragraph?'para. '+esc(v.passage.paragraph):'p. '+esc(v.passage.page_label))+' · '+esc(v.passage.text.slice(0,300))+(v.passage.text.length>300?'…':''):'Not verified: '+esc(v.why))+'<br><button type="button" class="lnk" data-act="pin-open" data-pin="'+i+'" aria-label="Open '+esc(d?d.symbol||d.short_title:pin.id)+' at PDF page '+pin.page+'">Open the PDF page</button>';
-  return '<span class="pin '+(v.ok?'ok':'no')+'"><button type="button" class="pl" data-act="pin-open" data-pin="'+i+'" aria-label="Open '+esc(pin.label)+' at PDF page '+pin.page+'">'+esc(pin.label)+'</button><span class="rg" title="register">'+regTxt(pin.id)+'</span><span class="vw">'+(v.ok?'✓ verified':'⚠ not found')+'</span>'+(diff?'<span class="vw">'+diff+'</span>':'')+'<button type="button" class="px" data-act="pin-toggle" aria-expanded="false" aria-label="Show the quote for '+esc(pin.label)+'">▾</button><span class="pd" hidden>'+det+'</span></span>';
-}
-function md(src,ctx){
-  const L=String(src||'').replace(/\r/g,'').split('\n'),out=[],fenceRe=new RegExp('^'+FENCE+'(\\w*)\\s*$');
-  let para=[],list=null,i=0;
-  const fp=()=>{if(para.length){out.push('<p>'+inline(para.join(' '),ctx)+'</p>');para=[];}};
-  const fl=()=>{if(list){out.push('<'+list.t+'>'+list.it.map(x=>'<li>'+inline(x,ctx)+'</li>').join('')+'</'+list.t+'>');list=null;}};
-  while(i<L.length){
-    const ln=L[i];let m;
-    if((m=ln.match(fenceRe))){fp();fl();const buf=[];i++;while(i<L.length&&!fenceRe.test(L[i]))buf.push(L[i++]);i++;out.push(m[1]==='contested'?conCard(buf.join('\n'),ctx):'<pre>'+esc(buf.join('\n'))+'</pre>');continue;}
-    if(ln==='<<ins>>'){fp();fl();out.push('<div class="ins" data-source="ai">');i++;continue;}
-    if(ln==='<<end>>'){fp();fl();out.push('</div>');i++;continue;}
-    if((m=ln.match(/^(#{1,4})\s+(.*)$/))){fp();fl();const n=m[1].length+1;out.push('<h'+n+'>'+inline(m[2],ctx)+'</h'+n+'>');i++;continue;}
-    if((m=ln.match(/^\s*([-*]|\d+[.)])\s+(.*)$/))){fp();const t=/\d/.test(m[1])?'ol':'ul';if(list&&list.t!==t)fl();if(!list)list={t,it:[]};list.it.push(m[2]);i++;continue;}
-    if(!ln.trim()){fp();fl();i++;continue;}
-    if(list&&/^\s+\S/.test(ln)){list.it[list.it.length-1]+=' '+ln.trim();i++;continue;}
-    fl();para.push(ln.trim());i++;
-  }
-  fp();fl();return out.join('\n');
-}
-function parseCon(txt){
-  const o={claim:'',verdict:'',note:'',pos:[]};
-  String(txt).split('\n').forEach(l=>{let m;
-    if((m=l.match(/^claim:\s*(.*)$/)))o.claim=m[1];
-    else if((m=l.match(/^verdict:\s*(.*)$/)))o.verdict=m[1].trim();
-    else if((m=l.match(/^note:\s*(.*)$/)))o.note=m[1];
-    else if((m=l.match(/^([+\-~])\s+(.*)$/))){const f=m[2].split(' | ');o.pos.push({sign:m[1],reg:(f[0]||'').trim().toLowerCase(),pin:f[1]||'',gloss:f[2]||'',page:f[3]||''});}
+function parseCard(txt){
+  const c={claim:'',verdict:'',note:'',pos:[]};
+  String(txt).split('\n').forEach(l=>{
+    let m;
+    if((m=l.match(/^claim:\s*(.*)$/)))c.claim=m[1];
+    else if((m=l.match(/^verdict:\s*(.*)$/)))c.verdict=m[1].trim();
+    else if((m=l.match(/^note:\s*(.*)$/)))c.note=m[1];
+    else if((m=l.match(/^([+\-~])\s*([a-f])\s*\|\s*(.*)$/))){
+      const rest=m[3],pm=new RegExp(PIN_SRC).exec(rest);let pin=null,after=rest;
+      if(pm){pin={label:pm[1],id:pm[2],page:+pm[3],quote:pm[4],mark:pm[5]};after=rest.slice(pm.index+pm[0].length);}
+      const parts=after.replace(/^\s*\|\s*/,'').split(/\s*\|\s*/),pgl=(parts.pop()||'').trim();
+      c.pos.push({sign:m[1],reg:m[2],pin,gloss:parts.join(' | ').trim(),page:pgl});
+    }
   });
-  return o;
+  return c;
 }
-function conCard(txt,ctx){
-  const c=parseCon(txt);let tot=0,sup=0;
-  c.pos.forEach(x=>{const w=WT[x.reg]||0;tot+=w;sup+=x.sign==='+'?w:x.sign==='~'?w/2:0;});
-  const pct=tot?Math.round(100*sup/tot):null,words={'+':'supports','-':'contests','~':'mixed'};
-  const tn=ctx&&ctx.slug?tensEntries().items.find(x=>x.card===ctx.slug):null;
-  return '<section class="con"><div class="lab">FIG.01 · contested claim</div><h4>'+inline(c.claim,ctx)+'</h4><div class="verdict">'+esc(c.verdict.replace(/-/g,' ')||'no verdict')+'</div><p>'+inline(c.note,ctx)+'</p>'
-   +'<div class="hint">descriptive: support '+(pct==null?'n/a':pct+'%')+' of weighted positions, weights a 5 · b 4 · c 3 · d 2 · e 1 · f ½; the verdict is the answer</div>'
-   +'<div class="bar" role="img" aria-label="Descriptive lean: '+(pct==null?'n/a':pct+' percent')+' support"><i style="width:'+(pct||0)+'%"></i></div>'
-   +'<div class="hint">How this is computed: (weight of + positions + ½ weight of ~ positions) ÷ weight of all positions.</div>'
-   +'<table><caption>Positions on this claim</caption><thead><tr><th scope="col">Position</th><th scope="col">Register</th><th scope="col">Pin</th><th scope="col">Gloss</th><th scope="col">Page</th></tr></thead><tbody>'
-   +c.pos.map(x=>'<tr><td>'+words[x.sign]+'</td><td class="mono">('+esc(x.reg)+') '+esc(REGS[x.reg]||'')+'</td><td>'+inline(x.pin,ctx)+'</td><td>'+inline(x.gloss,ctx)+'</td><td>'+inline(x.page,ctx)+'</td></tr>').join('')+'</tbody></table>'
-   +(tn?'<a href="#" data-act="open-tens" data-head="'+esc(tn.head)+'">in the tensions register</a>':'')+'</section>';
+function tensEntries(){return S.tens.split(/^(?=### )/m).filter(s=>/^### /.test(s));}
+const tensId=t=>slugify(t.split('\n')[0].replace(/^###\s*/,''));
+function tensFor(slug){return tensEntries().filter(t=>{const m=t.match(/card:\s*\[\[([^\]|#]+)/);return m&&m[1].trim()===slug;}).map(tensId);}
+function cardHtml(txt,ctx){
+  const c=parseCard(txt);let wp=0,wt=0;
+  c.pos.forEach(x=>{const w=REGW[x.reg]||0;wt+=w;wp+=x.sign==='+'?w:x.sign==='~'?w/2:0;});
+  const lean=wt?Math.round(100*wp/wt):0,SG={'+':'supports','-':'contests','~':'mixed'},tl=ctx.page?tensFor(ctx.page):[];
+  const rows=c.pos.map(x=>'<tr><td>'+SG[x.sign]+'</td><td>('+esc(x.reg)+') '+esc(REGS[x.reg]||'')+'</td><td>'+(x.pin?pinHtml(x.pin,ctx):'')+'</td><td>'+inline(x.gloss,ctx)+'</td><td>'+(x.page?inline(x.page,ctx):'')+'</td></tr>').join('');
+  return '<section class="card'+(ctx.diff&&ctx.ins?' ins':'')+'" aria-label="Contested claim"><p class="lab">Contested claim</p><h4 class="claim">'+inline(c.claim,ctx)+'</h4><p class="verdict">'+esc(c.verdict.replace(/-/g,' ')||'no verdict')+'</p><p>'+inline(c.note,ctx)+'</p>'
+   +'<p class="lab">FIG.01 · Lean bar</p><div class="bar" role="img" aria-label="Support '+lean+' percent of weighted positions"><i style="width:'+lean+'%"></i></div>'
+   +'<p class="how">descriptive: support '+lean+'% of weighted positions, weights a 5 · b 4 · c 3 · d 2 · e 1 · f ½; the verdict is the answer</p>'
+   +'<div class="tw"><table><caption>Positions on this claim</caption><thead><tr><th scope="col">Position</th><th scope="col">Register</th><th scope="col">Pin</th><th scope="col">Gloss</th><th scope="col">Page</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+   +(tl.length?'<p><button type="button" class="lk" data-act="tens" data-id="'+esc(tl[0])+'">in the tensions register</button></p>':'')+'</section>';
 }
-function tensEntries(){
-  const parts=tensions.split(/^### /m),intro=parts.shift();
-  return {intro,items:parts.map(t=>{const nl=t.indexOf('\n'),head=(nl<0?t:t.slice(0,nl)).trim(),body=nl<0?'':t.slice(nl+1),m=body.match(/card:[^\n]*?\[\[([^\]|#]+)/);return {head,body,card:m?m[1].trim():null};})};
+function md(body,ctx){
+  ctx=ctx||{};const out=[];let ins=false,h1done=false;
+  const parts=String(body).split(new RegExp(FENCE+'contested\\n?([\\s\\S]*?)'+FENCE));
+  parts.forEach((seg,i)=>{
+    if(i%2){ctx.ins=ins;out.push(cardHtml(seg,ctx));return;}
+    let para=[],list=null;
+    const cls=()=>ctx.diff?(ins?' class="ins"':' class="dim"'):'';
+    const fP=()=>{if(para.length){out.push('<p'+cls()+'>'+inline(para.join(' '),ctx)+'</p>');para=[];}};
+    const fL=()=>{if(list){out.push('<'+list.t+cls()+'>'+list.items.map(x=>'<li>'+inline(x,ctx)+'</li>').join('')+'</'+list.t+'>');list=null;}};
+    seg.split('\n').forEach(line=>{
+      let m;
+      if(INS0_RE.test(line)){fP();fL();ins=true;return;}
+      if(INS1_RE.test(line)){fP();fL();ins=false;return;}
+      if(!line.trim()){fP();fL();return;}
+      if((m=line.match(/^(#{1,4})\s+(.*)$/))){
+        fP();fL();
+        if(m[1].length===1&&!h1done&&ctx.skipH1){h1done=true;return;}
+        const n=[3,3,4,5][m[1].length-1];out.push('<h'+n+cls()+'>'+inline(m[2],ctx)+'</h'+n+'>');return;
+      }
+      if((m=line.match(/^\s*([-*]|\d+\.)\s+(.*)$/))){fP();const t=/\d/.test(m[1])?'ol':'ul';if(list&&list.t!==t)fL();list=list||{t,items:[]};list.items.push(m[2]);return;}
+      fL();para.push(line.trim());
+    });
+    fP();fL();
+  });
+  return out.join('');
 }
-function logEntries(){
-  const parts=log.split(/^## /m);parts.shift();
-  return parts.map(t=>{const nl=t.indexOf('\n'),h=(nl<0?t:t.slice(0,nl)).trim();return {head:'## '+h,title:h,body:nl<0?'':t.slice(nl+1)};});
+function toMd(p){
+  const f=p.fm,y=a=>'['+(a||[]).join(', ')+']';
+  return '---\ntitle: "'+String(p.title).replace(/"/g,'\\"')+'"\ntype: '+p.type+'\ntags: '+y(f.tags)+'\nregister: '+y(f.register)+'\nstatus: '+(f.status||'')+'\nupdated: '+(f.updated||'')+'\nlinks: '+y(f.links)+'\nsources: '+y(f.sources)+'\n---\n\n'+p.body.replace(new RegExp(INS0+'\\n?|'+INS1+'\\n?','g'),'');
+}
+function firstSentence(a){
+  const para=String(a).trim().split(/\n\s*\n/)[0].replace(/\n/g,' '),flat=para.replace(new RegExp(PIN_SRC,'g'),''),m=flat.match(/^.*?[.!?](?=\s|$)/);
+  return(m?m[0]:flat).replace(/\s+/g,' ').trim();
 }
 
-/* ---------- lint and self-checks ---------- */
-function lintAll(){
-  const idxSlugs=[...index.matchAll(/^\s*[-*]\s*\[\[([^\]|#]+)\]\]/gm)].map(m=>m[1].trim()),idxN={};
-  index.split('\n').forEach(l=>{const m=l.match(/^\s*[-*]\s*\[\[([^\]|#]+)\]\][^\n]*✓\s*(\d+)/);if(m)idxN[m[1].trim()]=+m[2];});
-  const te=tensEntries().items.filter(x=>x.card),C=[],add=(id,name,items)=>C.push({id,name,items});
-  add('dang','Dangling links ([[slug]] with no page)',pages.flatMap(p=>uniq(p._links).filter(l=>!bySlug[l]).map(l=>({slug:p.slug,note:'[['+l+']]'}))));
-  add('orph','Orphan pages (no other page links to them)',pages.filter(p=>!p._back.length).map(p=>({slug:p.slug})));
-  add('unv','Pins not verified by this page',pages.flatMap(p=>p._pins.map((x,i)=>p._v[i].ok?null:{slug:p.slug,note:x.label+': '+p._v[i].why}).filter(Boolean)));
-  add('lie','Pins marked ✓ that fail',pages.flatMap(p=>p._pins.map((x,i)=>(x.mark==='✓'&&!p._v[i].ok)?{slug:p.slug,note:x.label}:null).filter(Boolean)));
-  add('src','Pages whose sources differ from the documents pinned',pages.filter(p=>{const a=uniq(p.frontmatter.sources||[]).sort().join('|'),b=uniq(p._pins.map(x=>x.id)).sort().join('|');return a!==b;}).map(p=>({slug:p.slug})));
-  add('nop','Pages with no pins',pages.filter(p=>!p._pins.length).map(p=>({slug:p.slug})));
-  add('rec','Links not reciprocated (A lists B, B does not list A)',pages.flatMap(p=>(p.frontmatter.links||[]).filter(l=>bySlug[l]&&!(bySlug[l].frontmatter.links||[]).includes(p.slug)).map(l=>({slug:p.slug,note:'→ '+l}))));
-  add('idx','Pages missing from the index, and index lines without a page',[...pages.filter(p=>!idxSlugs.includes(p.slug)).map(p=>({slug:p.slug,note:'not in the index'})),...idxSlugs.filter(s=>!bySlug[s]).map(s=>({slug:s,note:'index line without a page'}))]);
-  add('idn','Index ✓N that differs from the computed count',pages.filter(p=>p.slug in idxN&&idxN[p.slug]!==vcount(p)).map(p=>({slug:p.slug,note:'index '+idxN[p.slug]+', computed '+vcount(p)})));
-  add('ten','Contested cards without a tensions entry, and the reverse',[...pages.filter(p=>p._con.length&&!te.some(x=>x.card===p.slug)).map(p=>({slug:p.slug,note:'no tensions entry'})),...te.filter(x=>!bySlug[x.card]||!bySlug[x.card]._con.length).map(x=>({slug:x.card,note:'tensions entry without a card'}))]);
-  add('stub','Stub pages',pages.filter(p=>p.frontmatter.status==='stub').map(p=>({slug:p.slug})));
-  add('inb','Pins to a document still in the inbox',pages.flatMap(p=>p._pins.filter(x=>docs[x.id]&&docs[x.id].status==='inbox').map(x=>({slug:p.slug,note:x.label}))));
-  return C;
-}
-const needLook=()=>lintAll().filter(c=>c.items.length).length;
-function slugLinks(items,max){
-  const u=uniq(items.map(x=>x.slug)),sh=u.slice(0,max||12);
-  return sh.map(s=>bySlug[s]?'<a href="#'+esc(s)+'" data-act="open-page" data-slug="'+esc(s)+'">'+esc(s)+'</a>':esc(s)).join(', ')+(u.length>sh.length?' … and '+(u.length-sh.length)+' more':'');
-}
-function selfChecks(){
-  const R=[],L=Object.fromEntries(lintAll().map(c=>[c.id,c])),pins=sum(pages,p=>p._pins.length),ver=sum(pages,vcount);
-  const m=index.split('\n').slice(0,8).join('\n').match(/(\d[\d,]*) pins/),stated=m?+m[1].replace(/,/g,''):null;
-  const ck=(g,t,ok,items)=>R.push({g,t,ok,items:items||[]});
-  ck('Pins','Pins found by the regular expression ('+nf(pins)+') against the number stated in the index ('+(stated==null?'none stated':nf(stated))+')',stated===pins);
-  ck('Pins','Verified by this page ('+nf(ver)+') against found ('+nf(pins)+'); ✓ marks that fail: '+L.lie.items.length,ver===pins&&!L.lie.items.length,L.lie.items);
-  const lb=sum(pages,p=>p._v.filter(v=>v.labelBad).length);
-  ck('Labels','Pins whose quote is found but whose label does not match the passage’s paragraph or page label: '+lb,lb===0);
-  ck('Structure','Dangling links '+L.dang.items.length+'; orphan pages '+L.orph.items.length,!L.dang.items.length&&!L.orph.items.length,[...L.dang.items,...L.orph.items]);
-  ck('Structure','sources equal the pinned documents on '+(pages.length-L.src.items.length)+' of '+pages.length+' pages',!L.src.items.length,L.src.items);
-  ck('Structure','Every page in the index and every index [[slug]] a page: '+L.idx.items.length+' differences',!L.idx.items.length,L.idx.items);
-  ck('Structure','Contested cards ('+sum(pages,p=>p._con.length)+') against tensions card: entries ('+tensEntries().items.filter(x=>x.card).length+'): '+L.ten.items.length+' differences',!L.ten.items.length,L.ten.items);
-  if(!S.callLog.length)ck('Model answers','No call to the model yet',null);
-  S.callLog.forEach((c,i)=>ck('Model answers','Call '+(i+1)+' ('+c.kind+'): '+(c.parsed?'JSON parsed':'JSON not parsed')+'; slugs not in the wiki: '+((c.bad||[]).length)+(c.returned!=null?'; returned '+c.returned+' = verified '+c.ver+' + could not verify '+c.fail+' + dropped '+c.drop:''),c.parsed&&(c.returned==null||c.returned===c.ver+c.fail+c.drop)));
-  if(!ing)ck('Coverage','No ingest started',null);
-  else{const n=ing.doc.passages.length,done=ing.next>=ing.batches.length;ck('Coverage','Passages sent ('+ing.sent+') against passages.length ('+n+')'+(done?'':' — the run is not complete')+'; takeaways naming a passage that was not sent: dropped and counted ('+ing.dropped+')',done?ing.sent===n:null);}
-  const warn=sum(pages,p=>p._pins.filter(x=>x.mark==='⚠').length);
-  const changed=pages.filter(p=>!(p.slug in orig)||orig[p.slug]!==p.body),badCh=sum(changed,p=>p._v.filter(v=>!v.ok).length);
-  ck('Unverified','⚠ pins in the wiki now: '+warn+' (at load: '+loadedWarn+'); pins in changed pages that do not verify: '+badCh,warn===loadedWarn&&badCh===0);
-  if(ing&&ing.tk.length){const v=ing.tk.filter(t=>t.ok).length,f=ing.tk.length-v;ck('Unverified','Could not verify ('+f+') plus verified takeaways ('+v+') equal takeaways returned ('+ing.tkRet+') less those dropped ('+ing.dropped+')',f+v===ing.tkRet-ing.dropped);}
-  const una=changed.filter(p=>!S.approved.has(p.slug));
-  ck('Approval','Pages changed in the wiki ('+changed.length+') against approved changes ('+S.approved.size+'); changed without an approved card: '+una.length,!una.length&&changed.length===S.approved.size,una.map(p=>({slug:p.slug})));
-  if(!S.filings)ck('Filing','Nothing filed yet',null);
-  else{
-    const lastLog=logEntries().slice(-1)[0],names=lastFiling?lastFiling.slugs:[];
-    const miss=names.filter(s=>!(lastLog&&lastLog.body.includes('[['+s+']]'))&&!(lastLog&&lastLog.title.includes(s)));
-    const idxBad=lintAll().find(c=>c.id==='idn').items;
-    ck('Filing','Changed pages re-parsed and re-verified (pins that fail: '+badCh+'); index counts equal the pages’ verified pins ('+idxBad.length+' differences); last log entry names '+(names.length-miss.length)+' of '+names.length+' changed pages',badCh===0&&!idxBad.length&&!miss.length);
-    if(lastFiling)ck('Filing','Lint checks needing a look: before '+lastFiling.before+', after '+lastFiling.after+' (side by side)',lastFiling.after<=lastFiling.before);
-  }
-  ck('Session','Log entries added this session ('+S.logAdded.size+') against filings made ('+S.filings+'); a download would hold '+pages.length+' pages (pages.length '+pages.length+')',S.logAdded.size===S.filings);
+/* ---------- lint and checks ---------- */
+function lint(){
+  const names=new Set(P.map(p=>p.slug)),R=[];
+  const row=(label,items)=>R.push({label,items,pages:uniq(items.map(i=>i.p))});
+  const il=Array.from(S.index.matchAll(/^\s*[-*]\s*\[\[([^\]|#]+)\]\]([^\n]*)/gm),m=>({s:m[1].trim(),t:m[2]})),is=new Set(il.map(x=>x.s));
+  const bad=[];P.forEach(p=>an(p)._pins.forEach(x=>{if(!verify(x).ok)bad.push({p:p.slug,mark:x.mark});}));
+  const tc=tensEntries().map(t=>{const m=t.match(/card:\s*\[\[([^\]|#]+)/);return m?m[1].trim():null;}).filter(Boolean);
+  const cards=p=>p.body.split(FENCE+'contested').length-1;
+  row('Dangling links',P.flatMap(p=>an(p)._links.filter(s=>!names.has(s)).map(s=>({p:p.slug}))));
+  row('Orphan pages (nothing links to them)',P.filter(p=>!backlinks(p.slug).length).map(p=>({p:p.slug})));
+  row('Pins not verified by this page',bad);
+  row('Pins marked ✓ that fail',bad.filter(b=>b.mark==='✓'));
+  row('Pages whose sources differ from the documents pinned',P.filter(p=>!sameSet(p.fm.sources,pinDocs(p))).map(p=>({p:p.slug})));
+  row('Pages with no pins',P.filter(p=>!an(p)._pins.length).map(p=>({p:p.slug})));
+  row('Links not reciprocated',P.flatMap(p=>p.fm.links.filter(s=>pg(s)&&!pg(s).fm.links.includes(p.slug)).map(()=>({p:p.slug}))));
+  row('Pages missing from the index',P.filter(p=>!is.has(p.slug)).map(p=>({p:p.slug})));
+  row('Index lines without a page',il.filter(x=>!names.has(x.s)).map(x=>({p:x.s})));
+  row('Index ✓N that differs from the computed count',il.filter(x=>{const m=x.t.match(/✓\s*(\d+)\s*$/);return pg(x.s)&&m&&+m[1]!==pinCount(pg(x.s));}).map(x=>({p:x.s})));
+  row('Contested cards without a tensions entry',P.filter(p=>cards(p)>tc.filter(s=>s===p.slug).length).map(p=>({p:p.slug})));
+  row('Tensions entries without a contested card',uniq(tc).filter(s=>!pg(s)||cards(pg(s))<tc.filter(x=>x===s).length).map(s=>({p:s})));
+  row('Stub pages',P.filter(p=>p.fm.status==='stub').map(p=>({p:p.slug})));
+  row('Pins to a document still in the inbox',P.flatMap(p=>an(p)._pins.filter(x=>DOC[x.id]&&DOC[x.id].status==='inbox').map(()=>({p:p.slug}))));
   return R;
 }
-
-/* ---------- rendering: header, tabs, pages ---------- */
-function setRunning(k,b){running[k]=b;const s=$('#t'+k+' .run');if(s)s.textContent=b?' · running':'';}
-function renderStrip(){$('#strip').textContent='Changes this session: '+S.changes.length+' · Calls to the model: '+S.calls+' · Passages that left the browser: '+S.passages;}
-function renderHead(){
-  const c={};pages.forEach(p=>{c[p.type]=(c[p.type]||0)+1;});
-  const inbox=Object.values(docs).filter(d=>d.status==='inbox').length;
-  $('#hline').textContent=pages.length+' pages ('+(c.source||0)+' sources, '+(c.concept||0)+' concepts, '+(c.entity||0)+' entities, '+(c.question||0)+' questions) · '+nf(sum(pages,p=>p._pins.length))+' pins, '+nf(sum(pages,vcount))+' verified by this page · '+LIBR.length+' documents, '+inbox+' in the inbox · built '+(WK.built||'unknown');
-  renderStrip();
+const lintNums=()=>lint().map(r=>r.items.length);
+function changedSlugs(){return P.filter(p=>ORIG[p.slug]!==p.body).map(p=>p.slug);}
+function checks(){
+  const st=pinStats(),L=lint(),out=[],n=l=>(L.find(r=>r.label.indexOf(l)===0)||{items:[]}).items.length;
+  const add=(name,ok,text,pages)=>out.push({name,ok,text,pages:pages||[]});
+  const stated=(S.index.match(/(\d[\d,]*) pins/)||[])[1],sn=stated?+stated.replace(/,/g,''):null;
+  add('Pins',sn===st.total&&st.ok===st.total&&!st.failMarked,'found '+fmt(st.total)+' by the regular expression, the index states '+(stated||'no number')+'; verified '+fmt(st.ok)+' of '+fmt(st.total)+'; marked ✓ but failing: '+st.failMarked,st.failPages);
+  add('Labels',st.label===0,st.label+' pin(s) whose quote is found but whose label names another paragraph or page');
+  const sd=[n('Dangling'),n('Orphan'),n('Pages whose sources'),n('Pages missing')+n('Index lines'),n('Contested')+n('Tensions')];
+  add('Structure',sd.every(x=>x===0),'dangling links '+sd[0]+'; orphans '+sd[1]+'; sources differing from pinned documents '+sd[2]+'; index mismatches '+sd[3]+'; contested cards against tensions entries '+sd[4]);
+  const ca=S.callLog;
+  if(!ca.length)add('Model answers',null,'no call to the model yet');
+  else{
+    const bad=ca.filter(c=>!c.ok).length,unk=[].concat(...ca.map(c=>c.unknown||[])),tk=ca.filter(c=>c.tk),r=tk.reduce((a,c)=>a+c.tk.returned,0),v=tk.reduce((a,c)=>a+c.tk.ok,0),f=tk.reduce((a,c)=>a+c.tk.failed,0),d=tk.reduce((a,c)=>a+c.tk.dropped,0);
+    add('Model answers',bad===0&&r===v+f+d,ca.length+' calls, '+(ca.length-bad)+' parsed as JSON; slugs that do not exist: '+(unk.length?unk.join(', '):'none')+(tk.length?'; takeaways returned '+r+' = verified '+v+' + could not verify '+f+' + dropped '+d:''));
+  }
+  if(!ING)add('Coverage',null,'no ingest started');
+  else{const tot=ING.doc.passages.length;add('Coverage',ING.sent===tot?true:(ING.stopped?false:null),'passages sent '+ING.sent+' of '+tot+'; takeaways naming a passage that was not sent were dropped: '+ING.dropped);}
+  const ch=changedSlugs(),allOk=ch.every(s=>an(pg(s))._pins.every(x=>verify(x).ok));
+  add('Unverified',st.warn===S.warn0&&allOk&&st.failMarked===0,'⚠ marks in the wiki: '+st.warn+' (at load: '+S.warn0+'); every pin in a changed page verifies: '+(allOk?'yes':'no'),ch);
+  const ap=uniq(S.changes.map(c=>c.slug));
+  add('Approval',sameSet(ch,ap),ch.length+' page(s) differ from the loaded wiki; '+ap.length+' approved or filed here'+(ING&&ING.filed?'; the log entry names approved and rejected pages by slug':''),ch);
+  if(!S.filing)add('Filing',null,'nothing filed yet');
+  else{
+    const f=S.filing,okp=f.slugs.every(s=>pg(s)&&an(pg(s))._pins.every(x=>verify(x).ok)),oki=f.slugs.every(s=>{const m=S.index.match(new RegExp('\\[\\['+escRe(s)+'\\]\\][^\\n]*✓\\s*(\\d+)'));return !m||+m[1]===pinCount(pg(s));});
+    const le=logEntries().pop(),okl=le&&f.slugs.every(s=>(le.head+le.body).indexOf('[['+s+']]')>=0||le.head.indexOf(pg(s).title)>=0);
+    add('Filing',okp&&oki&&!!okl,'changed pages re-verified: '+(okp?'yes':'no')+'; index counts equal pin counts: '+(oki?'yes':'no')+'; last log entry names them: '+(okl?'yes':'no')+'; lint checks needing a look: before '+f.before.filter(x=>x).length+', after '+f.after.filter(x=>x).length,f.slugs);
+  }
+  const ops=uniq(S.changes.map(c=>c.op)).length;
+  add('Session',ops===S.logAdded&&exportObj().pages.length===P.length,S.changes.length+' page change(s) in '+ops+' filing(s); log entries added this session: '+S.logAdded+'; the download holds '+exportObj().pages.length+' pages, the wiki '+P.length);
+  return out;
 }
+
+/* ---------- header, tabs, list, page ---------- */
+const TN=['PAGES','ASK','INGEST','CHECK','RECORD'];
+function renderHeader(){
+  const c={};P.forEach(p=>{c[p.type]=(c[p.type]||0)+1;});const st=pinStats(),inbox=Object.keys(DOC).filter(k=>DOC[k].status==='inbox').length;
+  const parts=['source','concept','entity','question'].map(t=>(c[t]||0)+' '+(c[t]===1?t:PLU[t]));
+  $('#hsub').textContent=P.length+' pages ('+parts.join(', ')+') · '+fmt(st.total)+' pins, '+fmt(st.ok)+' verified by this page · '+LIB.length+' documents, '+inbox+' in the inbox · built '+(WIKI.built||'unknown');
+  $('#strip').textContent='Changes this session: '+S.changes.length+' · Calls to the model: '+S.calls+' · Passages that left the browser: '+S.passages;
+}
+function setRun(i,on){const b=$('#tab'+i+' .run');if(b)b.textContent=on?' · running':'';}
 function showTab(i,focus){
-  curTab=i;const tabs=document.querySelectorAll('.tab');
-  tabs.forEach((b,k)=>{const on=k===i;b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;b.classList.toggle('on',on);$('#p'+(k+1)).hidden=!on;});
-  if(focus)tabs[i].focus();
-  if(i===3)renderCheck();
-  if(i===4)renderRecord();
+  S.tab=i;
+  $$('#tabs [role=tab]').forEach((b,j)=>{b.setAttribute('aria-selected',i===j);b.tabIndex=i===j?0:-1;});
+  $$('.panel').forEach((x,j)=>{x.hidden=i!==j;});
+  if(i===2)renderIngest();if(i===3)renderCheck();if(i===4)renderRecord();
+  if(focus)$('#tab'+i).focus();
 }
-function openPage(slug){
-  curPage=bySlug[slug]?slug:'';
-  try{if(decodeURIComponent(location.hash.slice(1))!==curPage)location.hash=curPage;}catch(e){}
-  showTab(0);renderList();renderPageView();window.scrollTo(0,0);
-}
-function openTens(head){showTab(4);const el=document.getElementById('tens-'+slugify(head));if(el){el.scrollIntoView();el.querySelector('summary').focus();el.open=true;}}
 function renderList(){
-  const q=($('#flt').value||'').trim().toLowerCase();
-  const f=pages.filter(p=>!q||(p.title+' '+p.slug+' '+(p.frontmatter.tags||[]).join(' ')).toLowerCase().includes(q));
-  $('#cnt').innerHTML='<span class="big">'+f.length+'</span> <span class="hint">of '+pages.length+' pages</span>';
-  const order=['source','concept','entity','question'].concat(uniq(pages.map(p=>p.type)).filter(t=>!SEC[t]));
-  let h='';
-  order.forEach(t=>{const g=f.filter(p=>p.type===t);if(!g.length)return;
-    h+='<div class="grp">'+esc(t)+' ('+g.length+')</div><ul class="plist">'+g.map(p=>'<li><a href="#'+esc(p.slug)+'" data-act="open-page" data-slug="'+esc(p.slug)+'"'+(p.slug===curPage?' aria-current="page"':'')+'>'+esc(p.title)+'</a><span class="hint">('+esc((p.frontmatter.register||[]).join(''))+') · '+p._pins.length+' pins'+(p.frontmatter.status==='stub'?' · <b class="stubtag">stub</b>':'')+'</span></li>').join('')+'</ul>';});
-  $('#plist').innerHTML=h||'<p class="hint">No page matches.</p>';
+  const f=S.flt.trim().toLowerCase();
+  const m=P.filter(p=>!f||p.title.toLowerCase().indexOf(f)>=0||p.slug.indexOf(f)>=0||p.fm.tags.join(' ').toLowerCase().indexOf(f)>=0);
+  $('#cnt').innerHTML='<span class="big">'+m.length+'</span> of '+P.length+' pages';
+  const types=uniq(['source','concept','entity','question'].concat(P.map(p=>p.type)));
+  $('#plist').innerHTML=types.map(t=>{
+    const L=m.filter(p=>p.type===t);if(!L.length)return '';
+    return '<h3 class="lab grp">'+esc(t)+' · '+L.length+'</h3><ul class="plist">'+L.map(p=>'<li><a href="#'+encodeURIComponent(p.slug)+'"'+(p.slug===S.cur?' aria-current="page"':'')+'>'+esc(p.title)+'</a><br><span class="meta">'+(p.fm.register.join(' ')||'–')+' · '+an(p)._pins.length+' pins'+(p.fm.status==='stub'?' <span class="stub">stub</span>':'')+'</span></li>').join('')+'</ul>';
+  }).join('')||'<p class="hint">No page matches.</p>';
 }
-function pageMarkdown(p){return '---\n'+Object.keys(p.frontmatter).map(k=>k+': '+JSON.stringify(p.frontmatter[k])).join('\n')+'\n---\n\n'+p.body;}
-function renderPageView(){
-  const el=$('#pview');
-  if(!curPage||!bySlug[curPage]){el.innerHTML='<div class="lab">INDEX · what does the wiki say?</div><h2 class="ptitle">Index</h2><div class="body">'+md(index,{})+'</div><p class="hint">How this is computed: the index is the wiki’s own text. Pins counted here and in the header are found by this page’s code, not read from the index. Choose a page on the left.</p>';return;}
-  const p=bySlug[curPage],fm=p.frontmatter,ctx={slug:p.slug},bl=p._links;
-  const body=p.body.replace(/^#\s+.*\n+/,'');
-  const out=uniq(fm.links||[]),src=fm.sources||[];
-  el.innerHTML='<article><div class="lab"><a href="#" data-act="open-page" data-slug="">Index</a> · PAGE · '+esc(p.slug)+'</div><h2 class="ptitle">'+esc(p.title)+'</h2>'
-   +'<div><span class="badge">'+esc(p.type)+'</span>'+(fm.register||[]).map(l=>'<span class="badge">('+esc(l)+') '+esc(REGN[l]||'')+'</span>').join('')+'<span class="badge">status: '+esc(fm.status||'?')+'</span><span class="badge">updated '+esc(fm.updated||'?')+'</span></div>'
-   +'<div class="hint">tags: '+esc((fm.tags||[]).join(', ')||'none')+'</div>'
-   +'<div class="body">'+md(body,ctx)+'</div>'
-   +'<p class="hint">How this is computed: '+p._pins.length+' pins found in this body by regular expression; '+vcount(p)+' verified = the quote (fragments in order) stands in a passage of that document starting on that PDF page, and the label names its paragraph or page label.</p>'
-   +'<h3 class="s">Links out</h3>'+(out.length?'<ul>'+out.map(s=>'<li>'+wlink(s)+(bl.includes(s)?'':' <span class="hint">frontmatter only</span>')+'</li>').join('')+'</ul>':'<p class="hint">none</p>')
-   +'<h3 class="s">Linked from</h3>'+(p._back.length?'<ul>'+p._back.map(s=>'<li>'+wlink(s)+'</li>').join('')+'</ul>':'<p class="hint">no page links here</p>')
-   +'<h3 class="s">Sources</h3>'+(src.length?'<ul>'+src.map(id=>{const d=docs[id];return d?'<li><a href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.short_title||d.title)+'</a> <span class="hint">'+esc(d.kind)+' · '+esc(d.year)+(d.status==='inbox'?' · inbox':'')+'</span></li>':'<li>'+esc(id)+' <span class="hint">not in the library</span></li>';}).join('')+'</ul>':'<p class="hint">none</p>')
-   +'<p><button type="button" class="btn" data-act="copy-page">Copy page as markdown</button></p></article>';
+function renderPage(){
+  const el=$('#pmain');
+  if(!S.cur){el.innerHTML='<p class="lab">INDEX</p><h2>Index of the wiki</h2><p class="hint">The catalog the wiki keeps, shown as written. Choose a page on the left; pins open the PDF beside this app.</p><div class="page">'+md(S.index,{skipH1:true})+'</div>';return;}
+  const p=pg(S.cur);
+  if(!p){el.innerHTML='<p class="lab">NO SUCH PAGE</p><h2>There is no page called "'+esc(S.cur)+'"</h2><p><a href="#index">Back to the index</a></p>';return;}
+  an(p);
+  const bl=backlinks(p.slug),inB=new Set(p._links),f=p.fm;
+  const regs=f.register.map(r=>'<span class="badge">('+esc(r)+') '+esc(REGN[r]||'?')+'</span>').join('');
+  const out=f.links.map(s=>'<li>'+(pg(s)?'<a href="#'+encodeURIComponent(s)+'">'+esc(pg(s).title)+'</a>':'<span class="dang">'+esc(s)+' <small>no page</small></span>')+(inB.has(s)?'':' <span class="hint">frontmatter only</span>')+'</li>').join('');
+  const src=f.sources.map(id=>{const d=DOC[id];return d?'<li><b>'+esc(d.short_title||d.title)+'</b> · '+esc(d.kind)+' · '+esc(d.year)+' · <a href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.symbol||id)+'</a>'+(d.status==='inbox'?' <span class="stub">inbox</span>':'')+'</li>':'<li>'+esc(id)+' <span class="hint">not in the library</span></li>';}).join('');
+  el.innerHTML='<p class="lab">PAGE · '+esc(p.slug)+'</p><h2>'+esc(p.title)+'</h2><p><span class="badge">'+esc(p.type)+'</span>'+regs+'<span class="badge">'+esc(f.status||'no status')+'</span><span class="badge">updated '+esc(f.updated||'?')+'</span></p><p class="meta">'+f.tags.map(esc).join(' · ')+'</p>'
+   +'<div class="page">'+md(p.body,{page:p.slug,skipH1:true})+'</div>'
+   +'<h3>Links out</h3><ul>'+(out||'<li class="hint">none</li>')+'</ul><h3>Linked from</h3><ul>'+(bl.map(b=>'<li><a href="#'+encodeURIComponent(b.slug)+'">'+esc(b.title)+'</a></li>').join('')||'<li class="hint">no page links here</li>')+'</ul>'
+   +'<h3>Sources</h3><ul>'+(src||'<li class="hint">none</li>')+'</ul><p><button type="button" class="btn" data-act="copy-md">Copy page as markdown</button> <span id="cpnote" class="hint" aria-live="polite"></span></p>';
+}
+function onHash(){
+  const h=decodeURIComponent(location.hash.replace(/^#/,''));
+  S.cur=h&&h!=='index'?h:null;showTab(0);renderList();renderPage();window.scrollTo(0,0);
 }
 
-/* ---------- model calls ---------- */
-async function callModel(prompt,nPass,kind){
-  S.calls++;S.chars+=prompt.length;S.passages+=nPass;renderStrip();
-  const rec={kind,parsed:false};S.callLog.push(rec);
-  let raw;
-  try{if(!(window.studio&&typeof studio.ask==='function'))throw new Error('studio.ask is not available in this preview');raw=await studio.ask(prompt,{json:true});}
-  catch(e){return {ok:false,raw:'',error:String(e&&e.message||e),rec};}
-  let d;
-  if(raw&&typeof raw==='object'){d=raw;raw=JSON.stringify(raw);}
-  else{raw=String(raw==null?'':raw);d=tryJ(raw);
-    if(d===undefined){const m=raw.match(new RegExp(FENCE+'(?:json)?\\s*([\\s\\S]*?)'+FENCE));if(m)d=tryJ(m[1]);}
-    if(d===undefined){const a=raw.indexOf('{'),b=raw.lastIndexOf('}');if(a>=0&&b>a)d=tryJ(raw.slice(a,b+1));}}
-  if(d===undefined||d===null||typeof d!=='object')return {ok:false,raw,rec};
-  rec.parsed=true;return {ok:true,data:d,raw,rec};
+/* ---------- calls to the model ---------- */
+function parseJSON(r){
+  if(r&&typeof r==='object')return r;
+  const s=String(r==null?'':r).trim();
+  try{return JSON.parse(s);}catch(e){}
+  const m=s.match(/\x60{3}(?:json)?\s*([\s\S]*?)\x60{3}/);
+  if(m){try{return JSON.parse(m[1]);}catch(e){}}
+  return undefined;
 }
-const PINRULE='Pin syntax: [label](pin:ID#pPAGE "verbatim quote") ✓. Quote only words that stand in the passages given; the code will check every quotation, and a pin that does not verify is removed.';
-const REGRULE='Registers: (a) treaty law, (b) General Comments, (c) UN, agency and soft-law reports, (d) national human rights institution, (e) civil society, (f) scholarship. Name the register where it matters, keep the document’s own verb ("notes", "recommends", "proposes"), and never present (c) to (f) as what the treaty requires.';
-function errHtml(e,act){return '<div class="err" role="alert"><p>The model’s answer could not be used'+(e.why?': '+esc(e.why):'')+'. Nothing was filed.</p><pre data-source="ai">'+esc(e.raw||'(no answer)')+'</pre><button type="button" class="btn" data-act="'+act+'">Retry</button></div>';}
+async function callModel(prompt,label,npass,say,what){
+  if(typeof studio==='undefined'||!studio.ask)throw new Error('The studio is not connected, so the model cannot be asked.');
+  S.calls++;S.passages+=npass;renderHeader();
+  const rec={label,chars:prompt.length,passages:npass,ok:false};S.callLog.push(rec);
+  say(what+': '+fmt(prompt.length)+' characters and '+npass+' passage objects are leaving the browser. Waiting for the model…');
+  const raw=await studio.ask(prompt,{json:true}),v=parseJSON(raw);
+  if(v===undefined||v===null){const e=new Error('The answer was not valid JSON.');e.raw=raw;throw e;}
+  rec.ok=true;return v;
+}
+function failHtml(err){return '<div class="warn" role="alert"><b>'+esc(err.e.message||'Error')+'</b>'+(err.e.raw!=null?'<p class="hint">Raw answer, nothing was used:</p><pre>'+esc(String(err.e.raw).slice(0,3000))+'</pre>':'')+'<button type="button" class="btn" data-act="retry">Retry</button></div>';}
+let RETRY=null;
+function showFail(el,e,fn){RETRY=fn;el.innerHTML=failHtml({e});}
+function openSrc(pin){
+  try{studio.openSource(pin.id,pin.page,pin.quote||'');}
+  catch(e){const n=$('#strip');n.textContent='The studio could not open the PDF here.';}
+}
+function copyText(t,note){
+  const done=ok=>{note.textContent=ok?'Copied.':'Could not copy; select the text and copy it by hand.';};
+  const fb=()=>{const a=document.createElement('textarea');a.value=t;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();let ok=false;try{ok=document.execCommand('copy');}catch(e){}a.remove();done(ok);};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(()=>done(true),fb);else fb();
+}
 
-/* ---------- tab 02: ask ---------- */
-function pinKey(p){return p.id+'#p'+p.page+'|'+norm(p.quote);}
-function askEval(){
-  const a=ask.answer,pins=parsePins(a.answer);let good=0,bad=0;const reg={};
-  pins.forEach(p=>{if(a.allowed.has(pinKey(p))&&verify(p).ok){good++;const r=(docReg(p.id)[0]||'?');reg[r]=(reg[r]||0)+1;}else bad++;});
-  return {pins,good,bad,reg};
+/* ---------- index, log and tensions editing ---------- */
+function idxSet(slug,line,secRe,secName){
+  const L=S.index.split('\n'),i=L.findIndex(l=>new RegExp('^\\s*[-*]\\s*\\[\\['+escRe(slug)+'\\]\\]').test(l));
+  if(i>=0)L[i]=line;
+  else{
+    const h=L.findIndex(l=>secRe.test(l));
+    if(h<0)L.push('','## '+secName,line);
+    else{let e=h+1;while(e<L.length&&!/^#{1,4}\s/.test(L[e]))e++;while(e>h+1&&!L[e-1].trim())e--;L.splice(e,0,line);}
+  }
+  S.index=L.join('\n');
+}
+function idxRecount(slug,N){S.index=S.index.split('\n').map(l=>new RegExp('^\\s*[-*]\\s*\\[\\['+escRe(slug)+'\\]\\]').test(l)?(/✓\s*\d+/.test(l)?l.replace(/✓\s*\d+/,'✓'+N):l):l).join('\n');}
+function idxCounts(){
+  const L=S.index.split('\n'),i=L.findIndex(l=>/\d[\d,]* pins/.test(l));if(i<0)return;
+  const c={};P.forEach(p=>{c[p.type]=(c[p.type]||0)+1;});let l=L[i].replace(/\d[\d,]*( pins)/,fmt(pinStats().total)+'$1').replace(/\d+( pages)/,P.length+'$1');
+  [['source','sources?'],['concept','concepts?'],['entity','(?:entity|entities)'],['question','questions?']].forEach(a=>{l=l.replace(new RegExp('\\d+( '+a[1]+')'),(c[a[0]]||0)+'$1');});
+  L[i]=l;S.index=L.join('\n');
+}
+function addLog(e){S.log=S.log.replace(/\s+$/,'')+'\n\n'+e+'\n';S.logAdded++;}
+function logEntries(){return S.log.split(/^(?=## )/m).filter(s=>/^## /.test(s)).map(s=>{const i=s.indexOf('\n');return{head:s.slice(3,i<0?undefined:i).trim(),body:i<0?'':s.slice(i+1).trim()};});}
+
+/* ---------- 02 ASK ---------- */
+const ASK={pages:[],manual:false,res:null,sent:null,bad:0,n:0,fileOpen:false,filed:null};
+function askPlan(){
+  const q=$('#q').value.trim().length;
+  $('#askSend').innerHTML='<b>What will leave this browser</b> when you press <i>'+(ASK.res?'Ask again':'Ask the wiki')+'</i>. Step 1: the index ('+fmt(S.index.length)+' characters) and your question ('+q+' characters); the model returns up to five page slugs. Step 2: the full text of those pages and your question, announced here with exact numbers before it goes. 0 library passages are sent from this tab.';
+}
+async function doAsk(){
+  if(S.running)return;
+  const q=$('#q').value.trim(),say=t=>{$('#askProg').textContent=t;};
+  if(!q){say('Type a question first.');$('#q').focus();return;}
+  S.running='ask';S.stop=false;setRun(1,true);$('#askStop').hidden=false;$('#askBtn').disabled=true;$('#askErr').innerHTML='';
+  let stage=1;
+  try{
+    if(!(ASK.manual&&ASK.pages.length)){
+      const prompt='You are the librarian of a research wiki on neurotechnology in the administration of justice. Below are the wiki\'s index (one line per page) and a question. Return JSON {"pages":["slug", ...]}: the slugs of at most five pages most likely to answer the question. Use only slugs that appear in the index.\n\nINDEX\n'+S.index+'\n\nQUESTION\n'+q;
+      const r=await callModel(prompt,'ask · pages',0,say,'Step 1, the index and your question');
+      if(S.stop)throw new Error('stopped');
+      const asked=(r&&Array.isArray(r.pages)?r.pages:[]).map(String);
+      S.callLog[S.callLog.length-1].unknown=asked.filter(s=>!pg(s));
+      ASK.pages=uniq(asked.filter(s=>pg(s))).slice(0,5);
+      if(!ASK.pages.length)throw new Error('The model named no page that exists in this wiki.');
+    }
+    ASK.manual=false;renderAskPages();stage=2;
+    const pages=ASK.pages.map(pg),chars=pages.reduce((a,p)=>a+p.body.length,0);
+    $('#askSend').innerHTML='<b>Step 2 is sending:</b> '+pages.length+' pages, '+fmt(chars)+' characters; 0 library passages have left the browser. The pages: '+pages.map(p=>esc(p.title)).join('; ')+'.';
+    const prompt='Answer the question using ONLY the wiki pages below. Return JSON {"title":"a short page title","answer":"markdown, at most 350 words","cannot_answer":"what these pages cannot answer, in one or two sentences"}. Build the answer around pins copied exactly from the pages; link other pages as [[slug]]. '+PIN_RULE+' Registers: (a) treaty law, (b) General Comments, (c) UN, agency and soft-law reports, (d) national human rights institution, (e) civil society, (f) scholarship.\n\nQUESTION\n'+q+'\n\nPAGES\n'+pages.map(p=>'### '+p.slug+' — '+p.title+'\n'+p.body).join('\n\n');
+    const r2=await callModel(prompt,'ask · answer',0,say,'Step 2, '+pages.length+' pages and your question');
+    if(S.stop)throw new Error('stopped');
+    ASK.res={title:String(r2.title||q).slice(0,160),answer:String(r2.answer||''),cannot:r2.cannot_answer};
+    ASK.sent=new Set();pages.forEach(p=>an(p)._pins.forEach(x=>ASK.sent.add(pinKey(x))));
+    ASK.filed=null;ASK.fileOpen=false;$('#askBtn').textContent='Ask again';
+    renderAskOut();say('Done. Nothing has been filed.');
+  }catch(e){
+    if(e.message==='stopped')say('Stopped. Nothing was filed.');
+    else{if(stage===2)ASK.manual=true;showFail($('#askErr'),e,doAsk);say('The step failed. Nothing was filed.');}
+  }
+  S.running=null;setRun(1,false);$('#askStop').hidden=true;$('#askBtn').disabled=false;askPlan();renderHeader();
+}
+function renderAskPages(){
+  const el=$('#askPages');
+  if(!ASK.pages.length){el.innerHTML='';return;}
+  if(!$('#pick')){
+    el.innerHTML='<p class="lab">PAGES THE ANSWER IS BUILT ON</p><p><span id="pchips"></span> <a href="#" data-act="chg">Change pages</a></p><fieldset id="pick" class="pick" hidden><legend>Tick up to five pages, then press Ask again</legend>'+P.map(p=>'<label class="ck"><input type="checkbox" data-act="pickp" value="'+esc(p.slug)+'"> '+esc(p.title)+'</label>').join('')+'</fieldset>';
+  }
+  $('#pchips').innerHTML=ASK.pages.map(s=>'<a class="pgchip" href="#'+encodeURIComponent(s)+'">'+esc(pg(s).title)+'</a>').join('');
+  $$('#pick input').forEach(c=>{c.checked=ASK.pages.includes(c.value);});
+}
+function renderAskOut(){
+  const r=ASK.res,el=$('#askOut');
+  if(!r){el.innerHTML='';renderAskFile();return;}
+  const pins=parsePins(r.answer),by={};let bad=0;
+  pins.forEach(x=>{if(verify(x).ok&&ASK.sent.has(pinKey(x))){const l=docReg(x.id)[0]||'?';by[l]=(by[l]||0)+1;}else bad++;});
+  ASK.bad=bad;ASK.n=pins.length;
+  const cn=Array.isArray(r.cannot)?r.cannot.map(x=>'- '+x).join('\n'):String(r.cannot||'');
+  el.innerHTML='<div data-source="ai" class="answer"><p class="lab">Answer · written by a model, every pin checked by this page</p><h3>'+esc(r.title)+'</h3>'+md(r.answer,{sent:ASK.sent})+'<h4>What the library cannot answer</h4>'+(cn.trim()?md(cn,{sent:ASK.sent}):'<p>The model flagged nothing.</p>')+'</div>'
+   +'<p class="hint">Verified pins by register: '+(Object.keys(by).sort().map(l=>'('+l+') '+(REGS[l]||'unknown')+' '+by[l]).join(' · ')||'none')+(bad?' · struck or not verified: '+bad:'')+'</p>'
+   +'<p class="how">How this is computed: a pin counts when its quote is found in a passage of its library document on the same PDF page and it stands on the pages sent; its register is the register of its document.</p>'
+   +(ASK.filed?'<p aria-live="polite">Filed as <a href="#'+encodeURIComponent(ASK.filed)+'">'+esc(ASK.filed)+'</a>.</p>':ASK.fileOpen?'':'<p><button type="button" class="btn" data-act="fileq">File as a question page</button></p>');
+  renderAskFile();
 }
 function buildQ(){
-  const a=ask.answer,title=(ask.fTitle||a.title||'Untitled question').trim();
-  const base=slugify(title)||'question';let slug=base,n=2;while(bySlug[slug])slug=base+'-'+n++;
-  const pins=parsePins(a.answer),text=a.answer.trim(),first=text.split(/\n\s*\n/)[0];
-  const links=uniq([...text.matchAll(/\[\[([^\]|#]+)/g)].map(m=>m[1].trim())).filter(s=>bySlug[s]);
-  const sources=uniq(pins.map(p=>p.id)),reg=uniq(sources.flatMap(id=>docReg(id))).sort();
-  const tags=(ask.fTags||'').split(',').map(s=>s.trim()).filter(Boolean);
-  const body='# '+title+'\n\n**Short answer.** '+first+'\n\n## Reasoning\n\n'+text+'\n\n## What the library cannot answer\n\n'+(a.cannot||'Nothing was flagged.')+'\n\n## Related\n\n'+(links.map(s=>'- [['+s+']]').join('\n')||'- (no page linked)')+'\n';
-  const ev=askEval(),reasons=[];
-  if(!ev.pins.length)reasons.push('the answer has no pins');
-  if(ev.bad)reasons.push(ev.bad+' pin(s) are struck through or do not verify');
-  return {slug,title,first,body,links,sources,reg,tags,ev,reasons,fileable:!reasons.length,
-    page:{slug,type:'question',title,body,frontmatter:{title,type:'question',tags,register:reg,status:'draft',updated:today(),links,sources}}};
+  const r=ASK.res,qt=$('#qt'),title=((qt?qt.value:r.title).trim())||r.title,base=slugify(title)||'question';
+  let slug=base,i=2;while(pg(slug))slug=base+'-'+(i++);
+  const tags=($('#qtags')?$('#qtags').value:'').split(',').map(s=>s.trim()).filter(Boolean);
+  const pins=parsePins(r.answer).filter(x=>verify(x).ok),sources=uniq(pins.map(x=>x.id));
+  const reg=uniq([].concat(...sources.map(docReg))).sort();
+  const links=uniq(Array.from(r.answer.matchAll(/\[\[([^\]|#]+)/g),m=>m[1].trim())).filter(s=>pg(s));
+  const cn=Array.isArray(r.cannot)?r.cannot.map(x=>'- '+x).join('\n'):String(r.cannot||'');
+  const body='# '+title+'\n\n**Short answer.** '+firstSentence(r.answer)+'\n\n## Reasoning\n\n'+r.answer.trim()+'\n\n## What the library cannot answer\n\n'+(cn.trim()||'The model flagged nothing.')+'\n\n## Related\n\n'+(links.length?links.map(s=>'- [['+s+']]').join('\n'):'- none yet')+'\n';
+  return{slug,type:'question',title,fm:{title,type:'question',tags,register:reg,status:'draft',updated:today(),links,sources},body};
 }
-function plain(s){return String(s).replace(new RegExp(PIN_LOOSE,'g'),'').replace(/\[\[([^\]|#]+)\]\]/g,'$1').replace(/[*_]/g,'').replace(/\s+/g,' ').trim();}
-function renderAsk(){
-  const a=ask,run=!!a.run;
-  const k=a.chosen.length,ch=sum(a.chosen,s=>bySlug[s]?bySlug[s].body.length:0);
-  $('#askNote').textContent=a.stage==='chosen'?'Step 2 will send '+k+' pages, '+nf(ch)+' characters, and your question. 0 library passages will leave the browser.'
-   :a.stage==='s2'?k+' pages, '+nf(ch)+' characters; 0 library passages have left the browser.'
-   :'Step 1 sends the wiki’s index ('+nf(index.length)+' characters) and your question to a language model. Step 2 then sends the bodies of up to 5 pages it names, announced here first. No library passages are sent. Nothing is sent until you press the button.';
-  const b=$('#askBtn');b.textContent=a.stage==='chosen'?'Send these '+k+' pages':a.answer?'Ask again':'Ask the wiki';b.disabled=run;
-  $('#askStop').hidden=!run;$('#askProg').textContent=a.prog||'';
-  let h='';
-  if(a.err)h+=errHtml(a.err,a.err.retry==='ask2'?'ask-retry2':'ask-retry1');
-  if((a.chosen.length||a.changing)&&(a.stage==='chosen'||a.stage==='s2'||a.answer||a.changing)){
-    h+='<div data-source="ai"><div class="lab">Pages chosen by the model</div><div class="chips">'+a.chosen.map(s=>'<span class="chip">'+wlink(s)+'</span>').join('')+'</div></div>';
-    if(!run)h+='<button type="button" class="lnk" data-act="ask-change">Change pages</button>';
-    if(a.changing)h+='<fieldset><legend>Tick up to 5 pages</legend>'+pages.map(p=>'<label style="display:block"><input type="checkbox" data-pick="'+esc(p.slug)+'"'+(a.chosen.includes(p.slug)?' checked':'')+'> '+esc(p.title)+'</label>').join('')+'</fieldset>';
-  }
-  if(a.answer){
-    const A=a.answer,ev=askEval();
-    h+='<article data-source="ai" style="border-top:1px solid var(--rule);margin-top:14px"><div class="lab">ANSWER · written by the model, every pin checked by this page</div><h3 class="s">'+esc(A.title||'Answer')+'</h3><div class="body">'+md(A.answer,{allowed:A.allowed})+'</div><h4>What the library cannot answer</h4><p>'+esc(A.cannot||'Nothing was flagged.')+'</p></article>';
-    h+='<p class="hint">Verified pins by register: '+(Object.keys(ev.reg).sort().map(r=>'('+r+') '+(REGS[r]||'?')+' '+ev.reg[r]).join(' · ')||'none')+' · struck through or failing: '+ev.bad+'</p>';
-    h+='<div class="row2"><button type="button" class="btn" data-act="ask-file-open" aria-expanded="'+!!a.file+'">File as a question page</button></div>';
-    if(a.file)h+='<fieldset class="chg"><legend>File as a question page</legend><label for="fT" class="lab">Title</label><input id="fT" type="text" value="'+esc(a.fTitle||A.title)+'"><label for="fG" class="lab">Tags (comma-separated)</label><input id="fG" type="text" value="'+esc(a.fTags)+'"><div id="fPrev"></div></fieldset>';
-  }
-  if(a.filed)h+='<p aria-live="polite"><b>Filed.</b> The page is now in the wiki: '+wlink(a.filed)+'. The index and the log were updated.</p>';
-  $('#askOut').innerHTML=h;
-  if(a.file)updFile();
+function renderAskFile(){
+  const el=$('#askFile');
+  if(!ASK.res||!ASK.fileOpen||ASK.filed){el.innerHTML='';return;}
+  if($('#qt'))return;
+  el.innerHTML='<fieldset class="card"><legend>File as a question page</legend><label for="qt" class="lbl">Title of the page</label><input id="qt" type="text" value="'+esc(ASK.res.title)+'"><label for="qtags" class="lbl">Tags (comma-separated, typed by you)</label><input id="qtags" type="text" placeholder="neurorights, existing-rights"><p class="lab">Preview of the page the code builds</p><pre id="qprev" class="prev"></pre><p id="qwhy" class="hint" aria-live="polite"></p><p class="row"><button type="button" id="qfile" class="btn pri" data-act="file-q">File this page</button><button type="button" class="btn" data-act="copy-ans">Copy answer</button><span id="qnote" class="hint" aria-live="polite"></span></p></fieldset>';
+  $('#qt').addEventListener('input',updAskFile);$('#qtags').addEventListener('input',updAskFile);updAskFile();
 }
-function updFile(){
-  const q=buildQ(),el=$('#fPrev');if(!el)return;
-  el.innerHTML='<p class="hint">Preview of the page the code will build. slug: '+esc(q.slug)+' · type: question · register: ('+esc(q.reg.join(''))+') · status: draft · updated '+today()+' · links: '+q.links.length+' · sources: '+esc(q.sources.join(', '))+'</p><div class="prev" data-source="ai">'+md(q.body,{allowed:ask.answer.allowed})+'</div>'
-   +'<div class="row2"><button type="button" class="btn pri" data-act="ask-file"'+(q.fileable?'':' disabled')+'>File this page</button><button type="button" class="btn" data-act="ask-copy">Copy answer</button><span class="hint">'+(q.fileable?'Every pin verifies.':'Disabled: '+esc(q.reasons.join('; '))+'.')+'</span></div>';
+function updAskFile(){
+  const b=buildQ(),why=[];
+  if(ASK.bad)why.push(ASK.bad+' pin(s) in the answer do not verify or are not on the pages sent');
+  if(!ASK.n)why.push('the answer carries no pin');
+  if(!$('#qt').value.trim())why.push('the title is empty');
+  $('#qprev').textContent=toMd(b);
+  $('#qwhy').textContent=why.length?'Filing is off: '+why.join('; ')+'.':'All '+ASK.n+' pins verify. Nothing is filed until you press the button.';
+  $('#qfile').disabled=!!why.length;
 }
-async function askStep1(){
-  const q=($('#askQ').value||'').trim();ask.q=q;
-  if(!q){ask.prog='Type a question first.';renderAsk();return;}
-  const run={stop:false};ask.run=run;ask.stage='s1';ask.answer=null;ask.file=null;ask.filed=null;ask.err=null;ask.changing=false;ask.chosen=[];
-  ask.prog='Step 1 of 2 · sending the index ('+nf(index.length)+' characters) and your question…';setRunning(2,true);renderAsk();
-  const prompt='You help with a research wiki on neurotechnology in the administration of justice. Below are the wiki’s index (one line per page) and a question. Choose up to 5 pages whose bodies are most likely to answer it. Return JSON {"pages": ["slug", ...]} using only slugs that appear in the index.\n\nINDEX\n'+index+'\n\nQUESTION\n'+q;
-  const r=await callModel(prompt,0,'ask, step 1');
-  if(run.stop)return;
-  ask.run=null;setRunning(2,false);
-  if(!r.ok){ask.stage='err';ask.err={raw:r.raw||r.error,retry:'ask1'};ask.prog='';return renderAsk();}
-  const names=uniq((Array.isArray(r.data.pages)?r.data.pages:[]).map(s=>String(s).replace(/^\[\[|\]\]$/g,'').trim())),good=names.filter(s=>bySlug[s]).slice(0,5);
-  r.rec.bad=names.filter(s=>!bySlug[s]);
-  if(!good.length){ask.stage='err';ask.err={raw:r.raw,retry:'ask1',why:'it named no page that exists in the index'};ask.prog='';return renderAsk();}
-  ask.chosen=good;ask.stage='chosen';ask.prog='Step 1 done · '+good.length+' pages chosen'+(r.rec.bad.length?' · '+r.rec.bad.length+' unknown slug(s) dropped':'')+'.';renderAsk();
-}
-async function askStep2(){
-  const sent=ask.chosen.map(s=>bySlug[s]).filter(Boolean),ch=sum(sent,p=>p.body.length);
-  const run={stop:false};ask.run=run;ask.stage='s2';ask.err=null;ask.changing=false;
-  ask.prog='Step 2 of 2 · sending '+sent.length+' pages, '+nf(ch)+' characters; 0 library passages have left the browser.';setRunning(2,true);renderAsk();
-  const prompt='You answer one question from a research wiki on neurotechnology in the administration of justice, using ONLY the wiki pages below.\n'+PINRULE+' Copy pins exactly as they stand on the pages; do not write a pin that is not on them.\n'+REGRULE+'\nAnswer in at most 350 words of markdown; you may link pages as [[slug]]. If the pages cannot answer part of the question, say so in cannot_answer instead of guessing.\nReturn JSON {"title": "a short title for the question", "answer": "...", "cannot_answer": "..."}.\n\nQUESTION\n'+ask.q+'\n\n'+sent.map(p=>'=== PAGE '+p.slug+' ('+(p.frontmatter.register||[]).join('')+') ===\n'+p.body).join('\n\n');
-  const r=await callModel(prompt,0,'ask, step 2');
-  if(run.stop)return;
-  ask.run=null;setRunning(2,false);
-  if(!r.ok||typeof r.data.answer!=='string'||!r.data.answer.trim()){ask.stage='chosen';ask.err={raw:r.raw||r.error,retry:'ask2',why:r.ok?'it returned no answer text':''};ask.prog='';return renderAsk();}
-  const allowed=new Set();sent.forEach(p=>parsePins(p.body).forEach(x=>allowed.add(pinKey(x))));
-  ask.answer={title:String(r.data.title||'').trim(),answer:r.data.answer,cannot:String(r.data.cannot_answer||'').trim(),allowed};
-  r.rec.bad=uniq([...r.data.answer.matchAll(/\[\[([^\]|#]+)/g)].map(m=>m[1].trim())).filter(s=>!bySlug[s]);
-  ask.stage='done';ask.fTitle='';ask.fTags='';ask.prog='Done. '+parsePins(r.data.answer).length+' pins in the answer, each checked by this page.';renderAsk();
-}
-function addIndexLine(section,line){
-  const L=index.split('\n'),re=new RegExp(rx(section),'i');
-  const h=L.findIndex(l=>/^#{1,4}\s/.test(l)&&re.test(l));
-  if(h<0){L.push('','## '+section,line);}
-  else{let j=h+1,last=h;while(j<L.length&&!/^#{1,4}\s/.test(L[j])){if(L[j].trim())last=j;j++;}L.splice(last+1,0,line);}
-  index=L.join('\n');
-}
-function setIndexLine(slug,line){const re=new RegExp('^\\s*[-*]\\s*\\[\\['+rx(slug)+'\\]\\]');index=index.split('\n').map(l=>re.test(l)?line:l).join('\n');}
-function setIndexN(slug,n){const re=new RegExp('^\\s*[-*]\\s*\\[\\['+rx(slug)+'\\]\\]');index=index.split('\n').map(l=>re.test(l)?l.replace(/✓\s*\d+/,'✓'+n):l).join('\n');}
-function fixIndexHead(){
-  const L=index.split('\n'),n=sum(pages,p=>p._pins.length);
-  for(let i=0;i<Math.min(L.length,8);i++)if(/(\d[\d,]*) pins/.test(L[i])){L[i]=L[i].replace(/(\d[\d,]*) pins/,nf(n)+' pins').replace(/(\d+) pages/,pages.length+' pages');break;}
-  index=L.join('\n');
-}
-function fileQuestion(){
-  const q=buildQ();if(!q.fileable)return;
-  const t=today(),before=needLook();
-  pages.push(q.page);rebuild();
-  const p=bySlug[q.slug],n=vcount(p);
-  addIndexLine('Questions','- [['+q.slug+']] — '+(plain(q.first).slice(0,140)||q.title)+' · ('+q.reg.join('')+') · ✓'+n);fixIndexHead();
-  const head='## ['+t+'] ask | '+q.title;
-  log=log.replace(/\s+$/,'')+'\n\n'+head+'\n\nQuestion: "'+ask.q.replace(/"/g,'”')+'". Filed as [['+q.slug+']] from '+ask.chosen.length+' pages ('+ask.chosen.map(s=>'[['+s+']]').join(', ')+'). '+n+' pins, all verified.\n';
-  S.logAdded.add(head);S.changes.push({date:t,kind:'ask',slug:q.slug,how:'new page'});S.approved.add(q.slug);S.filings++;
-  lintRan=true;lastFiling={before,after:needLook(),slugs:[q.slug]};
-  ask.filed=q.slug;ask.file=null;renderAll();
+function fileQ(){
+  const b=buildQ(),d=today(),n0=lintNums();
+  addPage(b);an(b);
+  const N=pinCount(b);
+  idxSet(b.slug,'- [['+b.slug+']] — '+firstSentence(ASK.res.answer).slice(0,160)+' · ('+b.fm.register.join(', ')+') · ✓'+N,SEC.question,'Questions');
+  idxCounts();
+  addLog('## ['+d+'] ask | '+b.title+'\nFiled [['+b.slug+']] from a question put to the wiki. '+N+' pins, all verified by this page. Pages read: '+ASK.pages.map(s=>'[['+s+']]').join(', ')+'.');
+  const op=++S.op;S.changes.push({op,date:d,kind:'ask',slug:b.slug,title:b.title,page:'new'});
+  S.filing={slugs:[b.slug],before:n0,after:lintNums()};
+  ASK.filed=b.slug;renderAskOut();renderAll();$('#askOut').scrollIntoView();
 }
 
-/* ---------- tab 03: ingest ---------- */
-const inboxDocs=()=>Object.values(docs).filter(d=>d.status==='inbox');
-function openIngest(id){
-  const d=docs[id],ps=d.passages||[],B=[];
-  for(let i=0;i<ps.length;i+=25){const ch=ps.slice(i,i+25),nums=ch.map(p=>p.paragraph).filter(Boolean),pg=ch.map(p=>p.page),lo=Math.min(...pg),hi=Math.max(...pg);
-    B.push({n:B.length+1,passages:ch,para:nums.length?nums[0]+(nums.length>1?' – '+nums[nums.length-1]:''):'none numbered',pp:lo+(hi>lo?' – '+hi:''),chars:sum(ch,p=>p.text.length),state:'todo'});}
-  ing={doc:d,stage:1,batches:B,next:0,sent:0,tk:[],tkRet:0,dropped:0,run:null,prog:'',err:null,src:null,srcSlug:'',touchesRaw:[],touched:null,drafted:0,cards:[],i:0,dec:{},newOK:new Set(),filed:null,c0:S.calls,p0:S.passages,skipped:[]};
-  renderIngest();
+/* ---------- 03 INGEST ---------- */
+let ING=null;
+const inboxDocs=()=>Object.keys(DOC).map(k=>DOC[k]).filter(d=>d.status==='inbox');
+function startIngest(id){
+  if(S.running)return;
+  const doc=DOC[id],ps=doc.passages,batches=[];
+  for(let i=0;i<ps.length;i+=25)batches.push({ps:ps.slice(i,i+25)});
+  const stub=pg(slugify(doc.id))||P.find(p=>p.fm.status==='stub')||null;
+  ING={id,doc,batches,step:1,done:0,sent:0,sentIds:new Set(),all:[],ok:[],failed:[],newSlugs:[],dropped:0,returned:0,prog:'',err:null,stopped:false,src:null,srcOne:'',srcSlug:null,touches:[],drafts:[],pi:0,changes:[],cur:0,dec:{},filed:null,chars:ps.reduce((a,x)=>a+x.text.length,0),stub,cite:citeAs(id)};
+  renderIngest();const h=$('#ingH');if(h)h.focus();
 }
-function takePrompt(g,b){
-  const d=g.doc;
-  return 'You are reading a document that is waiting to be added to a research wiki on neurotechnology in the administration of justice.\nDOCUMENT: '+d.title+' ('+citeAs(d)+', '+d.year+'), register '+regTxt(d.id)+'.\nBelow are (1) the wiki’s index and (2) a batch of passages from the document as JSON {id, page, paragraph, text}.\nReturn JSON {"takeaways":[{"claim":"...","quote":"...","passage":"<passage id>","pages":["slug"]}]}.\n- At most 10 takeaways; keep only claims that bear on the administration of justice (evidence, torture and ill-treatment, fair trial, self-incrimination, recommendations); skip the rest.\n- claim: one sentence saying what the document says, with its own verb; do not turn a report’s statement into law.\n- quote: 8 to 40 words copied verbatim from that one passage. Quote only words that stand in the passages given; the code will check every quotation.\n- passage: the id of the passage the quote comes from.\n- pages: slugs from the index that the claim bears on.\n\nINDEX\n'+index+'\n\nPASSAGES\n'+JSON.stringify(b.passages.map(p=>({id:p.id,page:p.page,paragraph:p.paragraph,text:p.text})));
+const ingSay=t=>{if(ING)ING.prog=t;const e=$('#ingProg');if(e)e.textContent=t;};
+function ingBegin(){S.running='ingest';S.stop=false;setRun(2,true);ING.err=null;renderIngest();}
+function ingEnd(){S.running=null;setRun(2,false);renderIngest();renderHeader();}
+function rangeOf(a){a=a.filter(x=>x!=null&&x!=='');return a.length?(a[0]===a[a.length-1]?a[0]:a[0]+'–'+a[a.length-1]):'–';}
+function tkTable(I){
+  if(!I.all.length)return '<p class="hint">Nothing has returned yet.</p>';
+  return '<table><caption>FIG.01 · Takeaways returned by the model, each checked by this page</caption><thead><tr><th scope="col">Claim</th><th scope="col">Quote</th><th scope="col">Passage</th><th scope="col">Would touch</th><th scope="col">Check</th></tr></thead><tbody>'+I.all.map(x=>{
+    const k=PR.push({pin:{id:I.id,page:x.passage.page,quote:x.quote}})-1;
+    return '<tr data-source="ai"><td>'+esc(x.claim)+'</td><td><span class="pq">\u201C'+esc(x.quote)+'\u201D</span></td><td><button type="button" class="cl" data-act="open" data-k="'+k+'" aria-label="Open '+esc(x.pin.label)+' at PDF page '+x.passage.page+'">'+(x.passage.paragraph?'para. '+esc(x.passage.paragraph):'p. '+esc(x.passage.page_label))+' · PDF p. '+x.passage.page+'</button></td><td>'+(x.pages.map(s=>'<a class="pgchip" href="#'+encodeURIComponent(s)+'">'+esc(s)+(pg(s)?'':' (new)')+'</a>').join('')||'<span class="hint">none named</span>')+'</td><td class="'+(x.ok?'pass':'chk')+'">'+(x.ok?'verified':'could not verify')+'</td></tr>';
+  }).join('')+'</tbody></table>';
 }
-function lcsRun(a,b){let best=0;const prev=new Array(b.length+1).fill(0);for(let i=1;i<=a.length;i++){let diag=0;for(let j=1;j<=b.length;j++){const t=prev[j];prev[j]=a[i-1]===b[j-1]?diag+1:0;if(prev[j]>best)best=prev[j];diag=t;}}return best;}
-function nearest(doc,ps,quote){
-  const qw=norm(quote).toLowerCase().split(' ');let best=null;
-  doc.passages.filter(x=>x.page===ps.page).forEach(x=>{const r=lcsRun(qw,norm(x.text).toLowerCase().split(' '));if(!best||r>best.run)best={p:x,run:r};});
-  return best||{p:ps,run:0};
+function failBox(I){
+  if(!I.failed.length)return '<p class="hint">Could not verify: 0</p>';
+  return '<div class="warn"><b>Could not verify: '+I.failed.length+'</b><p class="hint">These claims are in no change card and in no later prompt.</p>'+I.failed.map(x=>{
+    const k=PR.push({pin:{id:I.id,page:x.passage.page,quote:x.quote}})-1,n=x.near;
+    return '<div data-source="ai" style="border-top:1px solid var(--rule);padding:6px 0"><p><span class="pq">\u201C'+esc(x.quote)+'\u201D</span><br><span class="hint">The model named '+esc(x.passage.id)+' (PDF p. '+x.passage.page+'). '+esc(x.v.reason||'')+'.</span></p>'+(n&&n.p?'<p class="hint">Nearest passage on that page: '+(n.p.paragraph?'para. '+esc(n.p.paragraph):'p. '+esc(n.p.page_label))+', sharing a run of '+n.run+' word(s) with the quote: '+esc(n.p.text.slice(0,200))+'…</p>':'<p class="hint">No passage on that page shares a word run with the quote.</p>')+'<button type="button" class="btn" data-act="open" data-k="'+k+'" aria-label="Open the PDF page '+x.passage.page+' for this quote">Open the PDF page</button></div>';
+  }).join('')+'</div>';
 }
-function procBatch(g,b,data){
-  const arr=Array.isArray(data.takeaways)?data.takeaways:[],rows=arr.slice(0,10);let ver=0,fail=0,drop=arr.length-rows.length;const bad=[];
-  g.tkRet+=arr.length;
-  rows.forEach(t=>{
-    const claim=String(t&&t.claim||'').trim(),quote=String(t&&t.quote||'').replace(/\s+/g,' ').trim(),pid=String(t&&t.passage||'').trim(),tail=pid.replace(/^.*#/,'');
-    const ps=b.passages.find(p=>p.id===pid)||(/^\d+$/.test(tail)?b.passages.find(p=>p.id===g.doc.id+'#'+tail):null);
-    if(!ps||!claim||!quote){drop++;return;}
-    const slugs=[];
-    (Array.isArray(t.pages)?t.pages:[]).forEach(s=>{s=String(s).replace(/^\[\[|\]\]$/g,'').trim();
-      if(bySlug[s])slugs.push(s);
-      else if(/^[a-z0-9][a-z0-9-]*$/.test(s)&&(g.newOK.has(s)||g.newOK.size<2)){g.newOK.add(s);slugs.push(s);}
-      else bad.push(s);});
-    const e={claim,quote,ps,slugs:uniq(slugs),ok:inText(ps.text,quote),batch:b.n};
-    if(e.ok){e.pin=mkPin(g.doc,ps,quote);if(!verify(parsePins(e.pin)[0],g.doc.id).ok)e.ok=false;}
-    if(e.ok)ver++;else{e.near=nearest(g.doc,ps,quote);fail++;}
-    g.tk.push(e);
-  });
-  g.dropped+=drop;
-  return {returned:arr.length,ver,fail,drop,bad};
-}
-async function runBatches(){
-  const g=ing;g.stage=2;g.err=null;const run={stop:false};g.run=run;setRunning(3,true);renderIngest();
-  while(g.next<g.batches.length&&!run.stop){
-    const b=g.batches[g.next];b.state='running';
-    g.prog='batch '+b.n+' of '+g.batches.length+' · '+(g.sent+b.passages.length)+' of '+g.doc.passages.length+' passages have left the browser';
-    g.sent+=b.passages.length;renderIngest();
-    const r=await callModel(takePrompt(g,b),b.passages.length,'takeaways, batch '+b.n+' of '+g.batches.length);
-    if(run.stop)return;
-    if(!r.ok){g.sent-=b.passages.length;b.state='failed';g.err={raw:r.raw||r.error,retry:'batch'};break;}
-    Object.assign(r.rec,procBatch(g,b,r.data));b.state='done';g.next++;
-  }
-  g.run=null;setRunning(3,false);
-  g.prog=g.err?'':(g.next>=g.batches.length?'All '+g.batches.length+' batches have returned.':'');
-  renderIngest();
-}
-function stopIngest(){
-  const g=ing;if(!g||!g.run)return;g.run.stop=true;g.run=null;setRunning(3,false);
-  if(g.stage===2){const b=g.batches[g.next];if(b&&b.state==='running'){b.state='todo';g.sent-=b.passages.length;}}
-  g.prog='Stopped. What has returned is kept.';renderIngest();
-}
-function stopAsk(){
-  if(!ask.run)return;ask.run.stop=true;ask.run=null;setRunning(2,false);
-  ask.stage=ask.chosen.length&&ask.stage==='s2'?'chosen':ask.stage==='s1'?'idle':ask.stage;ask.prog='Stopped.';renderAsk();
-}
-function blocks(t){return String(t).split(/\n\s*\n/).filter(s=>s.trim()).length;}
-function insertAfter(body,after,text){
-  const blk=['','<<ins>>',text,'<<end>>',''],want=String(after).replace(/^#+\s*/,'').trim().toLowerCase();
-  const atEnd=note=>({body:body.replace(/\s+$/,'')+'\n'+blk.join('\n'),note});
-  if(!want||want==='end')return atEnd('');
-  const L=body.split('\n');let h=-1,lvl=0;
-  for(let pass=0;pass<2&&h<0;pass++)for(let i=0;i<L.length;i++){const m=L[i].match(/^(#{1,4})\s+(.*)$/);if(m&&(pass?m[2].toLowerCase().includes(want):m[2].trim().toLowerCase()===want)){h=i;lvl=m[1].length;break;}}
-  if(h<0)return atEnd('Heading "'+after+'" was not found: the text is placed at the end of the page.');
-  let j=h+1;while(j<L.length){const m=L[j].match(/^(#{1,4})\s/);if(m&&m[1].length<=lvl)break;j++;}
-  L.splice(j,0,...blk);return {body:L.join('\n'),note:''};
-}
-function cleanCon(raw,id){
-  if(!raw||typeof raw!=='string')return null;
-  let s=raw.trim();const m=s.match(new RegExp(FENCE+'(?:contested)?[ \\t]*\\n([\\s\\S]*?)\\n?'+FENCE));if(m)s=m[1];s=s.trim();
-  if(!/^claim:/m.test(s)||!/^verdict:/m.test(s)||!/^[+\-~]\s/m.test(s))return null;
-  return fixPins(s,id);
-}
-function srcPrompt(g,vt){
-  const d=g.doc;
-  return 'You write the source page for a document being added to a research wiki on neurotechnology in the administration of justice.\nDOCUMENT: '+d.title+'; author: '+d.author+'; published: '+d.published+'; '+d.pages+' PDF pages; url: '+d.url+'; cite as: '+citeAs(d)+'; register '+regTxt(d.id)+'.\n'+PINRULE+' Use only the pins listed below, copied exactly.\n'+REGRULE+'\nPage anatomy, as ## headings in this order: Full cite, Register, One-liner, Key takeaways, How NOT to read this, Where it feeds the wiki, Related. Link wiki pages as [[slug]].\nReturn JSON {"one_liner":"...","body":"markdown, at most 900 words","touches":[{"slug":"...","why":"..."}]}.\n\nVERIFIED TAKEAWAYS\n'+vt.map((t,i)=>(i+1)+'. '+t.claim+'\n   pin: '+t.pin+'\n   pages: '+t.slugs.join(', ')).join('\n')+'\n\nINDEX\n'+index;
-}
-async function draftSource(){
-  const g=ing,vt=g.tk.filter(t=>t.ok),d=g.doc;g.err=null;const run={stop:false};g.run=run;g.prog='Drafting the source page (1 call)…';setRunning(3,true);renderIngest();
-  const r=await callModel(srcPrompt(g,vt),0,'source page');
-  if(run.stop)return;
-  g.run=null;setRunning(3,false);
-  if(!r.ok||typeof r.data.body!=='string'){g.err={raw:r.raw||r.error,retry:'src',why:r.ok?'it returned no page body':''};g.prog='';return renderIngest();}
-  const f=fixPins(r.data.body,d.id),base=slugify(d.symbol||d.short_title||d.id)||'source';let slug=base;if(bySlug[slug])slug=base+'-source';let n=2;while(bySlug[slug])slug=base+'-source-'+n++;
-  g.srcSlug=slug;g.touchesRaw=Array.isArray(r.data.touches)?r.data.touches.slice(0,12):[];
-  const links=uniq([...f.text.matchAll(/\[\[([^\]|#]+)/g)].map(m=>m[1].trim())).filter(s=>bySlug[s]);
-  const title=(d.short_title||d.title)+' ('+citeAs(d)+')',one=String(r.data.one_liner||'').trim();
-  const fm={title,type:'source',tags:uniq(g.touchesRaw.map(x=>String(x&&x.slug||'')).filter(s=>bySlug[s])).slice(0,8),register:docReg(d.id).slice(),status:'draft',updated:today(),links,sources:[d.id]};
-  const bodyTxt=/^#\s/.test(f.text.trim())?f.text.trim():'# '+title+'\n\n'+f.text.trim();
-  g.src={slug,title,type:'source',kind:'new',role:'source',stub:false,after:'<<ins>>\n'+bodyTxt+'\n<<end>>\n',paras:blocks(bodyTxt),ok:f.ok,removed:f.removed,notes:[],oneLiner:one,con:null,fm};
-  g.cards=[g.src];g.touched=planTouched(g);g.drafted=0;g.prog='';renderIngest();
-}
-function planTouched(g){
-  const vt=g.tk.filter(t=>t.ok),map={};
-  vt.forEach(t=>t.slugs.forEach(s=>{(map[s]=map[s]||[]).push(t);}));
-  g.touchesRaw.forEach(x=>{const s=String(x&&x.slug||'').trim();if(!s||s===g.srcSlug)return;
-    if(bySlug[s]||g.newOK.has(s)){map[s]=map[s]||[];}
-    else if(/^[a-z0-9][a-z0-9-]*$/.test(s)&&g.newOK.size<2){g.newOK.add(s);map[s]=[];}});
-  const stub=pages.find(p=>p.frontmatter.status==='stub'&&(p.slug===slugify(g.doc.symbol||g.doc.id)||(p.frontmatter.sources||[]).includes(g.doc.id)))||pages.find(p=>p.frontmatter.status==='stub');
-  const sl=stub?stub.slug:null;
-  const rest=Object.keys(map).filter(s=>s!==sl).sort((a,b)=>map[b].length-map[a].length).slice(0,sl?11:12);
-  return (sl?[sl]:[]).concat(rest).map(s=>({slug:s,isNew:!bySlug[s],stub:s===sl,mode:(!bySlug[s]||s===sl)?'body':'edits',tks:s===sl?vt:map[s]}));
-}
-function touchPrompt(g,t){
-  const d=g.doc,p=bySlug[t.slug],tl=t.tks.map((x,i)=>(i+1)+'. '+x.claim+'\n   pin: '+x.pin).join('\n')||'(none: use the document’s title and register only)';
-  let h='You are updating a research wiki on neurotechnology in the administration of justice after reading a new document: '+d.title+' ('+citeAs(d)+', '+d.year+', register '+regTxt(d.id)+').\n'+PINRULE+' Use only the pins listed below, copied exactly.\n'+REGRULE+'\n\n';
-  if(t.mode==='edits')h+='PAGE '+t.slug+' (current body)\n'+p.body+'\n\nNEW TAKEAWAYS BEARING ON THIS PAGE\n'+tl+'\n\nReturn JSON {"edits":[{"after":"<an existing heading of this page, or end>","markdown":"..."}],"contested":null}. At most 300 words in all. "contested" is a full block (lines claim:, verdict:, note:, then one line per position: + or - or ~, a register letter, a pin, a gloss and a [[slug]], separated by " | ") only where this document disagrees with the page; otherwise null.';
-  else if(t.stub)h+='STUB PAGE '+t.slug+' (current body, with the checklist of what the ingest should check)\n'+p.body+'\n\nTAKEAWAYS FROM THE DOCUMENT\n'+tl+'\n\nRewrite this page as a proper entity page for the document: answer each checklist item the document addresses, say plainly which items it does not address, keep every existing pin that still applies (copied exactly) and use the pins above. Return JSON {"one_liner":"...","body":"markdown starting with # title, at most 600 words"}.';
-  else h+='NEW PAGE '+t.slug+'\n\nTAKEAWAYS\n'+tl+'\n\nWrite a new wiki page with this slug. Return JSON {"title":"...","type":"concept or entity","one_liner":"...","body":"markdown starting with # title, at most 400 words"}.';
-  return h;
-}
-function buildCard(g,t,data){
-  const p=bySlug[t.slug],id=g.doc.id,notes=[];let ok=0,removed=0,paras=0,after,con=null;
-  const one=String(data.one_liner||'').trim();
-  if(t.mode==='edits'){
-    after=p.body;let words=0;
-    (Array.isArray(data.edits)?data.edits:[]).forEach(e=>{
-      const m0=String(e&&e.markdown||'').trim();if(!m0)return;
-      words+=m0.split(/\s+/).length;if(words>400){notes.push('An edit beyond the word limit was dropped.');return;}
-      const f=fixPins(m0,id);ok+=f.ok;removed+=f.removed;paras+=blocks(f.text);
-      const r=insertAfter(after,String(e.after||'end'),f.text);after=r.body;if(r.note)notes.push(r.note);});
-    const c=cleanCon(data.contested,id);
-    if(c){ok+=c.ok;removed+=c.removed;con=c.text;paras+=1;
-      const blockTxt=FENCE+'contested\n'+c.text+'\n'+FENCE;
-      after=after.replace(/\s+$/,'')+'\n\n<<ins>>\n'+(/^#{1,4}\s.*contested/im.test(after)?'':'## Contested claims\n\n')+blockTxt+'\n<<end>>\n';}
-    if(!paras)return null;
-    return {slug:t.slug,title:p.title,type:p.type,kind:'edited',stub:false,after,paras,ok,removed,notes,oneLiner:one,con};
-  }
-  const f=fixPins(String(data.body||''),id);ok=f.ok;removed=f.removed;
-  if(!f.text.trim())return null;
-  const title=p?p.title:String(data.title||'').trim()||humanise(t.slug),type=p?p.type:(data.type==='entity'?'entity':'concept');
-  const bt=/^#\s/.test(f.text.trim())?f.text.trim():'# '+title+'\n\n'+f.text.trim();
-  const fm=p?null:{title,type,tags:[],register:docReg(id).slice(),status:'draft',updated:today(),links:[],sources:[id]};
-  return {slug:t.slug,title,type,kind:p?'edited':'new',stub:!!t.stub,after:'<<ins>>\n'+bt+'\n<<end>>\n',paras:blocks(bt),ok,removed,notes,oneLiner:one,con:null,fm};
-}
-async function draftPages(){
-  const g=ing;g.err=null;const run={stop:false};g.run=run;setRunning(3,true);
-  for(let k=g.drafted;k<g.touched.length&&!run.stop;k++){
-    const t=g.touched[k];g.prog='page '+(k+1)+' of '+g.touched.length+': '+t.slug;renderIngest();
-    const r=await callModel(touchPrompt(g,t),0,'page '+(k+1)+' of '+g.touched.length+' ('+t.slug+')');
-    if(run.stop)return;
-    if(!r.ok){g.err={raw:r.raw||r.error,retry:'pages'};break;}
-    const c=buildCard(g,t,r.data);if(c)g.cards.push(c);else g.skipped.push(t.slug);
-    g.drafted=k+1;
-  }
-  g.run=null;setRunning(3,false);g.prog=g.err?'':(g.drafted>=g.touched.length?'All page drafts have returned.':'');renderIngest();
-}
-function decide(v){const g=ing,c=g.cards[g.i];if(!c)return;g.dec[c.slug]=v;g.i++;renderIngest();}
-function secOf(t){return SEC[t]||'Other';}
-function fileIngest(){
-  const g=ing,d=g.doc,t=today(),before=needLook();
-  const ap=g.cards.filter(c=>g.dec[c.slug]==='approve'),rj=g.cards.filter(c=>g.dec[c.slug]==='reject');
-  if(!ap.length)return;
-  const cite=citeAs(d),srcCard=ap.find(c=>c.role==='source');
-  d.status='ingested';
-  ap.forEach(c=>{
-    const cl=cleanMk(c.after);let p=bySlug[c.slug];
-    if(p){p.body=cl;if(c.stub)p.frontmatter.status='draft';}
-    else{p={slug:c.slug,type:c.type,title:c.title,frontmatter:c.fm,body:cl};pages.push(p);bySlug[p.slug]=p;}
-  });
-  rebuild();
-  ap.forEach(c=>{
-    const p=bySlug[c.slug],fm=p.frontmatter,ids=uniq(p._pins.map(x=>x.id));
-    fm.updated=t;fm.sources=uniq((fm.sources||[]).filter(s=>ids.includes(s)).concat(ids));
-    fm.links=uniq((fm.links||[]).concat(p._links.filter(s=>bySlug[s]&&s!==p.slug)));
-    if(srcCard)fm.links=uniq(fm.links.concat(c.role==='source'?ap.filter(x=>x!==c).map(x=>x.slug):[srcCard.slug]));
-  });
-  rebuild();
-  ap.forEach(c=>{
-    const p=bySlug[c.slug],n=vcount(p),line='- [['+p.slug+']] — '+(c.oneLiner||p.title)+' · ('+(p.frontmatter.register||[]).join('')+') · ✓'+n;
-    if(c.kind==='new')addIndexLine(secOf(p.type),line);else if(c.stub)setIndexLine(p.slug,line);else setIndexN(p.slug,n);
-  });
-  fixIndexHead();
-  const pinsAll=sum(pages,p=>p._pins.filter(x=>x.id===d.id).length),srcSlug=srcCard?srcCard.slug:'';
-  const others=pages.filter(p=>p.slug!==srcSlug&&p._pins.some(x=>x.id===d.id)).map(p=>'[['+p.slug+']]');
-  const head='## ['+t+'] ingest | '+(d.symbol?d.symbol+': ':'')+d.short_title;
-  const bodyTxt='Read '+g.sent+' passages ('+cite+', register '+regTxt(d.id)+'). Wrote '+(srcCard?'[['+srcCard.slug+']]':'no source page')+'. '+pinsAll+' pins in all; besides its own page, pinned on '+others.length+' pages: '+(others.join(', ')||'none')+'. Rejected: '+(rj.map(c=>'[['+c.slug+']]').join(', ')||'none')+'.';
-  log=log.replace(/\s+$/,'')+'\n\n'+head+'\n\n'+bodyTxt+'\n';S.logAdded.add(head);
-  ap.forEach(c=>{
-    if(!c.con)return;
-    const cc=parseCon(c.con),slug=slugify(cc.claim).slice(0,60)||c.slug+'-claim',st=/^leans-/.test(cc.verdict)?'leaning':/^settled-/.test(cc.verdict)?'settled':'open';
-    const gl=sg=>cc.pos.filter(x=>x.sign===sg).map(x=>x.gloss.trim()).join('; ')||'none';
-    tensions=tensions.replace(/\s+$/,'')+'\n\n### '+slug+'\n\n- title: '+cc.claim+'\n- status: '+st+'\n- card: [['+c.slug+']]\n- poles: '+gl('+')+' — against: '+gl('-')+'\n- where: '+cc.pos.map(x=>(x.pin.match(/^\[([^\]]+)\]/)||[])[1]||'').filter(Boolean).join('; ')+'\n';
-    S.tensAdded.add('### '+slug);
-  });
-  ap.forEach(c=>{S.changes.push({date:t,kind:'ingest',slug:c.slug,how:c.kind==='new'?'new page':'edited'});S.approved.add(c.slug);});
-  S.filings++;lintRan=true;
-  const after=needLook();lastFiling={before,after,slugs:ap.map(c=>c.slug)};
-  g.filed={ap:ap.length,rj:rj.length,before,after,head,bodyTxt};
-  renderAll();
+function chgHtml(c,k,n){
+  const known=new Set(ING.changes.map(x=>x.slug)),bad=c.pinsBad>0;
+  return '<fieldset class="chg"><legend>Change '+k+' of '+n+': '+esc(c.title)+'</legend><p><span class="badge">'+esc(c.type)+'</span><span class="badge">'+(c.isNew?'new page':'edited')+'</span> '+c.insParas+' paragraph'+(c.insParas===1?'':'s')+' inserted · '+(c.pinsOk+c.pinsBad)+' pins added: '+c.pinsOk+' verified, '+c.pinsBad+' not verified'+(c.contested?' · adds a contested card':'')+'</p>'+(c.notes.length?'<p class="hint">'+esc(c.notes.join(' '))+'</p>':'')
+   +'<div class="page" data-source="ai">'+md(c.body,{diff:true,known,inbox:true})+'</div>'
+   +'<p class="row"><button type="button" class="btn pri" data-act="approve"'+(bad?' disabled':'')+' aria-label="Approve this page: change '+k+' of '+n+', '+esc(c.title)+'">Approve this page</button><button type="button" class="btn" data-act="reject" aria-label="Reject this page: change '+k+' of '+n+', '+esc(c.title)+'">Reject this page</button><span class="hint">change '+k+' of '+n+'</span></p>'
+   +(bad?'<p class="hint">Approve is off: '+c.pinsBad+' pin(s) in this draft do not verify, and nothing unverified may enter the wiki. Reject this page.</p>':'')+'</fieldset>';
 }
 function renderIngest(){
-  const el=$('#ingOut'),g=ing;let h='';
-  const inboxList=()=>{const ds=inboxDocs();return ds.length?ds.map(d=>'<div class="inb"><div><b>'+esc(d.short_title||d.title)+'</b><div class="hint">'+esc(d.symbol||d.author||'')+' · '+esc(d.kind)+' · '+esc(d.year)+' · '+(d.passages||[]).length+' passages · '+esc(d.pages)+' PDF pages · status: inbox</div></div><button type="button" class="btn pri" data-act="ing-open" data-id="'+esc(d.id)+'">Ingest '+esc(d.symbol||d.short_title)+'</button></div>').join(''):'<p>Nothing waits in the inbox.</p>';};
-  if(!g){el.innerHTML='<div class="grey">Pressing the button opens a four-step plan. Nothing leaves the browser until you press Start, and every step says what it sends.</div>'+inboxList();return;}
-  const steps=['01 SCOPE','02 TAKEAWAYS','03 DRAFTS','04 REVIEW AND FILE'];
-  h+='<ol class="steps" aria-label="Steps">'+steps.map((s,i)=>'<li'+(g.stage===i+1?' class="on" aria-current="step"':'')+'>'+s+'</li>').join('')+'</ol>';
-  h+='<div class="nums"><div><span class="big">'+(S.calls-g.c0)+'</span><div class="hint">calls so far</div></div><div><span class="big">'+(S.passages-g.p0)+'</span><div class="hint">passages sent</div></div></div><div class="hint" aria-live="polite">calls so far '+(S.calls-g.c0)+' · passages sent '+(S.passages-g.p0)+(g.prog?' · '+esc(g.prog):'')+'</div>';
-  if(g.run)h+='<div class="row2"><button type="button" class="btn" data-act="ing-stop">Stop</button><span class="hint">Escape also stops. What has returned is kept.</span></div>';
-  if(g.err)h+=errHtml(g.err,'ing-retry');
-  const vt=g.tk.filter(t=>t.ok),n=g.doc.passages.length;
-  if(g.stage===1){
-    h+='<h3 class="s">Scope: the whole document</h3><p>All '+n+' passages will be sent, in batches of 25 ('+g.batches.length+' calls), '+nf(sum(g.batches,b=>b.chars))+' characters; nothing is held back.</p>'
-     +'<table><caption>Batches</caption><thead><tr><th scope="col">Batch</th><th scope="col">Paragraphs</th><th scope="col">PDF pages</th><th scope="col" class="n">Passages</th><th scope="col" class="n">Characters</th></tr></thead><tbody>'+g.batches.map(b=>'<tr><td>'+b.n+'</td><td>'+esc(b.para)+'</td><td>'+esc(b.pp)+'</td><td class="n">'+b.passages.length+'</td><td class="n">'+nf(b.chars)+'</td></tr>').join('')+'</tbody></table>'
-     +'<p><button type="button" class="btn pri" data-act="ing-start">Start</button> <span class="hint">sends '+g.batches.length+' calls, one after another, with the wiki’s index in each</span></p>';
-  }else if(g.stage===2){
-    h+='<h3 class="s">Takeaways</h3><table><caption>FIG.02 Takeaways from '+esc(g.doc.symbol||g.doc.short_title)+': '+vt.length+' verified of '+g.tk.length+'</caption><thead><tr><th scope="col">Claim</th><th scope="col">Quote</th><th scope="col">Passage</th><th scope="col">Pages it would touch</th><th scope="col">Verification</th></tr></thead><tbody>'
-     +(g.tk.length?g.tk.map(t=>'<tr><td data-source="ai">'+esc(t.claim)+'</td><td data-source="ai">“'+esc(t.quote)+'”</td><td>'+(t.ps.paragraph?'para. '+esc(t.ps.paragraph)+' · ':'')+'PDF p. '+t.ps.page+'</td><td data-source="ai">'+(t.slugs.map(s=>'<span class="chip">'+esc(s)+(bySlug[s]?'':' (new)')+'</span>').join(' ')||'—')+'</td><td>'+(t.ok?'<span class="st ok">verified</span>':'<span class="st no">not verified</span>')+'</td></tr>').join(''):'<tr><td colspan="5" class="hint">No takeaway yet.</td></tr>')+'</tbody></table>'
-     +'<p class="hint">How this is computed: each quote must stand in the passage the model named; the code builds the pin and runs the same check as everywhere else. '+g.dropped+' takeaways were dropped (no passage sent, or over 10 in a batch).</p>';
-    const fl=g.tk.map((t,i)=>({t,i})).filter(x=>!x.t.ok);
-    h+='<details'+(fl.length?' open':'')+'><summary><b>Could not verify: '+fl.length+'</b></summary>'+(fl.length?fl.map(({t,i})=>'<div class="err"><p data-source="ai"><b>'+esc(t.claim)+'</b><br>Model’s quote: “'+esc(t.quote)+'”</p><p class="hint">Passage named: '+(t.ps.paragraph?'para. '+esc(t.ps.paragraph)+', ':'')+'PDF p. '+t.ps.page+' · nearest passage on that page: '+(t.near.p.paragraph?'para. '+esc(t.near.p.paragraph):'p. '+esc(t.near.p.page_label))+', sharing a run of '+t.near.run+' words</p><button type="button" class="btn" data-act="ing-open-tk" data-i="'+i+'" aria-label="Open '+esc(g.doc.symbol||g.doc.short_title)+' at PDF page '+t.ps.page+'">Open the PDF page</button></div>').join(''):'<p class="hint">None so far. These claims would be in no change card and in no later prompt.</p>')+'</details>';
-    if(!g.run){
-      const left=g.batches.length-g.next;
-      h+='<div class="row2">'+(left?'<button type="button" class="btn'+(vt.length?'':' pri')+'" data-act="ing-start">Run the remaining '+left+' batches</button>':'')+(vt.length?'<button type="button" class="btn pri" data-act="ing-go3">Go to the drafts</button>':'<span class="hint">No verified takeaway yet, so there is nothing to draft.</span>')+'</div>';
-    }
-  }else if(g.stage===3){
-    h+='<h3 class="s">Drafts</h3>';
-    if(!g.src){
-      const ch=sum(vt,t=>t.claim.length+t.pin.length)+index.length;
-      h+='<div class="grey">Sends '+vt.length+' verified takeaways (claims and pins, no passages) and the index: about '+nf(ch)+' characters, 1 call.</div>'+(g.run?'':'<button type="button" class="btn pri" data-act="ing-src">Draft the source page (1 call)</button>');
-    }else{
-      const c=g.src;
-      h+='<p>Source page drafted: <b data-source="ai">'+esc(c.title)+'</b> <span class="hint">('+esc(c.slug)+') · '+c.paras+' paragraphs · pins: '+c.ok+' verified, '+c.removed+' removed because they did not verify</span></p><p data-source="ai">'+esc(c.oneLiner)+'</p>';
-      if(g.drafted<g.touched.length&&!g.run){
-        const left=g.touched.length-g.drafted;
-        h+='<div class="grey">Pages to touch ('+g.touched.length+'): '+g.touched.map(t=>esc(t.slug)+(t.isNew?' (new)':'')+(t.stub?' (stub, rewritten)':'')).join(', ')+'. Each call sends the page’s body and the takeaways that bear on it; no passages.</div><button type="button" class="btn pri" data-act="ing-pages">'+(g.drafted?'Draft the remaining '+left+' pages':'Draft the changes to '+g.touched.length+' pages ('+g.touched.length+' calls)')+'</button>';
-      }
-      if(g.drafted>0&&!g.run)h+=' <button type="button" class="btn'+(g.drafted>=g.touched.length?' pri':'')+'" data-act="ing-review">Review the changes ('+g.cards.length+' pages)</button>';
-      if(g.skipped.length)h+='<p class="hint">No change proposed for: '+esc(g.skipped.join(', '))+'.</p>';
-    }
-  }else{
-    const c=g.cards[g.i],tot=g.cards.length;
-    h+='<h3 class="s">Review and file</h3>';
-    if(g.filed){
-      h+='<div role="status"><p><b>Filed.</b> '+g.filed.ap+' pages written, '+g.filed.rj+' rejected. The index, the log and the tensions register were updated.</p><div class="nums"><div><span class="big">'+g.filed.before+'</span><div class="hint">lint checks needing a look, before</div></div><div><span class="big">'+g.filed.after+'</span><div class="hint">after (tab 04 shows which)</div></div></div><p class="hint">Log entry: '+esc(g.filed.head)+'</p></div>';
-    }else if(c){
-      h+='<fieldset class="chg"><legend>Change '+(g.i+1)+' of '+tot+' · '+esc(c.title)+' · '+esc(c.type)+'</legend><p class="mono">'+(c.kind==='new'?'new page':'edited')+' · '+c.paras+' paragraphs inserted · pins added: '+c.ok+' verified, '+c.removed+' removed because they did not verify</p>'
-       +(c.notes.length?'<p class="hint">'+c.notes.map(esc).join(' ')+'</p>':'')+'<div class="prev dim">'+md(c.after,{allow:g.doc.id,slug:c.slug})+'</div>'
-       +'<div class="row2"><button type="button" class="btn pri" data-act="ing-approve" aria-label="Approve change '+(g.i+1)+' of '+tot+': '+esc(c.title)+'">Approve this page</button><button type="button" class="btn" data-act="ing-reject" aria-label="Reject change '+(g.i+1)+' of '+tot+': '+esc(c.title)+'">Reject this page</button><span class="hint">change '+(g.i+1)+' of '+tot+' · nothing is written until you file</span></div></fieldset>';
-    }else{
-      const ap=g.cards.filter(x=>g.dec[x.slug]==='approve').length;
-      h+='<p>'+tot+' decisions made: '+ap+' approved, '+(tot-ap)+' rejected. A rejected page stays exactly as loaded.</p><button type="button" class="btn pri" data-act="ing-file"'+(ap?'':' disabled')+'>File the approved changes</button>'+(ap?'':' <span class="hint">Disabled: no page was approved.</span>');
-    }
+  const el=$('#ingBox');if(!el)return;
+  const I=ING;
+  if(!I){
+    const L=inboxDocs();
+    el.innerHTML=L.length?L.map(d=>'<p><button type="button" class="btn pri" data-act="ing" data-id="'+esc(d.id)+'">Ingest '+esc(d.symbol||d.short_title)+'</button> <span class="hint">'+esc(d.short_title)+' · '+d.passages.length+' passages · reads it into the wiki, one approval per page</span></p>').join('')+'<p class="how">How this is computed: documents in the library whose status is "inbox".</p>':'<p>Nothing waits in the inbox.</p>';
+    return;
   }
-  if(g.filed)h+=inboxList();
+  const nb=I.batches.length,tot=I.doc.passages.length;
+  let h='<h3 id="ingH" tabindex="-1">Ingest '+esc(I.doc.symbol||I.doc.short_title)+'</h3><ol class="stepper" aria-label="Ingest steps">'+['Scope','Takeaways','Drafts','Review and file'].map((s,i)=>'<li'+(I.step===i+1?' aria-current="step"':'')+(I.step>i+1?' class="done"':'')+'>'+(i+1)+' '+s+'</li>').join('')+'</ol>'
+   +'<p class="runline" aria-live="polite"><span class="big">'+S.calls+'</span> calls so far · <span class="big">'+S.passages+'</span> passages sent</p>'
+   +'<p class="row"><span id="ingProg" class="prog" aria-live="polite">'+esc(I.prog)+'</span>'+(S.running==='ingest'?'<button type="button" class="btn" data-act="stop">Stop</button>':'')+'</p>'+(I.err?failHtml(I.err).replace('data-act="retry"','data-act="ing-retry"'):'');
+  if(I.step===1){
+    h+='<section class="sec"><h4>Step 1 · Scope: the whole document</h4><p>All '+tot+' passages will be sent, in batches of 25 ('+nb+' calls), '+fmt(I.chars)+' characters; nothing is held back. They leave this browser for a language model; the code then checks every quote it returns.</p><div class="tw"><table><caption>Batches, in file order</caption><thead><tr><th scope="col">Batch</th><th scope="col">Paragraphs</th><th scope="col">PDF pages</th><th scope="col" class="num">Passages</th></tr></thead><tbody>'
+     +I.batches.map((b,i)=>'<tr><td>'+(i+1)+' of '+nb+'</td><td>'+esc(rangeOf(b.ps.map(x=>x.paragraph)))+'</td><td>'+esc(rangeOf(b.ps.map(x=>x.page)))+'</td><td class="num">'+b.ps.length+'</td></tr>').join('')+'</tbody></table></div><p class="row"><button type="button" class="btn pri" data-act="ing-start">Start</button></p></section>';
+  }
+  if(I.step>=2)h+='<details class="sec"'+(I.step===2?' open':'')+'><summary>Step 2 · Takeaways: '+I.ok.length+' verified, '+I.failed.length+' could not be verified</summary><div class="tw">'+tkTable(I)+'</div>'+failBox(I)+'</details>';
+  if(I.step>=3){
+    h+='<section class="sec"><h4>Step 3 · Drafts</h4><p>'+I.ok.length+' verified takeaways go into the drafts; '+I.failed.length+' could not be verified and stay out of every prompt'+(I.dropped?'; '+I.dropped+' named a passage that was not sent and were dropped':'')+(I.stopped?'; the run was stopped, so the takeaways cover '+I.sent+' of '+tot+' passages':'')+'.</p>';
+    if(I.step===3&&!I.src)h+='<p class="row"><button type="button" class="btn pri" data-act="draft-src"'+(I.ok.length?'':' disabled')+'>Draft the source page (1 call)</button><span class="hint">'+(I.ok.length?'sends the verified takeaways with their pins, the index and the document details':'no verified takeaway to draft from')+'</span></p>';
+    if(I.src)h+='<div data-source="ai"><p><b>Source page drafted:</b> '+esc(I.src.title)+' <span class="hint">('+esc(I.srcSlug)+')</span></p><p>'+esc(I.srcOne)+'</p></div>';
+    if(I.step===3&&I.src)h+='<p class="hint">Pages to draft: '+I.touches.map(t=>esc(t.slug)+(t.isNew?' (new)':'')).join(', ')+'</p><p class="row"><button type="button" class="btn pri" data-act="draft-pages">Draft the changes to '+I.touches.length+' pages ('+I.touches.length+' calls)</button></p>';
+    h+='</section>';
+  }
+  if(I.step>=4){
+    const n=I.changes.length;h+='<section class="sec"><h4>Step 4 · Review and file</h4>';
+    if(I.filed){
+      const f=I.filed;
+      h+='<p aria-live="polite"><b>Filed.</b> '+f.ap.length+' page(s) written, '+f.rj.length+' rejected and left exactly as loaded.'+(f.statusSet?' The document now counts as ingested.':' The source page was not approved, so the document stays in the inbox.')+'</p><div class="tw"><table><caption>Lint, before and after filing</caption><thead><tr><th scope="col">Check</th><th scope="col" class="num">Before</th><th scope="col" class="num">After</th></tr></thead><tbody>'+f.labels.map((l,i)=>'<tr><th scope="row">'+esc(l)+'</th><td class="num">'+f.before[i]+'</td><td class="num">'+f.after[i]+'</td></tr>').join('')+'</tbody></table></div>';
+    }else if(I.cur<n)h+=chgHtml(I.changes[I.cur],I.cur+1,n);
+    else{
+      const a=I.changes.filter(c=>I.dec[c.slug]==='approved').length;
+      h+='<p>All '+n+' changes decided: '+a+' approved, '+(n-a)+' rejected. Nothing is written until you file.</p><p class="row"><button type="button" class="btn pri" data-act="file-ing"'+(a?'':' disabled')+'>File the approved changes</button>'+(a?'':'<span class="hint">nothing approved, nothing to file</span>')+'</p>';
+    }
+    h+='</section>';
+  }
   el.innerHTML=h;
 }
+function nearest(doc,page,quote){
+  const q=norm(quote).split(' ');let best={run:0,p:null};
+  doc.passages.filter(x=>x.page===page).forEach(x=>{
+    const t=norm(x.text).split(' ');let prev=new Array(t.length+1).fill(0),run=0;
+    for(let i=1;i<=q.length;i++){const cur=new Array(t.length+1).fill(0);for(let j=1;j<=t.length;j++)if(q[i-1]===t[j-1]){cur[j]=prev[j-1]+1;if(cur[j]>run)run=cur[j];}prev=cur;}
+    if(run>best.run||!best.p)best={run,p:x};
+  });
+  return best;
+}
+function takeawayPrompt(I,items){
+  return 'You are reading one batch of passages from '+(I.doc.symbol||I.doc.short_title)+' for a research wiki on neurotechnology in the administration of justice. Below are the wiki\'s index (the slugs of its pages) and '+items.length+' passages as JSON {id, page, paragraph, text}.\nReturn JSON {"takeaways":[{"claim":"...","quote":"...","passage":"<id of the passage>","pages":["slug", ...]}]}: at most 10; each quote 8 to 40 words copied verbatim from that one passage; pages = slugs from the index the claim bears on. '+PIN_RULE+'\n\nINDEX\n'+S.index+'\n\nPASSAGES\n'+JSON.stringify(items);
+}
+function processTakeaways(I,b,r){
+  const list=(r&&Array.isArray(r.takeaways)?r.takeaways:[]).slice(0,10),rec=S.callLog[S.callLog.length-1],tk={returned:list.length,ok:0,failed:0,dropped:0};
+  rec.unknown=[];
+  list.forEach(t=>{
+    const p=I.sentIds.has(String(t.passage))?I.doc.passages.find(x=>x.id===String(t.passage)):null;
+    if(!p){tk.dropped++;I.dropped++;return;}
+    const quote=String(t.quote||'').trim(),pin=makePin(I.doc,p,quote,I.cite),v=verify(pin,true),pages=[];
+    (Array.isArray(t.pages)?t.pages:[]).map(s=>slugify(String(s))).forEach(s=>{
+      if(!s||pages.includes(s))return;
+      if(pg(s)||I.newSlugs.includes(s))pages.push(s);
+      else if(I.newSlugs.length<2){I.newSlugs.push(s);pages.push(s);}
+      else rec.unknown.push(s);
+    });
+    const x={claim:String(t.claim||''),quote:pin.quote,passage:p,pin,pages,v,ok:v.ok};
+    I.all.push(x);
+    if(v.ok){I.ok.push(x);tk.ok++;}else{x.near=nearest(I.doc,p.page,quote);I.failed.push(x);tk.failed++;}
+  });
+  rec.tk=tk;
+}
+async function runBatches(){
+  const I=ING;if(S.running)return;
+  I.step=2;ingBegin();
+  try{
+    while(I.done<I.batches.length){
+      if(S.stop){I.stopped=true;break;}
+      const b=I.batches[I.done],items=b.ps.map(p=>({id:p.id,page:p.page,paragraph:p.paragraph,text:p.text})),nb=I.batches.length;
+      b.ps.forEach(p=>I.sentIds.add(p.id));
+      const r=await callModel(takeawayPrompt(I,items),'takeaways '+(I.done+1),items.length,ingSay,'Batch '+(I.done+1)+' of '+nb);
+      processTakeaways(I,b,r);I.done++;I.sent+=items.length;
+      ingSay('batch '+I.done+' of '+nb+' · '+I.sent+' of '+I.doc.passages.length+' passages have left the browser');renderIngest();
+    }
+    I.step=3;
+  }catch(e){
+    const b=I.batches[I.done];if(b)b.ps.forEach(p=>I.sentIds.delete(p.id));
+    I.err={e,retry:runBatches};
+  }
+  ingEnd();
+}
+function sourcePrompt(I){
+  const d=I.doc,tk=I.ok.map((x,i)=>(i+1)+'. '+x.claim+'\n   pin: '+x.pin.raw+'\n   bears on: '+(x.pages.join(', ')||'(none named)')).join('\n');
+  return 'Write the source page for a research wiki on neurotechnology in the administration of justice.\nDocument: '+d.title+'. Author: '+d.author+'. Published: '+d.published+'. '+d.pages+' PDF pages. '+d.url+'\nCite-as: '+I.cite+'. Register of this document: ('+((I.stub&&I.stub.fm.register)||[]).join(', ')+').\nA source page has these sections: Full cite, Register, One-liner, Key takeaways, How NOT to read this, Where it feeds the wiki, Related.\nReturn JSON {"one_liner":"...","body":"markdown, at most 900 words, starting with a # title line","touches":[{"slug":"...","why":"..."}]}. Use only the pins given below, copied exactly; link other pages as [[slug]]. touches = pages of the index this document should be added to (at most 12; at most 2 new slugs). '+PIN_RULE+'\n\nVERIFIED TAKEAWAYS\n'+tk+'\n\nINDEX\n'+S.index;
+}
+function insStats(body){
+  let paras=0,ok=0,bad=0;
+  for(const m of body.matchAll(INS_ALL)){
+    paras+=m[1].split(/\n\s*\n/).filter(s=>s.trim()).length;
+    parsePins(m[1]).forEach(x=>{if(verify(x,true).ok)ok++;else bad++;});
+  }
+  return{paras,ok,bad};
+}
+async function draftSource(){
+  const I=ING;if(S.running)return;
+  ingBegin();
+  try{
+    const r=await callModel(sourcePrompt(I),'source page',0,ingSay,'Drafting the source page');
+    const doc=I.doc,title=doc.short_title||doc.title;
+    let body=String(r.body||'').trim();if(!/^#\s/.test(body))body='# '+title+'\n\n'+body;
+    const base=slugify(doc.symbol||doc.short_title||doc.id)||'source';let slug=base,k=2;
+    if(pg(base))slug=base+'-source';while(pg(slug))slug=base+'-source-'+(k++);
+    const rec=S.callLog[S.callLog.length-1];rec.unknown=[];
+    const cnt={};I.ok.forEach(x=>x.pages.forEach(s=>{cnt[s]=(cnt[s]||0)+1;}));
+    const cand=[];
+    (Array.isArray(r.touches)?r.touches:[]).forEach(t=>{const s=slugify(String(t&&t.slug||''));if(s&&!cand.some(c=>c.slug===s)&&s!==slug)cand.push({slug:s,why:String(t.why||'')});});
+    Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]).forEach(s=>{if(!cand.some(c=>c.slug===s))cand.push({slug:s,why:'takeaways bear on this page'});});
+    const newOk=I.newSlugs.slice(),touches=[];
+    cand.forEach(c=>{
+      if(touches.length>=12)return;
+      if(pg(c.slug)||newOk.includes(c.slug)){touches.push(Object.assign(c,{isNew:!pg(c.slug)}));}
+      else if(newOk.length<2){newOk.push(c.slug);touches.push(Object.assign(c,{isNew:true}));}
+      else rec.unknown.push(c.slug);
+    });
+    if(I.stub&&!touches.some(t=>t.slug===I.stub.slug))touches.push({slug:I.stub.slug,why:'stub for this document',isNew:false});
+    I.stubSlug=I.stub&&I.stub.slug;I.touches=touches;I.srcSlug=slug;I.srcOne=String(r.one_liner||'');
+    const known=new Set(touches.map(t=>t.slug));
+    const links=uniq(Array.from(body.matchAll(/\[\[([^\]|#]+)/g),m=>m[1].trim()).filter(s=>pg(s)||known.has(s)).concat(touches.map(t=>t.slug)));
+    const full=INS0+'\n'+body+'\n'+INS1+'\n',st=insStats(full);
+    I.src={slug,isNew:true,type:'source',title,fm:{title,type:'source',tags:touches.map(t=>t.slug),register:((I.stub&&I.stub.fm.register)||docReg(doc.id)).slice(),status:'draft',updated:today(),links,sources:[doc.id]},body:full,notes:[],insParas:st.paras,pinsOk:st.ok,pinsBad:st.bad,contested:false,added:[]};
+    ingSay('Source page drafted; '+st.ok+' pins verified, '+st.bad+' not.');
+  }catch(e){I.err={e,retry:draftSource};}
+  ingEnd();
+}
+function insertAt(body,after,text,notes){
+  const lines=body.replace(/\s+$/,'').split('\n'),block=['',INS0,text.trim(),INS1,''],want=String(after||'end').replace(/^#+\s*/,'').trim().toLowerCase();
+  if(want&&want!=='end'){
+    const hi=lines.findIndex(l=>/^#{1,4}\s/.test(l)&&l.replace(/^#+\s*/,'').trim().toLowerCase()===want);
+    if(hi>=0){
+      const lv=lines[hi].match(/^#+/)[0].length;let e=hi+1;
+      while(e<lines.length&&!(/^#{1,4}\s/.test(lines[e])&&lines[e].match(/^#+/)[0].length<=lv))e++;
+      while(e>hi+1&&!lines[e-1].trim())e--;
+      lines.splice.apply(lines,[e,0].concat(block));return lines.join('\n')+'\n';
+    }
+    notes.push('Heading "'+after+'" was not found, so that text was added at the end of the page.');
+    block.splice(2,0,'*(The model named the heading "'+String(after).replace(/"/g,"'")+'"; it was not found, so this was added at the end.)*','');
+  }
+  Array.prototype.push.apply(lines,block);return lines.join('\n')+'\n';
+}
+function pagePrompt(I,t,p,use,isStub){
+  const tk=use.map((x,i)=>(i+1)+'. '+x.claim+'\n   pin: '+x.pin.raw).join('\n');
+  return 'You are editing one page of a research wiki, adding what a newly read document says and nothing else.\nPAGE: '+t.slug+(p?' — '+p.title:' (does not exist yet; it will be created)')+'\nWhy it is touched: '+t.why+'\n'+(isStub?'This page is a stub for the document just read. Its body holds a checklist of what the ingest should check: address each item the takeaways can answer, and say in one line what they cannot.\n':'')
+   +'Return JSON {"edits":[{"after":"an existing heading of this page, or end","markdown":"..."}],"contested":null}. At most 300 words in all. Copy pins exactly as given. "contested" is null, or a full block (opened by three backticks and the word contested; lines claim:, verdict:, note:, then one line per position: +, - or ~, the register letter, a pin, a gloss and a [[slug]], separated by " | ") only where this document disagrees with the page. '+PIN_RULE+'\n\nPAGE BODY\n'+(p?p.body:'(empty)')+'\n\nTAKEAWAYS\n'+tk;
+}
+function mkPageChange(I,t,p,r){
+  const title=p?p.title:t.slug.replace(/-/g,' ').replace(/^./,c=>c.toUpperCase()),notes=[];
+  let body=p?p.body:'# '+title+'\n',contested=false;
+  (r&&Array.isArray(r.edits)?r.edits:[]).filter(e=>e&&typeof e.markdown==='string'&&e.markdown.trim()).forEach(e=>{body=insertAt(body,e.after,e.markdown,notes);});
+  if(r&&typeof r.contested==='string'&&r.contested.indexOf(FENCE+'contested')>=0){body=insertAt(body,'Contested claims',r.contested.trim(),notes);contested=true;}
+  const fm=clone(p?p.fm:{title,type:'concept',tags:[],register:docReg(I.doc.id).slice(),status:'draft',updated:today(),links:[],sources:[]}),added=[];
+  const st=insStats(body);
+  for(const m of body.matchAll(INS_ALL))parsePins(m[1]).forEach(x=>{if(fm.sources.indexOf(x.id)<0)fm.sources.push(x.id);});
+  if(I.srcSlug&&fm.links.indexOf(I.srcSlug)<0){fm.links.push(I.srcSlug);added.push(I.srcSlug);}
+  if(t.slug===I.stubSlug&&st.paras>0&&fm.status==='stub')fm.status='draft';
+  return{slug:t.slug,isNew:!p,type:p?p.type:'concept',title,fm,body,notes,insParas:st.paras,pinsOk:st.ok,pinsBad:st.bad,contested,added};
+}
+async function draftPages(){
+  const I=ING;if(S.running)return;
+  ingBegin();
+  try{
+    while(I.pi<I.touches.length){
+      if(S.stop){I.stopped=true;break;}
+      const t=I.touches[I.pi],p=pg(t.slug),isStub=t.slug===I.stubSlug,tks=isStub?I.ok:I.ok.filter(x=>x.pages.indexOf(t.slug)>=0),use=(tks.length?tks:I.ok).slice(0,12);
+      const r=await callModel(pagePrompt(I,t,p,use,isStub),'page '+t.slug,0,ingSay,'Page '+(I.pi+1)+' of '+I.touches.length+' ('+t.slug+')');
+      I.drafts.push(mkPageChange(I,t,p,r));I.pi++;
+      ingSay(I.pi+' of '+I.touches.length+' pages drafted');renderIngest();
+    }
+    const real=I.drafts.filter(c=>c.insParas>0);
+    I.src.fm.links=uniq(I.src.fm.links.filter(s=>pg(s)||real.some(c=>c.slug===s)));I.src.added=real.map(c=>c.slug);
+    I.changes=[I.src].concat(real);I.cur=0;I.step=4;
+    ingSay(real.length+' page(s) have a proposed change'+(I.drafts.length>real.length?'; '+(I.drafts.length-real.length)+' came back with no change':'')+'. Nothing is written yet.');
+  }catch(e){I.err={e,retry:draftPages};}
+  ingEnd();
+}
+function cleanIns(b){return b.replace(new RegExp('^('+INS0+'|'+INS1+')[ \\t]*\\n?','gm'),'').replace(/\n{3,}/g,'\n\n').trim()+'\n';}
+function fileIng(){
+  const I=ING,d=today(),before=lintNums(),labels=lint().map(r=>r.label);
+  const ap=I.changes.filter(c=>I.dec[c.slug]==='approved'),rj=I.changes.filter(c=>I.dec[c.slug]==='rejected'),op=++S.op;
+  const exist=new Set(P.map(p=>p.slug)),rejected=new Set(rj.map(c=>c.slug));ap.forEach(c=>exist.add(c.slug));
+  ap.forEach(c=>{
+    const body=cleanIns(c.body);
+    c.fm.updated=d;c.fm.links=c.fm.links.filter(s=>!(c.added.indexOf(s)>=0&&(rejected.has(s)||!exist.has(s))));
+    const cur=pg(c.slug);
+    if(cur){cur.body=body;cur.fm=c.fm;}else addPage({slug:c.slug,type:c.type,title:c.title,fm:c.fm,body});
+    S.changes.push({op,date:d,kind:'ingest',slug:c.slug,title:c.title,page:c.isNew?'new':'edited'});
+  });
+  const srcOk=ap.some(c=>c.slug===I.srcSlug);
+  if(srcOk){DOC[I.id].status='ingested';VC.clear();}
+  ap.forEach(c=>{
+    const p=pg(c.slug),N=pinCount(p),L=p.fm.register.join(', ');
+    if(c.slug===I.srcSlug)idxSet(c.slug,'- [['+c.slug+']] — '+(I.srcOne||p.title)+' · ('+L+') · ✓'+N,SEC.source,'Sources');
+    else if(c.isNew||c.slug===I.stubSlug)idxSet(c.slug,'- [['+c.slug+']] — '+p.title+' · ('+L+') · ✓'+N,SEC[p.type]||SEC.concept,p.type==='entity'?'Entities':p.type[0].toUpperCase()+p.type.slice(1)+'s');
+    else idxRecount(c.slug,N);
+  });
+  idxCounts();
+  ap.forEach(c=>{
+    const m=c.body.match(new RegExp(FENCE+'contested\\n?([\\s\\S]*?)'+FENCE));
+    if(!m||!c.contested)return;
+    const cd=parseCard(m[1]),id=slugify(cd.claim).slice(0,60)||'claim-'+c.slug,v=cd.verdict;
+    const stt=/^settled/.test(v)?'settled':/^leans/.test(v)?'leaning':'open';
+    const pos=cd.pos.filter(x=>x.pin);
+    S.tens=S.tens.replace(/\s+$/,'')+'\n\n### '+id+'\ntitle: '+cd.claim+'\nstatus: '+stt+'\ncard: [['+c.slug+']]\npoles: '+(cd.pos.filter(x=>x.sign==='+')[0]||{gloss:'none'}).gloss+' / '+(cd.pos.filter(x=>x.sign==='-')[0]||{gloss:'none'}).gloss+'\nwhere: '+pos.map(x=>x.pin.label).join('; ')+'\n';
+    S.tensNew.push(id);
+  });
+  const doc=I.doc,edited=ap.filter(c=>c.slug!==I.srcSlug&&!c.isNew),made=ap.filter(c=>c.slug!==I.srcSlug&&c.isNew);
+  const onDoc=ap.filter(c=>c.slug!==I.srcSlug&&pg(c.slug)&&an(pg(c.slug))._pins.some(x=>x.id===doc.id));
+  let nDoc=0;P.forEach(p=>{nDoc+=an(p)._pins.filter(x=>x.id===doc.id).length;});
+  addLog('## ['+d+'] ingest | '+(doc.symbol||doc.short_title)+': '+doc.short_title+'\nRead '+I.sent+' passages ('+I.cite+', register ('+(docReg(doc.id).join(', ')||'?')+')). '+(srcOk?'Wrote [['+I.srcSlug+']]. ':'No source page was approved. ')+(edited.length?'Edited '+edited.map(c=>'[['+c.slug+']]').join(', ')+'. ':'')+(made.length?'Created '+made.map(c=>'[['+c.slug+']]').join(', ')+'. ':'')+nDoc+' pins in all; besides its own page, pinned on '+onDoc.length+' pages'+(onDoc.length?': '+onDoc.map(c=>'[['+c.slug+']]').join(', '):'')+'. Rejected: '+(rj.length?rj.map(c=>'[['+c.slug+']]').join(', '):'none')+'.');
+  const after=lintNums();
+  S.filing={slugs:ap.map(c=>c.slug),before,after,labels};
+  I.filed={ap,rj,before,after,labels,statusSet:srcOk};
+  renderAll();
+}
 
-/* ---------- tabs 04 and 05 ---------- */
+/* ---------- 04 CHECK ---------- */
 function renderCheck(){
-  const C=lintAll(),pins=sum(pages,p=>p._pins.length),ver=sum(pages,vcount),need=C.filter(c=>c.items.length).length;
-  let h='<div><span class="big" aria-live="polite">'+nf(ver)+'</span> <span>of '+nf(pins)+' pins verified by this page</span></div><p><b>'+need+' lint checks need a look.</b> <span class="hint">How this is computed: a pin verifies when its quote stands in a passage of that document starting on that PDF page and the label names the paragraph or page label.</span></p>';
-  h+='<table><caption>FIG.03 Lint checks on the wiki</caption><thead><tr><th scope="col">Check</th><th scope="col" class="n">Result</th><th scope="col">Pages concerned</th></tr></thead><tbody>'
-   +C.map(c=>'<tr><td>'+esc(c.name)+'</td><td class="n"><span class="st '+(c.items.length?'no':'ok')+'">'+c.items.length+' · '+(c.items.length?'check':'pass')+'</span></td><td>'+(c.items.length?slugLinks(c.items):'—')+'</td></tr>').join('')+'</tbody></table>';
-  h+='<p><button type="button" class="btn pri" data-act="lint">'+(lintRan?'Re-run':'Lint now')+'</button> <span class="hint">Contradictions between pages (the schema’s reading lint) are not checked by this page’s code.</span></p>';
-  const R=selfChecks(),groups=uniq(R.map(r=>r.g));
-  h+='<details open><summary><b>How the app checks itself</b></summary>'+groups.map(g=>'<h4 class="lab" style="margin:12px 0 2px">'+esc(g)+'</h4><ul style="list-style:none;padding:0;margin:0">'+R.filter(r=>r.g===g).map(r=>'<li style="padding:3px 0;border-bottom:1px solid var(--rule)"><span class="st '+(r.ok===null?'na':r.ok?'ok':'no')+'">'+(r.ok===null?'n/a':r.ok?'pass':'check')+'</span> '+esc(r.t)+(r.items.length?' · '+slugLinks(r.items,8):'')+'</li>').join('')+'</ul>').join('')+'</details>';
-  $('#chkOut').innerHTML=h;
+  const st=pinStats(),L=lint(),need=L.filter(r=>r.items.length).length,CH=checks();
+  const links=pages=>pages.length?pages.map(s=>pg(s)?'<a href="#'+encodeURIComponent(s)+'">'+esc(s)+'</a>':esc(s)+' <span class="hint">no page</span>').join(', '):'<span class="hint">none</span>';
+  $('#chkBox').innerHTML='<p class="lab">04 · Can I trust this?</p><p><span class="big">'+fmt(st.ok)+'</span> of '+fmt(st.total)+' pins verified by this page</p><p class="how">How this is computed: each pin\'s quote is searched, fragment by fragment in order, in the passages of its document that start on the pin\'s PDF page, and its label must name that passage. The ✓ written in a page is not trusted.</p>'
+   +'<p><span class="big">'+need+'</span> of '+L.length+' lint checks need a look</p>'
+   +'<p class="row"><button type="button" class="btn pri" data-act="lint">'+(S.lintPressed?'Re-run':'Lint now')+'</button><span class="hint">reads the wiki again; no model is called</span></p>'
+   +'<div class="tw"><table><caption>FIG.01 · Lint checks, run by this page</caption><thead><tr><th scope="col">Check</th><th scope="col" class="num">Result</th><th scope="col">Pages concerned</th></tr></thead><tbody>'
+   +L.map(r=>'<tr><th scope="row">'+esc(r.label)+'</th><td class="num '+(r.items.length?'chk':'pass')+'">'+r.items.length+' · '+(r.items.length?'check':'pass')+'</td><td>'+links(r.pages)+'</td></tr>').join('')+'</tbody></table></div>'
+   +'<p class="hint">Not done by code: the schema\'s reading for contradictions between pages needs a person or a model\'s judgment. The open disagreements are in the tensions register on tab 05.</p>'
+   +'<details class="sec" open><summary>Checks panel: how this page checks itself</summary><ul class="chkl">'+CH.map(c=>'<li><span class="'+(c.ok===true?'pass':c.ok===false?'chk':'na')+'">'+(c.ok===true?'pass':c.ok===false?'check':'not yet')+'</span> · <b>'+esc(c.name)+'.</b> '+esc(c.text)+(c.pages.length?' · '+links(c.pages.slice(0,12)):'')+'</li>').join('')+'</ul></details>';
+}
+
+/* ---------- 05 RECORD ---------- */
+function exportObj(){
+  const ls={};Object.keys(DOC).forEach(k=>{ls[k]=DOC[k].status;});
+  return{title:WIKI.title,source:WIKI.source,built:WIKI.built,count:P.length,schema:WIKI.schema,pages:P.map(p=>({slug:p.slug,type:p.type,title:p.title,frontmatter:p.fm,body:p.body})),index:S.index,log:S.log,tensions:S.tens,changes:S.changes,library_status:ls};
+}
+function save(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);}
+function tensHtml(t){
+  const L=t.split('\n'),h=L.shift().replace(/^###\s*/,'').trim(),id=slugify(h);
+  const body=L.filter(l=>l.trim()).map(l=>{const m=l.match(/^\s*[-*]?\s*\**([A-Za-z_ ]{2,20}?)\**:\s*(.*)$/);return m?'<div class="kv"><span class="lab">'+esc(m[1])+'</span> '+inline(m[2],{})+'</div>':'<p>'+inline(l.trim(),{})+'</p>';}).join('');
+  return '<article class="tens'+(S.sel===id?' sel':'')+'" id="t-'+id+'"><h4>'+esc(h)+(S.tensNew.indexOf(id)>=0?' <span class="sess">this session</span>':'')+'</h4>'+body+'</article>';
 }
 function renderRecord(){
-  const ents=logEntries();if(logNewest)ents.reverse();
-  const te=tensEntries();
-  let h='<div class="row2"><span class="lab">LOG</span><button type="button" class="btn" data-act="log-order" aria-pressed="'+logNewest+'">'+(logNewest?'Newest first':'Oldest first')+'</button><span class="hint">click = switch order</span></div>';
-  h+=ents.map(e=>'<details><summary>'+esc(e.title)+(S.logAdded.has(e.head)?'<span class="tag">this session</span>':'')+'</summary><div class="body">'+md(e.body,{})+'</div></details>').join('')||'<p class="hint">The log is empty.</p>';
-  h+='<h3 class="s">Where the sources disagree: the tensions register</h3>'+(te.intro.trim()?'<div class="body">'+md(te.intro,{})+'</div>':'')
-   +te.items.map(x=>'<details id="tens-'+slugify(x.head)+'"><summary>'+esc(x.head)+(S.tensAdded.has('### '+x.head)?'<span class="tag">this session</span>':'')+'</summary><div class="body">'+md(x.body,{})+'</div></details>').join('');
-  h+='<h3 class="s">Method</h3><p class="hint">Counting, matching and verification are done by this page’s code; each number has its “How this is computed” line. Source: '+esc(WK.source||'the attached wiki')+' · built '+esc(WK.built||'unknown')+' · library: '+esc((WD.library&&WD.library.source)||'the attached library')+'.</p>';
-  h+='<div class="row2"><button type="button" class="btn pri" data-act="download">Download the wiki</button>'+(S.changes.length?'<button type="button" class="btn" data-act="download-md">Download the changed pages (markdown)</button>':'')+'<span id="dlMsg" class="hint" aria-live="polite"></span></div>';
-  $('#recOut').innerHTML=h;
+  const E=logEntries(),ord=E.map((e,i)=>i);if(S.order==='new')ord.reverse();
+  const rows=ord.map(i=>'<details class="le"'+(i===ord[0]?' open':'')+'><summary>'+esc(E[i].head)+(i>=S.logBase?' <span class="sess">this session</span>':'')+'</summary><div class="page">'+md(E[i].body)+'</div></details>').join('');
+  const ch=changedSlugs();
+  $('#recBox').innerHTML='<p class="lab">05 · What has changed, where do the sources disagree, and how do I take it away?</p><h3>Log</h3><p class="row"><button type="button" role="switch" aria-checked="'+(S.order==='new')+'" data-act="order">Newest first</button><span class="hint">'+E.length+' entries, appended only; the switch flips the order</span></p>'+(rows||'<p class="hint">The log is empty.</p>')
+   +'<h3>Tensions register</h3><p class="hint">Each entry names the page that holds its contested card.</p>'+(tensEntries().map(tensHtml).join('')||'<p class="hint">No entries.</p>')
+   +'<h3>Method</h3><p class="hint">Counting, matching and verification are done by this page\'s code; each number has its "How this is computed" line. Data: '+esc(WIKI.source||'the research wiki')+', built '+esc(WIKI.built||'unknown')+', with the library of '+LIB.length+' documents. The model drafts; the code verifies every quotation; a person decides.</p>'
+   +'<p class="row"><button type="button" class="btn pri" data-act="dl-json">Download the wiki</button>'+(ch.length?'<button type="button" class="btn" data-act="dl-md">Download the changed pages (markdown)</button>':'')+'<span class="hint">'+(S.changes.length?S.changes.length+' change(s) live only in this page until you download':'no changes yet')+'</span></p>';
 }
-function download(name,text,type){
-  try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
-  catch(e){const m=$('#dlMsg');if(m)m.textContent='Download is not available here: '+e.message;}
-}
-function copyBtn(b,text){
-  const old=b.textContent,done=ok=>{b.textContent=ok?'Copied':'Copy is not available here';setTimeout(()=>{b.textContent=old;},1600);};
-  const fb=()=>{try{const a=document.createElement('textarea');a.value=text;a.style.cssText='position:fixed;opacity:0';document.body.appendChild(a);a.select();const ok=document.execCommand('copy');a.remove();return ok;}catch(e){return false;}};
-  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(()=>done(true),()=>done(fb()));else done(fb());
-}
-function renderAll(){renderHead();renderList();renderPageView();renderAsk();renderIngest();renderCheck();renderRecord();}
 
 /* ---------- events ---------- */
-function openPin(i){const p=pinReg[i];if(!p)return;try{if(window.studio&&typeof studio.openSource==='function')studio.openSource(p.id,p.page,p.quote);}catch(e){}}
+function renderAll(){renderHeader();renderList();renderPage();renderIngest();renderAskPages();if(S.tab===3)renderCheck();if(S.tab===4)renderRecord();askPlan();}
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
-  const F={
-   'open-page':()=>{e.preventDefault();openPage(b.dataset.slug);},
-   'open-tens':()=>{e.preventDefault();openTens(b.dataset.head);},
-   'pin-open':()=>openPin(+b.dataset.pin),
-   'pin-toggle':()=>{const d=b.parentElement.querySelector('.pd');d.hidden=!d.hidden;b.setAttribute('aria-expanded',String(!d.hidden));b.textContent=d.hidden?'▾':'▴';},
-   'copy-page':()=>copyBtn(b,pageMarkdown(bySlug[curPage])),
-   'ask':()=>ask.stage==='chosen'?askStep2():askStep1(),
-   'ask-stop':stopAsk,
-   'ask-retry1':askStep1,'ask-retry2':askStep2,
-   'ask-change':()=>{ask.changing=!ask.changing;renderAsk();},
-   'ask-file-open':()=>{ask.file=!ask.file;renderAsk();},
-   'ask-file':fileQuestion,
-   'ask-copy':()=>copyBtn(b,ask.answer.answer),
-   'ing-open':()=>openIngest(b.dataset.id),
-   'ing-start':runBatches,'ing-stop':stopIngest,
-   'ing-go3':()=>{ing.stage=3;renderIngest();},
-   'ing-src':draftSource,'ing-pages':draftPages,
-   'ing-review':()=>{ing.stage=4;ing.i=0;renderIngest();},
-   'ing-approve':()=>decide('approve'),'ing-reject':()=>decide('reject'),
-   'ing-file':fileIngest,
-   'ing-retry':()=>{const r=ing.err&&ing.err.retry;if(r==='batch')runBatches();else if(r==='src')draftSource();else draftPages();},
-   'ing-open-tk':()=>{const t=ing.tk[+b.dataset.i];try{if(window.studio&&studio.openSource)studio.openSource(ing.doc.id,t.ps.page,t.near.p.text.split(' ').slice(0,12).join(' '));}catch(err){}},
-   'lint':()=>{lintRan=true;renderCheck();},
-   'log-order':()=>{logNewest=!logNewest;renderRecord();},
-   'download':()=>download('wiki-'+today()+'.json',JSON.stringify({title:WK.title,source:WK.source,built:WK.built,count:pages.length,schema:WK.schema,pages:pages.map(p=>({slug:p.slug,type:p.type,title:p.title,frontmatter:p.frontmatter,body:p.body})),index,log,tensions,changes:S.changes,library_status:Object.fromEntries(Object.values(docs).map(d=>[d.id,d.status]))},null,1),'application/json'),
-   'download-md':()=>download('changed-pages-'+today()+'.md',pages.filter(p=>S.approved.has(p.slug)).map(pageMarkdown).join('\n\n'),'text/markdown')
-  };
-  if(F[a])F[a]();
-});
-document.addEventListener('input',e=>{
-  if(e.target.id==='flt')renderList();
-  else if(e.target.id==='fT'||e.target.id==='fG'){ask.fTitle=$('#fT').value;ask.fTags=$('#fG').value;updFile();}
+  if(a==='open'){openSrc(PR[+b.dataset.k].pin);}
+  else if(a==='tg'){const d=$('#pd'+b.dataset.k),on=d.hidden;d.hidden=!on;b.setAttribute('aria-expanded',on);b.textContent=on?'▾':'▸';}
+  else if(a==='retry'){const f=RETRY;RETRY=null;$('#askErr').innerHTML='';if(f)f();}
+  else if(a==='ing-retry'){const f=ING.err.retry;ING.err=null;f();}
+  else if(a==='ing')startIngest(b.dataset.id);
+  else if(a==='ing-start')runBatches();
+  else if(a==='draft-src')draftSource();
+  else if(a==='draft-pages')draftPages();
+  else if(a==='approve'||a==='reject'){const c=ING.changes[ING.cur];ING.dec[c.slug]=a==='approve'?'approved':'rejected';ING.cur++;renderIngest();const h=$('#ingH');if(h)h.focus();}
+  else if(a==='file-ing')fileIng();
+  else if(a==='stop'){S.stop=true;ingSay('Stopping after the call in flight returns; what has returned is kept.');}
+  else if(a==='lint'){S.lintPressed=true;renderCheck();}
+  else if(a==='order'){S.order=S.order==='new'?'old':'new';renderRecord();}
+  else if(a==='dl-json')save('wiki-'+today()+'.json',JSON.stringify(exportObj(),null,1),'application/json');
+  else if(a==='dl-md')save('wiki-changed-pages-'+today()+'.md',changedSlugs().map(s=>toMd(pg(s))).join('\n\n---\n\n'),'text/markdown');
+  else if(a==='copy-md'){const p=pg(S.cur);if(p)copyText(toMd(p),$('#cpnote'));}
+  else if(a==='copy-ans')copyText(ASK.res.answer,$('#qnote'));
+  else if(a==='fileq'){ASK.fileOpen=true;renderAskOut();const t=$('#qt');if(t)t.focus();}
+  else if(a==='file-q')fileQ();
+  else if(a==='chg'){e.preventDefault();const f=$('#pick');f.hidden=!f.hidden;}
+  else if(a==='tens'){S.sel=b.dataset.id;showTab(4);const t=$('#t-'+S.sel);if(t){t.scrollIntoView();}}
 });
 document.addEventListener('change',e=>{
-  const s=e.target.dataset&&e.target.dataset.pick;if(!s)return;
-  let c=ask.chosen.filter(x=>x!==s);if(e.target.checked)c.push(s);
-  if(c.length>5){e.target.checked=false;return;}
-  ask.chosen=c;ask.answer=null;ask.file=null;ask.err=null;ask.stage=c.length?'chosen':'idle';ask.prog=c.length?'Pages changed by you. Press the button to send them.':'';renderAsk();
+  const c=e.target;if(!c.dataset||c.dataset.act!=='pickp')return;
+  const ch=$$('#pick input:checked').map(x=>x.value);
+  if(ch.length>5){c.checked=false;return;}
+  ASK.pages=ch;ASK.manual=true;$('#pchips').innerHTML=ch.map(s=>'<a class="pgchip" href="#'+encodeURIComponent(s)+'">'+esc(pg(s).title)+'</a>').join('');
 });
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){if(ask.run)stopAsk();if(ing&&ing.run)stopIngest();}
-  if(e.target.id==='askQ'&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(!ask.run)(ask.stage==='chosen'?askStep2:askStep1)();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.running){S.stop=true;const t='Stopping after the call in flight returns.';if(S.running==='ask')$('#askProg').textContent=t;else ingSay(t);}});
+$('#tabs').innerHTML=TN.map((n,i)=>'<button type="button" role="tab" id="tab'+i+'" data-i="'+i+'" aria-controls="pan'+i+'" aria-selected="false" tabindex="-1">0'+(i+1)+' '+n+'<span class="run" aria-live="polite"></span></button>').join('');
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('[role=tab]');if(b)showTab(+b.dataset.i);});
+$('#tabs').addEventListener('keydown',e=>{
+  let i=S.tab;
+  if(e.key==='ArrowRight')i=(i+1)%5;else if(e.key==='ArrowLeft')i=(i+4)%5;else if(e.key==='Home')i=0;else if(e.key==='End')i=4;else return;
+  e.preventDefault();showTab(i,true);
 });
-window.addEventListener('hashchange',()=>{let s='';try{s=decodeURIComponent(location.hash.slice(1));}catch(e){}if(s!==curPage){curPage=bySlug[s]?s:'';showTab(0);renderList();renderPageView();}});
+$('#flt').addEventListener('input',e=>{S.flt=e.target.value;renderList();});
+$('#q').addEventListener('input',askPlan);
+$('#q').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doAsk();}});
+$('#askBtn').addEventListener('click',doAsk);
+$('#askStop').addEventListener('click',()=>{S.stop=true;$('#askProg').textContent='Stopping after the call in flight returns.';});
+window.addEventListener('hashchange',onHash);
 
 /* ---------- start ---------- */
-(function init(){
-  pages=(WK.pages||[]).map(p=>({slug:p.slug,type:p.type,title:p.title,frontmatter:JSON.parse(JSON.stringify(p.frontmatter||{})),body:p.body||''}));
-  pages.forEach(p=>{orig[p.slug]=p.body;});
-  LIBR.forEach(d=>{docs[d.id]=Object.assign({},d);});
-  rebuild();loadedWarn=sum(pages,p=>p._pins.filter(x=>x.mark==='⚠').length);
-  const tl=$('#tabs');
-  tl.innerHTML=BASE.map((t,i)=>'<button type="button" class="tab" role="tab" id="t'+(i+1)+'" aria-controls="p'+(i+1)+'" data-tab="'+i+'">'+t+'<span class="run" aria-live="polite"></span></button>').join('');
-  tl.querySelectorAll('.tab').forEach((b,i)=>{
-    b.addEventListener('click',()=>showTab(i));
-    b.addEventListener('keydown',e=>{const n=BASE.length;let k=null;if(e.key==='ArrowRight')k=(i+1)%n;else if(e.key==='ArrowLeft')k=(i+n-1)%n;else if(e.key==='Home')k=0;else if(e.key==='End')k=n-1;if(k!==null){e.preventDefault();showTab(k,true);}});
-  });
-  $('#foot').textContent=(WK.source||'')+' · built '+(WK.built||'unknown')+' · Counting, matching and verification are done by this page’s code; the model is called only when you press Ask, Ingest or a retry button.';
-  if(!pages.length){$('#pview').innerHTML='<p>No wiki is attached to this conversation. Drag the wiki file from “Your files” into the chat.</p>';}
-  try{const s=decodeURIComponent(location.hash.slice(1));if(bySlug[s])curPage=s;}catch(e){}
-  renderAll();showTab(0,true);
-})();
+S.logBase=logEntries().length;S.warn0=pinStats().warn;
+$('#foot').textContent=(WIKI.source||'Research wiki')+' · built '+(WIKI.built||'unknown')+' · Counting, matching and verification are done by this page\'s code; the model is called only when you press Ask, Ingest or a retry button.';
+renderHeader();askPlan();renderIngest();
+if(location.hash.length>1)onHash();else{showTab(0);renderList();renderPage();}
+$('#tab0').focus();
 })();
 </script>
 </body>

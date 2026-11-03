@@ -6,18 +6,26 @@
 <title>Gallery app</title>
 <meta name="robots" content="noindex, nofollow">
 <script src="../gate.js"></script>
-<link rel="stylesheet" href="../studio.css?v=2026-11-03d">
+<link rel="stylesheet" href="../studio.css?v=2026-11-04a">
 <style>
   body { display: flex; flex-direction: column; }
   .bar { display: flex; gap: 14px; align-items: center; padding: 8px 14px; background: var(--surface); border-bottom: 1px solid var(--line); }
   .bar a { color: var(--accent); }
-  #frame { flex: 1; border: 0; width: 100%; background: var(--surface); }
+  .stage-gal { position: relative; flex: 1; }
+  #frame { position: absolute; inset: 0; border: 0; width: 100%; height: 100%; background: var(--surface); }
 </style>
 </head>
 <body>
 <div class="bar"><a href="./">← Gallery</a><span id="what">Loading…</span></div>
-<iframe id="frame" title="App" sandbox="allow-scripts allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox" allow="clipboard-write"></iframe>
-<script src="../preview-doc.js?v=2026-11-03d"></script>
+<div class="stage-gal">
+  <iframe id="frame" title="App" sandbox="allow-scripts allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox" allow="clipboard-write"></iframe>
+  <aside class="drawer wide" id="drawer" hidden>
+    <div class="drawer-head"><h3 id="drawerTitle"></h3><button class="ghost icon" id="drawerClose" aria-label="Close">×</button></div>
+    <div class="drawer-body" id="drawerBody"></div>
+  </aside>
+</div>
+<script src="../pdf-view.js?v=2026-11-04a"></script>
+<script src="../preview-doc.js?v=2026-11-04a"></script>
 <script>
 (async function () {
   const app = new URLSearchParams(location.search).get('app') || '';
@@ -36,11 +44,18 @@
   const dataText = async (k) => PreviewDoc.escapeScript(await text('../data/' + file(k)));
   document.getElementById('frame').srcdoc = PreviewDoc.forFrame(await PreviewDoc.build(html, { chart, runtime, dataText }));
 })();
-// the gallery has no studio around the app: a PDF page opens in a new tab, and there is no model to ask
+// the gallery has no studio around the app: it opens a PDF page in its own drawer, and there is no model to ask
+document.getElementById('drawerClose').onclick = () => { document.getElementById('drawer').hidden = true; };
 window.addEventListener('message', (e) => {
   const m = e.data || {};
   if (e.source !== document.getElementById('frame').contentWindow) return;
-  if (m.type === 'studio:open-source') window.open('../files/' + String(m.symbol).replace(/\//g, '_') + '.pdf#page=' + (Number(m.page) || 1), '_blank', 'noopener');
+  if (m.type === 'studio:open-source') {
+    const file = '../files/' + String(m.symbol).replace(/\//g, '_') + '.pdf', page = Number(m.page) || 1;
+    document.getElementById('drawerTitle').textContent = m.symbol + ', page ' + page;
+    document.getElementById('drawer').hidden = false;
+    PdfView.open(document.getElementById('drawerBody'), file, page, m.quote,
+      `<p class="src-head"><a href="${file}#page=${page}" target="_blank" rel="noopener">Open in a new tab</a></p>`, '../');
+  }
   if (m.type === 'studio:ask') e.source.postMessage({ type: 'studio:answer', id: m.id, error: 'The gallery has no model. Open the studio with a seat code to try this step.' }, '*');
 });
 </script>

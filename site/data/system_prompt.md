@@ -23,6 +23,7 @@ Participants attach files from the studio's file shelf. Their message then says 
 - All CSS and JavaScript inline. Do not load anything from the internet: no CDNs, no fonts, no images, no fetch(), no XMLHttpRequest, no WebSocket. The page runs offline in a sandbox and anything external fails.
 - Chart.js 4 is preloaded as `window.Chart`. Use it for charts.
 - Keep the file under about 1,500 lines.
+- If you hide elements with the `hidden` attribute, add `[hidden]{display:none!important}` to the CSS: a rule that sets `display` on the element overrides `hidden` and shows it.
 - If you use code or wording from a "Reference shelf excerpts" page that has an open licence (MIT, Apache, BSD, ISC, CC BY), add a small "Credits" line at the bottom of the app naming the source and its licence.
 
 ## The data

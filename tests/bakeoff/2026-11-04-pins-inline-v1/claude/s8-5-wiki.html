@@ -1,0 +1,893 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Research wiki: neurotechnology and justice</title>
+<style>
+:root{--bg:#f4f0e8;--ink:#1d1b18;--rule:#d9d2c3;--edge:#8d8677;--red:#9b2335;--mut:#5b564d;--ok:#1d6a38;--warn:#855400;--ins:#fbf0b8;--serif:Georgia,"Times New Roman",serif;--mono:ui-monospace,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--red)}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.mono{font:12px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin:0}
+.hint{font:12px/1.5 var(--mono);color:var(--mut);margin:4px 0}
+.hdr{border-bottom:1px solid var(--rule);padding:18px 24px 0}
+.hrow{display:flex;gap:24px;justify-content:space-between;flex-wrap:wrap}
+h1{font:400 clamp(26px,3.4vw,40px)/1.15 var(--serif);margin:6px 0 8px;max-width:30ch}
+h2,h3,h4,h5{font-family:var(--serif);font-weight:400;line-height:1.25}
+h2{font-size:30px;margin:6px 0 8px}h3{font-size:22px;margin:22px 0 6px}h4{font-size:18px;margin:16px 0 4px}h5{font-size:16px;margin:12px 0 4px}
+.meta{margin:0 0 14px;font-size:15px;color:var(--mut);max-width:84ch}
+.strip{text-align:right;max-width:440px}
+.tabs{display:flex;flex-wrap:wrap}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 16px;font:12px var(--mono);letter-spacing:.08em;color:var(--ink);cursor:pointer}
+.tabs button[aria-selected=true]{color:var(--red);border-bottom-color:var(--red)}
+main{padding:20px 24px 70px;max-width:1300px}
+.panel[hidden]{display:none}
+.q{margin-bottom:12px}
+.cols{display:grid;grid-template-columns:320px minmax(0,900px);gap:32px}
+@media(max-width:900px){.cols{grid-template-columns:1fr}.strip{text-align:left}}
+.rail{border-right:1px solid var(--rule);padding-right:20px}
+.big{font:400 52px/1 var(--serif);margin:10px 0 2px}
+.big small{font:12px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--mut)}
+input,textarea{font:16px system-ui,sans-serif;border:1px solid var(--edge);background:#fffdf8;padding:8px;width:100%;color:var(--ink)}
+label{display:block;margin:10px 0 4px}
+input[type=checkbox]{width:auto;margin-right:6px}
+.runl{margin:6px 0;font:12px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--mut)}.runl b{font:400 44px/1 var(--serif);color:var(--ink);letter-spacing:0;margin:0 14px 0 6px}
+.grp{margin:16px 0 4px}
+.pl{list-style:none;padding:0;margin:0}.pl li{padding:4px 0;border-bottom:1px solid var(--rule);font-size:15px}
+.pl a[aria-current]{font-weight:700;text-decoration:none;border-left:3px solid var(--red);padding-left:6px}
+.stub{color:var(--warn)}
+.badge{display:inline-block;border:1px solid var(--edge);padding:1px 7px;margin:0 4px 4px 0;font:12px var(--mono);letter-spacing:.04em;text-transform:none;color:var(--ink)}
+.badge.warn{color:var(--warn);border-color:var(--warn)}
+.body{max-width:76ch}
+.btn{font:600 14px var(--mono);letter-spacing:.04em;background:var(--red);color:#fff;border:1px solid var(--red);padding:9px 16px;cursor:pointer;border-radius:2px;margin:4px 6px 4px 0}
+.btn.ghost{background:none;color:var(--red)}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.lk{background:none;border:0;padding:0;color:var(--red);text-decoration:underline;cursor:pointer;font:inherit}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:8px 0}
+th,td{border-bottom:1px solid var(--rule);padding:6px 8px;text-align:left;vertical-align:top}
+th{font:11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+caption{font:12px var(--mono);letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:6px 0;color:var(--mut)}
+td.num,th.num{text-align:right}
+.pq{font-style:italic}.pq.struck{text-decoration:line-through;color:var(--mut)}
+.chip{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;border:1px solid var(--edge);padding:0 6px;margin:0 2px 0 4px;font:12px var(--mono);background:#fbf8f1;vertical-align:baseline}
+.chip .pb{font:12px var(--mono);color:var(--red);background:none;border:0;padding:2px 0;text-decoration:underline;cursor:pointer}
+.chip .px{border:0;background:none;cursor:pointer;color:var(--ink);padding:2px 4px;font-size:12px}
+.vf.ok{color:var(--ok);font-weight:700}.vf.bad{color:var(--warn);font-weight:700}
+.pd{display:block;border-left:3px solid var(--edge);margin:6px 0;padding:4px 10px;font:14px/1.45 system-ui,sans-serif;font-style:normal;background:#fbf8f1}
+.dang{color:#9b2335;text-decoration:underline wavy}
+.card{border-top:2px solid var(--ink);border-bottom:1px solid var(--rule);margin:18px 0;padding:8px 0 14px}
+.verdict{font:400 36px/1.1 var(--serif);color:var(--red);margin:4px 0 8px}
+.lean{height:12px;background:#e6dfd0;border:1px solid var(--edge);max-width:520px}.lean i{display:block;height:100%;background:var(--red)}
+.fig{margin:10px 0}
+.ins{background:var(--ins);border-left:3px solid var(--warn);padding-left:8px}
+.chbody{color:var(--mut)}.chbody .ins,.chbody .ins *{color:var(--ink)}
+.box{background:#ebe6da;border-left:3px solid var(--edge);padding:10px 14px;margin:10px 0}
+.box.err{border-left-color:var(--red)}
+pre{white-space:pre-wrap;font:13px var(--mono);overflow:auto;max-height:240px}
+.chg{border:1px solid var(--edge);padding:12px 16px;margin:12px 0}
+.chg legend{font:12px var(--mono);letter-spacing:.07em;text-transform:uppercase;padding:0 6px}
+.warnline{color:var(--warn);font-weight:700}
+.steps{display:flex;gap:6px 22px;flex-wrap:wrap;list-style:none;padding:0;margin:8px 0}
+.steps li{font:12px var(--mono);letter-spacing:.07em;color:var(--mut)}.steps li[aria-current=step]{color:var(--red);border-bottom:2px solid var(--red)}
+.nums{display:flex;gap:40px;flex-wrap:wrap;margin:10px 0}
+.chip2{display:inline-block;border:1px solid var(--edge);padding:1px 8px;margin:2px 4px 2px 0;font-size:14px}
+.pass{color:var(--ok);font-weight:700}.check{color:var(--red);font-weight:700}.idle{color:var(--mut)}
+.chk{list-style:none;padding:0}.chk li{border-bottom:1px solid var(--rule);padding:6px 0;font-size:15px}
+.tag{font:11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--red);border:1px solid var(--red);padding:0 5px;margin-left:6px}
+details{border-bottom:1px solid var(--rule);padding:6px 0}summary{cursor:pointer}
+.bigrow{display:flex;gap:56px;flex-wrap:wrap}
+footer{border-top:1px solid var(--rule);padding:12px 24px 40px}
+#toast{position:fixed;left:16px;bottom:12px;background:var(--ink);color:#fff;padding:6px 12px;font:12px var(--mono);display:none}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="hrow">
+    <div>
+      <p class="mono">WIKI · neurotechnology and justice</p>
+      <h1>Research wiki: neurotechnology in the administration of justice</h1>
+      <p class="meta" id="hline"></p>
+    </div>
+    <div class="strip">
+      <p class="hint" id="sess" aria-live="polite"></p>
+      <p class="hint">This page has no storage: changes live in it until you download them (tab 05)</p>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Wiki workspace" aria-live="polite">
+    <button role="tab" id="t1" aria-controls="p1" aria-selected="true" tabindex="0">01 PAGES</button>
+    <button role="tab" id="t2" aria-controls="p2" aria-selected="false" tabindex="-1">02 ASK</button>
+    <button role="tab" id="t3" aria-controls="p3" aria-selected="false" tabindex="-1">03 INGEST</button>
+    <button role="tab" id="t4" aria-controls="p4" aria-selected="false" tabindex="-1">04 CHECK</button>
+    <button role="tab" id="t5" aria-controls="p5" aria-selected="false" tabindex="-1">05 RECORD</button>
+  </nav>
+</header>
+<main>
+  <section id="p1" class="panel" role="tabpanel" aria-labelledby="t1">
+    <p class="mono q">What does the wiki say?</p>
+    <div class="cols">
+      <aside class="rail">
+        <label class="mono" for="flt">title, tag or slug</label>
+        <input id="flt" type="search" autocomplete="off">
+        <div class="big"><span id="cnt">0</span> <small id="cnt2"></small></div>
+        <p class="hint">How this is computed: pages whose title, tags or slug contain every word you type (literal match, not synonyms).</p>
+        <div id="plist"></div>
+      </aside>
+      <article id="pview"></article>
+    </div>
+  </section>
+  <section id="p2" class="panel" role="tabpanel" aria-labelledby="t2" hidden>
+    <p class="mono q">What does the wiki answer, and is it worth filing?</p>
+    <div class="box" id="askbox" aria-live="polite"></div>
+    <label class="mono" for="q">Your question</label>
+    <textarea id="q" rows="2" placeholder="For example: does the library say neurotechnology needs new rights?"></textarea>
+    <div class="row"><button class="btn" id="askbtn">Ask the wiki</button><button class="btn ghost" id="askstop" hidden>Stop</button><span class="hint" id="askprog" aria-live="polite"></span></div>
+    <div id="askpick"></div>
+    <div id="askout"></div>
+  </section>
+  <section id="p3" class="panel" role="tabpanel" aria-labelledby="t3" hidden>
+    <p class="mono q">What would the waiting document change?</p>
+    <div id="ingtop"></div>
+    <div id="ingbody"></div>
+  </section>
+  <section id="p4" class="panel" role="tabpanel" aria-labelledby="t4" hidden>
+    <p class="mono q">Can I trust this?</p>
+    <div class="bigrow">
+      <div><div class="big" id="vbig"></div><p class="mono">pins verified by this page</p></div>
+      <div><div class="big" id="lbig"></div><p class="mono">lint checks need a look</p></div>
+    </div>
+    <p class="hint" id="vhow"></p>
+    <div class="row"><button class="btn" id="lintbtn">Lint now</button><span class="hint" id="lintmsg" aria-live="polite"></span></div>
+    <div id="linttab"></div>
+    <details open id="chkpanel"><summary class="mono">How the app checks itself</summary><ul class="chk" id="chklist"></ul></details>
+  </section>
+  <section id="p5" class="panel" role="tabpanel" aria-labelledby="t5" hidden>
+    <p class="mono q">What has changed, where do the sources disagree, and how do I take it away?</p>
+    <div class="row"><button class="btn ghost" id="ordsw" role="switch" aria-checked="true">Newest first: on</button></div>
+    <div id="logview"></div>
+    <h3>Open tensions</h3>
+    <div id="tenview"></div>
+    <p class="hint" id="method"></p>
+    <div class="row"><button class="btn" id="dl">Download the wiki</button><button class="btn ghost" id="dlmd" hidden>Download changed pages (markdown)</button></div>
+  </section>
+</main>
+<footer><p class="hint" id="foot"></p></footer>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+(function(){
+'use strict';
+var W=window.WORKSHOP_DATA||{},WK=W.wiki||{},LIB=(W.library&&W.library.records)||[];
+var $=function(s){return document.querySelector(s);};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var today=function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+var fmt=function(n){return Number(n||0).toLocaleString('en-GB');};
+var FN='```';
+var PIN_RE=/\[([^\]]+)\]\(pin:([^#\s)]+)#p(\d+)(?: "([^"]*)")?\) ?(✓|⚠)/g;
+var LINK_RE=/\[\[([^\]|#]+)/g;
+var REGS={a:'treaty law',b:'General Comment',c:'UN report',d:'NHRI',e:'civil society',f:'scholarship'};
+var REGN={a:'treaty law',b:'General Comments',c:'UN, agency and soft-law reports',d:'national human rights institution',e:'civil society',f:'scholarship'};
+var WT={a:5,b:4,c:3,d:2,e:1,f:0.5};
+var TYPES={source:'Sources',concept:'Concepts',entity:'Entities',question:'Questions'};
+var S={tab:1,calls:0,passages:0,chars:0,changes:[],logHeads:[],tenAdded:[],callLog:[],run:{ask:false,ingest:false},filing:null,newest:true,actions:0,apprSlugs:[]};
+var pages=(WK.pages||[]).map(function(p){return{slug:p.slug,type:p.type,title:p.title,frontmatter:JSON.parse(JSON.stringify(p.frontmatter||{})),body:p.body||''};});
+var orig={};pages.forEach(function(p){orig[p.slug]=p.body;});
+var idx=WK.index||'',logmd=WK.log||'',tens=WK.tensions||'';
+var docs={};LIB.forEach(function(d){docs[d.id]=d;});
+var ALLOW={},PM={},BL={},VC={},PN=new Map(),PR=[],PK={};
+var ASK={stage:0,q:'',slugs:[],ans:null,sent:null,ctl:null,prompt2:''};
+var I=null;
+
+function norm(s){return String(s||'').normalize('NFKC').replace(/[“”„]/g,'"').replace(/[‘’]/g,"'").replace(/[–—]/g,'-').replace(/­/g,'').replace(/-\s+/g,'').replace(/\s+/g,' ').trim();}
+function pnorm(x){var t=PN.get(x);if(t===undefined){t=norm(x.text);PN.set(x,t);}return t;}
+function reEsc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+function kebab(s){return String(s||'').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,70)||'page';}
+function sameSet(a,b){a=a||[];b=b||[];return a.length===b.length&&a.every(function(x){return b.indexOf(x)>=0;});}
+function uniq(a){return a.filter(function(x,i){return a.indexOf(x)===i;});}
+function note(m){var t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(note.h);note.h=setTimeout(function(){t.style.display='none';},4500);}
+
+/* ---------- verification ---------- */
+function verify(label,id,page,quote){
+  var key=[id,page,label,quote,ALLOW[id]?1:0,(docs[id]||{}).status].join('|');
+  if(VC[key])return VC[key];
+  return(VC[key]=verify0(label,id,page,quote));
+}
+function verify0(label,id,page,quote){
+  var d=docs[id];
+  if(!d)return{ok:false,why:'the library has no document '+id+'.'};
+  if(d.status==='inbox'&&!ALLOW[id])return{ok:false,why:'the document is still in the inbox, not read into the wiki.'};
+  if(!quote)return{ok:false,why:'the pin carries no quote.'};
+  var fr=quote.split(/…|\.\.\./).map(norm).filter(Boolean);
+  if(!fr.length)return{ok:false,why:'the pin carries no quote.'};
+  var bad=null,ps=d.passages||[];
+  for(var k=0;k<ps.length;k++){
+    var x=ps[k];if(String(x.page)!==String(page))continue;
+    var t=pnorm(x),pos=0,hit=true;
+    for(var j=0;j<fr.length;j++){var i=t.indexOf(fr[j],pos);if(i<0){hit=false;break;}pos=i+fr[j].length;}
+    if(!hit)continue;
+    var need=x.paragraph?'para. '+x.paragraph:'p. '+x.page_label;
+    if(new RegExp(reEsc(need)+'(?![\\w])').test(label))return{ok:true,passage:x};
+    bad=need;
+  }
+  if(bad)return{ok:false,label:true,why:'the quote is on that page, but the label should name “'+bad+'”.'};
+  return{ok:false,why:'the quote is not in any passage that starts on PDF page '+page+'. Footnotes, tables and captions are not in the passages, so a pin cannot verify them.'};
+}
+function regLetters(id){
+  var d=docs[id],p=pages.filter(function(p){return p.type==='source'&&sameSet(p.frontmatter.sources,[id]);})[0];
+  if(!p)p=pages.filter(function(p){return p.frontmatter.status==='stub'&&sameSet(p.frontmatter.sources,[id]);})[0];
+  if(!p&&d&&d.status==='inbox')p=stubFor(d);
+  var r=p&&p.frontmatter.register;return r&&r.length?[].concat(r):['?'];
+}
+function regLabel(id){return regLetters(id).map(function(l){return'('+l+') '+(REGS[l]||'unknown register');}).join(', ');}
+function stubFor(d){
+  var all=pages.filter(function(p){return p.frontmatter.status==='stub';});
+  return all.filter(function(p){return p.slug===kebab(d.symbol||d.id)||p.slug===kebab(d.id);})[0]||all[0]||null;
+}
+function citeAs(id){
+  var d=docs[id]||{},cnt={};
+  pages.forEach(function(p){(p._pins||[]).forEach(function(k){if(k.id!==id)return;var m=k.label.match(/^(.*?),\s*(?:para\.|p\.)\s/);if(m)cnt[m[1]]=(cnt[m[1]]||0)+1;});});
+  var best=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a];})[0];
+  return best||d.symbol||((d.author||id)+' '+(d.year||''));
+}
+function analyse(p){
+  p._links=[].slice.call(p.body.matchAll(LINK_RE)).map(function(m){return m[1].trim();});
+  p._pins=[].slice.call(p.body.matchAll(PIN_RE)).map(function(m){return{label:m[1],id:m[2],page:m[3],quote:m[4]||'',mark:m[5],v:verify(m[1],m[2],m[3],m[4]||'')};});
+  p._ok=p._pins.filter(function(k){return k.v.ok;}).length;
+}
+function refresh(){
+  PM={};pages.forEach(function(p){PM[p.slug]=p;});pages.forEach(analyse);BL={};
+  pages.forEach(function(p){uniq(p._links).forEach(function(s){(BL[s]=BL[s]||[]).push(p.slug);});});
+}
+
+/* ---------- markdown, pins, contested cards ---------- */
+function openSrc(id,page,quote){
+  try{if(window.studio&&typeof studio.openSource==='function'){studio.openSource(id,Number(page),quote||'');return;}}catch(e){}
+  note('The studio is not connected here, so the PDF cannot be opened.');
+}
+function pinHtml(k,cx){
+  var v=verify(k.label,k.id,k.page,k.quote),pk=[k.label,k.id,k.page,k.quote].join('\u0001'),n=PK[pk];
+  if(n===undefined){n=PR.length;PR.push({k:k,v:v});PK[pk]=n;}else PR[n].v=v;
+  var off=cx.sent&&!cx.sent[k.id+'|'+k.page+'|'+norm(k.quote)];
+  var said=(k.mark==='✓')!==v.ok?' <span class="vf bad">page says '+k.mark+'</span>':'';
+  return'<span class="pin"><span class="pq'+(off?' struck':'')+'">'+(k.quote?'“'+esc(k.quote)+'”':'(no quote)')+'</span>'
+   +'<span class="chip"><button class="pb" data-pin="'+n+'" data-act="open" aria-label="Open '+esc(k.label)+' at PDF page '+esc(k.page)+'">'+esc(k.label)+'</button>'
+   +'<span>'+esc(regLabel(k.id))+'</span>'
+   +(v.ok?'<span class="vf ok">✓ verified</span>':'<span class="vf bad">⚠ not found</span>')+said
+   +(off?'<span class="vf bad">not on the pages sent</span>':'')
+   +'<button class="px" data-pin="'+n+'" data-act="exp" aria-expanded="false" aria-label="Show the passage behind '+esc(k.label)+'">▸</button></span><span class="pd" hidden></span></span>';
+}
+function inline(s,cx){
+  var ph=[];
+  s=s.replace(PIN_RE,function(m,l,id,pg,q,mk){ph.push(pinHtml({label:l,id:id,page:pg,quote:q||'',mark:mk},cx));return''+(ph.length-1)+'';});
+  s=esc(s);
+  s=s.replace(/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/g,function(m,sl,al){sl=sl.trim();var p=PM[sl];return p?'<a href="#'+esc(sl)+'">'+(al||esc(p.title))+'</a>':'<a class="dang" href="#'+esc(sl)+'">'+esc(sl)+'</a> <span class="hint">(no page)</span>';});
+  s=s.replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/(^|[^*\w])\*([^*\s][^*]*)\*(?!\w)/g,'$1<em>$2</em>');
+  return s.replace(/(\d+)/g,function(m,i){return ph[i];});
+}
+function md(src,cx){
+  cx=cx||{};var L=String(src||'').replace(/\r/g,'').split('\n'),out=[],i=0,ins=false,para=[],m;
+  var c=function(){return ins?' class="ins" data-source="ai"':'';};
+  var flush=function(){if(para.length){out.push('<p'+c()+'>'+inline(para.join(' '),cx)+'</p>');para=[];}};
+  var LI=/^\s*([-*]|\d+\.)\s+/;
+  while(i<L.length){
+    var ln=L[i];
+    if(/^<!--ins-->\s*$/.test(ln)){flush();ins=true;i++;continue;}
+    if(/^<!--\/ins-->\s*$/.test(ln)){flush();ins=false;i++;continue;}
+    if(ln.indexOf(FN)===0){flush();var lang=ln.slice(3).trim(),buf=[];i++;while(i<L.length&&L[i].indexOf(FN)!==0)buf.push(L[i++]);i++;out.push(lang==='contested'?contested(buf,cx,ins):'<pre'+c()+'>'+esc(buf.join('\n'))+'</pre>');continue;}
+    if((m=ln.match(/^(#{1,4})\s+(.*)$/))){flush();var lv=m[1].length+1;out.push('<h'+lv+c()+'>'+inline(m[2],cx)+'</h'+lv+'>');i++;continue;}
+    if(LI.test(ln)){flush();var ord=/^\s*\d+\./.test(ln),items=[];while(i<L.length&&LI.test(L[i])){items.push(inline(L[i].replace(LI,''),cx));i++;}var tg=ord?'ol':'ul';out.push('<'+tg+c()+'>'+items.map(function(t){return'<li>'+t+'</li>';}).join('')+'</'+tg+'>');continue;}
+    if(!ln.trim()){flush();i++;continue;}
+    para.push(ln.trim());i++;
+  }
+  flush();return out.join('\n');
+}
+function parseContested(buf){
+  var o={claim:'',verdict:'',note:'',pos:[]};
+  buf.forEach(function(l){
+    var m;
+    if((m=l.match(/^claim:\s*(.*)$/)))o.claim=m[1];
+    else if((m=l.match(/^verdict:\s*(.*)$/)))o.verdict=m[1].trim();
+    else if((m=l.match(/^note:\s*(.*)$/)))o.note=m[1];
+    else if(/^[+\-~]\s/.test(l)){var pr=l.split(' | '),h=pr[0].trim().split(/\s+/);o.pos.push({sign:h[0],reg:(h[1]||'').toLowerCase(),pin:(pr[1]||'').trim(),gloss:(pr[2]||'').trim(),page:(pr[3]||'').trim()});}
+    else if(l.trim()&&o.note&&!o.pos.length&&l.indexOf(FN)!==0)o.note+=' '+l.trim();
+  });
+  return o;
+}
+function leanPct(o){var tot=0,sup=0;o.pos.forEach(function(p){var w=WT[p.reg]||0;tot+=w;sup+=p.sign==='+'?w:p.sign==='~'?w/2:0;});return tot?Math.round(100*sup/tot):null;}
+function tenEntries(){
+  return tens.split(/^### /m).slice(1).map(function(t){var nl=t.indexOf('\n'),h=(nl<0?t:t.slice(0,nl)).trim(),b=nl<0?'':t.slice(nl+1),cm=b.match(/card:\s*\[\[([^\]|#]+)/);return{slug:h,body:b,card:cm?cm[1].trim():null};});
+}
+function contested(buf,cx,ins){
+  var o=parseContested(buf),pc=leanPct(o),ten=tenEntries().filter(function(e){return e.card&&e.card===cx.slug;})[0];
+  var SG={'+':'supports','-':'contests','~':'mixed'};
+  return'<section class="card'+(ins?' ins':'')+'"'+(ins?' data-source="ai"':'')+' aria-label="Contested claim"><p class="mono">CONTESTED CLAIM</p><h4>'+inline(o.claim,cx)+'</h4>'
+   +'<p class="verdict">'+esc((o.verdict||'no verdict').replace(/-/g,' '))+'</p><p>'+inline(o.note,cx)+'</p>'
+   +(pc==null?'':'<div class="fig"><p class="mono">FIG.01 · lean bar</p><div class="lean" role="img" aria-label="'+pc+' percent of weighted positions support the claim"><i style="width:'+pc+'%"></i></div><p class="hint">descriptive: support '+pc+'% of weighted positions, weights a 5 · b 4 · c 3 · d 2 · e 1 · f ½; the verdict is the answer</p></div>')
+   +'<table><caption>Positions on this claim</caption><thead><tr><th scope="col">Position</th><th scope="col">Register</th><th scope="col">Source</th><th scope="col">Gloss</th><th scope="col">Page</th></tr></thead><tbody>'
+   +o.pos.map(function(p){return'<tr><td>'+(SG[p.sign]||esc(p.sign))+'</td><td>('+esc(p.reg)+') '+esc(REGS[p.reg]||'')+'</td><td>'+inline(p.pin,cx)+'</td><td>'+inline(p.gloss,cx)+'</td><td>'+inline(p.page,cx)+'</td></tr>';}).join('')
+   +'</tbody></table>'+(ten?'<p class="hint"><a href="#" data-ten="'+esc(ten.slug)+'">in the tensions register</a> (tab 05)</p>':'')+'</section>';
+}
+
+/* ---------- header, page list, page view ---------- */
+var cur='',BASEWARN=0;
+function typeOrder(){var t=['source','concept','entity','question'];pages.forEach(function(p){if(t.indexOf(p.type)<0)t.push(p.type);});return t;}
+function plural(t){return{source:'sources',concept:'concepts',entity:'entities',question:'questions'}[t]||t+'s';}
+function pinTotals(){var a=0,b=0;pages.forEach(function(p){a+=p._pins.length;b+=p._ok;});return[a,b];}
+function session(){$('#sess').textContent='Changes this session: '+S.changes.length+' · Calls to the model: '+S.calls+' · Passages that left the browser: '+S.passages;}
+function header(){
+  var t=pinTotals(),inbox=LIB.filter(function(d){return d.status==='inbox';}).length;
+  $('#hline').textContent=pages.length+' pages ('+typeOrder().map(function(y){return pages.filter(function(p){return p.type===y;}).length+' '+plural(y);}).join(', ')+') · '+fmt(t[0])+' pins, '+fmt(t[1])+' verified by this page · '+LIB.length+' documents, '+inbox+' in the inbox · built '+(WK.built||'unknown');
+  $('#foot').textContent=(WK.source||'Research wiki')+' · built '+(WK.built||'unknown')+' · Counting, matching and verification are done by this page’s code; the model is called only when you press Ask, Ingest or a retry button.';
+  session();
+}
+function plink(s){var p=PM[s];return p?'<a href="#'+esc(s)+'">'+esc(p.title)+'</a>':'<a class="dang" href="#'+esc(s)+'">'+esc(s)+'</a> <span class="hint">(no page)</span>';}
+function regStr(p){return[].concat(p.frontmatter.register||[]).join(',');}
+function renderList(){
+  var terms=($('#flt').value||'').trim().toLowerCase().split(/\s+/).filter(Boolean);
+  var sel=pages.filter(function(p){var h=(p.title+' '+p.slug+' '+(p.frontmatter.tags||[]).join(' ')).toLowerCase();return terms.every(function(t){return h.indexOf(t)>=0;});});
+  $('#cnt').textContent=sel.length;$('#cnt2').textContent='of '+pages.length+' pages';
+  $('#plist').innerHTML='<p class="hint"><a href="#" data-idx="1">Show the index</a></p>'+typeOrder().map(function(t){
+    var g=sel.filter(function(p){return p.type===t;});if(!g.length)return'';
+    return'<p class="mono grp">'+esc(TYPES[t]||t)+' · '+g.length+'</p><ul class="pl">'+g.map(function(p){
+      return'<li><a href="#'+esc(p.slug)+'"'+(p.slug===cur?' aria-current="page"':'')+'>'+esc(p.title)+'</a> <span class="hint">('+esc(regStr(p))+') · '+p._pins.length+' pins'+(p.frontmatter.status==='stub'?' · <b class="stub">stub</b>':'')+'</span></li>';}).join('')+'</ul>';}).join('');
+}
+function renderView(){
+  var el=$('#pview'),h=decodeURIComponent(location.hash.slice(1)),p=PM[cur];
+  if(!p){el.innerHTML=(h?'<p class="warnline">There is no page called “'+esc(h)+'”.</p>':'')+'<p class="mono">INDEX · the catalog, one line per page</p>'+md(idx,{});return;}
+  var f=p.frontmatter,body=p.body.replace(/^\s*#\s+.*\n?/,'');
+  var out=uniq(f.links||[]),from=(BL[p.slug]||[]).filter(function(s){return s!==p.slug;});
+  el.innerHTML='<p>'+'<span class="badge">'+esc(p.type)+'</span>'+[].concat(f.register||[]).map(function(l){return'<span class="badge">('+esc(l)+') '+esc(REGN[l]||'')+'</span>';}).join('')+'<span class="badge'+(f.status==='stub'?' warn':'')+'">'+esc(f.status||'no status')+'</span><span class="badge">updated '+esc(f.updated||'?')+'</span></p>'
+   +'<h2>'+esc(p.title)+'</h2><p class="hint">'+(f.tags||[]).map(function(t){return'#'+esc(t);}).join(' ')+'</p>'
+   +'<p class="hint">How this is computed: each pin is checked by this page against the library passage it names; a quotation in quotation marks is the pin’s own words.</p>'
+   +'<div class="body">'+md(body,{slug:p.slug})+'</div>'
+   +'<h3>Links out</h3><p>'+(out.length?out.map(function(s){return plink(s)+((p._links.indexOf(s)<0)?' <span class="hint">(frontmatter only)</span>':'');}).join(' · '):'<span class="hint">none</span>')+'</p>'
+   +'<h3>Linked from</h3><p>'+(from.length?from.map(plink).join(' · '):'<span class="hint">no page links here</span>')+'</p>'
+   +'<h3>Sources</h3><ul>'+(f.sources||[]).map(function(id){var d=docs[id];return d?'<li>'+esc(d.short_title||d.title)+' <span class="hint">'+esc(d.kind)+' · '+esc(d.year)+(d.status==='inbox'?' · inbox: not yet read into the wiki':'')+'</span> <a href="'+esc(d.url)+'" target="_blank" rel="noopener">'+esc(d.symbol||id)+'</a></li>':'<li>'+esc(id)+' <span class="hint">not in the library</span></li>';}).join('')+'</ul>'
+   +'<p><button class="btn" id="cpmd">Copy page as markdown</button> <span class="hint" id="cpmsg" aria-live="polite"></span></p>';
+}
+function toMd(p){
+  var f=p.frontmatter,y=function(k){return Array.isArray(f[k])?k+': ['+f[k].join(', ')+']':k+': '+(f[k]==null?'':f[k]);};
+  return'---\n'+['title','type','tags','register','status','updated','links','sources'].map(y).join('\n')+'\n---\n\n'+p.body;
+}
+function copyText(t,msg){
+  var done=function(){msg.textContent='Copied.';};
+  var fb=function(){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');done();}catch(e){msg.textContent='Copy was blocked by the browser.';}a.remove();};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,fb);else fb();
+}
+function route(){var h=decodeURIComponent(location.hash.slice(1));cur=PM[h]?h:'';renderList();renderView();}
+
+/* ---------- lint and self-checks ---------- */
+function runLint(){
+  var dang=[],orph=[],unv=[],mk=[],srcd=[],nopin=[],recip=[],miss=[],nd=[],tc=[],stub=[],inb=[];
+  pages.forEach(function(p){
+    uniq(p._links).forEach(function(s){if(!PM[s])dang.push(p.slug);});
+    if(!(BL[p.slug]||[]).some(function(x){return x!==p.slug;}))orph.push(p.slug);
+    p._pins.forEach(function(k){if(!k.v.ok)unv.push(p.slug);if(k.mark==='✓'&&!k.v.ok)mk.push(p.slug);if(docs[k.id]&&docs[k.id].status==='inbox')inb.push(p.slug);});
+    if(!sameSet(uniq(p._pins.map(function(k){return k.id;})),p.frontmatter.sources||[]))srcd.push(p.slug);
+    if(!p._pins.length)nopin.push(p.slug);
+    (p.frontmatter.links||[]).forEach(function(t){var b=PM[t];if(b&&(b.frontmatter.links||[]).indexOf(p.slug)<0)recip.push(p.slug);});
+    if(p.frontmatter.status==='stub')stub.push(p.slug);
+  });
+  var inIdx=uniq([].slice.call(idx.matchAll(/\[\[([^\]|#]+)/g)).map(function(m){return m[1].trim();}));
+  pages.forEach(function(p){if(inIdx.indexOf(p.slug)<0)miss.push(p.slug);});
+  inIdx.forEach(function(s){if(!PM[s])miss.push(s);});
+  idx.split('\n').forEach(function(l){var m=l.match(/\[\[([^\]|#]+)\]\].*?✓(\d+)/);if(m&&PM[m[1].trim()]&&PM[m[1].trim()]._ok!==Number(m[2]))nd.push(m[1].trim());});
+  var cp=pages.filter(function(p){return p.body.indexOf(FN+'contested')>=0;}).map(function(p){return p.slug;});
+  var tcs=tenEntries().map(function(e){return e.card;}).filter(Boolean);
+  cp.forEach(function(s){if(tcs.indexOf(s)<0)tc.push(s);});tcs.forEach(function(s){if(cp.indexOf(s)<0)tc.push(s);});
+  var mk1=function(key,label,a){return{key:key,label:label,n:a.length,slugs:uniq(a)};};
+  return[mk1('dang','Dangling [[links]]',dang),mk1('orph','Orphan pages (nothing links to them)',orph),mk1('unv','Pins not verified by this page',unv),mk1('mk','Pins marked ✓ that fail',mk),
+   mk1('srcd','Pages whose sources differ from the documents they pin',srcd),mk1('nopin','Pages with no pins',nopin),mk1('recip','Frontmatter links not reciprocated',recip),
+   mk1('miss','Pages missing from the index, or index lines without a page',miss),mk1('nd','Index ✓N that differs from the count computed here',nd),
+   mk1('tc','Contested cards without a tensions entry, and the reverse',tc),mk1('stub','Stub pages',stub),mk1('inb','Pins to a document still in the inbox',inb)];
+}
+function slugLinks(a){return a.slice(0,10).map(plink).join(' · ')+(a.length>10?' · and '+(a.length-10)+' more':'');}
+function checks(){
+  var C=[],L=runLint(),g=function(k){return L.filter(function(x){return x.key===k;})[0];},all=[];
+  pages.forEach(function(p){p._pins.forEach(function(k){all.push([p.slug,k]);});});
+  var stated=(idx.match(/(\d[\d,]*) pins/)||[])[1],st=stated?Number(stated.replace(/,/g,'')):null;
+  var okn=all.filter(function(a){return a[1].v.ok;}).length,fm=all.filter(function(a){return a[1].mark==='✓'&&!a[1].v.ok;}),lb=all.filter(function(a){return a[1].v.label;});
+  C.push(['Pins','found by the pattern '+fmt(all.length)+' · stated in the index '+(st==null?'nothing found':fmt(st))+' · verified '+fmt(okn)+' · marked ✓ but failing '+fm.length,st===all.length&&okn===all.length&&!fm.length?'pass':'check',fm.map(function(a){return a[0];})]);
+  C.push(['Labels','pins whose quote is on the page but whose label names another paragraph or printed page: '+lb.length,lb.length?'check':'pass',lb.map(function(a){return a[0];})]);
+  var sk=['dang','orph','srcd','miss','tc'],sl=[];sk.forEach(function(k){sl=sl.concat(g(k).slugs);});
+  C.push(['Structure','dangling links '+g('dang').n+' · orphans '+g('orph').n+' · sources differing from pinned documents '+g('srcd').n+' · pages and index out of step '+g('miss').n+' · contested cards and tensions out of step '+g('tc').n,sk.every(function(k){return g(k).n===0;})?'pass':'check',sl]);
+  var cl=S.callLog.filter(function(c){return!c.stopped;}),parsed=cl.filter(function(c){return c.parsed;}).length,unk=cl.reduce(function(a,c){return a+(c.unknown||[]).length;},0);
+  var tkok=!I||I.ret===I.tk.length+I.failed.length+I.drop;
+  C.push(['Model answers',cl.length?'calls '+cl.length+' · JSON parsed '+parsed+' · slugs named that do not exist (dropped) '+unk+(I?' · takeaways returned '+I.ret+' = verified '+I.tk.length+' + could not verify '+I.failed.length+' + dropped '+I.drop:''):'no call to the model yet',cl.length?(parsed===cl.length&&tkok?'pass':'check'):'idle',[]]);
+  C.push(['Coverage',I?'passages sent '+I.sent+' of '+I.doc.passages.length+(I.next<I.batches.length?' (the other batches were not sent)':'')+' · takeaways naming a passage that was not sent, dropped: '+I.drop:'no ingest started',I?(I.sent===I.doc.passages.length?'pass':'check'):'idle',[]]);
+  var warn=all.filter(function(a){return a[1].mark==='⚠';}).length,chs=uniq(S.changes.map(function(c){return c.slug;})),bad=[];
+  chs.forEach(function(s){if(PM[s]&&PM[s]._pins.some(function(k){return!k.v.ok;}))bad.push(s);});
+  C.push(['Unverified','⚠ pins in the wiki '+warn+' (at load: '+BASEWARN+') · changed pages with a pin that fails: '+bad.length+(I?' · could not verify '+I.failed.length+' + verified '+I.tk.length+' = returned '+(I.failed.length+I.tk.length)+(I.drop?' (+ '+I.drop+' dropped)':''):''),warn===BASEWARN&&!bad.length?'pass':'check',bad]);
+  var chg=pages.filter(function(p){return orig[p.slug]!==undefined&&orig[p.slug]!==p.body;}).map(function(p){return p.slug;});
+  var lg=(S.ingLog||[]).every(function(e){return e.approved.concat(e.rejected).every(function(s){return logmd.indexOf('[['+s+']]')>=0;});});
+  C.push(['Approval','existing pages changed '+chg.length+' · approved edits '+S.apprSlugs.length+' · every approved and rejected page named in its log entry: '+(lg?'yes':'no'),sameSet(chg,S.apprSlugs)&&lg?'pass':'check',chg]);
+  if(S.filing){
+    var f=S.filing,rv=f.slugs.every(function(s){return PM[s]&&PM[s]._pins.every(function(k){return k.v.ok;});}),ix=f.slugs.every(function(s){var m=idx.match(new RegExp('\\[\\['+reEsc(s)+'\\]\\].*?✓(\\d+)'));return!m||PM[s]&&Number(m[1])===PM[s]._ok;});
+    var last=logmd.split(/^## /m).slice(-1)[0]||'',ln=f.slugs.every(function(s){return last.indexOf('[['+s+']]')>=0;});
+    C.push(['Filing','pages changed '+f.slugs.length+' · all pins re-verified '+(rv?'yes':'no')+' · index counts match '+(ix?'yes':'no')+' · last log entry names them '+(ln?'yes':'no')+' · lint before '+f.before+', after '+f.after+' checks needing a look',rv&&ix&&ln?'pass':'check',f.slugs]);
+  }else C.push(['Filing','nothing filed yet','idle',[]]);
+  var nd=buildDownload().count===pages.length;
+  C.push(['Session','changes listed '+S.changes.length+' (on '+uniq(S.changes.map(function(c){return c.slug;})).length+' pages) · log entries added '+S.logHeads.length+' for '+S.actions+' filings · download holds '+buildDownload().count+' pages of '+pages.length,S.logHeads.length===S.actions&&nd?'pass':'check',[]]);
+  return C;
+}
+function renderCheck(){
+  var L=runLint(),t=pinTotals(),need=L.filter(function(x){return x.n>0;}).length;
+  $('#vbig').textContent=fmt(t[1])+' of '+fmt(t[0]);$('#lbig').textContent=need+' of '+L.length;
+  $('#vhow').textContent='How this is computed: a pin is verified when its quote (each fragment, in order, when joined by “…”) stands in a library passage that starts on the PDF page the pin names, and its label names that passage’s paragraph or printed page. Spaces, curly quotes, dashes and hyphenation are ignored; capitals are not.';
+  $('#lintbtn').textContent=S.linted?'Re-run':'Lint now';
+  $('#linttab').innerHTML='<table><caption>FIG.01 · Lint checks, '+pages.length+' pages</caption><thead><tr><th scope="col">Check</th><th scope="col" class="num">Result</th><th scope="col">Pages concerned</th></tr></thead><tbody>'
+   +L.map(function(x){return'<tr><td>'+esc(x.label)+'</td><td class="num"><span class="'+(x.n?'check':'pass')+'">'+x.n+' · '+(x.n?'check':'pass')+'</span></td><td>'+(x.slugs.length?slugLinks(x.slugs):'')+'</td></tr>';}).join('')
+   +'</tbody></table><p class="hint">Contradictions between pages are read by a model according to the schema; this page does not check them by code.</p>';
+  $('#chklist').innerHTML=checks().map(function(c){return'<li><span class="mono">'+esc(c[0])+'</span> <span class="'+c[2]+'">'+(c[2]==='idle'?'not run yet':c[2])+'</span> · '+esc(c[1])+(c[3].length?' · '+slugLinks(uniq(c[3])):'')+'</li>';}).join('');
+}
+
+/* ---------- calling the model ---------- */
+function ME(m,raw,stopped){var e=new Error(m);e.raw=raw;e.stopped=!!stopped;return e;}
+async function callModel(prompt,meta){
+  if(!(window.studio&&typeof studio.ask==='function'))throw ME('The studio is not connected, so the model cannot be asked from here.','');
+  S.calls++;S.chars+=prompt.length;S.passages+=meta.passages||0;
+  if(meta.sink){meta.sink.calls++;meta.sink.sent+=meta.passages||0;}
+  session();
+  var rec={label:meta.label,chars:prompt.length,passages:meta.passages||0,parsed:false,unknown:[]};S.callLog.push(rec);meta.rec=rec;
+  var raw;
+  try{raw=await studio.ask(prompt,{json:true});}catch(e){rec.failed=true;throw ME('The call failed: '+((e&&e.message)||e),'');}
+  if(meta.ctl&&meta.ctl.stop){rec.stopped=true;throw ME('Stopped',raw,true);}
+  var s=typeof raw==='string'?raw:JSON.stringify(raw),o=null;
+  try{o=JSON.parse(s);}catch(e1){var m=s.match(new RegExp(FN+'(?:json)?\\s*([\\s\\S]*?)'+FN));try{o=JSON.parse(m?m[1]:'');}catch(e2){o=null;}}
+  if(o===null||typeof o!=='object')throw ME('The answer is not valid JSON.',s);
+  rec.parsed=true;return o;
+}
+function failBox(el,e,retry){
+  if(e.stopped){el.insertAdjacentHTML('beforeend','<p class="hint">Stopped. What had already returned is kept.</p>');return;}
+  var id='rt'+Math.random().toString(36).slice(2,8);
+  el.insertAdjacentHTML('beforeend','<div class="box err" data-source="ai"><p><b>'+esc(e.message)+'</b> Nothing was filed.</p>'+(e.raw?'<p class="mono">Raw answer</p><pre>'+esc(String(e.raw).slice(0,3000))+'</pre>':'')+'<button class="btn" id="'+id+'">Retry</button></div>');
+  document.getElementById(id).onclick=retry;
+}
+
+/* ---------- index helpers ---------- */
+function plain(s){return String(s).replace(PIN_RE,function(m,l,id,pg,q){return'“'+(q||'')+'”';}).replace(/\[\[([^\]|#]+)[^\]]*\]\]/g,'$1').replace(/[*_]/g,'').replace(/\s+/g,' ').trim();}
+function firstSentence(a){
+  var ph=[],t=a.replace(PIN_RE,function(m){ph.push(m);return''+(ph.length-1)+'';}),m=t.match(/^[\s\S]*?[.!?](?=\s|$)/);
+  return(m?m[0]:t.split(/\n\s*\n/)[0]).replace(/(\d+)/g,function(x,i){return ph[i];}).trim();
+}
+function idxInsert(type,line){
+  var L=idx.split('\n'),name=TYPES[type]||type,h=-1;
+  L.forEach(function(l,i){if(h<0&&/^#+\s/.test(l)&&l.toLowerCase().indexOf(name.toLowerCase().slice(0,5))>=0)h=i;});
+  if(h<0){L.push('','## '+name,line);}else{var e=h+1;while(e<L.length&&!/^#+\s/.test(L[e]))e++;while(e>h+1&&!L[e-1].trim())e--;L.splice(e,0,line);}
+  idx=L.join('\n');
+}
+function idxLine(p,one){return'- [['+p.slug+']] — '+plain(one||p.title).slice(0,170)+' · ('+regStr(p)+') · ✓'+p._ok;}
+function idxReplace(slug,line){var re=new RegExp('^- \\[\\['+reEsc(slug)+'\\]\\].*$','m');if(re.test(idx))idx=idx.replace(re,function(){return line;});else idxInsert(PM[slug].type,line);}
+function idxN(slug){var re=new RegExp('^(.*\\[\\['+reEsc(slug)+'\\]\\].*?)✓\\d+','m');if(re.test(idx))idx=idx.replace(re,function(m,a){return a+'✓'+PM[slug]._ok;});}
+function idxFirst(){
+  var t=pinTotals();
+  idx=idx.replace(/(\d[\d,]*)( pins)/,function(m,n,s){return(/,/.test(n)?fmt(t[0]):t[0])+s;}).replace(/(\d+)( pages)/,function(m,n,s){return pages.length+s;});
+}
+function logAdd(head,body){logmd=logmd.replace(/\s*$/,'')+'\n\n## '+head+'\n'+body+'\n';S.logHeads.push(head);}
+
+/* ---------- tab 02: ask ---------- */
+function askBox(h){$('#askbox').innerHTML=h;}
+function notice1(){return'<span class="mono">What will leave the browser</span><br>Step 1 sends the wiki index ('+fmt(idx.length)+' characters) and your question to a language model, which names up to five pages. Step 2 sends those pages in full, with your question. 0 library passages are sent. Nothing is sent until you press the button.';}
+function notice2(){return'<span class="mono">What will leave the browser</span><br>Step 2 sends <b>'+ASK.slugs.length+' pages, '+fmt(ASK.prompt2.length)+' characters</b> (page bodies, instructions and your question); 0 library passages have left the browser. Press “Send these pages” to send them, or change the pages first.';}
+function askBusy(b){S.run.ask=b;$('#askstop').hidden=!b;$('#askbtn').disabled=b||(ASK.stage===1&&!ASK.slugs.length);renderTabs();}
+function buildAsk2(){
+  var regs=uniq([].concat.apply([],ASK.slugs.map(function(s){return PM[s]._pins.map(function(k){return k.id;});}))).map(function(id){return id+' = '+regLabel(id);});
+  return['You answer a question from a research wiki on neurotechnology in the administration of justice. Use ONLY the pages below.',
+   'Pin syntax: [label](pin:DOC#pPAGE "verbatim quote") ✓ . Copy pins exactly as they stand on the pages; quote only words that stand in the passages given; the code will check every pin.',
+   'Name the register where it matters: (a) treaty law, (b) General Comments, (c) UN, agency and soft-law reports, (d) national human rights institution, (e) civil society, (f) scholarship. Keep each document’s own verb (recommends, notes, calls for). Never present (c) to (f) as what the treaty requires.',
+   'Return JSON {"title": a short title for the question, "answer": markdown of at most 350 words, every claim carrying a pin and [[slug]] links to pages, "cannot_answer": what the library cannot answer, markdown}.',
+   '','QUESTION: '+ASK.q,'','DOCUMENT REGISTERS:',regs.join('\n'),'','PAGES:'].concat(ASK.slugs.map(function(s){return'### PAGE '+s+'\n'+PM[s].body;})).join('\n');
+}
+async function ask1(){
+  var q=$('#q').value.trim();
+  if(!q){$('#askprog').textContent='Write a question first.';$('#q').focus();return;}
+  ASK.q=q;ASK.ans=null;ASK.slugs=[];ASK.stage=0;$('#askbtn').textContent='Ask the wiki';$('#askpick').innerHTML='';$('#askout').innerHTML='';askBox(notice1());
+  var prompt=['You are the librarian of a research wiki on neurotechnology in the administration of justice. Below is the wiki’s index, one line per page.','Choose at most 5 pages most likely to answer the question. Return JSON {"pages": ["slug", ...]} using only slugs that appear in the index in [[double brackets]].','','INDEX:',idx,'','QUESTION: '+q].join('\n');
+  ASK.ctl={stop:false};askBusy(true);$('#askprog').textContent='Step 1 of 2: asking the model which pages to read ('+fmt(prompt.length)+' characters sent, 0 passages)…';
+  var meta={label:'ask 1',passages:0,ctl:ASK.ctl};
+  try{
+    var o=await callModel(prompt,meta),sl=(Array.isArray(o.pages)?o.pages:[]).map(String);
+    meta.rec.unknown=sl.filter(function(s){return!PM[s];});
+    ASK.slugs=uniq(sl.filter(function(s){return PM[s];})).slice(0,5);ASK.stage=1;
+    $('#askprog').textContent='Step 1 done. Check the pages, then send them.';showPick();
+  }catch(e){$('#askprog').textContent='';failBox($('#askout'),e,ask1);}
+  askBusy(false);
+}
+function drawChips(){
+  ASK.prompt2=buildAsk2();
+  $('#pickchips').innerHTML=ASK.slugs.length?ASK.slugs.map(function(s){return'<span class="chip2">'+esc(PM[s].title)+' <span class="hint">'+esc(s)+'</span></span>';}).join(''):'No page chosen. Use “Change pages”.';
+  askBox(notice2());$('#askbtn').disabled=!ASK.slugs.length;
+}
+function showPick(){
+  $('#askpick').innerHTML='<p class="mono">Pages the model chose</p><p id="pickchips" data-source="ai"></p><p><button class="lk" id="chg" aria-expanded="false">Change pages</button></p><div id="chgbox" hidden></div>';
+  $('#askbtn').textContent='Send these pages';drawChips();
+  $('#chg').onclick=function(){
+    var b=$('#chgbox');b.hidden=!b.hidden;this.setAttribute('aria-expanded',!b.hidden);
+    if(!b.hidden)b.innerHTML='<fieldset><legend class="mono">Pages to send (up to 8)</legend>'+pages.map(function(p){return'<label><input type="checkbox" value="'+esc(p.slug)+'"'+(ASK.slugs.indexOf(p.slug)>=0?' checked':'')+'> '+esc(p.title)+' <span class="hint">'+esc(p.slug)+'</span></label>';}).join('')+'</fieldset>';
+  };
+  $('#chgbox').onchange=function(){ASK.slugs=[].slice.call(this.querySelectorAll('input:checked')).map(function(x){return x.value;}).slice(0,8);drawChips();};
+}
+async function ask2(){
+  var prompt=ASK.prompt2||buildAsk2(),sent={};
+  ASK.slugs.forEach(function(s){PM[s]._pins.forEach(function(k){sent[k.id+'|'+k.page+'|'+norm(k.quote)]=1;});});
+  ASK.ctl={stop:false};askBusy(true);$('#askout').innerHTML='';
+  $('#askprog').textContent='Step 2 of 2: '+ASK.slugs.length+' pages, '+fmt(prompt.length)+' characters sent, 0 library passages…';
+  try{
+    var o=await callModel(prompt,{label:'ask 2',passages:0,ctl:ASK.ctl});
+    if(typeof o.answer!=='string'||!o.answer.trim())throw ME('The reply has no “answer” text.',JSON.stringify(o));
+    var cn=Array.isArray(o.cannot_answer)?o.cannot_answer.map(function(x){return'- '+x;}).join('\n'):String(o.cannot_answer||'');
+    ASK.ans={title:String(o.title||ASK.q).slice(0,140),answer:o.answer,cannot:cn};ASK.sent=sent;ASK.stage=2;ASK.filed=false;
+    $('#askprog').textContent='Done.';$('#askbtn').textContent='Ask again';showAnswer();
+  }catch(e){$('#askprog').textContent='';failBox($('#askout'),e,ask2);}
+  askBusy(false);
+}
+function showAnswer(){
+  var a=ASK.ans,cx={sent:ASK.sent},pins=[].slice.call(a.answer.matchAll(PIN_RE)).map(function(m){return{label:m[1],id:m[2],page:m[3],quote:m[4]||''};});
+  var good=pins.filter(function(k){return verify(k.label,k.id,k.page,k.quote).ok&&ASK.sent[k.id+'|'+k.page+'|'+norm(k.quote)];}),cnt={};
+  good.forEach(function(k){regLetters(k.id).forEach(function(l){cnt[l]=(cnt[l]||0)+1;});});
+  $('#askout').innerHTML='<div data-source="ai"><p class="mono">Answer · written by a model, every quotation checked by this page</p><h3>'+esc(a.title)+'</h3>'+md(a.answer,cx)+'<h4>What the library cannot answer</h4>'+md(a.cannot||'The model named nothing.',cx)+'</div>'
+   +'<p class="hint">'+good.length+' of '+pins.length+' pins verified and on the pages sent · by register: '+['a','b','c','d','e','f'].map(function(l){return'('+l+') '+(cnt[l]||0);}).join(' · ')+'</p>'
+   +'<p><button class="btn ghost" id="fileq">File as a question page</button></p><div id="filecard"></div>';
+}
+function drawFile(){
+  var t=($('#ftitle').value||'').trim()||ASK.ans.title,tags=($('#ftags').value||'').split(',').map(function(x){return x.trim();}).filter(Boolean),p=qPage(t,tags);
+  var pins=[].slice.call(ASK.ans.answer.matchAll(PIN_RE)),bad=pins.filter(function(m){return!(verify(m[1],m[2],m[3],m[4]||'').ok&&ASK.sent[m[2]+'|'+m[3]+'|'+norm(m[4]||'')]);}).length;
+  var why=!pins.length?'The answer carries no pins, so nothing in it can be checked.':bad?bad+' pin(s) in the answer do not verify or are not on the pages sent.':'';
+  $('#fileprev').innerHTML='<p class="hint">slug '+esc(p.slug)+' · type question · status draft · updated '+p.frontmatter.updated+' · register ('+esc(regStr(p))+') · links '+esc(p.frontmatter.links.join(', ')||'none')+' · sources '+esc(p.frontmatter.sources.join(', ')||'none')+'</p><div class="body" data-source="ai">'+md(p.body,{sent:ASK.sent})+'</div>';
+  $('#filego').disabled=!!why||!!ASK.filed;$('#filewhy').textContent=ASK.filed?'Filed.':why;
+}
+function qPage(title,tags){
+  var a=ASK.ans,ans=a.answer,srcs=uniq([].slice.call(ans.matchAll(PIN_RE)).map(function(m){return m[2];})),regs=[];
+  srcs.forEach(function(id){regLetters(id).forEach(function(l){if(l!=='?'&&regs.indexOf(l)<0)regs.push(l);});});regs.sort();
+  var links=uniq([].slice.call(ans.matchAll(LINK_RE)).map(function(m){return m[1].trim();})).filter(function(s){return PM[s];});
+  var slug=kebab(title),base=slug,n=2;while(PM[slug])slug=base+'-'+(n++);
+  var body='# '+title+'\n\n**Short answer.** '+firstSentence(ans)+'\n\n## Reasoning\n\n'+ans+'\n\n## What the library cannot answer\n\n'+(a.cannot||'The model named nothing.')+'\n\n## Related\n\n'+(links.length?links.map(function(s){return'- [['+s+']]';}).join('\n'):'- (no related pages named)')+'\n';
+  return{slug:slug,type:'question',title:title,frontmatter:{title:title,type:'question',tags:tags,register:regs,status:'draft',updated:today(),links:links,sources:srcs},body:body};
+}
+function openFile(){
+  ASK.filed=false;
+  $('#filecard').innerHTML='<fieldset class="chg"><legend>File as a question page</legend><label for="ftitle">Page title</label><input id="ftitle" value="'+esc(ASK.ans.title)+'"><label for="ftags">Tags (comma-separated)</label><input id="ftags" placeholder="for example: existing-rights, interpretation"><div id="fileprev"></div><div class="row"><button class="btn" id="filego">File this page</button><button class="btn ghost" id="filecp">Copy answer</button><span class="hint" id="filewhy" aria-live="polite"></span></div></fieldset>';
+  $('#ftitle').oninput=$('#ftags').oninput=drawFile;
+  $('#filego').onclick=fileQ;$('#filecp').onclick=function(){copyText(ASK.ans.answer,$('#filewhy'));};drawFile();
+}
+function fileQ(){
+  if(ASK.filed)return;
+  var t=($('#ftitle').value||'').trim()||ASK.ans.title,tags=($('#ftags').value||'').split(',').map(function(x){return x.trim();}).filter(Boolean),p=qPage(t,tags);
+  pages.push(p);refresh();
+  idxInsert('question',idxLine(p,firstSentence(ASK.ans.answer)));idxFirst();
+  logAdd('['+today()+'] ask | '+p.title,'Question: '+ASK.q+'\nFiled [['+p.slug+']] (draft) from '+ASK.slugs.length+' pages: '+ASK.slugs.map(function(s){return'[['+s+']]';}).join(', ')+'.');
+  S.actions++;S.changes.push({slug:p.slug,kind:'new page',date:today(),via:'ask'});S.filing={slugs:[p.slug],before:'-',after:runLint().filter(function(x){return x.n>0;}).length};
+  ASK.filed=true;renderAll();$('#filego').disabled=true;$('#filewhy').innerHTML='Filed as <a href="#'+esc(p.slug)+'">'+esc(p.title)+'</a>.';
+}
+
+/* ---------- tab 03: ingest (logic) ---------- */
+function fixMarks(md){return md.replace(PIN_RE,function(m,l,id,pg,q){return m.replace(/(✓|⚠)$/,verify(l,id,pg,q||'').ok?'✓':'⚠');});}
+function countParas(md){return md.split(/\n\s*\n/).filter(function(s){return s.trim()&&!/^#{1,6}\s/.test(s.trim());}).length;}
+function wrapIns(md){return'\n\n<!--ins-->\n'+md+'\n<!--/ins-->\n';}
+function longestRun(a,b){
+  var best=0,end=0,prev=new Array(b.length+1).fill(0);
+  for(var i=1;i<=a.length;i++){var cu=new Array(b.length+1).fill(0);for(var j=1;j<=b.length;j++){if(a[i-1]===b[j-1]){cu[j]=prev[j-1]+1;if(cu[j]>best){best=cu[j];end=i;}}}prev=cu;}
+  return{n:best,text:a.slice(end-best,end).join(' ')};
+}
+function nearest(x,quote){
+  var qw=norm(quote).split(' '),best=null;
+  I.doc.passages.forEach(function(y){if(y.page!==x.page)return;var r=longestRun(qw,pnorm(y).split(' '));if(!best||r.n>best.n)best={passage:y,n:r.n,text:r.text};});
+  return best;
+}
+function pLabel(x){return(x.paragraph?'para. '+x.paragraph:'p. '+x.page_label)+' · PDF page '+x.page;}
+function ingRun(on){S.run.ingest=on;I.running=on;if(on)I.err=null;renderTabs();ingBody();}
+function tkPrompt(b){
+  var ps=b.map(function(x){return{id:x.id,page:x.page,paragraph:x.paragraph,text:x.text};});
+  return['You read a UN document into a research wiki on neurotechnology in the administration of justice.',
+   'Below are the wiki index and a batch of passages of '+I.doc.title+' ('+I.cite+'). Find what the passages say that bears on pages of the wiki.',
+   'Return JSON {"takeaways": [{"claim": one sentence, "quote": 8 to 40 words copied verbatim from ONE passage, "passage": the passage id, "pages": [slugs from the index that the claim bears on]}]}, at most 10 takeaways.',
+   'Quote only words that stand in the passages given; the code will check every quote. Pins in the wiki look like [label](pin:DOC#pPAGE "verbatim quote") ✓ .','','INDEX:',idx,'','PASSAGES:',JSON.stringify(ps)].join('\n');
+}
+function handleTk(o,meta){
+  var arr=Array.isArray(o.takeaways)?o.takeaways:[],sentIds={};
+  I.batches.slice(0,I.next+1).forEach(function(b){b.forEach(function(x){sentIds[x.id]=x;});});
+  arr.forEach(function(t){
+    I.ret++;
+    var x=t&&sentIds[String(t.passage)];
+    if(!x){I.drop++;return;}
+    var q=String(t.quote||'').replace(/"([^"]*)"/g,'“$1”').replace(/"/g,'”').trim();
+    var label=I.cite+', '+(x.paragraph?'para. '+x.paragraph:'p. '+x.page_label),v=verify(label,I.doc.id,x.page,q);
+    if(!v.ok){I.failed.push({claim:String(t.claim||''),quote:q,passage:x,near:nearest(x,q)});return;}
+    var sl=[];
+    (Array.isArray(t.pages)?t.pages:[]).forEach(function(s){
+      s=String(s).trim();
+      if(PM[s]||I.newSlugs[s]){sl.push(s);return;}
+      if(/^[a-z0-9-]+$/.test(s)&&Object.keys(I.newSlugs).length<2){I.newSlugs[s]=1;sl.push(s);}else{I.badSlugs.push(s);meta.rec.unknown.push(s);}
+    });
+    I.tk.push({claim:String(t.claim||''),quote:q,passage:x,pages:uniq(sl),pin:'['+label+'](pin:'+I.doc.id+'#p'+x.page+' "'+q+'") ✓'});
+  });
+}
+async function runBatches(){
+  I.ctl={stop:false};I.step=2;ingRun(true);
+  try{
+    while(I.next<I.batches.length){
+      if(I.ctl.stop)break;
+      var b=I.batches[I.next],meta={label:'ingest batch '+(I.next+1),passages:b.length,ctl:I.ctl,sink:I};
+      var o=await callModel(tkPrompt(b),meta);
+      handleTk(o,meta);I.next++;ingBody();
+    }
+    if(I.next>=I.batches.length)I.step=3;
+  }catch(e){if(!e.stopped){I.err=e;I.retry=runBatches;}}
+  ingRun(false);
+}
+function srcPrompt(){
+  var d=I.doc,tks=I.tk.map(function(t,i){return'T'+(i+1)+' | claim: '+t.claim+' | pin: '+t.pin+' | pages: '+t.pages.join(', ');}).join('\n');
+  return['Write the SOURCE page for a UN document in a research wiki on neurotechnology in the administration of justice.',
+   'Document: '+d.title+'. Author: '+d.author+'. Published: '+d.published+'. PDF pages: '+d.pages+'. URL: '+d.url+'. Cite as: '+I.cite+'.',
+   'Page anatomy (the wiki schema): Full cite, Register, One-liner, Key takeaways, How NOT to read this, Where it feeds the wiki, Related. Use ## headings and [[slug]] links to pages of the index.',
+   'Use ONLY the pins given below, copied exactly (the quote inside its quotation marks, and the check mark). Write the prose around the quotation. Quote only words that stand in the passages given; the code will check.',
+   'Return JSON {"one_liner": one line, "body": markdown starting with a "# " title, at most 900 words, "touches": [{"slug": an existing page slug (or at most two new kebab-case slugs), "why": one line}]}.',
+   '','TAKEAWAYS (verified quotations):',tks,'','INDEX:',idx].join('\n');
+}
+async function draftSource(){
+  I.ctl={stop:false};ingRun(true);
+  try{
+    var o=await callModel(srcPrompt(),{label:'ingest source page',passages:0,ctl:I.ctl,sink:I}),body=String(o.body||'').trim(),d=I.doc;
+    if(!body)throw ME('The reply has no page body.',JSON.stringify(o));
+    var title=(d.symbol?d.symbol+': ':'')+(d.short_title||d.title);
+    if(!/^#\s/.test(body))body='# '+title+'\n\n'+body;
+    body=fixMarks(body);
+    var slug=kebab(d.symbol||d.id);if(PM[slug])slug+='-source';
+    I.srcSlug=slug;
+    var tl=[],seen={};
+    (Array.isArray(o.touches)?o.touches:[]).forEach(function(t){
+      var s=t&&String(t.slug||'').trim();if(!s||seen[s]||s===slug||(I.stub&&s===I.stub.slug))return;
+      if(PM[s]||I.newSlugs[s]||(/^[a-z0-9-]+$/.test(s)&&Object.keys(I.newSlugs).length<2)){if(!PM[s])I.newSlugs[s]=1;seen[s]=1;tl.push({slug:s,why:String(t.why||'')});}else I.badSlugs.push(s);
+    });
+    tl=tl.slice(0,I.stub?11:12);
+    if(I.stub)tl.unshift({slug:I.stub.slug,why:'The stub for this document: rewrite it with what the document says and work through its checklist.'});
+    var links=uniq([].slice.call(body.matchAll(LINK_RE)).map(function(m){return m[1].trim();}).concat(tl.map(function(t){return t.slug;}))),tagc={};
+    tl.forEach(function(t){((PM[t.slug]&&PM[t.slug].frontmatter.tags)||[]).forEach(function(g){tagc[g]=(tagc[g]||0)+1;});});
+    var tags=['source'].concat(Object.keys(tagc).sort(function(a,b){return tagc[b]-tagc[a];}).slice(0,5));
+    var pins=[].slice.call(body.matchAll(PIN_RE)),ok=pins.filter(function(m){return verify(m[1],m[2],m[3],m[4]||'').ok;}).length;
+    I.oneLiner=String(o.one_liner||'');I.touches=tl;I.tdone=0;
+    I.src={slug:slug,kind:'new',page:{slug:slug,type:'source',title:title,frontmatter:{title:title,type:'source',tags:tags,register:I.stub?[].concat(I.stub.frontmatter.register||[]):[],status:'draft',updated:today(),links:links,sources:[d.id]},body:body},marked:'<!--ins-->\n'+body+'\n<!--/ins-->',paras:countParas(body),ok:ok,bad:pins.length-ok,newCards:[],why:I.oneLiner,decision:null};
+    I.changes=[I.src];
+  }catch(e){if(!e.stopped){I.err=e;I.retry=draftSource;}}
+  ingRun(false);
+}
+function touchPrompt(t){
+  var p=PM[t.slug],stub=p&&p.frontmatter.status==='stub',tks=I.tk.filter(function(x){return x.pages.indexOf(t.slug)>=0;}).map(function(x){return'- claim: '+x.claim+' | pin: '+x.pin;}).join('\n');
+  return['Edit one page of a research wiki on neurotechnology in the administration of justice, adding what the new document ('+I.cite+') says.'+(p?'':' This page does not exist yet: write its first sections.'),
+   stub?'This page is the STUB for the document itself. Its body holds a checklist of ten items the ingest should check: address each item with the pins given, or say that the document does not bear on it. Keep the checklist.':'',
+   'Why this page is touched: '+t.why,
+   'Return JSON {"edits": [{"after": an existing heading of the page exactly as written, or "end", "markdown": text to insert}], "contested": null OR a full '+FN+'contested block ONLY where the new document disagrees with the page}. A block has lines "claim:", "verdict:" (contested, leans-support, leans-contest, settled-support or settled-contest), "note:", then one line per position: "+ c | pin | gloss | [[slug]]" where the first field is + (supports), - (contests) or ~ (mixed) and a register letter a to f, separated by " | ".',
+   'At most 300 words in all. Use only the pins given, copied exactly; quote only words that stand in the passages given; the code will check.','','PAGE BODY:',p?p.body:'(new page)','','TAKEAWAYS FOR THIS PAGE:',tks||'(none: say only what the checklist needs)'].join('\n');
+}
+function applyEdits(base,edits,cont){
+  var b=base.replace(/\s+$/,''),insMd='',paras=0,cards=[];
+  edits.forEach(function(e){
+    var md0=fixMarks(String((e&&e.markdown)||'').trim());if(!md0)return;
+    var after=String((e&&e.after)||'end').trim(),L=b.split('\n'),want=after.replace(/^#+\s*/,'').trim().toLowerCase(),hi=-1;
+    if(after.toLowerCase()!=='end')L.forEach(function(l,i){if(hi<0&&/^#{1,6}\s/.test(l)&&l.replace(/^#+\s*/,'').trim().toLowerCase()===want)hi=i;});
+    var md1=md0+(after.toLowerCase()!=='end'&&hi<0?'\n\n*(Placed at the end: the heading “'+after+'” was not found on this page.)*':'');
+    insMd+=md1+'\n';paras+=countParas(md1);
+    if(hi<0){b+=wrapIns(md1);return;}
+    var lv=L[hi].match(/^#+/)[0].length,end=hi+1;
+    while(end<L.length&&!(/^#{1,6}\s/.test(L[end])&&L[end].match(/^#+/)[0].length<=lv))end++;
+    var head=L.slice(0,end).join('\n').replace(/\s+$/,''),tail=L.slice(end).join('\n');
+    b=head+wrapIns(md1)+(tail.trim()?'\n'+tail:'');
+  });
+  if(typeof cont==='string'&&cont.trim()){
+    var cb=cont.trim();if(cb.indexOf(FN)!==0)cb=FN+'contested\n'+cb+'\n'+FN;
+    var o=parseContested(cb.split('\n').filter(function(l){return l.indexOf(FN)!==0;}));
+    if(o.claim&&o.verdict&&o.pos.length){cb=fixMarks(cb);cards.push(cb);b+=wrapIns(cb);insMd+=cb+'\n';paras++;}
+  }
+  return{marked:b,insMd:insMd,paras:paras,cards:cards};
+}
+function buildTouched(t,o){
+  var ex=PM[t.slug],title=ex?ex.title:t.slug.replace(/-/g,' ').replace(/^./,function(c){return c.toUpperCase();});
+  var r=applyEdits(ex?ex.body:'# '+title+'\n',Array.isArray(o.edits)?o.edits:[],o.contested);
+  var clean=r.marked.replace(/<!--ins-->\n/g,'').replace(/\n<!--\/ins-->/g,'');
+  var pins=[].slice.call(r.insMd.matchAll(PIN_RE)),ok=pins.filter(function(m){return verify(m[1],m[2],m[3],m[4]||'').ok;}).length;
+  var fm=JSON.parse(JSON.stringify(ex?ex.frontmatter:{title:title,type:'concept',tags:[],register:[],status:'draft',updated:today(),links:[],sources:[]}));
+  fm.links=uniq((fm.links||[]).concat(I.srcSlug));
+  if(pins.some(function(m){return m[2]===I.doc.id;}))fm.sources=uniq((fm.sources||[]).concat(I.doc.id));
+  if(!ex){var rg=[];uniq(pins.map(function(m){return m[2];})).forEach(function(id){regLetters(id).forEach(function(l){if(l!=='?'&&rg.indexOf(l)<0)rg.push(l);});});fm.register=rg.sort();}
+  if(ex&&fm.status==='stub')fm.status='draft';
+  return{slug:t.slug,kind:ex?'edited':'new',page:{slug:t.slug,type:ex?ex.type:'concept',title:title,frontmatter:fm,body:clean},marked:r.marked,paras:r.paras,ok:ok,bad:pins.length-ok,newCards:r.cards,why:t.why,decision:null};
+}
+async function draftTouched(){
+  I.ctl={stop:false};ingRun(true);
+  try{
+    while(I.tdone<I.touches.length){
+      if(I.ctl.stop)break;
+      var t=I.touches[I.tdone],o=await callModel(touchPrompt(t),{label:'ingest draft '+t.slug,passages:0,ctl:I.ctl,sink:I});
+      I.changes.push(buildTouched(t,o));I.tdone++;ingBody();
+    }
+    if(I.tdone>=I.touches.length){I.step=4;I.cur=0;I.refocus=true;}
+  }catch(e){if(!e.stopped){I.err=e;I.retry=draftTouched;}}
+  ingRun(false);
+}
+function fileIngest(){
+  var ap=I.changes.filter(function(c){return c.decision==='approve';}),rj=I.changes.filter(function(c){return c.decision==='reject';}),date=today(),d=I.doc;
+  var before=runLint().filter(function(x){return x.n>0;}).length;
+  ap.forEach(function(c){
+    var np={slug:c.page.slug,type:c.page.type,title:c.page.title,frontmatter:Object.assign({},c.page.frontmatter,{updated:date}),body:c.page.body},i=pages.findIndex(function(p){return p.slug===np.slug;});
+    if(i>=0)pages[i]=np;else pages.push(np);
+    S.changes.push({slug:np.slug,kind:c.kind==='new'?'new page':'edited',date:date,via:'ingest '+(d.symbol||d.id)});
+    if(c.kind==='edited')S.apprSlugs.push(np.slug);
+  });
+  d.status='ingested';refresh();
+  ap.forEach(function(c){
+    var p=PM[c.slug];
+    if(c.slug===I.srcSlug)idxInsert('source',idxLine(p,I.oneLiner||p.title));
+    else if(I.stub&&c.slug===I.stub.slug)idxReplace(c.slug,idxLine(p,I.oneLiner||p.title));
+    else if(c.kind==='new')idxInsert(p.type,idxLine(p,c.why||p.title));
+    else idxN(c.slug);
+  });
+  idxFirst();
+  var docPins=0,onP=[],L=function(a){return a.length?a.map(function(s){return'[['+s+']]';}).join(', '):'none';};
+  pages.forEach(function(p){var n=p._pins.filter(function(k){return k.id===d.id;}).length;docPins+=n;if(n&&p.slug!==I.srcSlug)onP.push(p.slug);});
+  var head='['+date+'] ingest | '+(d.symbol||d.id)+': '+(d.short_title||d.title);
+  logAdd(head,'Read '+d.passages.length+' passages ('+I.cite+', register ('+I.reg+')). Wrote '+(ap.some(function(c){return c.slug===I.srcSlug;})?'[['+I.srcSlug+']]':'no source page')+'. Approved: '+L(ap.map(function(c){return c.slug;}))+'. '+docPins+' pins in all; besides its own page, pinned on '+onP.length+' pages: '+L(onP)+'. Rejected: '+L(rj.map(function(c){return c.slug;}))+'.');
+  (S.ingLog=S.ingLog||[]).push({approved:ap.map(function(c){return c.slug;}),rejected:rj.map(function(c){return c.slug;})});
+  ap.forEach(function(c){c.newCards.forEach(function(blk){
+    var o=parseContested(blk.split('\n').filter(function(l){return l.indexOf(FN)!==0;})),stt=/^settled/.test(o.verdict)?'settled':/^leans/.test(o.verdict)?'leaning':'open',slug=kebab(o.claim.split(/\s+/).slice(0,8).join(' '));
+    var pole=function(sg){return o.pos.filter(function(p){return p.sign===sg;}).map(function(p){return plain(p.gloss);}).join('; ')||'none';};
+    tens=tens.replace(/\s*$/,'')+'\n\n### '+slug+'\n- title: '+o.claim+'\n- status: '+stt+'\n- card: [['+c.slug+']]\n- poles: supports: '+pole('+')+' | contests: '+pole('-')+'\n- where: '+o.pos.map(function(p){return p.page;}).join(', ')+'\n';
+    S.tenAdded.push(slug);
+  });});
+  S.actions++;
+  var after=runLint().filter(function(x){return x.n>0;}).length;
+  S.filing={slugs:ap.map(function(c){return c.slug;}),before:before,after:after};
+  I.filed=true;I.step=5;I.sum={ap:ap,rj:rj,before:before,after:after,head:head};I.refocus=true;
+  renderAll();ingTop();ingBody();
+}
+
+/* ---------- tab 03: ingest (screens) ---------- */
+function ingTop(){
+  var el=$('#ingtop'),ds=LIB.filter(function(d){return d.status==='inbox';});
+  if(I&&!I.filed){el.innerHTML='';return;}
+  el.innerHTML=ds.length?ds.map(function(d){return'<button class="btn" data-ing="'+esc(d.id)+'">Ingest '+esc(d.symbol||d.short_title)+'</button>';}).join('')+'<p class="hint">Four steps. Nothing is sent until you press Start, and no change enters the wiki until you approve that page.</p>':'<p>Nothing waits in the inbox.</p>';
+}
+function startIng(id){
+  var d=docs[id];if(!d||d.status!=='inbox')return;
+  var b=[],ps=d.passages||[];for(var i=0;i<ps.length;i+=25)b.push(ps.slice(i,i+25));
+  var stub=stubFor(d);
+  I={doc:d,step:1,batches:b,next:0,tk:[],failed:[],ret:0,drop:0,calls:0,sent:0,badSlugs:[],newSlugs:{},cite:citeAs(id),stub:stub,src:null,srcSlug:'',touches:[],tdone:0,changes:[],cur:0,ctl:null,running:false,err:null,filed:false,refocus:true,reg:stub?regStr(stub):'?'};
+  ALLOW[id]=1;ingTop();ingBody();
+}
+function tkTable(){
+  if(!I.tk.length)return'<p class="hint">No verified takeaway yet.</p>';
+  return'<table><caption>FIG.01 · Takeaways that verified ('+I.tk.length+')</caption><thead><tr><th scope="col">Claim</th><th scope="col">Quote</th><th scope="col">Passage</th><th scope="col">Pages it would touch</th><th scope="col">Check</th></tr></thead><tbody>'
+   +I.tk.map(function(t){return'<tr><td data-source="ai">'+esc(t.claim)+'</td><td data-source="ai">“'+esc(t.quote)+'”</td><td>'+esc(pLabel(t.passage))+'</td><td>'+(t.pages.length?t.pages.map(function(s){return'<span class="chip2">'+esc(s)+(PM[s]?'':' <span class="hint">new page</span>')+'</span>';}).join(''):'<span class="hint">none named</span>')+'</td><td><span class="vf ok">✓ quote found in that passage</span></td></tr>';}).join('')+'</tbody></table>';
+}
+function failedHtml(){
+  if(!I.failed.length)return'<div class="box"><b>Could not verify: 0</b></div>';
+  return'<div class="box"><p><b>Could not verify: '+I.failed.length+'</b> <span class="hint">these claims are in no change card and in no later prompt</span></p><ul>'+I.failed.map(function(f){var nr=f.near;
+   return'<li data-source="ai">“'+esc(f.quote)+'” <span class="hint">passage named: '+esc(pLabel(f.passage))+'</span><br><span class="hint">nearest passage on that PDF page: '+(nr?esc(pLabel(nr.passage))+', longest shared run '+nr.n+' words':'none')+'</span> <button class="lk" data-op="1" data-id="'+esc(I.doc.id)+'" data-page="'+f.passage.page+'" data-q="'+esc(nr&&nr.n>=3?nr.text:'')+'" aria-label="Open '+esc(I.doc.symbol||I.doc.id)+' at PDF page '+f.passage.page+'">Open the PDF page</button></li>';}).join('')+'</ul></div>';
+}
+function changeCard(ch,legend,btn,k,N){
+  var p=ch.page,lab=' change '+(k+1)+' of '+N+': '+p.title;
+  return'<fieldset class="chg"><legend>'+esc(legend)+'</legend><h3>'+esc(p.title)+'</h3><p class="mono">'+esc(p.type)+' · '+(ch.kind==='new'?'new page':'edited')+' · '+ch.paras+' paragraphs inserted · '+ch.ok+' pins added and verified, '+ch.bad+' pins added and not verified</p>'
+   +(ch.bad?'<p class="warnline">⚠ '+ch.bad+' pin(s) in the inserted text could not be verified by this page. Approving files them marked ⚠.</p>':'')
+   +'<p class="hint">Yellow = inserted by the model, read it before you decide. Grey = the page as it stands.</p><div class="chbody">'+md(ch.marked,{slug:p.slug})+'</div>'
+   +(btn?'<div class="row"><button class="btn" data-dec="approve" aria-label="Approve this page:'+esc(lab)+'">Approve this page</button><button class="btn ghost" data-dec="reject" aria-label="Reject this page:'+esc(lab)+'">Reject this page</button><span class="hint">change '+(k+1)+' of '+N+'</span></div>':'')+'</fieldset>';
+}
+function ingBody(){
+  var el=$('#ingbody');
+  if(!I){el.innerHTML='';return;}
+  var n=I.doc.passages.length,h='<ol class="steps">'+['01 SCOPE','02 TAKEAWAYS','03 DRAFTS','04 REVIEW AND FILE'].map(function(t,i){return'<li'+(I.step===i+1?' aria-current="step"':'')+'>'+t+'</li>';}).join('')+'</ol>'
+   +'<p class="runl" aria-live="polite">calls so far <b>'+I.calls+'</b> · passages sent <b>'+fmt(I.sent)+'</b></p>';
+  if(I.step===1){
+    var chars=I.doc.passages.reduce(function(a,x){return a+x.text.length;},0);
+    h+='<h3>01 Scope</h3><p><b>Scope: the whole document.</b> All '+n+' passages will be sent, in batches of 25 ('+I.batches.length+' calls), '+fmt(chars)+' characters; nothing is held back.</p><p class="hint">What leaves the browser: the passages, the wiki index and the instructions go to a language model, in '+I.batches.length+' calls.</p>'
+     +'<table><caption>Batches</caption><thead><tr><th scope="col">Batch</th><th scope="col">Paragraphs</th><th scope="col">PDF pages</th><th scope="col" class="num">Passages</th></tr></thead><tbody>'
+     +I.batches.map(function(b,i){var a=b[0],z=b[b.length-1];return'<tr><td>'+(i+1)+'</td><td>'+(a.paragraph?'para. '+esc(a.paragraph)+(z.paragraph&&z.paragraph!==a.paragraph?' to '+esc(z.paragraph):''):'no paragraph numbers')+'</td><td>'+a.page+(z.page!==a.page?' to '+z.page:'')+'</td><td class="num">'+b.length+'</td></tr>';}).join('')+'</tbody></table><p><button class="btn" id="ingstart">Start</button></p>';
+  }else if(I.step===2){
+    h+='<h3>02 Takeaways</h3><p class="hint" aria-live="polite">'+(I.running?'batch '+(I.next+1)+' of '+I.batches.length:'batch '+I.next+' of '+I.batches.length+' done')+' · '+I.sent+' of '+n+' passages have left the browser</p>'
+     +(I.running?'<p><button class="btn ghost" id="ingstop">Stop</button> <span class="hint">Escape also stops; what has returned is kept.</span></p>':'')+tkTable()+failedHtml()
+     +(!I.running&&I.tk.length?'<p><button class="btn" id="ingcont">Continue with the '+I.tk.length+' verified takeaways</button></p>':'');
+  }else if(I.step===3){
+    h+='<h3>03 Drafts</h3><details><summary class="mono">The '+I.tk.length+' verified takeaways and '+I.failed.length+' that could not be verified</summary>'+tkTable()+failedHtml()+'</details>';
+    if(!I.src){
+      h+='<div class="box">Sends the '+I.tk.length+' verified takeaways, the document’s details and the wiki index to a language model: '+fmt(srcPrompt().length)+' characters, 0 passages. Quotes that could not be verified are not sent.</div><p><button class="btn" id="ingsrc"'+(I.tk.length?'':' disabled')+'>Draft the source page (1 call)</button></p>'+(I.tk.length?'':'<p class="warnline">No verified takeaway, so there is nothing to draft.</p>');
+    }else{
+      var left=I.touches.length-I.tdone;
+      h+=changeCard(I.src,'Draft of the source page',false,0,1)
+       +(I.running?'<p class="hint" aria-live="polite">page '+(I.tdone+1)+' of '+I.touches.length+' · '+(I.touches[I.tdone]||{}).slug+'</p><p><button class="btn ghost" id="ingstop">Stop</button></p>'
+         :'<div class="box">Each call sends one page’s body, the takeaways that bear on it (with their pins) and the instructions: no passages. The stub is among the pages, with its checklist.</div><p><button class="btn" id="ingtouch">Draft the changes to '+left+' pages ('+left+' calls)</button>'+(I.tdone?' <button class="btn ghost" id="ingreview">Review the '+I.changes.length+' drafts so far</button>':'')+'</p>')
+       +(I.tdone?'<ul>'+I.changes.slice(1).map(function(c){return'<li data-source="ai">'+esc(c.page.title)+' <span class="hint">'+(c.kind==='new'?'new page':'edited')+' · '+c.paras+' paragraphs · '+c.ok+' pins verified, '+c.bad+' not</span></li>';}).join('')+'</ul>':'');
+    }
+  }else if(I.step===4){
+    var N=I.changes.length;h+='<h3>04 Review and file</h3>';
+    if(I.cur<N)h+='<p class="hint">Approving marks the page. File the approved changes writes everything at once; until then the wiki does not change. A rejected page stays exactly as loaded.</p>'+changeCard(I.changes[I.cur],'Change '+(I.cur+1)+' of '+N,true,I.cur,N);
+    else{
+      var ap=I.changes.filter(function(c){return c.decision==='approve';}).length;
+      h+='<p>All '+N+' changes decided: '+ap+' approved, '+(N-ap)+' rejected.</p><ul>'+I.changes.map(function(c){return'<li>'+esc(c.page.title)+' <span class="hint">'+(c.decision==='approve'?'approved':'rejected')+'</span></li>';}).join('')+'</ul>'
+       +(ap?'<p><button class="btn" id="ingfile">File the approved changes</button></p>':'<p>Nothing was approved, so nothing is filed and the document stays in the inbox.</p><p><button class="btn ghost" id="ingclose">Close this ingest</button></p>');
+    }
+  }else{
+    var s=I.sum;
+    h+='<h3>Filed</h3><p aria-live="polite">Filed '+s.ap.length+' pages and rejected '+s.rj.length+'. The document’s status is now “ingested” in memory; the log entry reads “'+esc(s.head)+'”.</p><table><caption>Lint checks needing a look</caption><thead><tr><th scope="col">Before filing</th><th scope="col">After filing</th></tr></thead><tbody><tr><td>'+s.before+'</td><td>'+s.after+'</td></tr></tbody></table><ul>'+s.ap.map(function(c){return'<li><a href="#'+esc(c.slug)+'">'+esc(c.page.title)+'</a> <span class="hint">'+(c.kind==='new'?'new page':'edited')+'</span></li>';}).join('')+'</ul><p class="hint">Download the wiki on tab 05 to keep these changes.</p>';
+  }
+  el.innerHTML=h;
+  if(I.err&&!I.running)failBox(el,I.err,function(){I.err=null;I.retry();});
+  if(I.refocus){I.refocus=false;var hh=el.querySelector('h3');if(hh){hh.tabIndex=-1;hh.focus();}}
+}
+
+/* ---------- tab 05: record, download ---------- */
+function cleanPages(){return pages.map(function(p){return{slug:p.slug,type:p.type,title:p.title,frontmatter:p.frontmatter,body:p.body};});}
+function buildDownload(){return{title:WK.title,source:WK.source,built:WK.built,count:pages.length,schema:WK.schema,pages:cleanPages(),index:idx,log:logmd,tensions:tens,changes:S.changes,library_status:Object.fromEntries(LIB.map(function(d){return[d.id,d.status];}))};}
+function save(name,text,type){var a=document.createElement('a'),u=URL.createObjectURL(new Blob([text],{type:type}));a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},3000);}
+function renderRecord(){
+  var ents=logmd.split(/^## /m).slice(1).map(function(t){var nl=t.indexOf('\n');return{head:(nl<0?t:t.slice(0,nl)).trim(),body:nl<0?'':t.slice(nl+1).trim()};});
+  var list=S.newest?ents.slice().reverse():ents;
+  $('#ordsw').textContent='Newest first: '+(S.newest?'on':'off');$('#ordsw').setAttribute('aria-checked',S.newest);
+  $('#logview').innerHTML='<p class="mono">Log · '+ents.length+' entries, append-only</p>'+list.map(function(e){return'<details><summary><span class="hint">'+esc(e.head)+'</span>'+(S.logHeads.indexOf(e.head)>=0?'<span class="tag">this session</span>':'')+'</summary><div>'+md(e.body,{})+'</div></details>';}).join('');
+  var te=tenEntries();
+  $('#tenview').innerHTML=te.length?te.map(function(e){return'<article id="ten-'+esc(e.slug)+'"><h4>'+esc(e.slug)+(S.tenAdded.indexOf(e.slug)>=0?'<span class="tag">this session</span>':'')+'</h4>'+md(e.body,{})+'</article>';}).join(''):'<p class="hint">No tensions entries.</p>';
+  $('#method').textContent='Method: counting, matching and verification are done by this page’s code, and each number carries its “How this is computed” line. Data: '+(WK.source||'the wiki')+', built '+(WK.built||'unknown')+', with the library of '+LIB.length+' documents.';
+  $('#dlmd').hidden=!S.changes.length;
+}
+
+/* ---------- tabs, events, start ---------- */
+var TN=['01 PAGES','02 ASK','03 INGEST','04 CHECK','05 RECORD'];
+function renderTabs(){TN.forEach(function(t,i){var b=$('#t'+(i+1)),run=(i===1&&S.run.ask)||(i===2&&S.run.ingest);b.textContent=t+(run?' · running':'');b.setAttribute('aria-selected',S.tab===i+1);b.tabIndex=S.tab===i+1?0:-1;$('#p'+(i+1)).hidden=S.tab!==i+1;});}
+function showTab(n,focus){S.tab=n;renderTabs();if(n===3){ingTop();ingBody();}if(n===4)renderCheck();if(n===5)renderRecord();if(focus)$('#t'+n).focus();}
+function renderAll(){refresh();header();renderList();renderView();renderTabs();if(S.tab===4)renderCheck();if(S.tab===5)renderRecord();}
+function togglePin(b){
+  var r=PR[b.getAttribute('data-pin')],d=b.parentNode.parentNode.querySelector('.pd'),open=b.getAttribute('aria-expanded')==='true';
+  if(open){b.setAttribute('aria-expanded','false');d.hidden=true;return;}
+  var x=r.v.passage;
+  d.innerHTML=x?'<b>'+(x.paragraph?'Paragraph '+esc(x.paragraph):'Printed page '+esc(x.page_label))+'</b> · PDF page '+x.page+'<br>'+esc(x.text.slice(0,300))+(x.text.length>300?'…':'')+'<br><button class="lk" data-pin="'+b.getAttribute('data-pin')+'" data-act="open">Open the PDF page</button>':'<b>Not verified:</b> '+esc(r.v.why||'')+'<br><button class="lk" data-pin="'+b.getAttribute('data-pin')+'" data-act="open">Open the PDF page</button>';
+  d.hidden=false;b.setAttribute('aria-expanded','true');
+}
+document.addEventListener('click',function(e){
+  var t=e.target,b;
+  if((b=t.closest('[data-pin]'))){var r=PR[b.getAttribute('data-pin')];if(b.getAttribute('data-act')==='exp')togglePin(b);else openSrc(r.k.id,r.k.page,r.k.quote);return;}
+  if((b=t.closest('[data-op]'))){openSrc(b.getAttribute('data-id'),b.getAttribute('data-page'),b.getAttribute('data-q'));return;}
+  if((b=t.closest('[data-ten]'))){e.preventDefault();showTab(5);var a=document.getElementById('ten-'+b.getAttribute('data-ten'));if(a){a.scrollIntoView();a.querySelector('h4').tabIndex=-1;a.querySelector('h4').focus();}return;}
+  if((b=t.closest('[data-idx]'))){e.preventDefault();location.hash='';route();return;}
+  if((b=t.closest('[data-ing]'))){startIng(b.getAttribute('data-ing'));return;}
+  if((b=t.closest('[data-dec]'))){I.changes[I.cur].decision=b.getAttribute('data-dec');I.cur++;I.refocus=true;ingBody();return;}
+  var id=t.id;
+  if(id==='cpmd'){copyText(toMd(PM[cur]),$('#cpmsg'));}
+  else if(id==='fileq')openFile();
+  else if(id==='ingstart')runBatches();
+  else if(id==='ingstop'){if(I.ctl)I.ctl.stop=true;t.textContent='Stopping after the current call…';}
+  else if(id==='ingcont'){I.step=3;I.refocus=true;ingBody();}
+  else if(id==='ingsrc')draftSource();
+  else if(id==='ingtouch')draftTouched();
+  else if(id==='ingreview'){I.step=4;I.cur=0;I.refocus=true;ingBody();}
+  else if(id==='ingfile')fileIngest();
+  else if(id==='ingclose'){delete ALLOW[I.doc.id];I=null;ingTop();ingBody();}
+});
+$('#tabs').addEventListener('click',function(e){var b=e.target.closest('[role=tab]');if(b)showTab(Number(b.id.slice(1)));});
+$('#tabs').addEventListener('keydown',function(e){
+  var k=e.key,n=S.tab;
+  if(k==='ArrowRight')n=n%5+1;else if(k==='ArrowLeft')n=(n+3)%5+1;else if(k==='Home')n=1;else if(k==='End')n=5;else return;
+  e.preventDefault();showTab(n,true);
+});
+$('#flt').addEventListener('input',renderList);
+$('#askbtn').addEventListener('click',function(){if(ASK.stage===1)ask2();else ask1();});
+$('#askstop').addEventListener('click',function(){if(ASK.ctl)ASK.ctl.stop=true;$('#askprog').textContent='Stopping after the current call…';});
+$('#q').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(!S.run.ask)ask1();}});
+$('#lintbtn').addEventListener('click',function(){S.linted=true;renderCheck();var n=runLint().filter(function(x){return x.n>0;}).length;$('#lintmsg').textContent='Lint run: '+n+' checks need a look.';});
+$('#ordsw').addEventListener('click',function(){S.newest=!S.newest;renderRecord();});
+$('#dl').addEventListener('click',function(){save('wiki-'+today()+'.json',JSON.stringify(buildDownload(),null,1),'application/json');});
+$('#dlmd').addEventListener('click',function(){
+  var sl=uniq(S.changes.map(function(c){return c.slug;})).filter(function(s){return PM[s];});
+  save('wiki-changed-pages-'+today()+'.md',sl.map(function(s){return'<!-- page: '+s+' -->\n'+toMd(PM[s]);}).join('\n\n---\n\n'),'text/markdown');
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(ASK.ctl)ASK.ctl.stop=true;if(I&&I.ctl)I.ctl.stop=true;}});
+window.addEventListener('hashchange',function(){route();if(location.hash.length>1&&S.tab!==1)showTab(1);});
+
+refresh();
+BASEWARN=pages.reduce(function(a,p){return a+p._pins.filter(function(k){return k.mark==='⚠';}).length;},0);
+askBox(notice1());header();renderList();route();renderTabs();ingTop();
+if(location.hash.length>1)showTab(1);
+$('#t1').focus();
+})();
+</script>
+</body>
+</html>

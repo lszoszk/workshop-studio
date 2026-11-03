@@ -107,7 +107,10 @@ Each of the 40 `pages` (9 source, 14 concept, 14 entity, 3 question) is
 register, status, updated, links, sources}` (`links`: slugs of related pages; `sources`: library ids;
 `register`: letters, see below); `body` is markdown, where `[[slug]]` links to another page.
 Every claim in a body carries a pin to a library passage: `[A/81/351, para. 16](pin:A/81/351#p6 "verbatim
-quote") ✓` gives the label to show, the library id, the PDF page, the quote, and ✓ (verified) or ⚠ (unverified).
+quote") ✓` gives a label, the library id, the PDF page, the quote, and ✓ (verified) or ⚠ (unverified).
+A pin is a quotation inside the sentence: the prose is written around it ("The central ask [pin] ✓, stated also
+in the summary [pin] ✓"), so show the quote itself, in quotation marks, where the pin stands, followed by the
+label as a small citation; a pin shown as its label alone leaves the sentence without its words.
 One regular expression finds them all: `/\[([^\]]+)\]\(pin:([^#\s)]+)#p(\d+)(?: "([^"]*)")?\) ?(✓|⚠)/g`
 (groups: label, id, PDF page, quote, mark). Open a pin with `studio.openSource(id, page, quote)`. A pin is verified
 when its quote is in a passage of that document in `WORKSHOP_DATA.library` that starts on that PDF page
