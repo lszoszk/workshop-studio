@@ -128,8 +128,11 @@
         "uses_workshop_data": true,
         "source_matches": "openSource",
         "calls_studio_ask": true,
-        "controls_min": 2,
-        "ask_button": "ask|ingest"
+        "controls_min": 1,
+        "ask_steps": [
+          "^Ingest",
+          "^Start"
+        ]
       }
     },
     {

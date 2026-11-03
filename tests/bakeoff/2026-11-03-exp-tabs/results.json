@@ -1,0 +1,24 @@
+[
+ {
+  "model": "claude",
+  "label": "Sonnet · tabs + Hick variant",
+  "prompt": "s7-1-dashboard",
+  "passed": 8,
+  "total": 8,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true
+  },
+  "errors": [],
+  "network": [],
+  "seconds": null,
+  "cost": 0,
+  "lines": 781
+ }
+]

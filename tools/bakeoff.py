@@ -188,7 +188,7 @@ def inject(page_html, init):
     return tag + page_html
 
 
-SETTINGS = {"ask_button"}   # in a prompt's `checks` but not a check: the label of the button that calls studio.ask
+SETTINGS = {"ask_button", "ask_steps"}   # in a prompt's `checks` but not a check: the label of the button that calls studio.ask
 
 
 async def score(browser, page_html, checks, init, shot_path):
@@ -208,9 +208,32 @@ async def score(browser, page_html, checks, init, shot_path):
     try:
         await page.set_content(inject(page_html, init), wait_until="load", timeout=30000)
         await page.wait_for_timeout(1500)
-        text = await page.inner_text("body")
+        tabs = page.locator("[role=tab]:visible")
+        n_tabs = await tabs.count()
+
+        async def anywhere(probe):
+            """True if probe() holds on the first view or after clicking one of the app's tabs (Hick's-law layout)."""
+            if await probe():
+                return True
+            for i in range(n_tabs):
+                await tabs.nth(i).click()
+                await page.wait_for_timeout(400)
+                if await probe():
+                    return True
+            return False
+
+        texts = [await page.inner_text("body")]
+        for i in range(n_tabs):
+            await tabs.nth(i).click()
+            await page.wait_for_timeout(400)
+            texts.append(await page.inner_text("body"))
+        if n_tabs:
+            await tabs.nth(0).click()
+            await page.wait_for_timeout(400)
+        text = "\n".join(texts)
         country = COUNTRY
-        for name, want in checks.items():
+        # a button may sit in a row that opens on click, so look for it after the search has filled the list
+        for name, want in sorted(checks.items(), key=lambda kv: kv[0] == "button_matches"):
             if name in SETTINGS:
                 continue
             if name == "no_console_errors":
@@ -220,12 +243,12 @@ async def score(browser, page_html, checks, init, shot_path):
             elif name == "uses_workshop_data":
                 res[name] = "WORKSHOP_DATA" in page_html
             elif name == "chart":
-                res[name] = await page.evaluate(
+                res[name] = await anywhere(lambda: page.evaluate(
                     "() => (window.Chart && Object.keys(Chart.instances||{}).length > 0) || "
-                    "[...document.querySelectorAll('svg,canvas')].some(e => { const r = e.getBoundingClientRect(); return r.width > 120 && r.height > 80; })")
+                    "[...document.querySelectorAll('svg,canvas')].some(e => { const r = e.getBoundingClientRect(); return r.width > 120 && r.height > 80; })"))
             elif name == "table_min_rows":
-                n = await page.evaluate("() => document.querySelectorAll('tbody tr, [role=row]').length")
-                res[name] = n >= want
+                res[name] = await anywhere(lambda: page.evaluate(
+                    f"() => document.querySelectorAll('tbody tr, [role=row]').length >= {int(want)}"))
             elif name == "text_contains":
                 res[name] = all(w.replace("{country}", country).lower() in text.lower() for w in want)
             elif name == "text_matches":
@@ -234,28 +257,44 @@ async def score(browser, page_html, checks, init, shot_path):
                 n = await page.evaluate("() => document.querySelectorAll('select, input, [role=combobox]').length")
                 res[name] = n >= want
             elif name == "links_to":
-                res[name] = await page.evaluate(f"() => !!document.querySelector('a[href*=\"{want}\"]')")
+                res[name] = await anywhere(lambda: page.evaluate(f"() => !!document.querySelector('a[href*=\"{want}\"]')"))
             elif name == "source_matches":
                 res[name] = bool(re.search(want, page_html))
             elif name == "button_matches":
-                labels = await page.evaluate("() => [...document.querySelectorAll('button, [role=button], input[type=button]')].map(b => b.innerText || b.value || '')")
-                res[name] = any(re.search(want, l) for l in labels)
+                async def has_button():
+                    labels = await page.evaluate("() => [...document.querySelectorAll('button, [role=button], input[type=button]')].map(b => b.innerText || b.value || '')")
+                    return any(re.search(want, l) for l in labels)
+                async def has_button_deeper():   # one click deeper: open the first collapsed items in this view
+                    if await has_button():
+                        return True
+                    closed = page.locator("button[aria-expanded=false]:visible, tbody tr:visible")
+                    for _ in range(min(4, await closed.count())):
+                        await closed.nth(0).click()
+                        await page.wait_for_timeout(400)
+                        if await has_button():
+                            return True
+                    return False
+                res[name] = await anywhere(has_button_deeper)
             elif name == "download":
                 res[name] = bool(re.search(r"Blob|download\s*=|\.download\b", page_html))
             elif name == "search_box":
                 res[name] = await page.evaluate("() => !!document.querySelector('input[type=search], input[type=text], input:not([type])')")
             elif name == "text_contains_after_search":
-                box = page.locator("input[type=search], input[type=text], input:not([type])").first
+                box = page.locator("input[type=search]:visible, input[type=text]:visible, input:not([type]):visible").first
+                await anywhere(lambda: box.count())
                 await box.fill(want["query"])
                 await box.press("Enter")
                 await page.wait_for_timeout(1200)
                 res[name] = want["expect"].lower() in (await page.inner_text("body")).lower()
             elif name in ("calls_studio_ask", "batches_max"):
                 if "calls_studio_ask" not in res:
-                    btn = page.locator("button", has_text=re.compile(checks.get("ask_button", "suggest|ai"), re.I)).first
-                    if await btn.count():
-                        await btn.click()
-                        await page.wait_for_timeout(4000)
+                    # ask_steps: buttons to press in order (a tab, then the button that sends); else one ask_button
+                    for step in checks.get("ask_steps") or [checks.get("ask_button", "suggest|ai")]:
+                        btn = page.locator("button:visible", has_text=re.compile(step, re.I)).first
+                        if await anywhere(lambda: btn.count()):
+                            await btn.click()
+                            await page.wait_for_timeout(800)
+                    await page.wait_for_timeout(3200)
                     asks = await page.evaluate("() => window.__asks")
                     res["calls_studio_ask"] = bool(asks)
                     res["batches_max"] = bool(asks) and max(a["ids"] for a in asks) <= checks.get("batches_max", 25)

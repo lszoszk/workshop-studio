@@ -1,0 +1,87 @@
+[
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · built in Claude Code (no API)",
+  "prompt": "s7-1-dashboard",
+  "passed": 8,
+  "total": 8,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true
+  },
+  "errors": [],
+  "network": [],
+  "lines": 903,
+  "seconds": null,
+  "cost": 0
+ },
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · built in Claude Code (no API)",
+  "prompt": "s7-4-extract",
+  "passed": 6,
+  "total": 6,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "download": true
+  },
+  "errors": [],
+  "network": [],
+  "lines": 978,
+  "seconds": null,
+  "cost": 0
+ },
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · built in Claude Code (no API)",
+  "prompt": "s8-1-verbatim",
+  "passed": 8,
+  "total": 8,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "search_box": true,
+   "source_matches": true,
+   "text_contains_after_search": true,
+   "button_matches": true
+  },
+  "errors": [],
+  "network": [],
+  "lines": 890,
+  "seconds": null,
+  "cost": 0
+ },
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · built in Claude Code (no API)",
+  "prompt": "s8-5-wiki",
+  "passed": 7,
+  "total": 7,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "source_matches": true,
+   "calls_studio_ask": true,
+   "batches_max": true,
+   "controls_min": true
+  },
+  "errors": [],
+  "network": [],
+  "lines": 990,
+  "seconds": null,
+  "cost": 0
+ }
+]

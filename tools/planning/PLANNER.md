@@ -57,12 +57,15 @@ Exactly the draft format in `tools/planning/FORMAT.md`:
    - **Context** — who uses this, for what decision, what goes wrong today.
    - **What I found in the data** — the facts from your looks that shape the app (counts, fill rates,
      traps), with numbers.
-   - **The app, screen by screen** — numbered, top to bottom; what each element shows and does.
+   - **The app, tab by tab** — the header, the filter rail if any, then each numbered tab with the one
+     question it answers and what it shows and does. Follow the layout rules in `system_prompt.md`
+     (Hick's law: at most about seven things to click per view, rarely used things one click deeper).
    - **How every number is computed** — exact rules over named fields; what stays verbatim.
    - **How the app checks itself** — a visible verification panel: what it checks against what, and
      what it shows when a check fails.
    - **Edge cases and risks** — missing values, odd records, what could mislead a non-expert.
-   - **Design and accessibility** — concrete, citing the shelf pages you used (by title).
+   - **Design and accessibility** — only what this app adds to the studio's look (paper, ink, one red
+     accent, serif titles and big numbers, monospace labels), citing the shelf pages you used (by title).
    - **Out of scope** — what this version deliberately leaves out.
    - **Sources consulted** — the shelf pages you read, with their URLs.
 
