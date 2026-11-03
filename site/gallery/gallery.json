@@ -2,6 +2,13 @@
  "country": "Kenya",
  "built": "2026-11-02",
  "models": {
+  "sonnet-tabs": {
+   "name": "Claude Sonnet 5.5 · new plan",
+   "origin": "USA",
+   "host": "Claude Code (no API)",
+   "weights": "closed",
+   "note": "Built on 3 November from the new plan: one question per tab, in the look of the author's research tools. The request shown above is the earlier plan the other cards were built from."
+  },
   "mistral": {
    "name": "Mistral Large 4",
    "origin": "France",
@@ -48,6 +55,62 @@
   }
  ],
  "results": [
+  {
+   "model": "sonnet-tabs",
+   "prompt": "s7-1-dashboard",
+   "app": true,
+   "passed": 8,
+   "total": 8,
+   "failed": [],
+   "seconds": null,
+   "cost": null,
+   "lines": 933,
+   "attempts": 1,
+   "returned": 1,
+   "full": 1
+  },
+  {
+   "model": "sonnet-tabs",
+   "prompt": "s7-4-extract",
+   "app": true,
+   "passed": 6,
+   "total": 6,
+   "failed": [],
+   "seconds": null,
+   "cost": null,
+   "lines": 616,
+   "attempts": 1,
+   "returned": 1,
+   "full": 1
+  },
+  {
+   "model": "sonnet-tabs",
+   "prompt": "s8-1-verbatim",
+   "app": true,
+   "passed": 8,
+   "total": 8,
+   "failed": [],
+   "seconds": null,
+   "cost": null,
+   "lines": 655,
+   "attempts": 1,
+   "returned": 1,
+   "full": 1
+  },
+  {
+   "model": "sonnet-tabs",
+   "prompt": "s8-5-wiki",
+   "app": true,
+   "passed": 7,
+   "total": 7,
+   "failed": [],
+   "seconds": null,
+   "cost": null,
+   "lines": 782,
+   "attempts": 1,
+   "returned": 1,
+   "full": 1
+  },
   {
    "model": "claude",
    "prompt": "s7-1-dashboard",

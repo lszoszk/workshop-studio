@@ -136,6 +136,25 @@
       }
     },
     {
+      "id": "s8-6-wiki-map",
+      "session": "S8",
+      "minute": 60,
+      "dataset": "wiki",
+      "builds_on": "s8-5-wiki",
+      "title": "A map of the wiki",
+      "blurb": "See the pages as a graph of their links: hubs, clusters and orphans",
+      "prompt": "Add a tab \"MAP\" that draws the wiki as a graph: one node per page, coloured by its type (source, concept, entity, question), and one line for each [[link]] between two pages. Size each node by the number of pages that link to it. Draw it in plain SVG with a fixed layout computed by the code (no random start), so the map looks the same every time. Hovering a node shows its title and how many links go in and out; clicking it highlights its neighbours and offers \"Open this page\", which shows the page on the pages tab. Under the map, one line: how many pages and links, and the pages no other page links to (orphans), each clickable. Keep everything else as it is.",
+      "lesson": "A map shows the shape of what the wiki knows: the hubs, the clusters and the orphans no page links to. The code draws it from the links the pages already have; no model guesses them.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "button_matches": "(?i)map",
+        "source_matches": "createElementNS|<svg",
+        "text_matches": "(?i)orphan|no (other )?page links"
+      }
+    },
+    {
       "id": "s8-2-ai-inside",
       "session": "S8",
       "minute": 35,

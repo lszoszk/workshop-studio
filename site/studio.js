@@ -395,8 +395,8 @@
 
   function nextPromptId() {
     const used = new Set(chainOf(currentVersion()).map((v) => v.promptId));
-    const ds = currentVersion() ? datasetsUsed(currentVersion().html)[0] : 'uhri';
-    const p = S.prompts.find((q) => q.dataset === ds && !used.has(q.id) && (!q.builds_on || used.has(q.builds_on)));
+    const ds = currentVersion() ? datasetsUsed(currentVersion().html) : ['uhri'];   // the wiki app also reads the library
+    const p = S.prompts.find((q) => ds.includes(q.dataset) && !used.has(q.id) && (!q.builds_on || used.has(q.builds_on)));
     return p ? p.id : null;
   }
 
@@ -484,6 +484,14 @@
   // a workshop request names the file it needs; until that file is in the chat, the box says so
   function renderNeeds() {
     const p = S.prompts.find((q) => q.id === S.pendingPromptId);
+    // a file that comes with the needed one (the library with the wiki) stands for it: swap it in
+    const part = p && p.dataset && !S.draft.has(p.dataset) && [...S.draft].find((k) => (fileMeta(p.dataset).also || []).includes(k));
+    if (part) {
+      S.draft.delete(part);
+      S.draft.add(p.dataset);
+      renderAttach();
+      note(`This request needs <b>${esc(fileLabel(p.dataset))}</b>, which brings <b>${esc(fileLabel(part))}</b> with it, so the studio attached that instead.`);
+    }
     const have = new Set([...attachedBefore(), ...S.draft]);
     const missing = p && p.dataset && !have.has(p.dataset) ? p.dataset : null;
     $('needs').hidden = !missing;
@@ -1855,11 +1863,11 @@
     const v = currentVersion();
     const used = new Set(chainOf(v).map((x) => x.promptId));
     const built = new Set(S.versions.map((x) => x.promptId));
-    const ds = v ? datasetsUsed(v.html)[0] : null;
+    const ds = v ? datasetsUsed(v.html) : [];   // the wiki app also reads the library
     const live = S.route && S.route.type !== 'replay';
     const mine = (p) => p.session === S.session && p.id !== S.pendingPromptId && !(S.planning && S.planning.p.id === p.id);
     // Hick's law: a few suggestions at a time, never the whole list
-    const next = v ? S.prompts.filter((p) => mine(p) && p.dataset === ds && p.builds_on && !used.has(p.id) && used.has(p.builds_on)).slice(0, 2) : [];
+    const next = v ? S.prompts.filter((p) => mine(p) && ds.includes(p.dataset) && p.builds_on && !used.has(p.id) && used.has(p.builds_on)).slice(0, 2) : [];
     if (v && live) next.push(...S.prompts.filter((p) => p.builds_on === 'any' && p.id !== S.pendingPromptId));   // "Suggest improvements"
     const starters = S.prompts.filter((p) => mine(p) && !p.builds_on && !built.has(p.id)).slice(0, !v ? 3 : S.session === 'S8' ? 2 : 1);
     const group = (label, list, fresh) => {

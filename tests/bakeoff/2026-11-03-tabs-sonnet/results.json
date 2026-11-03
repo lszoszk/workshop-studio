@@ -83,5 +83,25 @@
   "lines": 782,
   "seconds": null,
   "cost": 0
+ },
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · built in Claude Code (no API)",
+  "prompt": "s8-6-wiki-map",
+  "passed": 6,
+  "total": 6,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "source_matches": true,
+   "text_matches": true,
+   "button_matches": true
+  },
+  "errors": [],
+  "network": [],
+  "lines": 918,
+  "seconds": null,
+  "cost": 0
  }
 ]

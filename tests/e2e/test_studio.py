@@ -606,6 +606,27 @@ def test_the_wiki_links_every_paragraph_to_its_pdf_page(base_url, browser):
         opener.first.click()
     page.wait_for_selector("#drawer.wide iframe.pdf")
     assert re.fullmatch(r"files/[\w.\-]+\.pdf#page=\d+", page.get_attribute("#drawer iframe.pdf", "src"))
+    if (SITE / "replay/claude/s8-6-wiki-map.md").exists():   # the follow-up: a map of the pages' links
+        page.click("#drawerClose")
+        send(page, "A map of the wiki")
+        built(page, 2)
+        app_frame(page).get_by_role("tab", name=re.compile("map", re.I)).click()
+        assert app_frame(page).locator("svg circle").count() >= 40
+    ctx.close()
+
+
+def test_the_library_stands_for_the_wiki(base_url, browser):
+    """The wiki request needs the wiki, which brings the library with it: a participant who drags the
+    library gets the wiki attached instead, with a note, and can send."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + "?via=replay&planpace=1&stage=s8&country=Kenya")
+    started(page)
+    pick(page, "A research wiki")
+    add_file(page, "library")
+    assert [c.get_attribute("data-key") for c in page.locator("#attach .filechip button").all()] == ["wiki"]
+    assert page.is_hidden("#needs")
+    assert "brings" in page.locator(".msg").last.inner_text()
     ctx.close()
 
 

@@ -6,7 +6,7 @@
 <title>Gallery app</title>
 <meta name="robots" content="noindex, nofollow">
 <script src="../gate.js"></script>
-<link rel="stylesheet" href="../studio.css?v=2026-11-03b">
+<link rel="stylesheet" href="../studio.css?v=2026-11-03c">
 <style>
   body { display: flex; flex-direction: column; }
   .bar { display: flex; gap: 14px; align-items: center; padding: 8px 14px; background: var(--surface); border-bottom: 1px solid var(--line); }
@@ -17,7 +17,7 @@
 <body>
 <div class="bar"><a href="./">← Gallery</a><span id="what">Loading…</span></div>
 <iframe id="frame" title="App" sandbox="allow-scripts allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox" allow="clipboard-write"></iframe>
-<script src="../preview-doc.js?v=2026-11-03b"></script>
+<script src="../preview-doc.js?v=2026-11-03c"></script>
 <script>
 (async function () {
   const app = new URLSearchParams(location.search).get('app') || '';
@@ -36,6 +36,13 @@
   const dataText = async (k) => PreviewDoc.escapeScript(await text('../data/' + file(k)));
   document.getElementById('frame').srcdoc = PreviewDoc.forFrame(await PreviewDoc.build(html, { chart, runtime, dataText }));
 })();
+// the gallery has no studio around the app: a PDF page opens in a new tab, and there is no model to ask
+window.addEventListener('message', (e) => {
+  const m = e.data || {};
+  if (e.source !== document.getElementById('frame').contentWindow) return;
+  if (m.type === 'studio:open-source') window.open('../files/' + String(m.symbol).replace(/\//g, '_') + '.pdf#page=' + (Number(m.page) || 1), '_blank', 'noopener');
+  if (m.type === 'studio:ask') e.source.postMessage({ type: 'studio:answer', id: m.id, error: 'The gallery has no model. Open the studio with a seat code to try this step.' }, '*');
+});
 </script>
 </body>
 </html>
