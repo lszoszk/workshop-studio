@@ -83,7 +83,8 @@
         "text_contains": [
           "90"
         ],
-        "download": true
+        "download": true,
+        "text_matches": "141\\s*(of|/)\\s*141"
       }
     },
     {
