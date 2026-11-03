@@ -185,6 +185,7 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 .ficon.pdf { background: #c0392b; }
 .ficon.csv { background: #2e8b57; }
 .ficon.lib { background: #7a3e9d; }
+.ficon.wiki { background: #8a5a00; }
 .drop-hint { position: absolute; inset: 6px 10px; border: 2px dashed var(--accent); border-radius: 14px; background: color-mix(in srgb, var(--accent-soft) 92%, transparent); color: var(--accent); font-weight: 700; display: none; place-items: center; z-index: 3; pointer-events: none; }
 .chat.dragging .drop-hint { display: grid; }
 .primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 9px; padding: 8px 18px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }

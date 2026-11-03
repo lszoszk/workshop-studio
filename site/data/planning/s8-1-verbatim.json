@@ -1,0 +1,399 @@
+{
+ "id": "s8-1-verbatim",
+ "title": "Verbatim finder for General Comments",
+ "dataset": "gc",
+ "problem": "When I draft a submission I need the exact words of a General Comment and a correct citation. Help me find them.",
+ "facilitator_brief": "A search tool over every General Comment paragraph of the treaty bodies: it retrieves, it never generates. Boolean search and exact phrases, citations ready to paste, and a way to collect quotations for a draft.",
+ "planner": "Claude Fable 5.1",
+ "recorded": "2026-11-03",
+ "notes": "The problem as I read it: someone drafting a submission needs the exact words of a General Comment and a citation a reader can check. The facilitator's line is the design rule: the tool retrieves and never generates. The data is `WORKSHOP_DATA.gc`, every paragraph of the treaty bodies' General Comments and General Recommendations.\n\n The overview: 7,304 records, ten fields, all filled except `cited_articles` (2,398 of 7,304). 159 distinct `symbol`s but 188 distinct `title`s and 139 `doc_url`s, so a symbol is not a document; `paragraph` runs from 0 to 135; `year` from 1972 to 2026; the top-level `count` is the string \"7304\".  Ten committees, from CRC with 2,091 paragraphs to CED with 56; \"CAT-OP\" is the Subcommittee on Prevention of Torture, 59 paragraphs.  Three random paragraphs showed the text's habits: curly quotes (“actions”), and a footnote mark written as [[fn:13]] in the middle of a sentence, so the phrase \"Education For All. By virtue\" does not exist as a string in the data.  Paragraph 0: 33 records, all early CEDAW and CERD General Recommendations published inside annual reports (A/57/18, A/46/38). They are preambles (\"The Committee…, Recalling…\"), one with the PDF's line breaks kept. \"A/46/38, para. 0\" would be wrong twice over: a preamble has no number, and A/46/38 holds three General Recommendations.\n\n Footnote marks: 3,238 in 1,857 paragraphs.  Quotation marks: 7,706 occurrences, and my own count split them: 3,169 curly double quotes against 82 straight, 2,938 curly apostrophes against 78 straight. A query typed as State's misses State’s unless the app treats the two as one.  Lettered sub-paragraphs at the start of a line: 160 matches, most inside one paragraph after a line break; 22 records are themselves a sub-paragraph (\"(a) To take note of the situation;\"), numbered 1, 2, 3 by the file although the document letters them.  Line breaks inside the text: 299, in 40 paragraphs.  The symbols: the longest documents are CRC/C/GC/12 with 135 paragraphs and CRC/C/GC/25 with 125; three joint General Comments carry two symbols joined by an en dash (\"CMW/C/GC/7–CERD/C/GC/38\") but one `committee`.\n\nI then counted a few things in a script of my own. 4,258 of the 7,304 texts begin with their own paragraph number (\"12. The Committee…\"), 3,046 do not; in five the number differs from `paragraph`, three of them in CCPR General Comment 23, whose paragraphs are numbered 3.1, 3.2 in the original. 28 symbols are annual reports and 14 symbols hold more than one General Comment (A/48/18 holds seven). Two pinpoints are duplicated (CEDAW/C/GC/27, para. 9, and the joint GR 31/GC 18, para. 31). 208 paragraphs end with a colon: the list that follows is in the next records. Paragraphs run from 4 to 1,287 words. En dashes 248, non-breaking spaces 107, one soft hyphen. The test query from the checks, \"best interests\" AND child, matches 279 paragraphs once marks and quotes are normalised, 246 of them CRC.\n\nThen the shelf.  Citing: the Dag Hammarskjöld Library's answer and its guide to document symbols.  Search and highlighting brought Wikipedia's help page on search operators, MDN on regular expressions and the keyboard pages.  Charts: the Analysis Function's pages and Chart.js's note on canvas accessibility.  Retrieval: the Claude citations cookbook and the Analysis Function's page on generative AI, which calls hallucination a feature of the method, not a failure; my answer is to call no model at all.  The Library lists the parts of a citation and says styles differ in order and punctuation, so the app stores the parts and formats them on copy; the form became a question.  Wikipedia's conventions are what most people already know: double quotes for a phrase, a hyphen for exclusion, capital OR, a star for word endings. I adopt them, but the help text is the app's own wording, since that page is share-alike.  Chart.js: a canvas is invisible to a screen reader unless it has role=\"img\" and a label, or fallback content; the chart gets both and a table.  The charts page: horizontal bars for long names, rank by value, gaps narrower than bars, never a broken axis.\n\nTrade-offs. Matching runs on a normalised copy of each text; display and copying use the stored text. That is the only way an exact phrase can cross a footnote mark and still be shown verbatim. Whole words, not substrings: \"child\" does not match \"children\" unless typed child*. The leading \"12.\" is kept on screen, because it is in the data, and dropped from the copied quotation, because the citation carries the number; the check panel says when the two numbers disagree. Nothing leaves the browser. The five questions are the drafter's calls: citation form, footnote marks, strictness of matching, order of results, and how joint General Comments count.",
+ "steps": [
+  {
+   "at": 334,
+   "kind": "look",
+   "label": "Looked at the data: the fields in gc",
+   "detail": "7,304 records, 10 fields"
+  },
+  {
+   "at": 631,
+   "kind": "look",
+   "label": "Looked at the data: the values of committee in gc",
+   "detail": "10 distinct values of committee"
+  },
+  {
+   "at": 765,
+   "kind": "look",
+   "label": "Looked at the data: sample records in gc",
+   "detail": "3 sample records"
+  },
+  {
+   "at": 997,
+   "kind": "look",
+   "label": "Looked at the data: sample records in gc",
+   "detail": "3 sample records where paragraph=0"
+  },
+  {
+   "at": 1334,
+   "kind": "look",
+   "label": "Looked at the data: every match of /\\[\\[fn:\\d+\\]\\]/ in gc",
+   "detail": "3,238 matches of /\\[\\[fn:\\d+\\]\\]/"
+  },
+  {
+   "at": 1378,
+   "kind": "look",
+   "label": "Looked at the data: every match of /[“”‘’\"]/ in gc",
+   "detail": "7,706 matches of /[“”‘’\"]/"
+  },
+  {
+   "at": 1614,
+   "kind": "look",
+   "label": "Looked at the data: every match of /^\\s*\\([a-z]{1,4}\\)/ in gc",
+   "detail": "160 matches of /^\\s*\\([a-z]{1,4}\\)/"
+  },
+  {
+   "at": 1869,
+   "kind": "look",
+   "label": "Looked at the data: every match of /\\n/ in gc",
+   "detail": "299 matches of /\\n/"
+  },
+  {
+   "at": 1922,
+   "kind": "look",
+   "label": "Looked at the data: the values of symbol in gc",
+   "detail": "159 distinct values of symbol"
+  },
+  {
+   "at": 2957,
+   "kind": "search",
+   "label": "Searched the reference shelf: \"cite UN document symbol paragraph general comment\"",
+   "detail": "5 results",
+   "results": [
+    "dhl-how-to-cite-a-un-document",
+    "dhl-un-document-symbols",
+    "claude-cookbook-citations",
+    "govuk-content-guidance-clear-language",
+    "own-llm-wiki-schema-method"
+   ]
+  },
+  {
+   "at": 3039,
+   "kind": "search",
+   "label": "Searched the reference shelf: \"search results highlight matches status message keyboard accessible\"",
+   "detail": "5 results",
+   "results": [
+    "wikipedia-help-searching-operators",
+    "mdn-javascript-regular-expressions",
+    "a11y-project-checklist",
+    "wcag22-keyboard-and-focus",
+    "nng-10-usability-heuristics"
+   ]
+  },
+  {
+   "at": 3166,
+   "kind": "search",
+   "label": "Searched the reference shelf: \"bar chart colours labels accessible\"",
+   "detail": "5 results",
+   "results": [
+    "uk-af-charts-formatting-and-bar-charts",
+    "uk-af-colours-in-charts",
+    "uk-af-charts-choosing-and-supplying",
+    "chartjs-accessibility",
+    "chartjs-bar-chart"
+   ]
+  },
+  {
+   "at": 3250,
+   "kind": "search",
+   "label": "Searched the reference shelf: \"retrieval verbatim quotes citations model never generates\"",
+   "detail": "5 results",
+   "results": [
+    "claude-cookbook-citations",
+    "own-llm-wiki-schema-method",
+    "karpathy-llm-wiki-gist",
+    "chartjs-bar-chart",
+    "uk-af-qa-code-generative-ai"
+   ]
+  },
+  {
+   "at": 3447,
+   "kind": "read",
+   "label": "Read: Dag Hammarskjöld Library, Ask DAG: how should I cite a UN document? (summary)",
+   "detail": "https://ask.un.org/faq/401380",
+   "shelf_id": "dhl-how-to-cite-a-un-document"
+  },
+  {
+   "at": 3621,
+   "kind": "read",
+   "label": "Read: Wikipedia Help:Searching: exact phrase, exclusion, wildcards, AND / OR / NOT and field operators",
+   "detail": "https://en.wikipedia.org/w/index.php?title=Help:Searching&oldid=1379184667",
+   "shelf_id": "wikipedia-help-searching-operators"
+  },
+  {
+   "at": 3860,
+   "kind": "read",
+   "label": "Read: Chart.js: Accessibility of canvas charts",
+   "detail": "https://github.com/chartjs/Chart.js/blob/71d44219e79e3ac41e6f9dc907022eebf574868d/docs/general/accessibility.md",
+   "shelf_id": "chartjs-accessibility"
+  },
+  {
+   "at": 4004,
+   "kind": "read",
+   "label": "Read: Data visualisation: charts (formatting, labels, bar charts)",
+   "detail": "https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-charts/",
+   "shelf_id": "uk-af-charts-formatting-and-bar-charts"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "header": "Citation",
+   "question": "Which form should the Copy citation button produce?",
+   "options": [
+    {
+     "label": "Symbol and paragraph",
+     "default": true,
+     "description": "The short form used in UN practice, \"CCPR/C/GC/37, para. 12\"; when a symbol holds several General Comments, the committee and the number are added.",
+     "fragments": [
+      {
+       "section": "q1",
+       "text": "copies \"CCPR/C/GC/37, para. 12\"; when the symbol is shared by several General Comments (A/48/18, a page of HRI/GEN/1/Rev.9) the committee and the document's number come first: \"CERD, General Recommendation No. 29 (A/57/18), para. 3\". A grey note names the style, \"UN short form\""
+      },
+      {
+       "section": "q1.compute",
+       "text": "- **Citation** = `symbol` + \", \" + pinpoint. Pinpoint: \"para. \" + `paragraph`; \"preamble\" when `paragraph` is 0; \"subpara. (b)\" when `text` starts with a lettered label (`^\\(([a-z]{1,4})\\)`). When the symbol is shared by more than one `title` (computed at load), prefix `committee` + \", \" + the document's name (`title` up to the first colon or \" on \") and put the symbol in parentheses."
+      }
+     ]
+    },
+    {
+     "label": "Title and year",
+     "description": "\"Committee on the Rights of the Child, General comment No. 14 (2013), CRC/C/GC/14, para. 18\": the form treaty bodies use in their own documents and most NGO submissions follow.",
+     "fragments": [
+      {
+       "section": "q1",
+       "text": "copies the form treaty bodies use themselves, \"Committee on the Rights of the Child, General comment No. 14 (2013), CRC/C/GC/14, para. 18\". A grey note names the style, \"treaty-body form\""
+      },
+      {
+       "section": "q1.compute",
+       "text": "- **Citation** = full committee name + \", \" + the document's name (`title` up to the first colon or \" on \"; the whole `short_title` when `title` has no \"No.\") + \" (\" + `year` + \"), \" + `symbol` + \", \" + pinpoint. Full names come from a fixed table of the ten `committee` codes (CCPR \"Human Rights Committee\", CAT-OP \"Subcommittee on Prevention of Torture\"), falling back to the code. Pinpoint: \"para. \" + `paragraph`; \"preamble\" when `paragraph` is 0; \"subpara. (b)\" when `text` starts with a lettered label (`^\\(([a-z]{1,4})\\)`)."
+      }
+     ]
+    },
+    {
+     "label": "Full reference",
+     "description": "Everything the UN Library lists: committee, title, year, symbol, paragraph, the UN link and the date you accessed it; longest, for footnotes and bibliographies.",
+     "fragments": [
+      {
+       "section": "q1",
+       "text": "copies a full reference with every element the UN Library recommends: \"Committee on the Rights of the Child, General Comment No. 14 on the right of the child … (art. 3, para. 1), 2013, CRC/C/GC/14, para. 18, https://docs.un.org/en/CRC/C/GC/14 (accessed 3 November 2026)\". A grey note names the style, \"full reference\""
+      },
+      {
+       "section": "q1.compute",
+       "text": "- **Citation** = full committee name + \", \" + `title` + \", \" + `year` + \", \" + `symbol` + \", \" + pinpoint + \", \" + `doc_url` + \" (accessed \" + the browser's date in words + \")\". Full names come from a fixed table of the ten `committee` codes (CCPR \"Human Rights Committee\", CAT-OP \"Subcommittee on Prevention of Torture\"), falling back to the code. Pinpoint: \"para. \" + `paragraph`; \"preamble\" when `paragraph` is 0; \"subpara. (b)\" when `text` starts with a lettered label (`^\\(([a-z]{1,4})\\)`). The access date is the only element not taken from a field."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "header": "Footnotes",
+   "question": "What should happen to the footnote marks, written [[fn:12]], that sit inside the paragraph text?",
+   "options": [
+    {
+     "label": "Hide them",
+     "default": true,
+     "description": "The paragraph is shown and copied without the marks; a line under it says how many footnotes the original has, and a toggle shows the text as stored.",
+     "fragments": [
+      {
+       "section": "q2",
+       "text": "shown with the footnote marks removed, as it reads in print; a grey line under it says \"3 footnote marks removed · show as stored\", and that link swaps in the stored `text` character for character."
+      },
+      {
+       "section": "q2.compute",
+       "text": "- **Shown and copied text** = `text` with every `[[fn:N]]` removed (`\\[\\[fn:\\d+\\]\\]`, global); `marks` = the number removed. Line breaks, non-breaking spaces and curly quotes stay."
+      },
+      {
+       "section": "q2.checks",
+       "text": "- **Marks.** For every hit, the marks removed equal the count of `[[fn:` in the stored `text`, and putting them back gives the stored text exactly."
+      }
+     ]
+    },
+    {
+     "label": "Superscripts",
+     "description": "Each mark becomes a small raised number, so a reader sees where the footnotes were; the copied text carries them as [12].",
+     "fragments": [
+      {
+       "section": "q2",
+       "text": "shown with each footnote mark as a small raised number where the file has it; the copied quotation carries each as \"[12]\"; a grey line under the text says \"3 footnotes in the original\"."
+      },
+      {
+       "section": "q2.compute",
+       "text": "- **Shown text** = `text` with every `[[fn:N]]` (`\\[\\[fn:(\\d+)\\]\\]`, global) replaced by `<sup>N</sup>` after HTML-escaping; **copied text** = the same with \"[N]\"; `marks` = the number replaced. Nothing else changes."
+      },
+      {
+       "section": "q2.checks",
+       "text": "- **Marks.** For every hit, the raised numbers shown equal the count of `[[fn:` in the stored `text`, in the file's order."
+      }
+     ]
+    },
+    {
+     "label": "As stored",
+     "description": "The text stays exactly as the file has it, marks and all; matching still skips the marks.",
+     "fragments": [
+      {
+       "section": "q2",
+       "text": "shown and copied exactly as the file stores it, marks like [[fn:12]] included; a grey line under it says \"3 footnote marks in this text\"."
+      },
+      {
+       "section": "q2.compute",
+       "text": "- **Shown and copied text** = `text`, unchanged; `marks` = the count of `[[fn:` in it. Matching still runs on `norm` with the marks removed, so a phrase that crosses a mark is found and highlighted around it."
+      },
+      {
+       "section": "q2.checks",
+       "text": "- **Verbatim.** For every hit, the text in the page (highlights stripped) equals the stored `text` character for character."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "header": "Matching",
+   "question": "What counts as a match for a typed word or phrase?",
+   "options": [
+    {
+     "label": "Normalised",
+     "default": true,
+     "description": "Case is ignored; curly and straight quotes, apostrophes, dashes and hyphens, ordinary and non-breaking spaces count as the same; footnote marks are skipped; whole words only.",
+     "fragments": [
+      {
+       "section": "q3",
+       "text": "One line under the box: \"Whole words, any case. Curly and straight quotes, apostrophes, dashes and hyphens count as the same, and footnote marks are skipped, so State's finds State’s and a phrase can cross a footnote.\""
+      },
+      {
+       "section": "q3.compute",
+       "text": "- **Normalised text** `norm`, once per record at load = `text` with `[[fn:N]]` removed; “ ” „ → \"; ‘ ’ ‚ → '; en dash, em dash and soft hyphen → \"-\"; non-breaking space and all other whitespace, line breaks included, → one space; lower case. The query is normalised the same way, so curly quotes pasted from Word still make a phrase."
+      },
+      {
+       "section": "q3.checks",
+       "text": "- **Normalisation.** When the query holds a straight quote, apostrophe or hyphen, the panel says the curly and dash forms were matched too, and how many hits contain only those forms."
+      }
+     ]
+    },
+    {
+     "label": "Strict",
+     "description": "Characters must match as stored (case still ignored): a straight apostrophe will not find State’s, and the app warns when a query contains a character the data rarely uses.",
+     "fragments": [
+      {
+       "section": "q3",
+       "text": "One line under the box: \"Whole words, any case, characters as stored: a straight apostrophe does not find State’s and a hyphen does not find an en dash. Footnote marks are skipped.\" A query with a straight quote, apostrophe or hyphen gets an amber note with the data's own counts, \"2,938 apostrophes in this file are curly, 78 straight\" (computed, not typed in)."
+      },
+      {
+       "section": "q3.compute",
+       "text": "- **Normalised text** `norm`, once per record at load = `text` with `[[fn:N]]` removed, runs of whitespace (line breaks included) → one space, lower case. Quotes, apostrophes, dashes and non-breaking spaces stay as stored; the query is only lower-cased and whitespace-collapsed."
+      },
+      {
+       "section": "q3.checks",
+       "text": "- **Strictness.** When the query holds a straight quote, apostrophe or hyphen, the panel runs it once more with the curly and dash forms allowed and reports both counts: \"strict: 12 hits; normalised: 41 hits\"."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "header": "Order",
+   "question": "In which order should the matching paragraphs be listed?",
+   "options": [
+    {
+     "label": "Newest first",
+     "default": true,
+     "description": "The latest General Comments first, by year, then document and paragraph number, so current doctrine comes before older text.",
+     "fragments": [
+      {
+       "section": "q4",
+       "text": "\"sorted by year, newest first, then by document and paragraph\"; a select beside it offers document order and most matches first."
+      },
+      {
+       "section": "q4.compute",
+       "text": "- **Order** = `year` descending, then `title`, then `paragraph` ascending. The select swaps the comparator; the hit set does not change."
+      }
+     ]
+    },
+    {
+     "label": "Document order",
+     "description": "Grouped by committee and document in the order of the file, so a reader walks through one General Comment at a time.",
+     "fragments": [
+      {
+       "section": "q4",
+       "text": "\"grouped by committee and document, in paragraph order\", with a heading per document (`short_title`, symbol, year, \"n matching paragraphs\"); a select beside it offers newest first and most matches first."
+      },
+      {
+       "section": "q4.compute",
+       "text": "- **Order** = `committee`, `year`, `title`, `paragraph`, all ascending; a heading is emitted when `title` changes. The select swaps the comparator; the hit set does not change."
+      }
+     ]
+    },
+    {
+     "label": "Most matches first",
+     "description": "Paragraphs with the most occurrences of the search words first; ties by year.",
+     "fragments": [
+      {
+       "section": "q4",
+       "text": "\"sorted by number of matches, then newest first\", each row showing \"4 matches\" next to the pinpoint; a select beside it offers newest first and document order."
+      },
+      {
+       "section": "q4.compute",
+       "text": "- **Order** = highlighted matches in the paragraph descending (NOT terms count nothing), then `year` descending, then `title`, then `paragraph`. The select swaps the comparator; the hit set does not change."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "header": "Joint GCs",
+   "question": "How should the joint General Comments, one text adopted by two committees, be counted and filtered?",
+   "options": [
+    {
+     "label": "Under both",
+     "default": true,
+     "description": "A joint General Comment matches the filter for either committee and is counted in both bars; the chart says so and the total of hits is not inflated.",
+     "fragments": [
+      {
+       "section": "q5",
+       "text": "A joint General Comment (two symbols in one `symbol`) appears when either committee is ticked and shows both badges; the chart's note says \"Joint General Comments count under both committees, so the bars can add up to more than the hits\"."
+      },
+      {
+       "section": "q5.compute",
+       "text": "- **A record's committees** = the codes found in `symbol` (`\\b(CAT|CCPR|CED|CEDAW|CERD|CESCR|CMW|CRC|CRPD)\\b`, \"CAT-OP\" for `CAT/OP`) plus `committee`; the filter keeps a record if any is ticked, and the chart adds it to each of its committees' bars."
+      },
+      {
+       "section": "q5.checks",
+       "text": "- **Chart total.** The bars sum to the hits plus the joint hits, both shown."
+      }
+     ]
+    },
+    {
+     "label": "As filed",
+     "description": "It counts only under the committee in its committee field (CMW or CRC), as the file has it.",
+     "fragments": [
+      {
+       "section": "q5",
+       "text": "A joint General Comment (two symbols in one `symbol`) is filed under the one `committee` the file gives it and shows a grey \"joint\" tag, so a reader filtering on CERD knows to tick CMW too; the chart's note says \"Each paragraph counts under the committee the file assigns it, so the bars add up to the hits\"."
+      },
+      {
+       "section": "q5.compute",
+       "text": "- **A record's committee** = `committee` as stored; a record is `joint` when `symbol` holds an en dash or a comma between two symbols, and the tag is shown."
+      },
+      {
+       "section": "q5.checks",
+       "text": "- **Chart total.** The bars sum to the hits."
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "plan_base": "# Verbatim finder: exact paragraphs of General Comments, with a citation to paste\n\n## Context\n\nThe user drafts submissions: a shadow report, an amicus brief, a statement to a treaty body. The reader will check every quotation against the General Comment, so a paraphrase or a wrong paragraph number costs credibility. Today the words come from OHCHR's site or a PDF, copied by hand, or from a chatbot that invents paragraph numbers that sound right. This app searches `WORKSHOP_DATA.gc`, the treaty bodies' General Comments and General Recommendations paragraph by paragraph, with Boolean operators and exact phrases; shows the matching paragraphs as stored; copies a citation built only from the record's fields; and collects quotations for the draft. It retrieves; it never generates. No model is called and nothing leaves the browser.\n\n## What I found in the data\n\nNumbers are from the file I examined; the app computes its own from `records` at load.\n\n- 7,304 records, every field filled except `cited_articles` (2,398). `records.length` is the count; the top-level `count` is the string \"7304\".\n- A symbol is not a document: 159 distinct `symbol`, 188 distinct `title`. 28 symbols are annual reports (A/48/18) or pages of HRI/GEN/1/Rev.9, and 14 hold more than one General Comment; A/48/18 holds seven, so \"A/48/18, para. 3\" alone is ambiguous.\n- Three joint General Comments carry two symbols in one `symbol` (\"CMW/C/GC/7–CERD/C/GC/38\", en dash; \"CRC/C/GC/23, CMW/C/GC/4\", comma) but one `committee`.\n- `paragraph` runs 0 to 135. 33 records have `paragraph` 0: preambles of early CEDAW and CERD General Recommendations. 22 records are lettered sub-paragraphs (\"(a) To take note…\") that the file numbers 1, 2, 3.\n- 4,258 texts begin with their own number (\"12. The Committee…\"), 3,046 do not; in 5 the number differs from `paragraph` (three in CCPR/C/21/Rev.1/Add.5, numbered 3.1, 3.2 in the original). Two pinpoints occur twice (CEDAW/C/GC/27 para. 9; the joint GR 31/GC 18 para. 31).\n- Footnote marks are written `[[fn:N]]`: 3,238 in 1,857 paragraphs, 212 between two words of a sentence, so the string \"Education For All. By virtue\" does not exist although the sentence does.\n- Quotes are curly: 3,169 curly double quotes against 82 straight; 2,938 curly apostrophes against 78 straight; 248 en dashes, 107 non-breaking spaces; \"non-State\" 145 times.\n- 40 paragraphs contain line breaks; 208 end with a colon and their list sits in the following records. Length 4 to 1,287 words. 10 `committee` codes (CRC 2,091 … CED 56; CAT-OP is the Subcommittee on Prevention of Torture); `year` 1972–2026. `cited_articles` is a third filled and 131 entries start with \"?\": not offered as a filter.\n\n## The app, screen by screen\n\n1. **Header.** Title \"Verbatim finder: General Comments and General Recommendations\"; one line: \"`records.length` paragraphs from n General Comments (distinct `title`) of k committees, `year` min–max\", `source` linked to `source_url`; one sentence: \"This page retrieves; it never writes. Every paragraph shown is a record of the file, as stored.\"\n2. **Search box.** A labelled input, a \"Search\" button, Enter searches. Under it, the syntax in the app's own words: *a space or AND joins words; OR; NOT or a leading minus; \"an exact phrase\" in double quotes; parentheses; a star at the end of a word for any ending (child\\* finds children); operators in capitals, lower-case \"or\" is a word.* Three example buttons fill and run: `\"best interests\" AND child`, `(torture OR ill-treatment) NOT detention`, `\"reasonable accommodation\"`. {{q3}} After a search, a line echoes the query as understood: \"Paragraphs containing the phrase “best interests” and the word child\". An unbalanced quote or parenthesis shows a message and no results.\n3. **Filters.** Committee: a checkbox per code with its full name and, after a search, its hits in brackets; all ticked; \"all / none\". Year: from and to inputs preset to the data's min and max. Document: a select of `short_title` grouped by committee, blank for all. {{q5}}\n4. **Summary line** (`aria-live`): \"279 of 7,304 paragraphs match · 8 committees · 1990–2023\", then the order: {{q4}}\n5. **Chart: hits per committee.** A horizontal bar chart (Chart.js, `indexAxis: 'y'`), one bar per committee, ranked by value, the value at the end of each bar, axis from zero; the canvas has `role=\"img\"` and an `aria-label` stating the numbers, and a small table with the same numbers beside it. \"How this is computed: one count per committee over the paragraphs that match the query and filters.\" Clicking a bar ticks that committee alone.\n6. **Results.** 25 per page, \"Show 25 more\". Each row: committee badge and `short_title`; `symbol` linked to `doc_url` in a new tab, the pinpoint (\"para. 18\", \"preamble\", \"subpara. (b)\") and `year`. The text is {{q2}} Every matched word or phrase is wrapped in `<mark>` (bold, pale yellow, dark text). Paragraphs up to 700 characters are shown whole; longer ones show the first 700 cut at a word, with \"Show the full paragraph (1,287 words)\"; `white-space: pre-wrap` keeps stored line breaks. \"Context: previous | next\" opens paragraph −1 or +1 of the same `title` inline, in grey, with its own pinpoint, for a chapeau that ends in a colon. Three buttons. **Copy citation** {{q1}}. **Copy quotation** copies the shown text in quotation marks, a space, the citation. **Add to draft** sends both to the drawer. An amber note when needed: \"the text begins ‘45.’ but the record is para. 41: check the document\"; \"a lettered sub-paragraph, numbered 2 by the file\"; \"two records share this pinpoint\"; \"joint General Comment\".\n7. **Draft drawer.** On the right, below on a narrow screen: \"Your draft (n quotations)\", each with its quotation as copied, its citation and a remove button; \"Copy all\" (quotation, new line, citation, blank line between items); \"Download .txt\" and \"Download .csv\" (`citation`, `symbol`, `paragraph`, `pinpoint`, `committee`, `short_title`, `year`, `text_copied`, `text_as_stored`, `doc_url`; UTF-8 with byte-order mark, fields double-quoted). Kept in `localStorage` when allowed, in memory otherwise; the drawer says which.\n8. **Checks panel** under the summary line, open by default.\n9. **Footer.** `source` and `built`; \"Counting, matching and sorting are done by this page's code; no model is called.\" A Credits line if shelf code is reused (Chart.js, MIT).\n\n## How every number is computed\n\n- **Load.** `R = WORKSHOP_DATA.gc.records`; totals are `R.length`, the sets of `title` and `committee`, the min and max of `year`. Per record, once: `norm`, `marks`, `leading` (`^(\\d{1,3})\\.\\s` on `text`), pinpoint, citation, `shared` (the symbol holds more than one `title`), `joint`, committees.\n{{q3.compute}}\n- **Query parser.** Tokens: a phrase in double quotes (straight or curly); `(` `)`; `AND`, `OR`, `NOT` in capitals; a leading `-` as NOT; any other run of non-space characters as a word, trailing `*` allowed. Adjacent terms are joined by AND. Precedence NOT, AND, OR; parentheses override. The parser returns a tree and an English echo, or the error shown in the box.\n- **Term match.** A word becomes a regular expression over `norm`: the word escaped, trailing `*` → `\\w*`, boundaries that work for accented letters, `(?<![\\p{L}\\p{N}])` before and `(?![\\p{L}\\p{N}])` after, flag `u`. A hyphen is a boundary, so \"state\" finds \"non-State\". A phrase is its words joined by `\\s+` inside the same boundaries. A record matches when the Boolean tree is true over `norm`; a NOT-only query matches everything that lacks the terms, and the echo says so.\n- **Highlight.** The same terms become a second regular expression over the shown text, where a quote or apostrophe matches its straight and curly forms, a hyphen matches hyphen, en and em dash, and a gap between phrase words matches `(?:\\s|\\[\\[fn:\\d+\\]\\])+`; matches are wrapped in `<mark>` after HTML-escaping. NOT terms are never highlighted.\n- **Hits** = records whose tree matches and that pass the committee, year and document filters. **Hits per committee** = one count per committee over the hits, by each record's committee:\n{{q5.compute}}\n{{q2.compute}}\n- **Leading number.** When `leading` equals `paragraph`, the copied quotation drops the \"12. \" at the start (the citation carries the number); the shown text keeps it. When they differ, nothing is dropped and the row carries the amber note.\n{{q1.compute}}\n- **Copy** uses `navigator.clipboard.writeText`; if refused, the text goes into a selectable box with \"Select and copy\". After every copy an `aria-live` message shows the exact string sent.\n{{q4.compute}}\n\n## How the app checks itself\n\nEach check is one line: what was compared, the values, \"pass\" in green or \"check failed\" in red with the pinpoints concerned. A failed check marks rows; it never drops them.\n\n- **Query understood.** The English echo and the number of terms; a parse error appears here too.\n- **Totals.** Rows listed across pages equal the hits; the checkboxes' bracketed counts sum to the hits plus joint hits.\n{{q5.checks}}\n- **Highlight.** Every hit shows at least one `<mark>` unless the query is NOT-only; a hit matched in `norm` but without a highlight is listed as \"matched, not highlighted\" and still shown.\n{{q3.checks}}\n- **Numbering.** Hits whose leading number differs from `paragraph`, with both numbers; hits that share a pinpoint with another record of the same `title`; hits that are lettered sub-paragraphs.\n{{q2.checks}}\n- **Draft.** For every item, the stored `text` of the record with that `id` is looked up again and compared with the item's `text_as_stored`; a difference marks the item.\n- **Known quirks of this file**, computed at load and shown before any search: records with `paragraph` 0, symbols shared by several documents, joint documents, duplicated pinpoints, leading-number mismatches, each with its count and an example.\n\n## Edge cases and risks\n\n- The app can only return paragraphs that exist, with their real `symbol` and `paragraph`; citation and quotation are built from fields, and the panel says so.\n- Preambles are cited as \"preamble\", never \"para. 0\"; lettered sub-paragraph records as \"subpara. (b)\" with a reminder to verify; shared symbols carry the General Recommendation's number, or a reader lands in a 200-page report.\n- A leading number that differs from `paragraph` is never corrected: the row shows both.\n- Older General Comments may be replaced by later ones (Human Rights Committee GC 36 replaced GC 6 and 14); the file has no \"replaced\" field, so `year` is on every row.\n- Whole words: \"child\" does not find \"children\"; the syntax line says to type child\\*. Lower-case \"or\" is a word.\n- Long paragraphs are cut on screen only; copy and draft take the whole text. Clipboard or `localStorage` can be refused in a sandbox: the fallback box and memory are always there.\n- An empty query with filters lists every paragraph that passes them, paged, and the summary says \"no search words\".\n\n## Design and accessibility\n\n- One column, maximum width 1,100 px plus a 320 px drawer; system font stack at 16 px; one accent colour (#1f6fb2); highlights are bold as well as coloured; pass and fail are words as well as colours.\n- The chart follows \"Data visualisation: charts (formatting, labels, bar charts)\" (UK Government Analysis Function): horizontal bars for long names, ranked by value, gaps narrower than a bar, the axis from zero, at most ten light gridlines, horizontal labels, the value at the end of each bar.\n- The canvas follows \"Chart.js: Accessibility of canvas charts\": `role=\"img\"`, an `aria-label` that states the numbers, fallback content, and a visible table with the same values.\n- The syntax follows the conventions on \"Wikipedia Help:Searching\": double quotes for a phrase, a leading hyphen for exclusion, capital OR, a star for endings; the help text is written fresh, since that page is CC BY-SA.\n- Citations follow \"Dag Hammarskjöld Library, Ask DAG: how should I cite a UN document?\": parts stored separately and formatted on copy, the symbol as the key, a pinpoint always, the style named on screen, no symbol or URL ever invented.\n- Keyboard: the search box has focus on load; every control is a real `<button>` with visible focus; rows are `<article>`s with a heading; the summary and the \"Copied\" message are `aria-live=\"polite\"`; the chart's click is duplicated by the checkboxes.\n\n## Out of scope\n\nNo model calls, summaries or \"similar paragraphs\". No stemming or synonyms beyond the star. No tracking of which General Comment replaced which. No filter on `cited_articles`. No concluding observations or views, no languages other than English, no editing of texts.\n\n## Sources consulted\n\n- Dag Hammarskjöld Library, Ask DAG: how should I cite a UN document? — https://ask.un.org/faq/401380\n- Wikipedia Help:Searching: exact phrase, exclusion, wildcards, AND / OR / NOT and field operators — https://en.wikipedia.org/w/index.php?title=Help:Searching&oldid=1379184667\n- Chart.js: Accessibility of canvas charts — https://github.com/chartjs/Chart.js/blob/71d44219e79e3ac41e6f9dc907022eebf574868d/docs/general/accessibility.md\n- UK Government Analysis Function, Data visualisation: charts (formatting, labels, bar charts) — https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-charts/"
+}

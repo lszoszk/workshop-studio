@@ -453,7 +453,8 @@
   const fileMeta = (key) => S.config.files.find((f) => f.key === key);
   const fileLabel = (key) => fileMeta(key).label.replace(/\{country\}/g, S.country);
   // what the model gets for a file: its name and where the app finds it, never its contents
-  const attachLine = (key) => `(Attached: ${fileLabel(key)} → WORKSHOP_DATA.${key})`;
+  const attachLine = (key) => `(Attached: ${fileLabel(key)} → WORKSHOP_DATA.${key}` +
+    (fileMeta(key).also || []).map((k) => `, with WORKSHOP_DATA.${k}`).join('') + ')';
   const attachedBefore = () => new Set([...S.versions, ...S.talk, ...(S.planning ? [S.planning] : [])].flatMap((t) => t.files || []));
 
   function addFile(key) {
@@ -1974,6 +1975,7 @@
   function fileMetaLine(key) {
     const d = S.index.datasets[key];
     if (key === 'library') return `${fmt(d.count)} PDFs · passage by passage, with pages`;
+    if (key === 'wiki') return `${fmt(d.count)} pages · every quotation verified`;
     if (key === 'uhri') return `${fmt(S.countryCount)} records · opens in Excel`;
     if (key === 'gc') return `${fmt(d.count)} paragraphs · opens in Excel`;
     if (key === 'hrc') return `${fmt(d.count)} recorded votes · opens in Excel`;
@@ -2024,6 +2026,13 @@
   async function openFile(key) {
     const f = fileMeta(key);
     if (f.kind === 'pdf') { window.open(f.pdf, '_blank', 'noopener'); return; }
+    if (f.kind === 'wiki') {
+      const w = await dataParsed(key);
+      openDrawer(fileLabel(key));
+      $('drawerBody').innerHTML = `<p>The wiki's catalog, as its index page keeps it. Drag the wiki into the chat to build a workspace on it.</p>` +
+        `<div class="answer-md">${md(w.index.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (m, s, t) => '**' + (t || s) + '**'))}</div>`;
+      return;
+    }
     if (f.kind === 'lib') {
       const lib = await dataParsed(key);
       openDrawer(fileLabel(key));

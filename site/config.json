@@ -137,8 +137,10 @@
      "blurb": "The General Comments and General Recommendations of the UN treaty bodies"},
     {"key": "hrc", "kind": "csv", "label": "Human Rights Council votes",
      "blurb": "Every recorded vote since 2021, with how each member State voted"},
-    {"key": "library", "kind": "lib", "label": "Library: neurotechnology and justice (9 PDFs)",
-     "blurb": "The Secretary-General's 2026 report, a UNODC–INTERPOL paper, a civil-society submission, a national human rights institution's report, two journal articles and three General Comments. Attached, your app gets every passage with its page"},
+    {"key": "wiki", "kind": "wiki", "label": "Research wiki: neurotechnology and justice", "also": ["library"],
+     "blurb": "40 pages kept the way a research team keeps a wiki: sources, concepts, entities, questions and open disagreements, every claim pinned to a verified quotation. Attached, your app gets the wiki and the library behind it"},
+    {"key": "library", "kind": "lib", "label": "Library: neurotechnology and justice (10 PDFs)",
+     "blurb": "The Secretary-General's 2026 report, a UNODC–INTERPOL paper, a civil-society submission, a national human rights institution's report, two journal articles, three General Comments, and a 2024 Advisory Committee report not yet in the wiki. Attached, your app gets every passage with its page"},
     {"key": "pdf_text", "kind": "pdf", "label": "CESCR General comment No. 27 (PDF)", "pdf": "files/E_C.12_GC_27.pdf",
      "blurb": "A UN document as a PDF. Attached, your app gets its text page by page, as a PDF converter extracts it"}
   ],

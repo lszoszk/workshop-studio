@@ -111,7 +111,8 @@ quote") ✓` gives the label to show, the library id, the PDF page, the quote, a
 One regular expression finds them all: `/\[([^\]]+)\]\(pin:([^#\s)]+)#p(\d+)(?: "([^"]*)")?\) ?(✓|⚠)/g`
 (groups: label, id, PDF page, quote, mark). Open a pin with `studio.openSource(id, page)`. A pin is verified
 when its quote is in a passage of that document in `WORKSHOP_DATA.library` that starts on that PDF page
-(compare after normalising whitespace, curly quotes, dashes and hyphenation).
+(compare after normalising whitespace, curly quotes, dashes and hyphenation). A quote may join fragments
+of one passage with "…": then each fragment must be in that passage, in the same order (82 of 707 pins do).
 `register` letters: (a) treaty law, (b) General Comments, (c) UN, agency and soft-law reports, (d) national
 human rights institution, (e) civil society, (f) scholarship. A fenced block opened by ```` ```contested ````
 records a disagreement: lines `claim:`, `verdict:`, `note:`, then one line per position:

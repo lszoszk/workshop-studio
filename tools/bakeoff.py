@@ -79,7 +79,8 @@ def request_text(p):
 def attached(key):
     """The line the studio adds when the participant drags this file into the chat."""
     f = next(f for f in json.loads((SITE / "config.json").read_text())["files"] if f["key"] == key)
-    return f"\n\n(Attached: {f['label'].replace('{country}', COUNTRY)} → WORKSHOP_DATA.{key})"
+    also = "".join(f", with WORKSHOP_DATA.{k}" for k in f.get("also", []))
+    return f"\n\n(Attached: {f['label'].replace('{country}', COUNTRY)} → WORKSHOP_DATA.{key}{also})"
 
 
 def extract_html(text):

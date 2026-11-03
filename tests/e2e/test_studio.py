@@ -331,7 +331,7 @@ def test_what_is_shown_grows_with_progress(base_url, browser):
     page.goto(base_url + "?via=replay&planpace=1&country=Kenya")
     started(page)
     assert not page.is_visible("#toolbar")
-    assert page.is_visible("#composer") and page.locator("#shelf .fcard").count() == 5
+    assert page.is_visible("#composer") and page.locator("#shelf .fcard").count() == 6
     assert page.locator("#suggest button").count() <= 3
     send(page, DASHBOARD, "uhri", 1)
     assert page.is_visible("#toolbar") and not page.is_visible("#shelf")
@@ -478,7 +478,7 @@ def test_session8_offers_its_two_apps_first(base_url, browser):
     assert titles[:2] == ["Verbatim finder for General Comments", "A research wiki on neurotechnology and justice"], titles
     assert "Check an AI briefing" not in titles
     send(page, "Verbatim finder", "gc", 1)
-    send(page, "A research wiki", "library", 2)
+    send(page, "A research wiki", "wiki", 2)
     send(page, "Check an AI briefing", "hrc", 3)
     body = app_frame(page).locator("body")
     body.locator("select, h1").first.wait_for(timeout=20000)
@@ -596,7 +596,7 @@ def test_the_wiki_links_every_paragraph_to_its_pdf_page(base_url, browser):
     page = ctx.new_page()
     page.goto(base_url + "?via=replay&planpace=1&stage=s8&country=Kenya")
     started(page)
-    send(page, "A research wiki", "library", 1)
+    send(page, "A research wiki", "wiki", 1)
     frame = app_frame(page)
     frame.get_by_text(re.compile(r"^\s*mental privacy", re.I)).first.click()
     frame.get_by_text(re.compile(r"(para\.\s*\d+|p\.\s*\d{4})")).first.click()
