@@ -567,7 +567,8 @@ def test_the_divider_is_dragged_kept_and_reset(base_url, browser):
 
 def test_a_pdf_opens_next_to_the_app(base_url, browser):
     """studio.openSource from inside an app opens the PDF at its page in the studio's drawer, with
-    the printed page where it differs; the library card lists every PDF in the library."""
+    the printed page where it differs and the quoted passage marked; the library card lists every PDF
+    in the library."""
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
     page.goto(base_url + "?via=replay&planpace=1&country=Kenya")
@@ -580,13 +581,21 @@ def test_a_pdf_opens_next_to_the_app(base_url, browser):
     app_frame(page).locator("body").wait_for()
     frame = page.locator(".viewport > iframe:not(.back)").element_handle().content_frame()   # the app on stage
     frame.evaluate("() => studio.openSource('CCPR/C/GC/32', 5)")
-    page.wait_for_selector("#drawer.wide iframe.pdf")
-    assert page.get_attribute("#drawer iframe.pdf", "src") == "files/CCPR_C_GC_32.pdf#page=5"
+    page.wait_for_selector("#drawer.wide .pdfpage canvas")   # drawn by PDF.js
+    assert page.locator(".src-head a").first.get_attribute("href") == "files/CCPR_C_GC_32.pdf#page=5"
+    assert "PDF page 5 of" in page.inner_text("#pdfNote") and page.locator("#drawer .pdfmark").count() == 0
     assert page.request.get(base_url + "files/CCPR_C_GC_32.pdf").status == 200
     frame.evaluate("() => studio.openSource('Szoszkiewicz-Yuste-2025', 3)")
     page.wait_for_function("() => document.getElementById('drawerTitle').textContent.includes('p. 3471')")
-    assert page.get_attribute("#drawer iframe.pdf", "src") == "files/Szoszkiewicz-Yuste-2025.pdf#page=3"
+    page.wait_for_selector("#drawer.wide .pdfpage canvas")
+    assert page.locator(".src-head a").first.get_attribute("href") == "files/Szoszkiewicz-Yuste-2025.pdf#page=3"
     assert page.request.get(base_url + "files/Szoszkiewicz-Yuste-2025.pdf").status == 200
+    # with a quote: the passage is marked, across a line break and curly quotes
+    frame.evaluate("() => studio.openSource('A/81/351', 3, 'defined as \u201cqualitative and quantitative data about the structure, activity and function of the nervous system')")
+    page.wait_for_function("() => /is marked/.test(document.getElementById('pdfNote').textContent)")
+    assert page.locator("#drawer .pdfmark").count() >= 2
+    page.click("#pdfNote button[data-to='4']")
+    page.wait_for_function("() => /PDF page 4 of/.test(document.getElementById('pdfNote').textContent)")
     ctx.close()
 
 
@@ -604,14 +613,16 @@ def test_the_wiki_links_every_paragraph_to_its_pdf_page(base_url, browser):
     opener = frame.get_by_role("button", name=re.compile(r"open the pdf", re.I))   # a pin may open a card first
     if opener.count():
         opener.first.click()
-    page.wait_for_selector("#drawer.wide iframe.pdf")
-    assert re.fullmatch(r"files/[\w.\-]+\.pdf#page=\d+", page.get_attribute("#drawer iframe.pdf", "src"))
+    page.wait_for_selector("#drawer.wide .pdfpage canvas")   # PDF.js draws the page; the pin's quote is marked on it
+    assert re.fullmatch(r"files/[\w.\-]+\.pdf#page=\d+", page.locator(".src-head a").first.get_attribute("href"))
+    page.wait_for_function("() => /marked|not found/.test(document.getElementById('pdfNote').textContent)")
+    assert "is marked" in page.inner_text("#pdfNote") and page.locator("#drawer .pdfmark").count() > 0
     if (SITE / "replay/claude/s8-6-wiki-map.md").exists():   # the follow-up: a map of the pages' links
         page.click("#drawerClose")
         send(page, "A map of the wiki")
         built(page, 2)
         app_frame(page).get_by_role("tab", name=re.compile("map", re.I)).click()
-        assert app_frame(page).locator("svg circle").count() >= 40
+        assert app_frame(page).locator("svg circle, svg rect, svg polygon, svg path").count() >= 40   # 40 pages, any shape
     ctx.close()
 
 

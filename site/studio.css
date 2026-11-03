@@ -493,3 +493,11 @@ body.wall .work { grid-template-columns: 1fr; height: calc(100% - var(--top-h));
   .model-pick select { max-width: 170px; }
   .foot-links { display: none; }
 }
+
+/* a library PDF drawn by PDF.js, the quoted passage marked */
+.pdf-note { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.pdf-note .pdf-found { flex-basis: 100%; }
+.pdfview { flex: 1; min-height: 0; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.pdfpage { position: relative; margin: 0 auto; }
+.pdfpage canvas { display: block; width: 100%; height: 100%; }
+.pdfmark { position: absolute; background: rgba(155, 35, 53, .22); border-bottom: 2px solid #9b2335; pointer-events: none; }

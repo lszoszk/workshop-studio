@@ -92,8 +92,8 @@ one to cite: "p. 3471"), the paragraph number where the document numbers its par
 (`paragraph`, a string such as "32" or "50 (c)"; null in articles and reports that do not), and
 the heading it sits under (`section`, or null).
 Documents: A/81/351 (UN report, 2026: Secretary-General's report on human rights in the administration of justice, 60 passages); UNODC-INTERPOL-2025 (UN agency paper, 2025: UNODC–INTERPOL background paper on neurotechnology and criminal justice, 40 passages); FuturesLab-2026 (Civil-society submission, 2026: Futures Lab submission to the Secretary-General's report, 35 passages); AHRC-2025 (National human rights institution report, 2025: Peace of Mind (Australian Human Rights Commission), 652 passages); Szoszkiewicz-Yuste-2025 (Journal article, 2025: Mental privacy (EMBO Reports), 22 passages); Prainsack-et-al-2022 (Journal article, 2022: Data solidarity (The Lancet Digital Health), 8 passages); CCPR/C/21/Rev.1/Add.4 (General Comment, 1993: GC22: the right to freedom of thought, conscience and religion (art. 18), 11 passages); CCPR/C/GC/32 (General Comment, 2007: GC32: article 14: right to equality before courts and tribunals and to a fair trial, 65 passages); CCPR/C/GC/34 (General Comment, 2011: GC34: article 19: freedoms of opinion and expression, 52 passages); A/HRC/57/61 (UN report, 2024: Advisory Committee report on neurotechnology and human rights, 100 passages).
-`studio.openSource(id, page)` opens that document's PDF at that PDF page next to the app: use it
-for every passage shown, so a reader can check it against the original. Cite a passage as
+`studio.openSource(id, page, quote)` opens that document's PDF at that PDF page next to the app and marks `quote` on it: use it
+for every passage shown (with its text as `quote`), so a reader can check it against the original. Cite a passage as
 symbol or author and year, then "para. N" when `paragraph` is set, otherwise "p. page_label".
 
 ## `WORKSHOP_DATA.wiki`: a research wiki on the library, kept by language models
@@ -109,7 +109,7 @@ register, status, updated, links, sources}` (`links`: slugs of related pages; `s
 Every claim in a body carries a pin to a library passage: `[A/81/351, para. 16](pin:A/81/351#p6 "verbatim
 quote") ✓` gives the label to show, the library id, the PDF page, the quote, and ✓ (verified) or ⚠ (unverified).
 One regular expression finds them all: `/\[([^\]]+)\]\(pin:([^#\s)]+)#p(\d+)(?: "([^"]*)")?\) ?(✓|⚠)/g`
-(groups: label, id, PDF page, quote, mark). Open a pin with `studio.openSource(id, page)`. A pin is verified
+(groups: label, id, PDF page, quote, mark). Open a pin with `studio.openSource(id, page, quote)`. A pin is verified
 when its quote is in a passage of that document in `WORKSHOP_DATA.library` that starts on that PDF page
 (compare after normalising whitespace, curly quotes, dashes and hyphenation). A quote may join fragments
 of one passage with "…": then each fragment must be in that passage, in the same order (82 of 707 pins do).

@@ -19,9 +19,9 @@
         post({ type: 'studio:ask', id: id, prompt: String(prompt), json: !!(opts && opts.json) });
       });
     },
-    // the PDF of a document in the library, at a page, next to the app (a saved copy opens where it was published)
-    openSource: function (id, page) {
-      if (inStudio) return post({ type: 'studio:open-source', symbol: String(id), page: Number(page) || 1 });
+    // the PDF of a document in the library, at a page, next to the app, the quoted passage marked (a saved copy opens where it was published)
+    openSource: function (id, page, quote) {
+      if (inStudio) return post({ type: 'studio:open-source', symbol: String(id), page: Number(page) || 1, quote: quote ? String(quote) : '' });
       var lib = (window.WORKSHOP_DATA && WORKSHOP_DATA.library && WORKSHOP_DATA.library.records) || [];
       var doc = lib.filter(function (d) { return d.id === id || d.symbol === id; })[0];
       window.open(doc ? doc.url : 'https://docs.un.org/en/' + id, '_blank', 'noopener');
