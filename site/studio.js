@@ -366,13 +366,16 @@
     const id = o.promptId || nextPromptId();
     // recorded for Kenya; the apps read the country from the data, the words around them do not
     const local = (s) => (S.country === 'Kenya' ? s : s.replace(/Kenya/g, S.country));
-    let text;
+    // the workshop apps are recorded from the current plans; the extras only in the fallback recording
+    let rec = S.config.replay, text;
     try {
-      text = local(await getText(S.config.replay.dir + id + '.md'));
+      text = local(await getText(rec.dir + id + '.md'));
     } catch (e) {
-      throw Object.assign(new Error('Recorded mode can only play back the workshop requests. Pick one of the suggestions.'), { failover: false });
+      rec = rec.fallback;
+      text = rec && local(await getText(rec.dir + id + '.md').catch(() => ''));
+      if (!text) throw Object.assign(new Error('Recorded mode can only play back the workshop requests. Pick one of the suggestions.'), { failover: false });
     }
-    const thought = local(await getText(S.config.replay.dir + id + '.thought.md').catch(() => ''));
+    const thought = local(await getText(rec.dir + id + '.thought.md').catch(() => ''));
     const t0 = performance.now();
     // the recorded thinking first, sped up to at most about ten seconds, then the answer
     const step = Math.max(220, Math.ceil(thought.length / 250));
@@ -386,8 +389,8 @@
       await new Promise((r) => setTimeout(r, 40));
       o.onDelta(text.slice(0, i + 220));
     }
-    const m = S.config.models[S.config.replay.model];
-    return { text, usage: { model: S.config.replay.model, model_label: m.label + ' (recorded)', host: m.host, zdr: true, recorded: true, cost: 0, seconds: (performance.now() - t0) / 1000 } };
+    const m = S.config.models[rec.model];
+    return { text, usage: { model: rec.model, model_label: m.label + ' (recorded)', host: m.host, zdr: true, recorded: true, cost: 0, seconds: (performance.now() - t0) / 1000 } };
   }
 
   function nextPromptId() {

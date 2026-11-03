@@ -288,7 +288,8 @@ def test_participant_path(base_url, browser, tmp_path):
     # a reload keeps the version, its thinking, its lesson and the trace
     page.reload()
     page.wait_for_function("() => document.querySelectorAll('#versions button').length === 1")
-    assert page.locator(".thought summary").first.inner_text().startswith("Thought")
+    if (SITE / "replay/claude/s7-1-dashboard.thought.md").exists():   # builds made in Claude Code have no recorded thinking
+        assert page.locator(".thought summary").first.inner_text().startswith("Thought")
     assert page.locator(".lesson").count() == 1
     assert page.inner_text("#traceCount") == "1"
 
@@ -388,7 +389,7 @@ def test_layout_holds_on_a_small_laptop(base_url, pw, browser, engine):
 def test_extraction_from_raw_pdf_text(base_url, browser):
     """The recorded 'Paragraphs out of a PDF' app runs on the raw page text and checks itself
     against the reference shipped with it."""
-    if not (SITE / "replay/mistral/s7-4-extract.md").exists():
+    if not (SITE / "replay/claude/s7-4-extract.md").exists():
         pytest.skip("no recording for s7-4-extract yet")
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
@@ -400,7 +401,7 @@ def test_extraction_from_raw_pdf_text(base_url, browser):
     body = app_frame(page).locator("body")
     body.get_by_text("E/C.12/GC/27").first.wait_for(timeout=20000)
     text = body.inner_text()
-    assert re.search(r"90\s*(/|of)\s*90", text), text[:400]
+    assert re.search(r"90\s*(/|of)\s*90", text, re.I), text[:400]
     assert page.locator(".lesson").inner_text().count("four ways") == 1
     assert not errors, errors
     ctx.close()
@@ -590,7 +591,7 @@ def test_a_pdf_opens_next_to_the_app(base_url, browser):
 
 
 def test_the_wiki_links_every_paragraph_to_its_pdf_page(base_url, browser):
-    if not (SITE / "replay/mistral/s8-5-wiki.md").exists():
+    if not (SITE / "replay/claude/s8-5-wiki.md").exists():
         pytest.skip("no recording for s8-5-wiki yet")
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
@@ -600,6 +601,9 @@ def test_the_wiki_links_every_paragraph_to_its_pdf_page(base_url, browser):
     frame = app_frame(page)
     frame.get_by_text(re.compile(r"^\s*mental privacy", re.I)).first.click()
     frame.get_by_text(re.compile(r"(para\.\s*\d+|p\.\s*\d{4})")).first.click()
+    opener = frame.get_by_role("button", name=re.compile(r"open the pdf", re.I))   # a pin may open a card first
+    if opener.count():
+        opener.first.click()
     page.wait_for_selector("#drawer.wide iframe.pdf")
     assert re.fullmatch(r"files/[\w.\-]+\.pdf#page=\d+", page.get_attribute("#drawer iframe.pdf", "src"))
     ctx.close()

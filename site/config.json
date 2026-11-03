@@ -108,8 +108,9 @@
     "question": null
   },
   "replay": {
-    "model": "mistral",
-    "dir": "replay/mistral/"
+    "model": "claude",
+    "dir": "replay/claude/",
+    "fallback": {"model": "mistral", "dir": "replay/mistral/"}
   },
   "author": {
     "name": "Łukasz Szoszkiewicz",
