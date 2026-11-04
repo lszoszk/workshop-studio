@@ -9,7 +9,7 @@
       "builds_on": null,
       "title": "Your country's recommendations dashboard",
       "blurb": "Counts, filters, a chart of themes and a table of every record",
-      "prompt": "Build a dashboard of the UN human rights recommendations and observations addressed to {country}, one question per tab. A header with the country, the number of records and the years. A narrow filter rail on the left: keyword, mechanism, treaty body or mandate, year range and SDG. Tab 01 Overview: how many records each mechanism made, and a bar chart of the 10 most frequent themes for the current filter. Tab 02 Records: a table of the matching records with date, body, symbol (linked to the UN document) and the first line of the text; clicking a row opens the full text in place. Tab 03 Check: how each number is computed and whether the counts add up. Tab 04 Method & export: download the current filter as CSV.",
+      "prompt": "Build a dashboard of the UN human rights recommendations and observations addressed to {country}, one question per tab. A header with the country, the number of records and the years. A narrow filter rail on the left: keyword, mechanism, treaty body or mandate, year range and SDG. Tab 01 Overview: how many records each mechanism made, a bar chart of the 10 most frequent themes for the current filter, and, closed until opened, the app's own checks: whether the counts add up. Tab 02 Records: a table of the matching records with date, body, symbol (linked to the UN document) and the first line of the text; clicking a row opens the full text in place. Tab 03 Method & export: how each number is computed, and a download of the current filter as CSV.",
       "planning": "planning/s7-1-dashboard.json",
       "lesson": "The model wrote the code once. Every number on the screen is computed by that code, the same way every time, from data the model never saw.",
       "checks": {
@@ -24,6 +24,25 @@
         "controls_min": 4,
         "links_to": "docs.un.org"
       }
+    },
+    {
+      "id": "s7-3-quote-check",
+      "session": "S7",
+      "minute": 50,
+      "dataset": "uhri",
+      "builds_on": "s7-1-dashboard",
+      "title": "Check a quotation",
+      "blurb": "Paste your own text and check every quotation of a UN recommendation against the data",
+      "prompt": "Add a tab \"Check a quotation\". I paste a passage I wrote (a briefing, a submission, an email) that quotes UN recommendations and observations to {country}. For every quotation in quotation marks (\"…\", “…”, „…”, «…») of five words or more that has a citation within 60 characters of it (a UN document symbol, with or without a paragraph number), check it against the records in the file, with code only: compare words, ignoring case and punctuation; an ellipsis or a bracketed change [ ] splits a quotation into parts, and every part of three words or more must match. Give each quotation one verdict: ✓ correct (the words are in a record of the cited document, at the cited paragraph when one is given; the paragraph number is the number at the start of the record's text, when it has one); ≈ the words are right but the citation is not (show the correct symbol and paragraph, linked to the document); ✗ not in the data (the words are in no record). Never use a model: say on screen that the same text always gets the same verdicts. To try it at once, offer a sample passage built from the file when the tab opens: one correct quotation, one with a wrong paragraph or document, and one that is invented.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "button_matches": "(?i)check",
+        "text_matches": "(?i)not in the data|not found"
+      },
+      "lesson": "A checker that compares words is deterministic: the same text, the same verdict, every time. It can say that a quotation is not in the data; it cannot say whether the sentence around it is a fair reading of the recommendation. That stays with you.",
+      "hidden": true
     },
     {
       "id": "s7-3-check-ten",
@@ -41,7 +60,9 @@
         "uses_workshop_data": true,
         "text_matches": "(?i)corrected by you|my corrections",
         "download": true
-      }
+      },
+      "hidden": true,
+      "bakeoff": false
     },
     {
       "id": "s7-2-who-recommends",
@@ -270,7 +291,7 @@
       "bakeoff": false,
       "title": "Suggest improvements",
       "blurb": "A careful review of your app, as a list to choose from",
-      "prompt": "Review my app as a careful colleague would. List five concrete improvements, numbered: to how clearly it explains its numbers, to correctness, to accessibility and to its design. One or two sentences each, saying why it matters. Do not change the code yet: I will tell you which ones to make.",
+      "prompt": "Review my app as a careful colleague would. List five concrete improvements, numbered, each small enough to make as one change (a column, a chart, a filter, a check, clearer wording): one or two sentences each, saying what you would change and why it matters for how clearly the app explains its numbers, for correctness, for accessibility or for its design. Do not change the code yet: I will tell you which one to make.",
       "lesson": null
     },
     {

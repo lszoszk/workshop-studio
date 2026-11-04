@@ -1,0 +1,37 @@
+[
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · built in Claude Code (no API)",
+  "prompt": "s7-1-dashboard",
+  "passed": 8,
+  "total": 8,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true
+  },
+  "errors": [],
+  "network": [],
+  "lines": 739,
+  "seconds": null,
+  "cost": 0
+ },
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · built in Claude Code (no API)",
+  "prompt": "s7-3-quote-check",
+  "passed": 0,
+  "total": 0,
+  "checks": {},
+  "errors": [],
+  "network": [],
+  "lines": 0,
+  "seconds": null,
+  "cost": 0
+ }
+]

@@ -1,0 +1,148 @@
+[
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true
+  },
+  "passed": 8,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 2103,
+  "edit": null,
+  "repair": {
+   "error": "Cannot read properties of null (reading 'appendChild')",
+   "seconds": 9.4,
+   "cost": 0.01395625,
+   "applied": true,
+   "checks_before": 5
+  },
+  "seconds": 210.4,
+  "first_token": 0.8,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 20066,
+  "completion_tokens": 21439,
+  "cost": 0.03658985,
+  "provider": "Mistral"
+ },
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "edit-1-column",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true,
+   "text_matches": true
+  },
+  "passed": 9,
+  "total": 9,
+  "errors": [],
+  "network": [],
+  "lines": 2120,
+  "edit": {
+   "edits": 5,
+   "lines": 54
+  },
+  "repair": null,
+  "seconds": 11.0,
+  "first_token": 2.0,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 41551,
+  "completion_tokens": 1102,
+  "cost": 0.01485055,
+  "provider": "Mistral"
+ },
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "edit-2-chart",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "controls_min": true,
+   "links_to": false,
+   "text_matches": true
+  },
+  "passed": 5,
+  "total": 9,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Unexpected token '}'"
+  ],
+  "network": [],
+  "lines": 2054,
+  "edit": {
+   "edits": 2,
+   "lines": 152
+  },
+  "repair": {
+   "error": "Failed to execute 'write' on 'Document': Unexpected token '}'",
+   "seconds": 18.4,
+   "cost": 0.01708982,
+   "applied": true,
+   "checks_before": 5
+  },
+  "seconds": 16.2,
+  "first_token": 1.1,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 41544,
+  "completion_tokens": 1857,
+  "cost": 0.00544797,
+  "provider": "Mistral"
+ },
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "edit-3-filter",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true,
+   "text_matches": true
+  },
+  "passed": 9,
+  "total": 9,
+  "errors": [],
+  "network": [],
+  "lines": 2104,
+  "edit": {
+   "edits": 1,
+   "lines": 8
+  },
+  "repair": null,
+  "seconds": 4.1,
+  "first_token": 0.8,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 41551,
+  "completion_tokens": 346,
+  "cost": 0.00295867,
+  "provider": "Mistral"
+ }
+]

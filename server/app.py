@@ -104,11 +104,11 @@ class AnthropicLines:
                     elif event.delta.type == "text_delta" and event.delta.text:
                         yield line({"choices": [{"delta": {"content": event.delta.text}}]})
             u = (await self.stream.get_final_message()).usage
-            pt = int(u.input_tokens or 0) + int(getattr(u, "cache_read_input_tokens", 0) or 0) \
-                + int(getattr(u, "cache_creation_input_tokens", 0) or 0)
-            ct = int(u.output_tokens or 0)
-            yield line({"usage": {"prompt_tokens": pt, "completion_tokens": ct,
-                                  "cost": models.estimate_cost(self.model, pt, ct)}})
+            fresh, ct = int(u.input_tokens or 0), int(u.output_tokens or 0)
+            write = int(getattr(u, "cache_creation_input_tokens", 0) or 0)
+            read = int(getattr(u, "cache_read_input_tokens", 0) or 0)
+            yield line({"usage": {"prompt_tokens": fresh + write + read, "completion_tokens": ct, "cached_tokens": read,
+                                  "cost": models.estimate_cost(self.model, fresh, ct, write, read)}})
         except anthropic.APIError as e:   # the message is not logged: it may quote the prompt
             yield line({"error": {"code": f"anthropic_{getattr(e, 'status_code', None) or type(e).__name__}"}})
 
@@ -135,6 +135,11 @@ class Config:
     origins: list = field(default_factory=lambda: os.environ.get("STUDIO_ORIGINS", ORIGINS).split(","))
     build: str = field(default_factory=lambda: os.environ.get("STUDIO_BUILD", ""))
     busy_retry_s: float = field(default_factory=lambda: float(os.environ.get("STUDIO_BUSY_RETRY_S", "20")))
+
+
+def is_change(messages: list) -> bool:
+    """A build request that follows an answer of the model's: a change to an app it already wrote (edit mode)."""
+    return any(x.get("role") == "assistant" for x in messages)
 
 
 def build_system_prompt(data_dir: Path) -> str:
@@ -276,11 +281,18 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         if seats.spent_on(m.key, "anthropic") >= cfg.anthropic_cap:
             return None, "anthropic_cap"
         _, max_tokens = PURPOSES[purpose]   # Sonnet 5.5 takes no temperature: only its default is accepted
-        params = {"model": m.id, "max_tokens": max_tokens, "messages": messages,
-                  "thinking": {"type": "adaptive", "display": "summarized"},
-                  "output_config": {"effort": (m.reasoning or "high") if purpose == "build" else "low"}}
+        effort = "low" if purpose != "build" else (m.edit_reasoning or m.reasoning or "high") if is_change(messages) \
+            else (m.reasoning or "high")
+        # prompt caching: the studio's instructions, and the conversation up to the last answer (in edit mode the
+        # whole app), are the same prefix on the next request; reading them back costs a tenth of the input price
+        msgs = [dict(x) for x in messages]
+        last_answer = max((i for i, x in enumerate(msgs) if x["role"] == "assistant"), default=None)
+        if last_answer is not None:
+            msgs[last_answer]["content"] = [{"type": "text", "text": msgs[last_answer]["content"], "cache_control": {"type": "ephemeral"}}]
+        params = {"model": m.id, "max_tokens": max_tokens, "messages": msgs,
+                  "thinking": {"type": "adaptive", "display": "summarized"}, "output_config": {"effort": effort}}
         if systems[purpose]:
-            params["system"] = systems[purpose]
+            params["system"] = [{"type": "text", "text": systems[purpose], "cache_control": {"type": "ephemeral"}}]
         manager = claude.messages.stream(**params)
         try:
             stream = await manager.__aenter__()
@@ -298,7 +310,9 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         payload = {"model": m.id, "stream": True, "usage": {"include": True}, "temperature": temperature,
                    "max_tokens": max_tokens, "provider": models.provider_block(m),
                    "messages": ([{"role": "system", "content": system}] if system else []) + messages}
-        if purpose == "build" and m.reasoning:
+        if purpose == "build" and is_change(messages) and m.edit_reasoning:
+            payload["reasoning"] = {"effort": m.edit_reasoning}   # a change to an app already built
+        elif purpose == "build" and m.reasoning:
             payload["reasoning"] = {"effort": m.reasoning}
         elif purpose == "question" and m.reasoning:   # a quick question: think briefly (GLM-5.3 otherwise thinks past its budget)
             payload["reasoning"] = {"effort": "low"}

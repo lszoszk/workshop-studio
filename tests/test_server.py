@@ -37,11 +37,12 @@ def chunk(content=None, usage=None, provider="Mistral", reasoning=None):
 USAGE = {"prompt_tokens": 1200, "completion_tokens": 300, "cost": 0.0123}
 
 
-def anthropic_sse(thinking="plan the app", text="ok", input_tokens=1000, output_tokens=300):
+def anthropic_sse(thinking="plan the app", text="ok", input_tokens=1000, output_tokens=300, cache_read=0, cache_write=0):
     """A Messages API stream as Anthropic sends it: a thinking block, a text block, then the usage."""
     ev = [("message_start", {"type": "message_start", "message": {"id": "msg_1", "type": "message", "role": "assistant",
            "model": "claude-sonnet-5-5", "content": [], "stop_reason": None, "stop_sequence": None,
-           "usage": {"input_tokens": input_tokens, "output_tokens": 1}}}),
+           "usage": {"input_tokens": input_tokens, "output_tokens": 1, "cache_read_input_tokens": cache_read,
+                     "cache_creation_input_tokens": cache_write}}}),
           ("content_block_start", {"type": "content_block_start", "index": 0,
                                    "content_block": {"type": "thinking", "thinking": "", "signature": ""}}),
           ("content_block_delta", {"type": "content_block_delta", "index": 0, "delta": {"type": "thinking_delta", "thinking": thinking}}),
@@ -71,6 +72,8 @@ class FakeOpenRouter:
         if request.url.host == "api.anthropic.com":
             self.anthropic_requests.append(json.loads(request.content))
             status = self.anthropic_replies.pop(0) if self.anthropic_replies else 200
+            if isinstance(status, dict):          # a scripted stream: anthropic_sse(**status)
+                return httpx.Response(200, headers={"content-type": "text/event-stream"}, content=anthropic_sse(**status))
             if status != 200:
                 return httpx.Response(status, json={"type": "error", "error": {"type": "api_error", "message": f"echo: {SECRET}"}})
             return httpx.Response(200, headers={"content-type": "text/event-stream"}, content=anthropic_sse())
@@ -773,3 +776,27 @@ def test_an_anthropic_error_falls_back_and_never_leaks(env):
     u = next(d for e, d in events(r.text) if e == "usage")
     assert u["model"] == "mistral" and u["fallback_from"] == "claude"
     assert SECRET not in r.text
+
+
+CHANGE = [{"role": "user", "content": "Build a counter"}, {"role": "assistant", "content": "```html\n<!doctype html><html></html>\n```"},
+          {"role": "user", "content": "Add a column"}]
+
+
+def test_a_change_thinks_less_and_reuses_the_cache(env):
+    """Edit mode: a build request that follows the model's answer is a change. Claude gets low effort for it, and
+    the instructions and the conversation up to the last answer are marked for Anthropic's prompt cache."""
+    env.fake.anthropic_replies.append({"input_tokens": 200, "cache_read": 30000, "output_tokens": 400})
+    ev = events(env.client.post("/studio-api/chat", json=body(model="claude", messages=CHANGE)).text)
+    q = env.fake.anthropic_requests[-1]
+    assert q["output_config"] == {"effort": "low"}
+    assert q["system"][0]["cache_control"] == {"type": "ephemeral"}
+    assert q["messages"][1]["content"][0]["cache_control"] == {"type": "ephemeral"}
+    assert q["messages"][2]["content"] == "Add a column"                       # the new request is not cached
+    u = next(d for e, d in ev if e == "usage")
+    assert u["prompt_tokens"] == 30200 and u["cost"] == round((200 * 2.0 + 30000 * 0.2 + 400 * 10.0) / 1e6, 6)
+
+
+def test_a_change_on_glm_thinks_less(env):
+    env.client.post("/studio-api/chat", json=body(model="glm-cn"))
+    env.client.post("/studio-api/chat", json=body(model="glm-cn", messages=CHANGE))
+    assert [q["reasoning"] for q in env.fake.requests] == [{"effort": "medium"}, {"effort": "low"}]

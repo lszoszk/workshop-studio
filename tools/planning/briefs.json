@@ -5,7 +5,7 @@
       "title": "Your country's recommendations dashboard",
       "dataset": "uhri",
       "problem": "I need to see what UN human rights mechanisms have told my country, on which themes and when, find the exact paragraphs fast, and know whether I can trust the numbers.",
-      "facilitator_brief": "A dashboard on the participant's country's file from the Universal Human Rights Index. It should be trustworthy enough for a diplomat preparing a meeting: every number explained, every paragraph one click from its UN document, and a way to check the UN's own labels on a random sample."
+      "facilitator_brief": "A dashboard on the participant's country's file from the Universal Human Rights Index. It should be trustworthy enough for a diplomat preparing a meeting: every number explained, and every paragraph one click from its UN document."
     },
     "s7-4-extract": {
       "title": "Paragraphs out of a UN document",

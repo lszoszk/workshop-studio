@@ -1,0 +1,1 @@
+Reproduce full file with edits applied. I'll rewrite the whole document incorporating the docType filter.

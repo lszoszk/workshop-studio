@@ -627,7 +627,7 @@
     return `The model could not finish (${m}). Your message is back in the box: send it again.`;
   }
 
-  async function build(userText, files = []) {
+  async function build(userText, files = [], opts = {}) {
     if (S.busy || !userText.trim()) return;
     const parent = S.freshNext ? null : currentVersion();
     const promptId = S.pendingPromptId;
@@ -722,7 +722,7 @@
       const v = Object.assign(base, {
         n: S.versions.length + 1, parent: parent ? parent.n : null,
         reply: edit ? summaryOf(text) + '\n\n```html\n' + html + '\n```' : text,
-        summary: summaryOf(text), html, fix: userText.startsWith(FIX), ...(edit ? { edit } : {}),
+        summary: summaryOf(text), html, fix: userText.startsWith(FIX), ...(edit ? { edit } : {}), ...(opts.auto ? { auto: true } : {}),
       });
       S.versions.push(v);
       S.current = v.n;
@@ -732,13 +732,23 @@
       if (p && p.lesson) view.lesson(p.lesson);
       save();
       renderVersions();
+      // automatic repair: an error in the first seconds of a new live version is sent back to the model once, as an
+      // edit (a few seconds); a version that is itself a repair, or a recorded answer, is never repaired again
+      S.autoFix = S.route.type !== 'replay' && !opts.auto ? { n: v.n, t: performance.now() } : null;
       await showVersion(v);
     } catch (e) {
       view.fail('', friendly(e));
       giveBack();
     } finally {
       setBusy(false);
+      if (S.pendingRepair) { const m = S.pendingRepair; S.pendingRepair = null; autoRepair(m); }
     }
+  }
+
+  const REPAIR_WINDOW_MS = 8000;   // an app that fails on load fails in the first seconds; later errors come from a click
+  function autoRepair(m) {
+    note(`The app showed an error as it opened (<i>${esc(String(m.message || '').slice(0, 120))}</i>). The studio sends it back to the model to fix, once; the fix usually takes a few seconds.`);
+    build(`${FIX} "${m.message}"${m.line ? ' at line ' + m.line : ''}. Please fix it and keep everything else the same.`, [], { auto: true });
   }
 
   function setBusy(on) {
@@ -785,10 +795,19 @@
         this.frames.push(f);
       }
     },
+    // one load at a time: a sketch set while the code streams and the finished app set right after it (an answer
+    // that arrives in one piece) would otherwise race for the same frame, and the sketch, with no scripts, could win
     show(doc) {
+      const run = () => this.load(doc);
+      this.queue = (this.queue || Promise.resolve()).then(run, run);
+      return this.queue;
+    },
+    load(doc) {
       return new Promise((resolve) => {
         const back = this.frames[1 - this.front];
+        this.loading = back;   // its scripts run before it comes to the front: their errors belong to the app being shown
         back.onload = () => {
+          this.loading = null;
           // a skeleton set just before this doc fires its own load first; the second load must not swap again
           if (this.frames[this.front] === back) return resolve();
           back.classList.remove('back');
@@ -800,6 +819,8 @@
       });
     },
     win() { return this.frames[this.front].contentWindow; },
+    // the frame on the stage, or the one loading to take its place (an app that fails as it opens fails there)
+    owns(w) { return w === this.win() || (this.loading && w === this.loading.contentWindow); },
   };
 
   async function showVersion(v) {
@@ -821,7 +842,7 @@
     if (m.type === 'studio:ready' && Run3.waiting && e.source === Run3.frame.contentWindow) return Run3.got({ fp: m.fingerprint, shown: m.shown || { picks: [] } });
     const fromTab = tabs.has(e.source);
     if (fromTab && m.type === 'studio:tab-ready') return sendToTab(e.source);
-    if (e.source !== Preview.win() && !fromTab) return;
+    if (!Preview.owns(e.source) && !fromTab) return;
     if (m.type === 'studio:ask') handleAsk(e.source, m);
     else if (fromTab) return;   // a tab shows its own errors and PDFs
     else if (m.type === 'studio:open-source') openSource(m.symbol, m.page, m.quote);
@@ -913,6 +934,13 @@
 
   function showAppError(m) {
     S.lastAppError = String(m.message || '').slice(0, 200);
+    const a = S.autoFix;
+    if (a && a.n === S.current && performance.now() - a.t < REPAIR_WINDOW_MS) {
+      S.autoFix = null;
+      if (S.busy) S.pendingRepair = m;   // the build that showed the app has not finished yet
+      else autoRepair(m);
+      return;
+    }
     const box = $('appError');
     const chain = chainOf(currentVersion());
     let fixes = 0;
@@ -2257,13 +2285,12 @@
   function renderFooter() {
     const a = S.config.author;
     $('footWho').innerHTML = `Made by ${link(a.url, `<b>${esc(a.name)}</b>`)}, ${link(a.place_url, esc(a.place))}`;
-    $('footLinks').innerHTML = 'Open tools: ' + a.tools.map((t) => link(t.url, esc(t.name), t.blurb)).join(' · ') + `<span class="tb"> · ${link(a.github, 'GitHub')}</span>`;
     renderTheme();
   }
 
   function takeFurther() {
     const a = S.config.author;
-    openDrawer('Take it further');
+    openDrawer('About');
     $('drawerBody').innerHTML = `
       <p>${esc(a.line)} These open tools were built the way you built your app today: a model writes the code, the code does the counting, and a person checks it.</p>
       ${a.tools.map((t) => `<div class="tool-card"><h4><a href="${t.url}" target="_blank" rel="noopener">${esc(t.name)}</a></h4>

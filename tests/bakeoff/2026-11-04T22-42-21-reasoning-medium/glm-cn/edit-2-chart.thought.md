@@ -1,0 +1,1 @@
+Add FIG.02 variant: per year per type (Recommendations vs Concerns/Observations). Add as FIG.03. Use edit blocks.

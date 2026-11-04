@@ -1,0 +1,141 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true
+  },
+  "passed": 8,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 772,
+  "edit": null,
+  "repair": null,
+  "seconds": 162.1,
+  "first_token": 38.1,
+  "first_thought": 1.1,
+  "reasoning_chars": 10100,
+  "prompt_tokens": 18960,
+  "completion_tokens": 16205,
+  "cost": 0.097846,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "edit-1-column",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true,
+   "text_matches": true
+  },
+  "passed": 9,
+  "total": 9,
+  "errors": [],
+  "network": [],
+  "lines": 777,
+  "edit": {
+   "edits": 1,
+   "lines": 10
+  },
+  "repair": {
+   "error": "sortCol is not defined",
+   "seconds": 7.7,
+   "cost": 0.02974904,
+   "applied": true,
+   "checks_before": 8
+  },
+  "seconds": 3.9,
+  "first_token": 1.7,
+  "first_thought": 1.3,
+  "reasoning_chars": 96,
+  "prompt_tokens": 32754,
+  "completion_tokens": 253,
+  "cost": 0.02537264,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "edit-2-chart",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true,
+   "text_matches": true
+  },
+  "passed": 9,
+  "total": 9,
+  "errors": [],
+  "network": [],
+  "lines": 795,
+  "edit": {
+   "edits": 4,
+   "lines": 42
+  },
+  "repair": null,
+  "seconds": 11.0,
+  "first_token": 2.5,
+  "first_thought": 1.7,
+  "reasoning_chars": 184,
+  "prompt_tokens": 32747,
+  "completion_tokens": 1260,
+  "cost": 0.01410724,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "edit-3-filter",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true,
+   "text_matches": true
+  },
+  "passed": 9,
+  "total": 9,
+  "errors": [],
+  "network": [],
+  "lines": 783,
+  "edit": {
+   "edits": 8,
+   "fell_back": true,
+   "failed": "if(key==='state')c.push('state');"
+  },
+  "repair": null,
+  "seconds": 106.5,
+  "first_token": 1.6,
+  "first_thought": 1.2,
+  "reasoning_chars": 105,
+  "prompt_tokens": 33835,
+  "completion_tokens": 14099,
+  "cost": 0.08633148,
+  "provider": "Z.AI"
+ }
+]

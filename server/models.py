@@ -38,6 +38,7 @@ class Model:
     zdr: bool = True               # requests go out with zero data retention; Anthropic's own API has none by default
     worker_id: str | None = None   # for api="anthropic": the OpenRouter model and host the Cloudflare Worker uses instead
     worker_host: str | None = None
+    edit_reasoning: str | None = None   # effort for a change to an app already built (edit mode): less than a new build
 
 
 MODELS: dict[str, Model] = {m.key: m for m in [
@@ -49,12 +50,12 @@ MODELS: dict[str, Model] = {m.key: m for m in [
     # STUDIO_ANTHROPIC_CAP, after which requests go to the fallback. No zero data retention on this route.
     # Medium effort: dashboards in 2.4-2.8 min instead of 4.7-5.3 at high, all checks passed (bake-off, 4.11.2026)
     Model("claude", "claude-sonnet-5-5", "anthropic", "Claude Sonnet 5.5", "Anthropic", "US",
-          2.0, 10.0, fallback="mistral", reasoning="medium", api="anthropic", zdr=False,
+          2.0, 10.0, fallback="mistral", reasoning="medium", api="anthropic", zdr=False, edit_reasoning="low",
           worker_id="anthropic/claude-sonnet-5.5", worker_host="amazon-bedrock/us-east-1"),
     Model("glm-cn", "z-ai/glm-5.3", "z-ai", "GLM-5.3 (developer's service)", "Z.AI", "CN",
-          1.4, 4.4, fallback="glm-eu", reasoning="medium"),
+          1.4, 4.4, fallback="glm-eu", reasoning="medium", edit_reasoning="low"),
     Model("glm-eu", "z-ai/glm-5.3", "mistral/nvfp4/eu", "GLM-5.3 (run in the EU)", "Mistral", "EU",
-          1.54, 4.84, fallback="mistral", reasoning="medium"),
+          1.54, 4.84, fallback="mistral", reasoning="medium", edit_reasoning="low"),
     Model("fast", "deepseek/deepseek-v4.1-flash", None, "DeepSeek V4.1 Flash", "any ZDR host", None,
           0.45, 1.8, fallback="mistral"),     # the dearest ZDR endpoint, so an estimate never undercharges
 ]}
@@ -68,8 +69,11 @@ def provider_block(m: Model) -> dict:   # OpenRouter's routing block; an api="an
     return {"only": [m.host], "allow_fallbacks": False, "zdr": True, "data_collection": "deny"}
 
 
-def estimate_cost(m: Model, prompt_tokens: int, completion_tokens: int) -> float:
-    return (prompt_tokens * m.price_in + completion_tokens * m.price_out) / 1e6
+def estimate_cost(m: Model, prompt_tokens: int, completion_tokens: int, cache_write: int = 0, cache_read: int = 0) -> float:
+    """prompt_tokens are the uncached input; a cache write costs 1.25 times the input price, a cache read 0.1 times
+    (Anthropic's prompt caching)."""
+    return (prompt_tokens * m.price_in + cache_write * m.price_in * 1.25 + cache_read * m.price_in * 0.1
+            + completion_tokens * m.price_out) / 1e6
 
 
 def worker_export() -> dict:
@@ -81,7 +85,7 @@ def worker_export() -> dict:
         if m.api == "anthropic":
             d.update(id=m.worker_id, host=m.worker_host, host_label="Amazon Bedrock", api="openrouter", zdr=True,
                      price_in=2.2, price_out=11.0)
-        for k in ("api", "zdr", "worker_id", "worker_host"):
+        for k in ("api", "zdr", "worker_id", "worker_host", "edit_reasoning"):
             d.pop(k, None)
         out.append(d)
     return json.loads(json.dumps({"default": DEFAULT, "models": out}))

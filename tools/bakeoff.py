@@ -98,6 +98,13 @@ def extract_html(text):
 
 
 REASONING = None  # set from --reasoning: OpenRouter reasoning effort (low/medium/high)
+EDIT_REASONING = None  # set from --edit-reasoning: the effort for a change to an app already built (server/models.py)
+REPAIR = False  # set from --repair: an app that fails as it opens is sent back once, as the studio does
+
+
+def effort_for(messages):
+    """The studio's rule (server/app.py is_change): a build request that follows the model's answer is a change."""
+    return (EDIT_REASONING or REASONING) if any(m["role"] == "assistant" for m in messages) else REASONING
 # what the studio sends when a model's edits do not fit the app (site/studio.js, WHOLE_FILE)
 WHOLE_FILE = "Your edits did not match the current code exactly. Reply with the complete updated HTML document in one ```html block instead."
 
@@ -130,14 +137,19 @@ async def generate_anthropic(model_id, messages):
         return {"error": f"the Anthropic ledger is at ${spent:.2f}, at or over the ${ANTHROPIC_CAP:.0f} cap", "seconds": 0}
     mid = MODELS[model_id][0]
     system = "\n\n".join(m["content"] for m in messages if m["role"] == "system")
-    convo = [m for m in messages if m["role"] != "system"]
+    convo = [dict(m) for m in messages if m["role"] != "system"]
+    # prompt caching, as on the server: the instructions and the conversation up to the last answer
+    last = max((i for i, m in enumerate(convo) if m["role"] == "assistant"), default=None)
+    if last is not None:
+        convo[last]["content"] = [{"type": "text", "text": convo[last]["content"], "cache_control": {"type": "ephemeral"}}]
     client = anthropic.AsyncAnthropic(api_key=anthropic_key())
     t0, first, think_first, parts, thoughts = time.monotonic(), None, None, [], []
     try:
         async with client.messages.stream(
-            model=mid, max_tokens=64000, system=system, messages=convo,
+            model=mid, max_tokens=64000, messages=convo,
+            system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
             thinking={"type": "adaptive", "display": "summarized"},
-            output_config={"effort": REASONING or "high"},
+            output_config={"effort": effort_for(messages) or "high"},
         ) as stream:
             async for event in stream:
                 if event.type == "content_block_delta":
@@ -151,17 +163,19 @@ async def generate_anthropic(model_id, messages):
     except anthropic.APIError as e:
         return {"error": f"{type(e).__name__}: {str(e)[:300]}", "seconds": round(time.monotonic() - t0, 1)}
     u = final.usage
-    cost = (u.input_tokens * ANTHROPIC_PRICE[0] + u.output_tokens * ANTHROPIC_PRICE[1]) / 1e6
+    write, read = int(getattr(u, "cache_creation_input_tokens", 0) or 0), int(getattr(u, "cache_read_input_tokens", 0) or 0)
+    cost = (u.input_tokens * ANTHROPIC_PRICE[0] + write * ANTHROPIC_PRICE[0] * 1.25 + read * ANTHROPIC_PRICE[0] * 0.1
+            + u.output_tokens * ANTHROPIC_PRICE[1]) / 1e6
     LEDGER.parent.mkdir(parents=True, exist_ok=True)
     with open(LEDGER, "a", encoding="utf-8") as f:
         f.write(json.dumps({"time": datetime.now().isoformat(timespec="seconds"), "model": mid, "cost": round(cost, 5),
-                            "input": u.input_tokens, "output": u.output_tokens}) + "\n")
+                            "input": u.input_tokens, "output": u.output_tokens, "cache_read": read, "cache_write": write}) + "\n")
     return {
         "text": "".join(parts), "seconds": round(time.monotonic() - t0, 1),
         "first_token": round(first - t0, 1) if first else None,
         "first_thought": round(think_first - t0, 1) if think_first else None,
         "reasoning_chars": sum(map(len, thoughts)), "thought": "".join(thoughts),
-        "prompt_tokens": u.input_tokens, "completion_tokens": u.output_tokens, "cost": round(cost, 5),
+        "prompt_tokens": u.input_tokens + write + read, "cached_tokens": read, "completion_tokens": u.output_tokens, "cost": round(cost, 5),
         "provider": "anthropic", "stop_reason": final.stop_reason,
     }
 
@@ -181,8 +195,8 @@ async def generate(client, key, model_id, messages, tries=2):
         "provider": {"only": [provider], "allow_fallbacks": False, "zdr": True},
         "usage": {"include": True},
     }
-    if REASONING:
-        body["reasoning"] = {"effort": REASONING}
+    if effort_for(messages):
+        body["reasoning"] = {"effort": effort_for(messages)}
     for attempt in range(tries):
         t0, first, parts, usage, prov = time.monotonic(), None, [], {}, None
         think_first, thoughts = None, []
@@ -429,6 +443,22 @@ async def run(models, prompt_ids, outdir):
                 (d / f"{p['id']}.reply.md").write_text(g.get("text") or g.get("error", ""), encoding="utf-8")
                 if g.get("thought"):   # the studio replays it before the answer in recorded mode
                     (d / f"{p['id']}.thought.md").write_text(g["thought"], encoding="utf-8")
+                repair = None
+                if page_html and REPAIR:
+                    checks0, errs0, _ = await score(browser, page_html, p["checks"], init, d_tmp := (outdir / m / f"{p['id']}.pre.png"))
+                    load_err = next((e for e in errs0 if not e.startswith("Failed to load resource")), None)
+                    if load_err:   # what the studio sends (site/studio.js, autoRepair), applied as edit mode applies it
+                        fix_msg = f'The app shows this error: "{load_err}". Please fix it and keep everything else the same.'
+                        fixing = messages + [{"role": "assistant", "content": g["text"] if extract_html(g.get("text", "")) else
+                                              "```html\n" + page_html + "\n```"}, {"role": "user", "content": fix_msg}]
+                        g3 = await generate(client, key, m, fixing)
+                        fixed = extract_html(g3.get("text", ""))
+                        if not fixed and parse_edits(g3.get("text", "")):
+                            fixed, _ = apply_edits(page_html, parse_edits(g3["text"]))
+                        repair = {"error": load_err[:120], "seconds": g3.get("seconds"), "cost": g3.get("cost"),
+                                  "applied": bool(fixed), "checks_before": sum(checks0.values())}
+                        if fixed:
+                            page_html = fixed
                 if page_html:
                     html_of[p["id"]] = page_html
                     # an edited app goes on in the conversation as its whole code, as the studio sends it
@@ -440,7 +470,7 @@ async def run(models, prompt_ids, outdir):
                     checks, errs, net = {k: False for k in p["checks"]}, [g.get("error", "no html in reply")], []
                 r = {"model": m, "label": MODELS[m][2], "prompt": p["id"], "checks": checks,
                      "passed": sum(checks.values()), "total": len(checks), "errors": errs, "network": net,
-                     "lines": page_html.count("\n") + 1 if page_html else 0, "edit": edit,
+                     "lines": page_html.count("\n") + 1 if page_html else 0, "edit": edit, "repair": repair,
                      **{k: g.get(k) for k in ("seconds", "first_token", "first_thought", "reasoning_chars", "prompt_tokens", "completion_tokens", "cost", "provider")}}
                 results.append(r)
                 print(f"{m:8} {p['id']:22} {r['passed']}/{r['total']}  thought@{r['first_thought']}s code@{r['first_token']}s  {r['seconds']}s  ${r['cost'] or 0:.3f}  {errs[:1]}")
@@ -512,9 +542,11 @@ def main():
     ap.add_argument("--prompts", default="")
     ap.add_argument("--rescore", type=Path)
     ap.add_argument("--reasoning", choices=["minimal", "low", "medium", "high"])
+    ap.add_argument("--edit-reasoning", choices=["minimal", "low", "medium", "high"])
+    ap.add_argument("--repair", action="store_true", help="send an app that fails as it opens back once, as the studio does")
     a = ap.parse_args()
-    global REASONING
-    REASONING = a.reasoning
+    global REASONING, EDIT_REASONING, REPAIR
+    REASONING, EDIT_REASONING, REPAIR = a.reasoning, a.edit_reasoning, a.repair
     if a.rescore:
         asyncio.run(rescore(a.rescore))
         return

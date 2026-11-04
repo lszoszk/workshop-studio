@@ -1,0 +1,1 @@
+Add FIG.03 on Overview tab: records per year by type (Recommendations vs Concerns/Observations), stacked or grouped. Keep simple: stacked bars by type, using type values present. Edit.

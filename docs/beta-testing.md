@@ -22,7 +22,7 @@ Session 7 (pick *Session 7* at the top):
 
 1. Choose your country, pick *Your country's recommendations dashboard* and drag the country file from *Your files* into the chat. Answer the planning questions and build the app from the plan.
 2. Open *Look inside* and try *Layers*, *Run it three times* and *What left this laptop*. Each of them should be understandable without the facilitator.
-3. Try the next step *Check and correct the labels*: correct one label and check whether the counts change and whether the correction is marked.
+3. Try the next step *Check a quotation*: paste a passage that quotes UN recommendations to your country (or use the sample the app offers) and see whether the verdicts are right.
 4. Ask for a change in your own words (another chart, a filter, a column), then *Save as file* and open the saved file with Wi-Fi turned off.
 
 Session 8 (pick *Session 8*):

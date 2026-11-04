@@ -58,6 +58,10 @@ EDIT_FITS = ("Now it says how many in words.\n```edit\n<<<<<<< SEARCH\nu.country
 EDIT_MISSES = ("Added a footer.\n```edit\n<<<<<<< SEARCH\n<p>a line that is not in the app</p>\n=======\n"
                "<p>a line that is not in the app</p><footer>Source: UHRI</footer>\n>>>>>>> REPLACE\n```")
 APP_FOOTER = APP.replace("</body>", "<footer>Source: UHRI</footer></body>")
+# automatic repair: an app that fails as it opens, and the one-line edit that repairs it
+APP_BROKEN = APP.replace("<script>const u", "<script>undefinedHelper();\nconst u")
+EDIT_REPAIR = ("Removed the call to a function that does not exist.\n```edit\n<<<<<<< SEARCH\nundefinedHelper();\n=======\n"
+               "\n>>>>>>> REPLACE\n```")
 PLAN_V2 = ("Here is the revised plan.\n\n```markdown\n## Context\nThe same dashboard, revised.\n\n"
            "## The app, screen by screen\n1. A line chart of the records per year.\n2. The table of records.\n```")
 
@@ -123,6 +127,10 @@ def fake_api():
                 events.append({"delta": "I'm well, thank you! Ask me anything, or drag a file into the chat to build an app."})
             elif req["purpose"] == "build" and "how should a bar chart" in last.lower():
                 events.append({"delta": "Sort the bars, label them directly and start the axis at zero."})
+            elif req["purpose"] == "build" and "a counter that breaks" in last.lower():
+                events.append({"delta": APP_BROKEN})
+            elif req["purpose"] == "build" and "The app shows this error" in last and "undefinedHelper" in last:
+                events.append({"delta": EDIT_REPAIR})
             elif req["purpose"] == "build" and "say how many in words" in last.lower():
                 events.append({"delta": EDIT_FITS})
             elif req["purpose"] == "build" and "add a footer" in last.lower():
@@ -1033,4 +1041,24 @@ def test_edit_mode_changes_only_what_was_asked(base_url, browser, fake_api):
     app_frame(page).get_by_text("Source: UHRI").wait_for(timeout=10000)
     assert "did not fit your app" in page.locator(".retry-note").last.inner_text()
     assert not errors, errors
+    ctx.close()
+
+
+def test_an_app_that_fails_as_it_opens_is_repaired_once(base_url, browser, fake_api):
+    """A new live version that throws in its first seconds goes back to the model once, as an edit, with a note in
+    the chat; the repaired version is never repaired automatically again."""
+    api, calls = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + f"?api={api}&planpace=1#s=TEST22")
+    started(page)
+    send(page, DASHBOARD, "uhri", 1)
+    app_frame(page).get_by_text("Colombia 2150").wait_for(timeout=10000)
+    page.fill("#input", "Make it a counter that breaks.")
+    page.click("#sendBtn")
+    built(page, 3)                                                     # the broken version, then its repair
+    assert "The app shows this error" in calls[-1]["messages"][-1]["content"] and "undefinedHelper" in calls[-1]["messages"][-1]["content"]
+    assert "sends it back to the model to fix, once" in page.locator(".msg.note").last.inner_text()
+    app_frame(page).get_by_text("Colombia 2150").wait_for(timeout=10000)
+    assert page.is_hidden("#appError")
     ctx.close()

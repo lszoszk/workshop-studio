@@ -104,7 +104,7 @@ At 09:48 the video should play. In this room two of five are not ready: Mr Chen'
 
 - **The arc.** Dashboard, then PDF, then published data, then the Verbatim finder: each step answers the question the previous one raised, and the method ladder gives the facilitator one sentence per step.
 - **The quotation of paragraph 97** and **the reveal that the data already exists**: short, concrete, and they change how lawyers see the tool.
-- **Run it three times, Layers, Check ten at random, the comparison table**: they turn "trust" into something to look at. This matters, because research on automation bias finds that teaching people about AI's limits does not by itself reduce over-reliance, while checks built into the workflow do (see Sources).
+- **Run it three times, Layers, Check a quotation, the comparison table**: they turn "trust" into something to look at. This matters, because research on automation bias finds that teaching people about AI's limits does not by itself reduce over-reliance, while checks built into the workflow do (see Sources).
 - **The confidentiality thread** (*What left this laptop*, the model badge, the model step's "n pages will leave the browser", the eight cards). For diplomats and UN staff it is the real question of the morning, and the studio answers it on screen.
 - **Recorded mode and *Improve it in the studio***: anyone whose build breaks can continue from a working app in under a minute.
 - **The HTML exercise** (since 4 November): a shorter plan, builds of about two minutes, and a loss (0 of 141 footnotes) that participants find themselves, which leads straight into the slide on formats.
@@ -127,7 +127,7 @@ At 09:48 the video should play. In this room two of five are not ready: Mr Chen'
 - "Can I use this with confidential documents?" Not in this studio; at home, with a model run locally or under an agreement your institution approves; the script-first method keeps the documents themselves away from the model.
 - "Which AI may UN staff use?" Their own institution's rules apply; the studio only shows where each request goes.
 - "Why a Chinese model?" To compare where requests go and how the same plan fares; GLM is open weights, and the EU-hosted entry keeps requests in the EU.
-- "Is the UN's labelling reliable?" *Check ten at random* exists to look at that, not to answer it.
+- "Is the UN's labelling reliable?" The labels sit next to the text they label on every record; *Check a quotation* checks the participant's own quotations, not the UN's labels.
 - "Who pays, and what does it cost?" In the bake-off a build cost 4 to 31 cents with Mistral Large 3 and GLM (Claude costs more and was not measured through the studio); the seat budgets are set by the organisers.
 - "Will this replace legal researchers?" The HRC Voting story: one evening of building, then more than 50 fixes over ten weeks; the knowledge of the domain did the work.
 
