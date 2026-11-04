@@ -1,0 +1,3037 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Research wiki: neurotechnology in the administration of justice</title>
+<style>
+:root {
+  --paper: #f4f0e8;
+  --ink: #1d1b18;
+  --rule: #d9d2c3;
+  --accent: #9b2335;
+  --amber: #ffa500;
+  --green: #2e8b57;
+  --yellow: #fff8dc;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  background-color: var(--paper);
+  overflow-x: hidden;
+}
+[hidden] { display: none !important; }
+h1, h2, h3, h4, h5, h6 {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-weight: 400;
+  margin: 0 0 0.5em;
+}
+h1 { font-size: 2.2rem; }
+h2 { font-size: 1.8rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.3rem; }
+h5 { font-size: 1.1rem; }
+h6 { font-size: 1rem; }
+label {
+  display: block;
+  margin-bottom: 0.25em;
+  font-size: 0.9rem;
+}
+input, textarea, button {
+  font-family: inherit;
+  font-size: inherit;
+  box-sizing: border-box;
+}
+input, textarea {
+  border: 1px solid var(--rule);
+  padding: 0.5em;
+  background: white;
+}
+button {
+  border: 1px solid var(--rule);
+  background: white;
+  padding: 0.5em 1em;
+  cursor: pointer;
+  border-radius: 2px;
+}
+button:hover { background: var(--paper); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.secondary { background: transparent; border-color: transparent; }
+button.secondary:hover { background: var(--paper); }
+button.stop { background: var(--amber); color: white; }
+button.stop:hover { background: #cc8400; }
+button.approve { background: var(--green); color: white; }
+button.approve:hover { background: #256a42; }
+button.reject { background: var(--accent); color: white; }
+button.reject:hover { background: #7a1c2a; }
+header {
+  padding: 1em 1.5em;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 1em;
+}
+header h1 {
+  font-size: 1.8rem;
+  margin: 0;
+}
+header .meta {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  color: #666;
+  text-align: right;
+}
+.tablist {
+  display: flex;
+  border-bottom: 1px solid var(--rule);
+  padding: 0 1.5em;
+  gap: 0.5em;
+  list-style: none;
+  margin: 0;
+  flex-wrap: wrap;
+}
+.tablist button {
+  padding: 0.75em 1em;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tablist button[aria-selected="true"] {
+  border-bottom-color: var(--accent);
+  font-weight: bold;
+}
+.tablist button:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tablist button.running::after {
+  content: " · running";
+  color: var(--accent);
+}
+main {
+  padding: 1.5em;
+  display: flex;
+  gap: 2em;
+}
+.sidebar {
+  width: 320px;
+  flex-shrink: 0;
+}
+.page-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.page-list li {
+  margin-bottom: 1em;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid var(--rule);
+}
+.page-list .type {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #666;
+  margin-bottom: 0.5em;
+}
+.page-list .title {
+  font-size: 1rem;
+  margin: 0;
+  line-height: 1.3;
+}
+.page-list .meta {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  color: #666;
+}
+.page-list .stub::after {
+  content: " · stub";
+  color: var(--accent);
+}
+.content {
+  flex: 1;
+  max-width: 900px;
+}
+.big-number {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 3rem;
+  margin: 0 0 0.5em;
+  color: var(--ink);
+}
+.badge {
+  display: inline-block;
+  padding: 0.2em 0.5em;
+  margin-right: 0.5em;
+  margin-bottom: 0.5em;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.badge.register {
+  background: var(--paper);
+  color: var(--ink);
+}
+.badge.status {
+  background: var(--paper);
+  color: var(--ink);
+}
+.badge.status.draft { background: #fff3cd; }
+.badge.status.reviewed { background: #d4edda; }
+.badge.status.stub { background: #f8d7da; }
+.tag {
+  display: inline-block;
+  padding: 0.2em 0.5em;
+  margin-right: 0.5em;
+  margin-bottom: 0.5em;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+.markdown {
+  white-space: pre-wrap;
+}
+.markdown h1, .markdown h2, .markdown h3, .markdown h4, .markdown h5, .markdown h6 {
+  margin-top: 1.5em;
+}
+.markdown p { margin: 0 0 1em; }
+.markdown ul, .markdown ol {
+  margin: 0 0 1em;
+  padding-left: 2em;
+}
+.markdown li { margin-bottom: 0.5em; }
+.markdown a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.markdown a:hover { text-decoration: underline; }
+.markdown a.dangling {
+  color: var(--accent);
+  text-decoration: line-through;
+}
+.markdown a.dangling:hover { text-decoration: line-through underline; }
+.markdown a.external::after {
+  content: " ↗";
+  font-size: 0.8em;
+}
+.pin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.2em 0.5em;
+  margin: 0 0.2em;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.pin-chip:hover { background: #e8e0d0; }
+.pin-chip[data-verified="false"] { border-color: var(--amber); }
+.pin-chip[data-verified="false"] .verification { color: var(--amber); }
+.pin-chip .verification { font-family: ui-monospace, Menlo, Consolas, monospace; }
+.pin-chip .quote {
+  font-style: italic;
+  color: #666;
+}
+.pin-chip .document {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  color: #666;
+}
+.pin-chip .page-info {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  color: #666;
+}
+.pin-chip .open-pdf {
+  font-size: 0.7rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+.pin-chip .open-pdf:hover { text-decoration: underline; }
+.pin-chip.expanded {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3em;
+  padding: 0.5em;
+  margin: 0.5em 0;
+  background: white;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+.contested-card {
+  margin: 1.5em 0;
+  padding: 1em;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: white;
+}
+.contested-card h3 {
+  margin-top: 0;
+  font-size: 1.3rem;
+}
+.contested-card .verdict {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 2rem;
+  margin: 0.5em 0;
+  color: var(--ink);
+}
+.contested-card .verdict.leans-contest { color: var(--accent); }
+.contested-card .verdict.contested { color: var(--accent); }
+.contested-card .verdict.leans-support { color: var(--green); }
+.contested-card .verdict.settled-contest { color: var(--accent); }
+.contested-card .verdict.settled-support { color: var(--green); }
+.contested-card .lean-bar {
+  margin: 1em 0;
+  height: 2em;
+  background: var(--rule);
+  position: relative;
+}
+.contested-card .lean-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+}
+.contested-card .lean-bar-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  color: white;
+}
+.contested-card table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1em;
+}
+.contested-card th, .contested-card td {
+  padding: 0.5em;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+}
+.contested-card th { font-weight: bold; }
+.contested-card .sign { font-weight: bold; }
+.contested-card .sign.plus { color: var(--green); }
+.contested-card .sign.minus { color: var(--accent); }
+.contested-card .sign.tilde { color: #666; }
+.links-out, .linked-from, .sources {
+  margin: 2em 0;
+}
+.links-out h4, .linked-from h4, .sources h4 {
+  font-size: 1rem;
+  margin-bottom: 0.5em;
+}
+.links-out ul, .linked-from ul, .sources ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.links-out li, .linked-from li, .sources li {
+  margin-bottom: 0.5em;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid var(--rule);
+}
+.links-out li:last-child, .linked-from li:last-child, .sources li:last-child {
+  border-bottom: none;
+}
+.links-out .meta, .linked-from .meta, .sources .meta {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  color: #666;
+}
+.links-out .meta::before, .linked-from .meta::before, .sources .meta::before {
+  content: "· ";
+}
+.ask-form {
+  margin-bottom: 2em;
+}
+.ask-form textarea {
+  width: 100%;
+  min-height: 100px;
+  margin-bottom: 0.5em;
+}
+.ask-answer {
+  margin: 2em 0;
+  padding: 1em;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: white;
+}
+.ask-answer[data-source="ai"] {
+  border-left: 4px solid var(--accent);
+}
+.ask-answer .pin-counts {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 1em;
+}
+.ask-answer .cannot-answer {
+  margin-top: 1em;
+  padding-top: 1em;
+  border-top: 1px solid var(--rule);
+}
+.ask-answer .cannot-answer h4 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+.file-card {
+  margin: 2em 0;
+  padding: 1em;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: white;
+}
+.file-card h3 {
+  margin-top: 0;
+  font-size: 1.3rem;
+}
+.file-card .frontmatter {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  background: var(--paper);
+  padding: 0.5em;
+  border-radius: 3px;
+  margin: 1em 0;
+}
+.ingest-stepper {
+  margin: 2em 0;
+}
+.ingest-stepper .step {
+  margin-bottom: 2em;
+  padding-bottom: 2em;
+  border-bottom: 1px solid var(--rule);
+}
+.ingest-stepper .step:last-child { border-bottom: none; }
+.ingest-stepper h3 {
+  margin-top: 0;
+  font-size: 1.3rem;
+}
+.ingest-stepper .batch-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+.ingest-stepper .batch-table th, .ingest-stepper .batch-table td {
+  padding: 0.5em;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+}
+.ingest-stepper .batch-table th { font-weight: bold; }
+.ingest-stepper .takeaways-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+.ingest-stepper .takeaways-table th, .ingest-stepper .takeaways-table td {
+  padding: 0.5em;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+}
+.ingest-stepper .takeaways-table th { font-weight: bold; }
+.ingest-stepper .takeaways-table .verification {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+}
+.ingest-stepper .takeaways-table .verification.verified { color: var(--green); }
+.ingest-stepper .takeaways-table .verification.failed { color: var(--amber); }
+.ingest-stepper .failed-takeaways {
+  margin: 1em 0;
+  padding: 1em;
+  border: 1px solid var(--amber);
+  border-radius: 3px;
+  background: #fff8e1;
+}
+.ingest-stepper .failed-takeaways h4 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+.ingest-stepper .failed-takeaways .failed-item {
+  margin-bottom: 1em;
+  padding-bottom: 1em;
+  border-bottom: 1px solid var(--amber);
+}
+.ingest-stepper .failed-takeaways .failed-item:last-child { border-bottom: none; }
+.ingest-stepper .failed-takeaways .quote {
+  font-style: italic;
+  background: white;
+  padding: 0.5em;
+  border-radius: 3px;
+  margin: 0.5em 0;
+}
+.ingest-stepper .failed-takeaways .passage {
+  background: white;
+  padding: 0.5em;
+  border-radius: 3px;
+  margin: 0.5em 0;
+}
+.ingest-stepper .failed-takeaways .nearest {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  color: #666;
+}
+.change-card {
+  margin: 2em 0;
+  padding: 1em;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: white;
+}
+.change-card fieldset {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1em;
+  margin: 1em 0;
+}
+.change-card legend {
+  padding: 0 0.5em;
+  font-weight: bold;
+}
+.change-card .inserted {
+  background: var(--yellow);
+  padding: 0.5em;
+  border-left: 3px solid var(--accent);
+  margin: 0.5em 0;
+}
+.lint-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+.lint-table th, .lint-table td {
+  padding: 0.5em;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+}
+.lint-table th { font-weight: bold; }
+.lint-table .check { color: var(--accent); }
+.lint-table .pass { color: var(--green); }
+.lint-table .pages a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.lint-table .pages a:hover { text-decoration: underline; }
+.log-entry {
+  margin-bottom: 1em;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1em;
+}
+.log-entry h3 {
+  margin-top: 0;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.log-entry h3::before {
+  content: "▶ ";
+  font-size: 0.8em;
+}
+.log-entry h3.collapsed::before { content: "▼ "; }
+.log-entry .body {
+  margin-top: 0.5em;
+  padding-left: 1em;
+  border-left: 2px solid var(--rule);
+}
+.log-entry .body pre {
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: inherit;
+  margin: 0;
+}
+.tensions-register {
+  margin: 2em 0;
+}
+.tensions-register h3 {
+  margin-top: 0;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.tensions-register h3::before {
+  content: "▶ ";
+  font-size: 0.8em;
+}
+.tensions-register h3.collapsed::before { content: "▼ "; }
+.tensions-register .entry {
+  margin-top: 0.5em;
+  padding-left: 1em;
+  border-left: 2px solid var(--rule);
+}
+.tensions-register .entry pre {
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: inherit;
+  margin: 0;
+}
+.tensions-register .entry .card-link {
+  color: var(--accent);
+  text-decoration: none;
+  cursor: pointer;
+}
+.tensions-register .entry .card-link:hover { text-decoration: underline; }
+.method-note {
+  margin: 2em 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+.download {
+  margin: 2em 0;
+}
+.download button {
+  margin-right: 1em;
+}
+.session-tag {
+  background: var(--accent);
+  color: white;
+  padding: 0.1em 0.3em;
+  border-radius: 2px;
+  font-size: 0.7rem;
+  margin-left: 0.5em;
+}
+@media (max-width: 900px) {
+  main { flex-direction: column; }
+  .sidebar { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1><span style="font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8em; letter-spacing: 0.05em; text-transform: uppercase;">WIKI · neurotechnology and justice</span><br/>Research wiki: neurotechnology in the administration of justice</h1>
+    <div class="meta" id="header-meta"></div>
+  </div>
+  <div class="meta">
+    <div id="session-counters">Changes this session: 0 · Calls to the model: 0 · Passages that left the browser: 0</div>
+    <div>This page has no storage: changes live in it until you download them (tab 05)</div>
+  </div>
+</header>
+
+<ul class="tablist" role="tablist" aria-label="Tabs">
+  <li><button id="tab-01" role="tab" aria-selected="true" aria-controls="panel-01">01 PAGES</button></li>
+  <li><button id="tab-02" role="tab" aria-selected="false" aria-controls="panel-02">02 ASK</button></li>
+  <li><button id="tab-03" role="tab" aria-selected="false" aria-controls="panel-03">03 INGEST</button></li>
+  <li><button id="tab-04" role="tab" aria-selected="false" aria-controls="panel-04">04 CHECK</button></li>
+  <li><button id="tab-05" role="tab" aria-selected="false" aria-controls="panel-05">05 RECORD</button></li>
+</ul>
+
+<main>
+  <div id="panel-01" role="tabpanel" aria-labelledby="tab-01">
+    <div class="sidebar">
+      <label for="page-filter">title, tag or slug</label>
+      <input type="text" id="page-filter" placeholder="Filter pages..."/>
+      <div class="big-number" id="page-count">0 of 0 pages</div>
+      <ul class="page-list" id="page-list"></ul>
+    </div>
+    <div class="content" id="page-content">
+      <div id="index-content"></div>
+    </div>
+  </div>
+
+  <div id="panel-02" role="tabpanel" aria-labelledby="tab-02" hidden>
+    <div class="content">
+      <div class="ask-form">
+        <label for="ask-question">What does the wiki say about…?</label>
+        <textarea id="ask-question" placeholder="e.g. Can a suspect consent to lie detection?"></textarea>
+        <button id="ask-button">Ask the wiki</button>
+      </div>
+      <div id="ask-prompt"></div>
+      <div id="ask-answer"></div>
+    </div>
+  </div>
+
+  <div id="panel-03" role="tabpanel" aria-labelledby="tab-03" hidden>
+    <div class="content">
+      <div id="ingest-intro">
+        <h2>What waits in the inbox?</h2>
+        <div id="inbox-documents"></div>
+      </div>
+      <div id="ingest-stepper"></div>
+    </div>
+  </div>
+
+  <div id="panel-04" role="tabpanel" aria-labelledby="tab-04" hidden>
+    <div class="content">
+      <div class="big-number" id="verified-count">0 of 0 pins verified by this page</div>
+      <div class="big-number" id="lint-count">0 lint checks need a look</div>
+      <div class="lint-table-container">
+        <table class="lint-table">
+          <caption>FIG.01 &nbsp; Lint checks</caption>
+          <thead>
+            <tr>
+              <th>Check</th>
+              <th>Result</th>
+              <th>Pages</th>
+            </tr>
+          </thead>
+          <tbody id="lint-results"></tbody>
+        </table>
+      </div>
+      <details open>
+        <summary>How the app checks itself</summary>
+        <div class="method-note">
+          <p>A panel of one-line checks: what was compared, the values, "pass" in green or "check" in red, with the pages concerned as links. A failing check never hides a page or a pin.</p>
+        </div>
+      </details>
+      <button id="lint-button">Lint now</button>
+    </div>
+  </div>
+
+  <div id="panel-05" role="tabpanel" aria-labelledby="tab-05" hidden>
+    <div class="content">
+      <div class="download">
+        <button id="download-wiki">Download the wiki</button>
+        <button id="download-changes" disabled>Download changed pages as markdown</button>
+      </div>
+      <div>
+        <label>
+          <input type="checkbox" id="log-order"/>
+          Show newest first
+        </label>
+      </div>
+      <div id="log-content"></div>
+      <div id="tensions-content"></div>
+      <div class="method-note">
+        <p>Counting, matching and verification are done by this page's code; each number has its "How this is computed" line. The model is called only when you press Ask, Ingest or a retry button.</p>
+      </div>
+      <div class="meta">
+        <p>Data source: <code>WORKSHOP_DATA.wiki</code> with <code>WORKSHOP_DATA.library</code></p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="meta">
+  <div style="padding: 1em 1.5em; border-top: 1px solid var(--rule); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8rem;">
+    <span id="wiki-source"></span> · Counting, matching and verification are done by this page's code; the model is called only when you press Ask, Ingest or a retry button.
+  </div>
+</footer>
+
+<script>
+(function() {
+  // Data
+  const P = WORKSHOP_DATA.wiki.pages;
+  const D = WORKSHOP_DATA.library.records;
+  const index = WORKSHOP_DATA.wiki.index;
+  const log = WORKSHOP_DATA.wiki.log;
+  const tensions = WORKSHOP_DATA.wiki.tensions;
+  const schema = WORKSHOP_DATA.wiki.schema;
+  const built = WORKSHOP_DATA.wiki.built;
+  const source = WORKSHOP_DATA.wiki.source;
+
+  // State
+  let currentTab = "01";
+  let currentPage = null;
+  let sessionChanges = 0;
+  let sessionCalls = 0;
+  let sessionPassages = 0;
+  let changes = [];
+  let lintResults = [];
+  let askPages = [];
+  let askAnswer = null;
+  let ingestDocument = null;
+  let ingestBatches = [];
+  let ingestTakeaways = [];
+  let ingestFailed = [];
+  let ingestSourcePage = null;
+  let ingestChanges = [];
+  let ingestApproved = [];
+  let ingestRejected = [];
+  let logOrder = false;
+
+  // Maps
+  const slugToPage = new Map();
+  const idToDocument = new Map();
+  const backlinks = new Map();
+  const registerNames = {
+    a: "treaty law",
+    b: "General Comments",
+    c: "UN, agency and soft-law reports",
+    d: "national human rights institution",
+    e: "civil society",
+    f: "scholarship"
+  };
+
+  // Normalise text for matching
+  function norm(s) {
+    if (typeof s !== "string") return "";
+    return s
+      .normalize("NFKC")
+      .replace(/[“”„]/g, '"')
+      .replace(/[‘’]/g, "'")
+      .replace(/[–—]/g, "-")
+      .replace(/\u00AD/g, "")
+      .replace(/-\s+/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  // Verify a pin
+  function verify(pin) {
+    const { id, page, quote, label } = pin;
+    const doc = idToDocument.get(id);
+    if (!doc) return { verified: false, reason: "document not found" };
+    if (doc.status === "inbox") return { verified: false, reason: "document in inbox" };
+    const passage = doc.passages.find(p => p.page === page);
+    if (!passage) return { verified: false, reason: "page not found" };
+
+    const fragments = quote.split(/…|\.\.\./).map(norm);
+    let text = norm(passage.text);
+    let pos = 0;
+    for (const frag of fragments) {
+      const idx = text.indexOf(frag, pos);
+      if (idx === -1) return { verified: false, reason: "quote not found" };
+      pos = idx + frag.length;
+    }
+
+    const expectedLabel = passage.paragraph
+      ? `para. ${passage.paragraph}`
+      : `p. ${passage.page_label}`;
+    if (!label.includes(expectedLabel)) {
+      return { verified: false, reason: "label mismatch" };
+    }
+
+    return { verified: true, passage };
+  }
+
+  // Build a pin chip
+  function buildPinChip(pin, expanded = false) {
+    const { label, id, page, quote, mark } = pin;
+    const doc = idToDocument.get(id);
+    const docRegister = doc ? getDocumentRegister(doc.id) : "?";
+    const docName = doc ? doc.short_title || doc.title : id;
+    const verification = verify(pin);
+    const verified = verification.verified;
+    const reason = verification.reason;
+    const passage = verification.passage;
+
+    const chip = document.createElement("span");
+    chip.className = "pin-chip";
+    chip.setAttribute("data-verified", verified);
+    chip.setAttribute("data-id", id);
+    chip.setAttribute("data-page", page);
+    chip.setAttribute("data-quote", quote);
+
+    const quoteSpan = document.createElement("span");
+    quoteSpan.className = "quote";
+    quoteSpan.textContent = `"${quote}"`;
+
+    const labelButton = document.createElement("button");
+    labelButton.className = "secondary";
+    labelButton.textContent = label;
+    labelButton.addEventListener("click", () => {
+      studio.openSource(id, page, quote);
+    });
+
+    const docSpan = document.createElement("span");
+    docSpan.className = "document";
+    docSpan.textContent = `(${docRegister}) ${docName}`;
+
+    const verificationSpan = document.createElement("span");
+    verificationSpan.className = "verification";
+    verificationSpan.textContent = verified ? "✓ verified" : "⚠ not found";
+    if (mark === "✓" && !verified) {
+      verificationSpan.textContent += " · page says ✓";
+    } else if (mark === "⚠" && verified) {
+      verificationSpan.textContent += " · page says ⚠";
+    }
+
+    chip.appendChild(quoteSpan);
+    chip.appendChild(labelButton);
+    chip.appendChild(docSpan);
+    chip.appendChild(verificationSpan);
+
+    if (expanded) {
+      chip.classList.add("expanded");
+      const pageInfo = document.createElement("span");
+      pageInfo.className = "page-info";
+      if (passage) {
+        pageInfo.textContent = passage.paragraph
+          ? `para. ${passage.paragraph}`
+          : `p. ${passage.page_label}`;
+        if (passage.text.length > 300) {
+          pageInfo.textContent += ` · ${passage.text.substring(0, 300)}…`;
+        } else {
+          pageInfo.textContent += ` · ${passage.text}`;
+        }
+      } else {
+        pageInfo.textContent = "passage not found";
+      }
+      chip.appendChild(pageInfo);
+
+      const openPdf = document.createElement("a");
+      openPdf.className = "open-pdf";
+      openPdf.textContent = "Open the PDF page";
+      openPdf.href = "#";
+      openPdf.addEventListener("click", (e) => {
+        e.preventDefault();
+        studio.openSource(id, page, quote);
+      });
+      chip.appendChild(openPdf);
+    }
+
+    return chip;
+  }
+
+  // Get the register of a document
+  function getDocumentRegister(id) {
+    for (const page of P) {
+      if (page.frontmatter.sources && page.frontmatter.sources.includes(id)) {
+        return page.frontmatter.register || "?";
+      }
+    }
+    return "?";
+  }
+
+  // Get the cite-as for a document
+  function getCiteAs(id) {
+    const pins = [];
+    for (const page of P) {
+      const matches = [...page.body.matchAll(/\[([^\]]+)\]\(pin:([^#\s)]+)#p(\d+)(?: "([^"]*)")?\) ?(✓|⚠)/g)];
+      for (const m of matches) {
+        if (m[2] === id) pins.push(m[1]);
+      }
+    }
+    if (pins.length === 0) {
+      const doc = idToDocument.get(id);
+      return doc.symbol || `${doc.author} ${doc.year}`;
+    }
+    const counts = {};
+    for (const pin of pins) {
+      const prefix = pin.split(", ")[0];
+      counts[prefix] = (counts[prefix] || 0) + 1;
+    }
+    let max = 0;
+    let citeAs = "";
+    for (const [prefix, count] of Object.entries(counts)) {
+      if (count > max) {
+        max = count;
+        citeAs = prefix;
+      }
+    }
+    return citeAs;
+  }
+
+  // Build a new pin
+  function buildNewPin(id, page, quote) {
+    const doc = idToDocument.get(id);
+    const passage = doc.passages.find(p => p.page === page);
+    if (!passage) return null;
+    const citeAs = getCiteAs(id);
+    const label = passage.paragraph
+      ? `${citeAs}, para. ${passage.paragraph}`
+      : `${citeAs}, p. ${passage.page_label}`;
+    const cleanQuote = quote.replace(/"/g, "“”");
+    return `[${label}](pin:${id}#p${page} "${cleanQuote}") ✓`;
+  }
+
+  // Parse a page's pins
+  function parsePins(body) {
+    const pins = [];
+    const matches = [...body.matchAll(/\[([^\]]+)\]\(pin:([^#\s)]+)#p(\d+)(?: "([^"]*)")?\) ?(✓|⚠)/g)];
+    for (const m of matches) {
+      pins.push({
+        label: m[1],
+        id: m[2],
+        page: parseInt(m[3]),
+        quote: m[4] || "",
+        mark: m[5]
+      });
+    }
+    return pins;
+  }
+
+  // Parse a page's links
+  function parseLinks(body) {
+    const links = new Set();
+    const matches = [...body.matchAll(/\[\[([^\]|#]+)/g)];
+    for (const m of matches) {
+      links.add(m[1]);
+    }
+    return Array.from(links);
+  }
+
+  // Build backlinks
+  function buildBacklinks() {
+    for (const page of P) {
+      const slug = page.slug;
+      backlinks.set(slug, []);
+    }
+    for (const page of P) {
+      const links = parseLinks(page.body);
+      for (const link of links) {
+        if (backlinks.has(link)) {
+          backlinks.get(link).push(page.slug);
+        }
+      }
+    }
+  }
+
+  // Render markdown
+  function renderMarkdown(text, container) {
+    // Headings
+    text = text.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+    text = text.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+    text = text.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+    text = text.replace(/^#### (.*$)/gm, '<h4>$1</h4>');
+    text = text.replace(/^##### (.*$)/gm, '<h5>$1</h5>');
+    text = text.replace(/^###### (.*$)/gm, '<h6>$1</h6>');
+
+    // Bold, italic
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+    // Lists
+    text = text.replace(/^\s*\*\s+(.*$)/gm, '<ul><li>$1</li></ul>');
+    text = text.replace(/<\/ul>\s*<ul>/g, '');
+    text = text.replace(/^\s*\d+\.\s+(.*$)/gm, '<ol><li>$1</li></ol>');
+    text = text.replace(/<\/ol>\s*<ol>/g, '');
+
+    // Links
+    text = text.replace(/\[\[([^\]|#]+)\]\]/g, (_, slug) => {
+      const page = slugToPage.get(slug);
+      if (page) {
+        return `<a href="#${slug}" class="internal-link">${page.title}</a>`;
+      } else {
+        return `<a class="dangling">${slug}</a>`;
+      }
+    });
+    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="external">$1</a>');
+
+    // Pins
+    text = text.replace(/\[([^\]]+)\]\(pin:([^#\s)]+)#p(\d+)(?: "([^"]*)")?\) ?(✓|⚠)/g, (_, label, id, page, quote, mark) => {
+      const pin = { label, id, page: parseInt(page), quote: quote || "", mark };
+      const chip = buildPinChip(pin);
+      return chip.outerHTML;
+    });
+
+    // Contested blocks
+    text = text.replace(/```contested([\s\S]+?)```/g, (_, block) => {
+      const lines = block.trim().split("\n");
+      let claim = "";
+      let verdict = "";
+      let note = "";
+      const positions = [];
+      for (const line of lines) {
+        if (line.startsWith("claim: ")) {
+          claim = line.substring(7).trim();
+        } else if (line.startsWith("verdict: ")) {
+          verdict = line.substring(8).trim();
+        } else if (line.startsWith("note: ")) {
+          note = line.substring(5).trim();
+        } else if (line.match(/^[+-~] \| [a-f] \|/)) {
+          const parts = line.split(" | ");
+          positions.push({
+            sign: parts[0],
+            register: parts[1],
+            pin: parts[2],
+            gloss: parts[3],
+            page: parts[4]
+          });
+        }
+      }
+      const card = document.createElement("div");
+      card.className = "contested-card";
+
+      const h3 = document.createElement("h3");
+      h3.textContent = claim;
+      card.appendChild(h3);
+
+      const verdictEl = document.createElement("div");
+      verdictEl.className = `verdict ${verdict.replace(/\s+/g, "-")}`;
+      verdictEl.textContent = verdict;
+      card.appendChild(verdictEl);
+
+      const noteEl = document.createElement("p");
+      noteEl.textContent = note;
+      card.appendChild(noteEl);
+
+      const weights = { a: 5, b: 4, c: 3, d: 2, e: 1, f: 0.5 };
+      const totalWeight = positions.reduce((sum, pos) => sum + weights[pos.register], 0);
+      const supportWeight = positions.reduce((sum, pos) => {
+        if (pos.sign === "+") return sum + weights[pos.register];
+        if (pos.sign === "~") return sum + 0.5 * weights[pos.register];
+        return sum;
+      }, 0);
+      const lean = totalWeight > 0 ? supportWeight / totalWeight : 0;
+
+      const bar = document.createElement("div");
+      bar.className = "lean-bar";
+      const barFill = document.createElement("div");
+      barFill.className = "lean-bar-fill";
+      barFill.style.width = `${lean * 100}%`;
+      bar.appendChild(barFill);
+      const barLabel = document.createElement("div");
+      barLabel.className = "lean-bar-label";
+      barLabel.textContent = `descriptive: support ${Math.round(lean * 100)}% of weighted positions, weights a 5 · b 4 · c 3 · d 2 · e 1 · f ½; the verdict is the answer`;
+      bar.appendChild(barLabel);
+      card.appendChild(bar);
+
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const tbody = document.createElement("tbody");
+      const tr = document.createElement("tr");
+      ["Sign", "Register", "Pin", "Gloss", "Page"].forEach(text => {
+        const th = document.createElement("th");
+        th.textContent = text;
+        tr.appendChild(th);
+      });
+      thead.appendChild(tr);
+      table.appendChild(thead);
+
+      for (const pos of positions) {
+        const tr = document.createElement("tr");
+        const signTd = document.createElement("td");
+        signTd.className = `sign ${pos.sign === "+" ? "plus" : pos.sign === "-" ? "minus" : "tilde"}`;
+        signTd.textContent = pos.sign;
+        tr.appendChild(signTd);
+
+        const regTd = document.createElement("td");
+        regTd.textContent = pos.register;
+        tr.appendChild(regTd);
+
+        const pinTd = document.createElement("td");
+        const pin = {
+          label: pos.pin.match(/\[([^\]]+)\]/)[1],
+          id: pos.pin.match(/pin:([^#\s)]+)/)[1],
+          page: parseInt(pos.pin.match(/#p(\d+)/)[1]),
+          quote: pos.pin.match(/"([^"]*)"/)[1],
+          mark: "✓"
+        };
+        const chip = buildPinChip(pin);
+        pinTd.appendChild(chip);
+        tr.appendChild(pinTd);
+
+        const glossTd = document.createElement("td");
+        glossTd.textContent = pos.gloss;
+        tr.appendChild(glossTd);
+
+        const pageTd = document.createElement("td");
+        const pageLink = document.createElement("a");
+        pageLink.href = `#${pos.page}`;
+        pageLink.textContent = pos.page;
+        pageLink.className = "internal-link";
+        pageLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          document.querySelector(`#tab-01`).click();
+          setTimeout(() => {
+            const link = document.querySelector(`a[href="#${pos.page}"]`);
+            if (link) link.click();
+          }, 100);
+        });
+        pageTd.appendChild(pageLink);
+        tr.appendChild(pageTd);
+
+        tbody.appendChild(tr);
+      }
+      table.appendChild(tbody);
+      card.appendChild(table);
+
+      const tensionsEntry = tensions.match(new RegExp(`### ${slugToPage.get(positions[0].page).slug}\\b`));
+      if (tensionsEntry) {
+        const link = document.createElement("p");
+        link.innerHTML = `See this claim in the <a href="#" class="tensions-link">tensions register</a>.`;
+        link.querySelector(".tensions-link").addEventListener("click", (e) => {
+          e.preventDefault();
+          document.querySelector(`#tab-05`).click();
+          setTimeout(() => {
+            const entry = document.querySelector(`.tensions-register .entry pre`);
+            if (entry) entry.scrollIntoView();
+          }, 100);
+        });
+        card.appendChild(link);
+      }
+
+      return card.outerHTML;
+    });
+
+    // Paragraphs
+    text = text.replace(/^([^\n]+)\n/gm, '<p>$1</p>');
+
+    container.innerHTML = `<div class="markdown">${text}</div>`;
+
+    // Add click handlers for internal links
+    container.querySelectorAll(".internal-link").forEach(link => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        const slug = link.getAttribute("href").substring(1);
+        document.querySelector(`#tab-01`).click();
+        setTimeout(() => {
+          const pageLink = document.querySelector(`.page-list a[data-slug="${slug}"]`);
+          if (pageLink) pageLink.click();
+        }, 100);
+      });
+    });
+
+    // Add click handlers for pin chips
+    container.querySelectorAll(".pin-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const expanded = chip.classList.contains("expanded");
+        const newChip = buildPinChip({
+          label: chip.querySelector("button").textContent,
+          id: chip.getAttribute("data-id"),
+          page: parseInt(chip.getAttribute("data-page")),
+          quote: chip.getAttribute("data-quote"),
+          mark: chip.querySelector(".verification").textContent.includes("✓") ? "✓" : "⚠"
+        }, !expanded);
+        chip.replaceWith(newChip);
+      });
+    });
+  }
+
+  // Render a page
+  function renderPage(slug) {
+    const page = slugToPage.get(slug);
+    if (!page) return;
+
+    currentPage = slug;
+    window.location.hash = slug;
+
+    const content = document.getElementById("page-content");
+    content.innerHTML = "";
+
+    const title = document.createElement("h1");
+    title.textContent = page.title;
+    content.appendChild(title);
+
+    const badges = document.createElement("div");
+    badges.style.marginBottom = "1em";
+
+    const typeBadge = document.createElement("span");
+    typeBadge.className = "badge";
+    typeBadge.textContent = page.frontmatter.type;
+    badges.appendChild(typeBadge);
+
+    const registerBadges = document.createElement("span");
+    for (const reg of page.frontmatter.register || []) {
+      const badge = document.createElement("span");
+      badge.className = "badge register";
+      badge.textContent = reg;
+      registerBadges.appendChild(badge);
+      const name = document.createElement("span");
+      name.textContent = ` ${registerNames[reg]}`;
+      registerBadges.appendChild(name);
+      registerBadges.appendChild(document.createTextNode(" "));
+    }
+    badges.appendChild(registerBadges);
+
+    const statusBadge = document.createElement("span");
+    statusBadge.className = `badge status ${page.frontmatter.status}`;
+    statusBadge.textContent = page.frontmatter.status;
+    badges.appendChild(statusBadge);
+
+    const updated = document.createElement("span");
+    updated.className = "badge";
+    updated.textContent = `updated ${page.frontmatter.updated}`;
+    badges.appendChild(updated);
+
+    content.appendChild(badges);
+
+    const tags = document.createElement("div");
+    for (const tag of page.frontmatter.tags || []) {
+      const tagEl = document.createElement("span");
+      tagEl.className = "tag";
+      tagEl.textContent = tag;
+      tags.appendChild(tagEl);
+    }
+    content.appendChild(tags);
+
+    const body = document.createElement("div");
+    renderMarkdown(page.body, body);
+    content.appendChild(body);
+
+    const linksOut = document.createElement("div");
+    linksOut.className = "links-out";
+    const linksOutTitle = document.createElement("h4");
+    linksOutTitle.textContent = "Links out";
+    linksOut.appendChild(linksOutTitle);
+    const linksOutList = document.createElement("ul");
+    for (const link of page.frontmatter.links || []) {
+      const item = document.createElement("li");
+      const page = slugToPage.get(link);
+      if (page) {
+        const a = document.createElement("a");
+        a.href = `#${link}`;
+        a.textContent = page.title;
+        a.className = "internal-link";
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          document.querySelector(`#tab-01`).click();
+          setTimeout(() => {
+            const pageLink = document.querySelector(`.page-list a[data-slug="${link}"]`);
+            if (pageLink) pageLink.click();
+          }, 100);
+        });
+        item.appendChild(a);
+      } else {
+        const span = document.createElement("span");
+        span.textContent = link;
+        span.className = "dangling";
+        item.appendChild(span);
+      }
+      const meta = document.createElement("span");
+      meta.className = "meta";
+      if (!parseLinks(page.body).includes(link)) {
+        meta.textContent = "frontmatter only";
+      }
+      item.appendChild(meta);
+      linksOutList.appendChild(item);
+    }
+    linksOut.appendChild(linksOutList);
+    content.appendChild(linksOut);
+
+    const linkedFrom = document.createElement("div");
+    linkedFrom.className = "linked-from";
+    const linkedFromTitle = document.createElement("h4");
+    linkedFromTitle.textContent = "Linked from";
+    linkedFrom.appendChild(linkedFromTitle);
+    const linkedFromList = document.createElement("ul");
+    for (const from of backlinks.get(slug) || []) {
+      const item = document.createElement("li");
+      const page = slugToPage.get(from);
+      const a = document.createElement("a");
+      a.href = `#${from}`;
+      a.textContent = page.title;
+      a.className = "internal-link";
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        document.querySelector(`#tab-01`).click();
+        setTimeout(() => {
+          const pageLink = document.querySelector(`.page-list a[data-slug="${from}"]`);
+          if (pageLink) pageLink.click();
+        }, 100);
+      });
+      item.appendChild(a);
+      linkedFromList.appendChild(item);
+    }
+    linkedFrom.appendChild(linkedFromList);
+    content.appendChild(linkedFrom);
+
+    const sources = document.createElement("div");
+    sources.className = "sources";
+    const sourcesTitle = document.createElement("h4");
+    sourcesTitle.textContent = "Sources";
+    sources.appendChild(sourcesTitle);
+    const sourcesList = document.createElement("ul");
+    for (const id of page.frontmatter.sources || []) {
+      const doc = idToDocument.get(id);
+      const item = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = doc.url;
+      a.textContent = doc.short_title || doc.title;
+      a.className = "external";
+      a.target = "_blank";
+      item.appendChild(a);
+      const meta = document.createElement("span");
+      meta.className = "meta";
+      meta.textContent = `${doc.kind}, ${doc.year}`;
+      if (doc.status === "inbox") {
+        meta.textContent += ", inbox";
+      }
+      item.appendChild(meta);
+      sourcesList.appendChild(item);
+    }
+    sources.appendChild(sourcesList);
+    content.appendChild(sources);
+
+    const copyButton = document.createElement("button");
+    copyButton.textContent = "Copy page as markdown";
+    copyButton.addEventListener("click", () => {
+      const frontmatter = `---\n${Object.entries(page.frontmatter)
+        .map(([k, v]) => `${k}: ${Array.isArray(v) ? `\n  - ${v.join("\n  - ")}` : v}`)
+        .join("\n")}\n---\n`;
+      const markdown = frontmatter + page.body;
+      navigator.clipboard.writeText(markdown).then(() => {
+        copyButton.textContent = "Copied!";
+        setTimeout(() => {
+          copyButton.textContent = "Copy page as markdown";
+        }, 2000);
+      });
+    });
+    content.appendChild(copyButton);
+  }
+
+  // Render the index
+  function renderIndex() {
+    const content = document.getElementById("index-content");
+    content.innerHTML = "";
+
+    const title = document.createElement("h1");
+    title.textContent = "Index";
+    content.appendChild(title);
+
+    renderMarkdown(index, content);
+  }
+
+  // Render the page list
+  function renderPageList(filter = "") {
+    const list = document.getElementById("page-list");
+    list.innerHTML = "";
+
+    const types = {
+      source: [],
+      concept: [],
+      entity: [],
+      question: []
+    };
+
+    for (const page of P) {
+      if (filter &&
+          !page.title.toLowerCase().includes(filter.toLowerCase()) &&
+          !page.slug.toLowerCase().includes(filter.toLowerCase()) &&
+          !(page.frontmatter.tags || []).some(tag => tag.toLowerCase().includes(filter.toLowerCase()))) {
+        continue;
+      }
+      types[page.frontmatter.type].push(page);
+    }
+
+    const count = document.getElementById("page-count");
+    const total = P.length;
+    const shown = Object.values(types).reduce((sum, arr) => sum + arr.length, 0);
+    count.textContent = `${shown} of ${total} pages`;
+
+    for (const [type, pages] of Object.entries(types)) {
+      if (pages.length === 0) continue;
+
+      const typeEl = document.createElement("div");
+      typeEl.className = "type";
+      typeEl.textContent = type.toUpperCase();
+      list.appendChild(typeEl);
+
+      for (const page of pages) {
+        const item = document.createElement("li");
+        const link = document.createElement("a");
+        link.href = `#${page.slug}`;
+        link.textContent = page.title;
+        link.className = "page-link";
+        link.setAttribute("data-slug", page.slug);
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          renderPage(page.slug);
+        });
+        item.appendChild(link);
+
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.textContent = `${page.frontmatter.register || []} · ${parsePins(page.body).length} pins`;
+        if (page.frontmatter.status === "stub") {
+          item.classList.add("stub");
+        }
+        item.appendChild(meta);
+
+        list.appendChild(item);
+      }
+    }
+  }
+
+  // Render the ask tab
+  function renderAsk() {
+    const prompt = document.getElementById("ask-prompt");
+    const answer = document.getElementById("ask-answer");
+    prompt.innerHTML = "";
+    answer.innerHTML = "";
+
+    if (!askAnswer) return;
+
+    const promptText = document.createElement("div");
+    promptText.className = "method-note";
+    promptText.innerHTML = `<p>Step 1 sent the index (6,990 characters) and the question. The model returned these pages:</p>`;
+    const pagesDiv = document.createElement("div");
+    for (const slug of askPages) {
+      const page = slugToPage.get(slug);
+      const chip = document.createElement("span");
+      chip.className = "tag";
+      chip.textContent = page.title;
+      pagesDiv.appendChild(chip);
+      pagesDiv.appendChild(document.createTextNode(" "));
+    }
+    promptText.appendChild(pagesDiv);
+    const changeLink = document.createElement("button");
+    changeLink.className = "secondary";
+    changeLink.textContent = "Change pages";
+    changeLink.addEventListener("click", () => {
+      const form = document.createElement("div");
+      form.style.marginTop = "1em";
+      for (const slug of askPages) {
+        const page = slugToPage.get(slug);
+        const div = document.createElement("div");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.id = `ask-page-${slug}`;
+        checkbox.checked = true;
+        const label = document.createElement("label");
+        label.htmlFor = `ask-page-${slug}`;
+        label.textContent = page.title;
+        div.appendChild(checkbox);
+        div.appendChild(label);
+        form.appendChild(div);
+      }
+      const submit = document.createElement("button");
+      submit.textContent = "Update pages";
+      submit.addEventListener("click", () => {
+        askPages = [];
+        for (const slug of askPages) {
+          const checkbox = document.getElementById(`ask-page-${slug}`);
+          if (checkbox && checkbox.checked) askPages.push(slug);
+        }
+        askStep2();
+      });
+      form.appendChild(submit);
+      promptText.appendChild(form);
+    });
+    promptText.appendChild(changeLink);
+    prompt.appendChild(promptText);
+
+    const answerDiv = document.createElement("div");
+    answerDiv.className = "ask-answer";
+    answerDiv.setAttribute("data-source", "ai");
+    const title = document.createElement("h2");
+    title.textContent = askAnswer.title;
+    answerDiv.appendChild(title);
+    renderMarkdown(askAnswer.answer, answerDiv);
+
+    const pinCounts = {};
+    for (const reg of ["a", "b", "c", "d", "e", "f"]) {
+      pinCounts[reg] = 0;
+    }
+    const pins = [...askAnswer.answer.matchAll(/\[([^\]]+)\]\(pin:([^#\s)]+)#p(\d+)(?: "([^"]*)")?\) ?(✓|⚠)/g)];
+    for (const m of pins) {
+      const id = m[2];
+      const doc = idToDocument.get(id);
+      const reg = getDocumentRegister(id);
+      if (reg && pinCounts[reg] !== undefined) {
+        pinCounts[reg]++;
+      }
+    }
+    const countsDiv = document.createElement("div");
+    countsDiv.className = "pin-counts";
+    countsDiv.textContent = Object.entries(pinCounts)
+      .map(([reg, count]) => `${reg} ${count}`)
+      .join(" · ");
+    answerDiv.appendChild(countsDiv);
+
+    if (askAnswer.cannot_answer) {
+      const cannot = document.createElement("div");
+      cannot.className = "cannot-answer";
+      const h4 = document.createElement("h4");
+      h4.textContent = "What the library cannot answer";
+      cannot.appendChild(h4);
+      const p = document.createElement("p");
+      p.textContent = askAnswer.cannot_answer;
+      cannot.appendChild(p);
+      answerDiv.appendChild(cannot);
+    }
+
+    answer.appendChild(answerDiv);
+
+    const fileCard = document.createElement("div");
+    fileCard.className = "file-card";
+    const fileTitle = document.createElement("h3");
+    fileTitle.textContent = "File as a question page";
+    fileCard.appendChild(fileTitle);
+
+    const frontmatter = {
+      title: askAnswer.title,
+      type: "question",
+      tags: [],
+      register: [],
+      status: "draft",
+      updated: new Date().toISOString().split("T")[0],
+      links: [],
+      sources: []
+    };
+    const pinsInAnswer = [...askAnswer.answer.matchAll(/pin:([^#\s)]+)#p(\d+)/g)];
+    for (const m of pinsInAnswer) {
+      const id = m[1];
+      const doc = idToDocument.get(id);
+      const reg = getDocumentRegister(id);
+      if (reg && !frontmatter.register.includes(reg)) {
+        frontmatter.register.push(reg);
+      }
+      if (!frontmatter.sources.includes(id)) {
+        frontmatter.sources.push(id);
+      }
+    }
+    frontmatter.register.sort();
+    const linksInAnswer = [...askAnswer.answer.matchAll(/\[\[([^\]|#]+)/g)];
+    for (const m of linksInAnswer) {
+      if (!frontmatter.links.includes(m[1])) {
+        frontmatter.links.push(m[1]);
+      }
+    }
+
+    const frontmatterDiv = document.createElement("div");
+    frontmatterDiv.className = "frontmatter";
+    frontmatterDiv.textContent = `---\n${Object.entries(frontmatter)
+      .map(([k, v]) => `${k}: ${Array.isArray(v) ? `\n  - ${v.join("\n  - ")}` : v}`)
+      .join("\n")}\n---\n`;
+    fileCard.appendChild(frontmatterDiv);
+
+    const body = `# ${askAnswer.title}\n\n**Short answer.** ${askAnswer.answer}\n\n## Reasoning\n\n${askAnswer.answer}\n\n## What the library cannot answer\n\n${askAnswer.cannot_answer || ""}\n\n## Related\n\n${frontmatter.links.map(link => `[[${link}]]`).join(", ")}`;
+    const bodyDiv = document.createElement("div");
+    renderMarkdown(body, bodyDiv);
+    fileCard.appendChild(bodyDiv);
+
+    const buttons = document.createElement("div");
+    buttons.style.marginTop = "1em";
+    const fileButton = document.createElement("button");
+    fileButton.textContent = "File this page";
+    fileButton.addEventListener("click", () => {
+      const slug = askAnswer.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      if (slugToPage.has(slug)) {
+        alert("A page with this slug already exists. Please edit the title.");
+        return;
+      }
+      const page = {
+        slug,
+        type: "question",
+        title: askAnswer.title,
+        frontmatter,
+        body
+      };
+      P.push(page);
+      slugToPage.set(slug, page);
+      sessionChanges++;
+      updateHeader();
+      renderPageList(document.getElementById("page-filter").value);
+      const logEntry = `## [${frontmatter.updated}] ask | ${askAnswer.title}\n\nRead ${frontmatter.sources.length} documents (${frontmatter.sources.map(id => {
+        const doc = idToDocument.get(id);
+        return `${getCiteAs(id)}, ${getDocumentRegister(id)} (${doc.kind})`;
+      }).join("; ")}). Wrote [[${slug}]]. ${pins.length} pins in all.`;
+      log.push(logEntry);
+      document.getElementById("log-order").checked = true;
+      renderLog();
+      fileButton.disabled = true;
+      fileButton.textContent = "Filed";
+    });
+    const disabled = pins.some(m => {
+      const pin = {
+        label: m[1],
+        id: m[2],
+        page: parseInt(m[3]),
+        quote: m[4] || "",
+        mark: m[5]
+      };
+      return !verify(pin).verified;
+    });
+    if (disabled) {
+      fileButton.disabled = true;
+      fileButton.title = "Some pins in the answer do not verify.";
+    }
+    buttons.appendChild(fileButton);
+
+    const copyButton = document.createElement("button");
+    copyButton.textContent = "Copy answer";
+    copyButton.addEventListener("click", () => {
+      navigator.clipboard.writeText(askAnswer.answer).then(() => {
+        copyButton.textContent = "Copied!";
+        setTimeout(() => {
+          copyButton.textContent = "Copy answer";
+        }, 2000);
+      });
+    });
+    buttons.appendChild(copyButton);
+
+    fileCard.appendChild(buttons);
+    answer.appendChild(fileCard);
+  }
+
+  // Ask step 1: choose pages
+  async function askStep1() {
+    const question = document.getElementById("ask-question").value.trim();
+    if (!question) return;
+
+    const promptEl = document.getElementById("ask-prompt");
+    promptEl.innerHTML = `<p>Sending the index and the question to the model…</p>`;
+
+    const prompt = `The following is the index of a research wiki on neurotechnology in the administration of justice. Each line is one page: its slug, title, register letters (a treaty law, b General Comments, c UN reports, d national human rights institution, e civil society, f scholarship), and the number of verified pins to the library.
+
+${index}
+
+Question: ${question}
+
+Return JSON {pages: [slug…]}, at most 5 slugs, the pages that best answer the question.`;
+
+    sessionCalls++;
+    sessionPassages += 0;
+    updateHeader();
+
+    try {
+      const response = await studio.ask(prompt, { json: true });
+      const json = JSON.parse(response.replace(/```json\n|\n```/g, ""));
+      askPages = json.pages.filter(slug => slugToPage.has(slug));
+      askStep2();
+    } catch (e) {
+      promptEl.innerHTML = `<p>Failed to parse the model's answer. <button class="retry">Retry</button></p><pre>${e.message}</pre><pre>${response}</pre>`;
+      promptEl.querySelector(".retry").addEventListener("click", askStep1);
+    }
+  }
+
+  // Ask step 2: get the answer
+  async function askStep2() {
+    const question = document.getElementById("ask-question").value.trim();
+    if (!question) return;
+
+    const promptEl = document.getElementById("ask-prompt");
+    const pagesText = askPages.map(slug => {
+      const page = slugToPage.get(slug);
+      return `[[${slug}]] — ${page.title} (${page.frontmatter.register || []})`;
+    }).join("\n");
+    const chars = askPages.reduce((sum, slug) => sum + slugToPage.get(slug).body.length, 0);
+    promptEl.innerHTML = `<p>Sending ${askPages.length} pages (${chars.toLocaleString()} characters) and the question to the model. 0 library passages have left the browser.</p>`;
+
+    const prompt = `The following are ${askPages.length} pages from a research wiki on neurotechnology in the administration of justice. Each page is a markdown document with frontmatter (title, type, tags, register, status, updated, links, sources) and a body. Every claim in the body is pinned to a passage of the library with a syntax like [label](pin:id#pPage "quote") ✓, where the quote is copied verbatim from the passage. The code verifies every pin; only verified pins are shown.
+
+${askPages.map(slug => slugToPage.get(slug).body).join("\n\n---\n\n")}
+
+Question: ${question}
+
+Return JSON {title, answer, cannot_answer}, title at most 10 words, answer at most 350 words, only pins that already stand in the pages given (copy the pin exactly), name the register where it matters, keep the document's own verb, never present (c) to (f) as what the treaty requires, cannot_answer at most 50 words.`;
+
+    sessionCalls++;
+    sessionPassages += 0;
+    updateHeader();
+
+    try {
+      const response = await studio.ask(prompt, { json: true });
+      const json = JSON.parse(response.replace(/```json\n|\n```/g, ""));
+      askAnswer = json;
+
+      // Strike through pins not in the sent pages
+      const pinsInPages = new Set();
+      for (const slug of askPages) {
+        const page = slugToPage.get(slug);
+        const matches = [...page.body.matchAll(/pin:([^#\s)]+)#p(\d+)/g)];
+        for (const m of matches) {
+          pinsInPages.add(`${m[1]}#p${m[2]}`);
+        }
+      }
+      askAnswer.answer = askAnswer.answer.replace(/\[([^\]]+)\]\(pin:([^#\s)]+)#p(\d+)(?: "([^"]*)")?\) ?(✓|⚠)/g, (_, label, id, page, quote, mark) => {
+        if (pinsInPages.has(`${id}#p${page}`)) {
+          return `[${label}](pin:${id}#p${page} "${quote}") ${mark}`;
+        } else {
+          return `~~[${label}](pin:${id}#p${page} "${quote}") ${mark}~~ <span style="color: var(--amber);">not on the pages sent</span>`;
+        }
+      });
+
+      renderAsk();
+    } catch (e) {
+      promptEl.innerHTML = `<p>Failed to parse the model's answer. <button class="retry">Retry</button></p><pre>${e.message}</pre><pre>${response}</pre>`;
+      promptEl.querySelector(".retry").addEventListener("click", askStep2);
+    }
+  }
+
+  // Render the ingest tab
+  function renderIngest() {
+    const intro = document.getElementById("ingest-intro");
+    const stepper = document.getElementById("ingest-stepper");
+    intro.innerHTML = "";
+    stepper.innerHTML = "";
+
+    const inbox = D.filter(doc => doc.status === "inbox");
+    if (inbox.length === 0) {
+      intro.innerHTML = "<p>Nothing waits in the inbox.</p>";
+      return;
+    }
+
+    const h2 = document.createElement("h2");
+    h2.textContent = "What waits in the inbox?";
+    intro.appendChild(h2);
+
+    const list = document.createElement("div");
+    list.id = "inbox-documents";
+    for (const doc of inbox) {
+      const button = document.createElement("button");
+      button.textContent = `Ingest ${doc.symbol || doc.short_title || doc.title}`;
+      button.addEventListener("click", () => {
+        ingestDocument = doc;
+        renderIngestStepper();
+      });
+      list.appendChild(button);
+      list.appendChild(document.createElement("br"));
+    }
+    intro.appendChild(list);
+  }
+
+  // Render the ingest stepper
+  function renderIngestStepper() {
+    const stepper = document.getElementById("ingest-stepper");
+    stepper.innerHTML = "";
+
+    const doc = ingestDocument;
+    const citeAs = getCiteAs(doc.id);
+    const passages = doc.passages;
+    const batches = [];
+    for (let i = 0; i < passages.length; i += 25) {
+      batches.push(passages.slice(i, i + 25));
+    }
+
+    const stepperDiv = document.createElement("div");
+    stepperDiv.className = "ingest-stepper";
+
+    const step1 = document.createElement("div");
+    step1.className = "step";
+    const h3 = document.createElement("h3");
+    h3.textContent = "Step 1: Scope";
+    step1.appendChild(h3);
+
+    const p = document.createElement("p");
+    p.textContent = `Scope: the whole document. All ${passages.length} passages will be sent, in batches of 25 (${batches.length} calls), ${passages.reduce((sum, p) => sum + p.text.length, 0).toLocaleString()} characters; nothing is held back.`;
+    step1.appendChild(p);
+
+    const table = document.createElement("table");
+    table.className = "batch-table";
+    const thead = document.createElement("thead");
+    const tbody = document.createElement("tbody");
+    const tr = document.createElement("tr");
+    ["Batch", "Paragraphs", "PDF pages"].forEach(text => {
+      const th = document.createElement("th");
+      th.textContent = text;
+      tr.appendChild(th);
+    });
+    thead.appendChild(tr);
+    table.appendChild(thead);
+
+    for (let i = 0; i < batches.length; i++) {
+      const batch = batches[i];
+      const tr = document.createElement("tr");
+      const batchTd = document.createElement("td");
+      batchTd.textContent = i + 1;
+      tr.appendChild(batchTd);
+
+      const paras = batch.map(p => p.paragraph).filter(p => p !== null);
+      const paraTd = document.createElement("td");
+      paraTd.textContent = paras.length > 0
+        ? `${Math.min(...paras)}–${Math.max(...paras)}`
+        : "none";
+      tr.appendChild(paraTd);
+
+      const pages = batch.map(p => p.page_label || p.page);
+      const pageTd = document.createElement("td");
+      pageTd.textContent = `${Math.min(...pages)}–${Math.max(...pages)}`;
+      tr.appendChild(pageTd);
+
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    step1.appendChild(table);
+
+    const startButton = document.createElement("button");
+    startButton.textContent = "Start";
+    startButton.addEventListener("click", () => {
+      ingestBatches = batches;
+      ingestTakeaways = [];
+      ingestFailed = [];
+      ingestStep1Run();
+    });
+    step1.appendChild(startButton);
+
+    stepperDiv.appendChild(step1);
+    stepper.appendChild(stepperDiv);
+  }
+
+  // Run step 1: takeaways
+  async function ingestStep1Run() {
+    const stepper = document.querySelector(".ingest-stepper");
+    const step1 = stepper.querySelector(".step");
+    step1.innerHTML = "";
+
+    const h3 = document.createElement("h3");
+    h3.textContent = "Step 1: Takeaways";
+    step1.appendChild(h3);
+
+    const progress = document.createElement("div");
+    progress.className = "progress";
+    progress.textContent = `Batch 1 of ${ingestBatches.length} · 0 of ${ingestDocument.passages.length} passages have left the browser`;
+    step1.appendChild(progress);
+
+    const stopButton = document.createElement("button");
+    stopButton.className = "stop";
+    stopButton.textContent = "Stop";
+    stopButton.addEventListener("click", () => {
+      ingestStep2();
+    });
+    step1.appendChild(stopButton);
+
+    const table = document.createElement("table");
+    table.className = "takeaways-table";
+    const thead = document.createElement("thead");
+    const tbody = document.createElement("tbody");
+    const tr = document.createElement("tr");
+    ["Claim", "Quote", "Passage", "Pages", "Verification"].forEach(text => {
+      const th = document.createElement("th");
+      th.textContent = text;
+      tr.appendChild(th);
+    });
+    thead.appendChild(tr);
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    step1.appendChild(table);
+
+    const failedDiv = document.createElement("div");
+    failedDiv.className = "failed-takeaways";
+    const failedTitle = document.createElement("h4");
+    failedTitle.textContent = "Could not verify: 0";
+    failedDiv.appendChild(failedTitle);
+    step1.appendChild(failedDiv);
+
+    for (let i = 0; i < ingestBatches.length; i++) {
+      const batch = ingestBatches[i];
+      progress.textContent = `Batch ${i + 1} of ${ingestBatches.length} · ${i * 25} of ${ingestDocument.passages.length} passages have left the browser`;
+
+      const prompt = `The following are ${batch.length} passages from ${ingestDocument.title} (${ingestDocument.kind}, ${ingestDocument.year}). Each passage is {id, page, paragraph, text}.
+
+${JSON.stringify(batch, null, 2)}
+
+The following is the index of the wiki:
+
+${index}
+
+Return JSON {takeaways: [{claim, quote, passage, pages}]}, at most 10 takeaways, quote 8 to 40 words copied verbatim from that one passage, pages = slugs from the index the claim bears on, at most 5 slugs.`;
+
+      sessionCalls++;
+      sessionPassages += batch.length;
+      updateHeader();
+
+      try {
+        const response = await studio.ask(prompt, { json: true });
+        const json = JSON.parse(response.replace(/```json\n|\n```/g, ""));
+
+        for (const takeaway of json.takeaways) {
+          const passage = ingestDocument.passages.find(p => p.id === takeaway.passage);
+          if (!passage) continue;
+
+          const pin = buildNewPin(ingestDocument.id, passage.page, takeaway.quote);
+          if (!pin) continue;
+
+          const verification = verify({
+            label: pin.match(/\[([^\]]+)\]/)[1],
+            id: pin.match(/pin:([^#\s)]+)/)[1],
+            page: parseInt(pin.match(/#p(\d+)/)[1]),
+            quote: pin.match(/"([^"]*)"/)[1],
+            mark: "✓"
+          });
+
+          const tr = document.createElement("tr");
+          const claimTd = document.createElement("td");
+          claimTd.textContent = takeaway.claim;
+          tr.appendChild(claimTd);
+
+          const quoteTd = document.createElement("td");
+          quoteTd.textContent = takeaway.quote;
+          tr.appendChild(quoteTd);
+
+          const passageTd = document.createElement("td");
+          passageTd.textContent = passage.paragraph
+            ? `para. ${passage.paragraph}`
+            : `p. ${passage.page_label}`;
+          tr.appendChild(passageTd);
+
+          const pagesTd = document.createElement("td");
+          for (const slug of takeaway.pages) {
+            if (slugToPage.has(slug)) {
+              const chip = document.createElement("span");
+              chip.className = "tag";
+              chip.textContent = slug;
+              pagesTd.appendChild(chip);
+              pagesTd.appendChild(document.createTextNode(" "));
+            }
+          }
+          tr.appendChild(pagesTd);
+
+          const verificationTd = document.createElement("td");
+          verificationTd.className = `verification ${verification.verified ? "verified" : "failed"}`;
+          verificationTd.textContent = verification.verified ? "verified" : "failed";
+          tr.appendChild(verificationTd);
+
+          tbody.appendChild(tr);
+
+          if (verification.verified) {
+            ingestTakeaways.push({
+              claim: takeaway.claim,
+              quote: takeaway.quote,
+              passage: takeaway.passage,
+              pages: takeaway.pages.filter(slug => slugToPage.has(slug)),
+              pin
+            });
+          } else {
+            ingestFailed.push({
+              claim: takeaway.claim,
+              quote: takeaway.quote,
+              passage: takeaway.passage,
+              nearest: findNearestPassage(takeaway.quote, passage.page)
+            });
+            failedTitle.textContent = `Could not verify: ${ingestFailed.length}`;
+
+            const failedItem = document.createElement("div");
+            failedItem.className = "failed-item";
+
+            const claimP = document.createElement("p");
+            claimP.textContent = takeaway.claim;
+            failedItem.appendChild(claimP);
+
+            const quoteP = document.createElement("div");
+            quoteP.className = "quote";
+            quoteP.textContent = takeaway.quote;
+            failedItem.appendChild(quoteP);
+
+            const passageP = document.createElement("div");
+            passageP.className = "passage";
+            passageP.textContent = passage.text;
+            failedItem.appendChild(passageP);
+
+            const nearestP = document.createElement("div");
+            nearestP.className = "nearest";
+            nearestP.textContent = `Nearest passage on this page: ${takeaway.quote.split(/…|\.\.\./).map(frag => frag.trim()).join(" … ")} (${ingestFailed[ingestFailed.length - 1].nearest.length} words)`;
+            failedItem.appendChild(nearestP);
+
+            const openButton = document.createElement("button");
+            openButton.textContent = "Open the PDF page";
+            openButton.addEventListener("click", () => {
+              studio.openSource(ingestDocument.id, passage.page, takeaway.quote);
+            });
+            failedItem.appendChild(openButton);
+
+            failedDiv.appendChild(failedItem);
+          }
+        }
+      } catch (e) {
+        progress.textContent = `Batch ${i + 1} failed: ${e.message}`;
+        break;
+      }
+    }
+
+    ingestStep2();
+  }
+
+  // Find the nearest passage on a page
+  function findNearestPassage(quote, page) {
+    const fragments = quote.split(/…|\.\.\./).map(norm);
+    const passages = ingestDocument.passages.filter(p => p.page === page);
+    let best = { passage: null, length: 0 };
+
+    for (const passage of passages) {
+      const text = norm(passage.text);
+      let pos = 0;
+      let total = 0;
+      for (const frag of fragments) {
+        const idx = text.indexOf(frag, pos);
+        if (idx !== -1) {
+          total += frag.length;
+          pos = idx + frag.length;
+        }
+      }
+      if (total > best.length) {
+        best = { passage, length: total };
+      }
+    }
+
+    return best;
+  }
+
+  // Step 2: draft the source page
+  function ingestStep2() {
+    const stepper = document.querySelector(".ingest-stepper");
+    const step2 = document.createElement("div");
+    step2.className = "step";
+    stepper.appendChild(step2);
+
+    const h3 = document.createElement("h3");
+    h3.textContent = "Step 2: Draft the source page";
+    step2.appendChild(h3);
+
+    const p = document.createElement("p");
+    p.textContent = `Draft the source page (1 call).`;
+    step2.appendChild(p);
+
+    const draftButton = document.createElement("button");
+    draftButton.textContent = "Draft the source page";
+    draftButton.addEventListener("click", async () => {
+      const prompt = `The following are ${ingestTakeaways.length} verified takeaways from ${ingestDocument.title} (${ingestDocument.kind}, ${ingestDocument.year}). Each takeaway is {claim, quote, passage, pages, pin}.
+
+${JSON.stringify(ingestTakeaways, null, 2)}
+
+The cite-as for this document is "${getCiteAs(ingestDocument.id)}".
+The document's metadata: title "${ingestDocument.title}", author "${ingestDocument.author}", published "${ingestDocument.published}", pages ${ingestDocument.pages}, url "${ingestDocument.url}".
+
+The following is the anatomy of a source page in the wiki:
+
+Full cite
+Register
+One-liner
+Key takeaways
+How NOT to read this
+Where it feeds the wiki
+Related
+
+Return JSON {one_liner, body, touches: [{slug, why}]}, body at most 900 words, only the pins given, copied exactly, touches at most 12 slugs, the stub [[${ingestDocument.id.toLowerCase()}]] added if missing.`;
+
+      sessionCalls++;
+      sessionPassages += 0;
+      updateHeader();
+
+      try {
+        const response = await studio.ask(prompt, { json: true });
+        const json = JSON.parse(response.replace(/```json\n|\n```/g, ""));
+        ingestSourcePage = json;
+
+        // Build the frontmatter
+        const frontmatter = {
+          title: ingestDocument.short_title || ingestDocument.title,
+          type: "source",
+          register: getDocumentRegister(ingestDocument.id),
+          sources: [ingestDocument.id],
+          links: json.touches.map(t => t.slug),
+          tags: json.touches.map(t => t.why),
+          status: "reviewed",
+          updated: new Date().toISOString().split("T")[0]
+        };
+
+        // Re-verify every pin in the body
+        const body = json.body;
+        const pins = [...body.matchAll(/\[([^\]]+)\]\(pin:([^#\s)]+)#p(\d+)(?: "([^"]*)")?\) ?(✓|⚠)/g)];
+        for (const m of pins) {
+          const verification = verify({
+            label: m[1],
+            id: m[2],
+            page: parseInt(m[3]),
+            quote: m[4] || "",
+            mark: m[5]
+          });
+          if (!verification.verified) {
+            alert(`Pin in the source page draft does not verify: ${m[0]}`);
+            return;
+          }
+        }
+
+        const card = document.createElement("div");
+        card.className = "change-card";
+        const title = document.createElement("h3");
+        title.textContent = `New page: [[${ingestDocument.id.toLowerCase()}]] — ${frontmatter.title}`;
+        card.appendChild(title);
+
+        const frontmatterDiv = document.createElement("div");
+        frontmatterDiv.className = "frontmatter";
+        frontmatterDiv.textContent = `---\n${Object.entries(frontmatter)
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? `\n  - ${v.join("\n  - ")}` : v}`)
+          .join("\n")}\n---\n`;
+        card.appendChild(frontmatterDiv);
+
+        const bodyDiv = document.createElement("div");
+        renderMarkdown(body, bodyDiv);
+        card.appendChild(bodyDiv);
+
+        step2.appendChild(card);
+
+        ingestStep3();
+      } catch (e) {
+        step2.innerHTML = `<p>Failed to parse the model's answer. <button class="retry">Retry</button></p><pre>${e.message}</pre><pre>${response}</pre>`;
+        step2.querySelector(".retry").addEventListener("click", () => {
+          draftButton.click();
+        });
+      }
+    });
+    step2.appendChild(draftButton);
+  }
+
+  // Step 3: draft the changes to touched pages
+  function ingestStep3() {
+    const stepper = document.querySelector(".ingest-stepper");
+    const step3 = document.createElement("div");
+    step3.className = "step";
+    stepper.appendChild(step3);
+
+    const h3 = document.createElement("h3");
+    h3.textContent = "Step 3: Draft the changes to touched pages";
+    step3.appendChild(h3);
+
+    const p = document.createElement("p");
+    p.textContent = `Draft the changes to ${ingestSourcePage.touches.length} pages (${ingestSourcePage.touches.length} calls).`;
+    step3.appendChild(p);
+
+    const draftButton = document.createElement("button");
+    draftButton.textContent = "Draft the changes";
+    draftButton.addEventListener("click", async () => {
+      const progress = document.createElement("div");
+      progress.className = "progress";
+      progress.textContent = `Page 1 of ${ingestSourcePage.touches.length}`;
+      step3.appendChild(progress);
+
+      const stopButton = document.createElement("button");
+      stopButton.className = "stop";
+      stopButton.textContent = "Stop";
+      stopButton.addEventListener("click", () => {
+        ingestStep4();
+      });
+      step3.appendChild(stopButton);
+
+      ingestChanges = [];
+
+      for (let i = 0; i < ingestSourcePage.touches.length; i++) {
+        const touch = ingestSourcePage.touches[i];
+        progress.textContent = `Page ${i + 1} of ${ingestSourcePage.touches.length}`;
+
+        const page = slugToPage.get(touch.slug);
+        if (!page) continue;
+
+        const takeaways = ingestTakeaways.filter(t => t.pages.includes(touch.slug));
+        const prompt = `The following is the body of [[${touch.slug}]] (${page.title}):
+
+${page.body}
+
+The following are ${takeaways.length} takeaways from ${ingestDocument.title} that bear on this page. Each takeaway is {claim, quote, passage, pages, pin}.
+
+${JSON.stringify(takeaways, null, 2)}
+
+Return JSON {edits: [{after, markdown}], contested}, each after an existing heading or "end", at most 300 words in all, pins copied exactly, contested a full block only where this document disagrees with the page.`;
+
+        sessionCalls++;
+        sessionPassages += 0;
+        updateHeader();
+
+        try {
+          const response = await studio.ask(prompt, { json: true });
+          const json = JSON.parse(response.replace(/```json\n|\n```/g, ""));
+
+          // Re-verify every pin in the edits
+          for (const edit of json.edits) {
+            const pins = [...edit.markdown.matchAll(/\[([^\]]+)\]\(pin:([^#\s)]+)#p(\d+)(?: "([^"]*)")?\) ?(✓|⚠)/g)];
+            for (const m of pins) {
+              const verification = verify({
+                label: m[1],
+                id: m[2],
+                page: parseInt(m[3]),
+                quote: m[4] || "",
+                mark: m[5]
+              });
+              if (!verification.verified) {
+                alert(`Pin in edit to ${touch.slug} does not verify: ${m[0]}`);
+                return;
+              }
+            }
+          }
+
+          ingestChanges.push({
+            slug: touch.slug,
+            edits: json.edits,
+            contested: json.contested
+          });
+        } catch (e) {
+          progress.textContent = `Page ${i + 1} failed: ${e.message}`;
+          break;
+        }
+      }
+
+      ingestStep4();
+    });
+    step3.appendChild(draftButton);
+  }
+
+  // Step 4: review and file
+  function ingestStep4() {
+    const stepper = document.querySelector(".ingest-stepper");
+    const step4 = document.createElement("div");
+    step4.className = "step";
+    stepper.appendChild(step4);
+
+    const h3 = document.createElement("h3");
+    h3.textContent = "Step 4: Review and file";
+    step4.appendChild(h3);
+
+    const p = document.createElement("p");
+    p.textContent = `Review ${ingestChanges.length + 1} changes. Nothing is written until you approve.`;
+    step4.appendChild(p);
+
+    // Source page
+    const sourceCard = document.createElement("div");
+    sourceCard.className = "change-card";
+    const sourceTitle = document.createElement("h3");
+    sourceTitle.textContent = `New page: [[${ingestDocument.id.toLowerCase()}]] — ${ingestSourcePage.one_liner}`;
+    sourceCard.appendChild(sourceTitle);
+
+    const sourceFrontmatter = document.createElement("div");
+    sourceFrontmatter.className = "frontmatter";
+    sourceFrontmatter.textContent = `---\ntitle: ${ingestDocument.short_title || ingestDocument.title}\ntype: source\nregister: ${getDocumentRegister(ingestDocument.id)}\nsources:\n  - ${ingestDocument.id}\nlinks:\n  - ${ingestSourcePage.touches.map(t => t.slug).join("\n  - ")}\ntags:\n  - ${ingestSourcePage.touches.map(t => t.why).join("\n  - ")}\nstatus: reviewed\nupdated: ${new Date().toISOString().split("T")[0]}\n---\n`;
+    sourceCard.appendChild(sourceFrontmatter);
+
+    const sourceBody = document.createElement("div");
+    renderMarkdown(ingestSourcePage.body, sourceBody);
+    sourceCard.appendChild(sourceBody);
+
+    const sourceButtons = document.createElement("div");
+    sourceButtons.style.marginTop = "1em";
+    const sourceApprove = document.createElement("button");
+    sourceApprove.className = "approve";
+    sourceApprove.textContent = "Approve this page";
+    sourceApprove.addEventListener("click", () => {
+      const slug = ingestDocument.id.toLowerCase();
+      const page = {
+        slug,
+        type: "source",
+        title: ingestDocument.short_title || ingestDocument.title,
+        frontmatter: {
+          title: ingestDocument.short_title || ingestDocument.title,
+          type: "source",
+          register: getDocumentRegister(ingestDocument.id),
+          sources: [ingestDocument.id],
+          links: ingestSourcePage.touches.map(t => t.slug),
+          tags: ingestSourcePage.touches.map(t => t.why),
+          status: "reviewed",
+          updated: new Date().toISOString().split("T")[0]
+        },
+        body: ingestSourcePage.body
+      };
+      P.push(page);
+      slugToPage.set(slug, page);
+      ingestApproved.push(slug);
+      sessionChanges++;
+      updateHeader();
+      sourceApprove.disabled = true;
+      sourceApprove.textContent = "Approved";
+      sourceReject.disabled = true;
+      checkNextChange();
+    });
+    sourceButtons.appendChild(sourceApprove);
+
+    const sourceReject = document.createElement("button");
+    sourceReject.className = "reject";
+    sourceReject.textContent = "Reject this page";
+    sourceReject.addEventListener("click", () => {
+      ingestRejected.push(ingestDocument.id.toLowerCase());
+      sourceApprove.disabled = true;
+      sourceReject.disabled = true;
+      sourceReject.textContent = "Rejected";
+      checkNextChange();
+    });
+    sourceButtons.appendChild(sourceReject);
+
+    sourceCard.appendChild(sourceButtons);
+    step4.appendChild(sourceCard);
+
+    // Touched pages
+    for (let i = 0; i < ingestChanges.length; i++) {
+      const change = ingestChanges[i];
+      const page = slugToPage.get(change.slug);
+
+      const card = document.createElement("div");
+      card.className = "change-card";
+      const title = document.createElement("h3");
+      title.textContent = `Change ${i + 2} of ${ingestChanges.length + 1}: [[${change.slug}]] — ${page.title}`;
+      card.appendChild(title);
+
+      const fieldset = document.createElement("fieldset");
+      const legend = document.createElement("legend");
+      legend.textContent = `${change.edits.length} paragraph${change.edits.length === 1 ? "" : "s"} inserted, ${change.edits.reduce((sum, e) => sum + (e.markdown.match(/pin:/g) || []).length, 0)} pins added`;
+      fieldset.appendChild(legend);
+
+      const body = document.createElement("div");
+      let bodyText = page.body;
+      for (const edit of change.edits) {
+        const heading = edit.after;
+        if (heading === "end") {
+          bodyText += `\n\n${edit.markdown}`;
+        } else {
+          const idx = bodyText.indexOf(`\n${heading}\n`);
+          if (idx === -1) {
+            bodyText += `\n\n${edit.markdown}\n\n<!-- inserted at end: heading "${heading}" not found -->`;
+          } else {
+            const after = bodyText.substring(idx + heading.length + 2);
+            const before = bodyText.substring(0, idx + heading.length + 2);
+            bodyText = before + `\n\n${edit.markdown}` + after;
+          }
+        }
+      }
+      renderMarkdown(bodyText, body);
+
+      // Highlight inserted text
+      const inserted = body.querySelectorAll(".inserted");
+      for (const el of inserted) {
+        el.replaceWith(el.textContent);
+      }
+      for (const edit of change.edits) {
+        const markdown = edit.markdown;
+        const div = document.createElement("div");
+        div.className = "inserted";
+        div.textContent = markdown;
+        body.querySelector(".markdown").innerHTML = body.querySelector(".markdown").innerHTML.replace(
+          markdown.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+          div.outerHTML
+        );
+      }
+
+      fieldset.appendChild(body);
+      card.appendChild(fieldset);
+
+      const buttons = document.createElement("div");
+      buttons.style.marginTop = "1em";
+      const approve = document.createElement("button");
+      approve.className = "approve";
+      approve.textContent = "Approve this page";
+      approve.addEventListener("click", () => {
+        // Update the page
+        let bodyText = page.body;
+        for (const edit of change.edits) {
+          const heading = edit.after;
+          if (heading === "end") {
+            bodyText += `\n\n${edit.markdown}`;
+          } else {
+            const idx = bodyText.indexOf(`\n${heading}\n`);
+            if (idx === -1) {
+              bodyText += `\n\n${edit.markdown}\n\n<!-- inserted at end: heading "${heading}" not found -->`;
+            } else {
+              const after = bodyText.substring(idx + heading.length + 2);
+              const before = bodyText.substring(0, idx + heading.length + 2);
+              bodyText = before + `\n\n${edit.markdown}` + after;
+            }
+          }
+        }
+        page.body = bodyText;
+
+        // Update frontmatter
+        const pins = parsePins(page.body);
+        const sources = new Set(pins.map(p => p.id));
+        page.frontmatter.sources = Array.from(sources);
+
+        const links = parseLinks(page.body);
+        page.frontmatter.links = links;
+
+        if (change.contested) {
+          page.body += `\n\n\`\`\`contested\n${change.contested}\n\`\`\``;
+        }
+
+        ingestApproved.push(change.slug);
+        sessionChanges++;
+        updateHeader();
+        approve.disabled = true;
+        approve.textContent = "Approved";
+        reject.disabled = true;
+        checkNextChange();
+      });
+      buttons.appendChild(approve);
+
+      const reject = document.createElement("button");
+      reject.className = "reject";
+      reject.textContent = "Reject this page";
+      reject.addEventListener("click", () => {
+        ingestRejected.push(change.slug);
+        approve.disabled = true;
+        reject.disabled = true;
+        reject.textContent = "Rejected";
+        checkNextChange();
+      });
+      buttons.appendChild(reject);
+
+      card.appendChild(buttons);
+      step4.appendChild(card);
+    }
+
+    const fileButton = document.createElement("button");
+    fileButton.className = "approve";
+    fileButton.textContent = "File the approved changes";
+    fileButton.disabled = true;
+    fileButton.addEventListener("click", () => {
+      // Update the index
+      const indexLines = index.split("\n");
+      const newIndexLines = [];
+      let found = false;
+      for (const line of indexLines) {
+        if (line.startsWith("- [[") && line.includes("]] — ")) {
+          const slug = line.match(/\[\[([^\]]+)\]/)[1];
+          if (ingestApproved.includes(slug)) {
+            const page = slugToPage.get(slug);
+            const pins = parsePins(page.body);
+            const verified = pins.filter(p => verify(p).verified).length;
+            const newLine = `- [[${slug}]] — ${page.title} · (${page.frontmatter.register || []}) · ✓${verified}`;
+            newIndexLines.push(newLine);
+            found = true;
+          } else if (slug === ingestDocument.id.toLowerCase()) {
+            // Skip the stub
+          } else {
+            newIndexLines.push(line);
+          }
+        } else {
+          newIndexLines.push(line);
+        }
+      }
+      if (!found) {
+        const page = slugToPage.get(ingestDocument.id.toLowerCase());
+        const pins = parsePins(page.body);
+        const verified = pins.filter(p => verify(p).verified).length;
+        newIndexLines.push(`- [[${ingestDocument.id.toLowerCase()}]] — ${page.title} · (${page.frontmatter.register || []}) · ✓${verified}`);
+      }
+      WORKSHOP_DATA.wiki.index = newIndexLines.join("\n");
+
+      // Update the log
+      const citeAs = getCiteAs(ingestDocument.id);
+      const logEntry = `## [${new Date().toISOString().split("T")[0]}] ingest | ${ingestDocument.symbol || ingestDocument.short_title || ingestDocument.title}: ${ingestDocument.short_title || ingestDocument.title}\n\nRead ${ingestDocument.passages.length} passages (${citeAs}, ${getDocumentRegister(ingestDocument.id)} (${ingestDocument.kind})). Wrote [[${ingestDocument.id.toLowerCase()}]]. ${ingestTakeaways.length} pins in all; besides its own page, pinned on ${ingestApproved.length - 1} pages: ${ingestApproved.filter(s => s !== ingestDocument.id.toLowerCase()).map(s => `[[${s}]]`).join(", ")}. Rejected: ${ingestRejected.map(s => `[[${s}]]`).join(", ")}.`;
+      log.push(logEntry);
+
+      // Update the tensions register
+      for (const change of ingestChanges) {
+        if (change.contested) {
+          const lines = change.contested.trim().split("\n");
+          let claim = "";
+          let verdict = "";
+          for (const line of lines) {
+            if (line.startsWith("claim: ")) {
+              claim = line.substring(7).trim();
+            } else if (line.startsWith("verdict: ")) {
+              verdict = line.substring(8).trim();
+            }
+          }
+          const status = verdict.startsWith("leans-") ? "leaning" : verdict.startsWith("settled-") ? "settled" : "contested";
+          const entry = `### ${slugToPage.get(change.slug).slug}\n\n${claim}\n\nstatus: ${status}\ncard: [[${change.slug}]]\npoles: ${verdict.includes("contest") ? "contest" : "support"}\nwhere: ${change.slug}\n`;
+          tensions += `\n${entry}`;
+        }
+      }
+
+      // Update the document's status
+      ingestDocument.status = "ingested";
+
+      // Re-run lint
+      runLint();
+
+      // Render the log
+      document.getElementById("log-order").checked = true;
+      renderLog();
+
+      // Render the tensions
+      renderTensions();
+
+      fileButton.disabled = true;
+      fileButton.textContent = "Filed";
+    });
+    step4.appendChild(fileButton);
+
+    function checkNextChange() {
+      const allApproved = ingestApproved.length + ingestRejected.length === ingestChanges.length + 1;
+      fileButton.disabled = !allApproved;
+    }
+  }
+
+  // Render the lint tab
+  function renderLint() {
+    const count = document.getElementById("lint-count");
+    count.textContent = `${lintResults.filter(r => r.result === "check").length} lint checks need a look`;
+
+    const tbody = document.getElementById("lint-results");
+    tbody.innerHTML = "";
+
+    for (const result of lintResults) {
+      const tr = document.createElement("tr");
+      const checkTd = document.createElement("td");
+      checkTd.textContent = result.check;
+      tr.appendChild(checkTd);
+
+      const resultTd = document.createElement("td");
+      resultTd.className = result.result;
+      resultTd.textContent = `${result.count} · ${result.result}`;
+      tr.appendChild(resultTd);
+
+      const pagesTd = document.createElement("td");
+      pagesTd.className = "pages";
+      for (const slug of result.pages) {
+        const a = document.createElement("a");
+        a.href = `#${slug}`;
+        a.textContent = slug;
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          document.querySelector(`#tab-01`).click();
+          setTimeout(() => {
+            const pageLink = document.querySelector(`.page-list a[data-slug="${slug}"]`);
+            if (pageLink) pageLink.click();
+          }, 100);
+        });
+        pagesTd.appendChild(a);
+        pagesTd.appendChild(document.createTextNode(" "));
+      }
+      tr.appendChild(pagesTd);
+
+      tbody.appendChild(tr);
+    }
+  }
+
+  // Run lint
+  function runLint() {
+    lintResults = [];
+
+    // Pins: index count vs regex count
+    const indexCount = parseInt(index.match(/(\d[\d,]*) pins/)[1].replace(/,/g, ""));
+    const regexCount = P.reduce((sum, page) => sum + parsePins(page.body).length, 0);
+    lintResults.push({
+      check: "Pins in the index vs pins found by regex",
+      count: `${indexCount} vs ${regexCount}`,
+      result: indexCount === regexCount ? "pass" : "check",
+      pages: []
+    });
+
+    // Pins: verified vs found
+    const verifiedCount = P.reduce((sum, page) => sum + parsePins(page.body).filter(p => verify(p).verified).length, 0);
+    lintResults.push({
+      check: "Verified pins vs pins found by regex",
+      count: `${verifiedCount} vs ${regexCount}`,
+      result: verifiedCount === regexCount ? "pass" : "check",
+      pages: []
+    });
+
+    // Pins: any ✓ that fails
+    const failedPins = [];
+    for (const page of P) {
+      const pins = parsePins(page.body);
+      for (const pin of pins) {
+        if (pin.mark === "✓" && !verify(pin).verified) {
+          failedPins.push(page.slug);
+          break;
+        }
+      }
+    }
+    lintResults.push({
+      check: "Pins marked ✓ that fail verification",
+      count: failedPins.length,
+      result: failedPins.length === 0 ? "pass" : "check",
+      pages: failedPins
+    });
+
+    // Labels: every verified pin's label matches its passage
+    const labelMismatches = [];
+    for (const page of P) {
+      const pins = parsePins(page.body);
+      for (const pin of pins) {
+        if (verify(pin).verified) {
+          const doc = idToDocument.get(pin.id);
+          const passage = doc.passages.find(p => p.page === pin.page);
+          const expectedLabel = passage.paragraph
+            ? `para. ${passage.paragraph}`
+            : `p. ${passage.page_label}`;
+          if (!pin.label.includes(expectedLabel)) {
+            labelMismatches.push(page.slug);
+            break;
+          }
+        }
+      }
+    }
+    lintResults.push({
+      check: "Verified pins' labels match their passages",
+      count: labelMismatches.length,
+      result: labelMismatches.length === 0 ? "pass" : "check",
+      pages: labelMismatches
+    });
+
+    // Structure: dangling links
+    const danglingLinks = [];
+    for (const page of P) {
+      const links = parseLinks(page.body);
+      for (const link of links) {
+        if (!slugToPage.has(link)) {
+          danglingLinks.push(page.slug);
+          break;
+        }
+      }
+    }
+    lintResults.push({
+      check: "Dangling links",
+      count: danglingLinks.length,
+      result: danglingLinks.length === 0 ? "pass" : "check",
+      pages: danglingLinks
+    });
+
+    // Structure: orphans
+    const orphans = [];
+    for (const page of P) {
+      if (backlinks.get(page.slug).length === 0 && page.frontmatter.links && page.frontmatter.links.length > 0) {
+        orphans.push(page.slug);
+      }
+    }
+    lintResults.push({
+      check: "Orphan pages (linked from nowhere)",
+      count: orphans.length,
+      result: orphans.length === 0 ? "pass" : "check",
+      pages: orphans
+    });
+
+    // Structure: sources equal pinned documents
+    const sourceMismatches = [];
+    for (const page of P) {
+      const pins = parsePins(page.body);
+      const pinned = new Set(pins.map(p => p.id));
+      const sources = new Set(page.frontmatter.sources || []);
+      if (pinned.size !== sources.size || ![...pinned].every(id => sources.has(id))) {
+        sourceMismatches.push(page.slug);
+      }
+    }
+    lintResults.push({
+      check: "Sources equal pinned documents",
+      count: sourceMismatches.length,
+      result: sourceMismatches.length === 0 ? "pass" : "check",
+      pages: sourceMismatches
+    });
+
+    // Structure: pages in the index
+    const indexPages = new Set();
+    const indexMatches = index.match(/\[\[([^\]]+)\]/g);
+    if (indexMatches) {
+      for (const m of indexMatches) {
+        indexPages.add(m.substring(2, m.length - 2));
+      }
+    }
+    const missingFromIndex = [];
+    const missingPage = [];
+    for (const page of P) {
+      if (!indexPages.has(page.slug)) {
+        missingFromIndex.push(page.slug);
+      }
+    }
+    for (const slug of indexPages) {
+      if (!slugToPage.has(slug)) {
+        missingPage.push(slug);
+      }
+    }
+    lintResults.push({
+      check: "Pages in the index",
+      count: `${missingFromIndex.length} missing from index, ${missingPage.length} missing page`,
+      result: missingFromIndex.length === 0 && missingPage.length === 0 ? "pass" : "check",
+      pages: [...missingFromIndex, ...missingPage]
+    });
+
+    // Structure: index ✓N vs computed
+    const indexVerified = {};
+    const indexMatches2 = index.match(/- \[\[([^\]]+)\]\] .* ✓(\d+)/g);
+    if (indexMatches2) {
+      for (const m of indexMatches2) {
+        const slug = m.match(/\[\[([^\]]+)\]/)[1];
+        const count = parseInt(m.match(/✓(\d+)/)[1]);
+        indexVerified[slug] = count;
+      }
+    }
+    const verifiedMismatches = [];
+    for (const [slug, count] of Object.entries(indexVerified)) {
+      const page = slugToPage.get(slug);
+      if (page) {
+        const pins = parsePins(page.body);
+        const verified = pins.filter(p => verify(p).verified).length;
+        if (verified !== count) {
+          verifiedMismatches.push(slug);
+        }
+      }
+    }
+    lintResults.push({
+      check: "Index ✓N vs computed verified pins",
+      count: verifiedMismatches.length,
+      result: verifiedMismatches.length === 0 ? "pass" : "check",
+      pages: verifiedMismatches
+    });
+
+    // Structure: contested cards vs tensions
+    const contestedPages = new Set();
+    for (const page of P) {
+      if (page.body.includes("```contested")) {
+        contestedPages.add(page.slug);
+      }
+    }
+    const tensionsCards = new Set();
+    const tensionsMatches = tensions.match(/card: \[\[([^\]]+)\]/g);
+    if (tensionsMatches) {
+      for (const m of tensionsMatches) {
+        tensionsCards.add(m.substring(8, m.length - 2));
+      }
+    }
+    const contestedMismatches = [];
+    for (const slug of contestedPages) {
+      if (!tensionsCards.has(slug)) {
+        contestedMismatches.push(slug);
+      }
+    }
+    for (const slug of tensionsCards) {
+      if (!contestedPages.has(slug)) {
+        contestedMismatches.push(slug);
+      }
+    }
+    lintResults.push({
+      check: "Contested cards vs tensions register",
+      count: contestedMismatches.length,
+      result: contestedMismatches.length === 0 ? "pass" : "check",
+      pages: contestedMismatches
+    });
+
+    // Structure: stub pages
+    const stubs = P.filter(page => page.frontmatter.status === "stub").map(page => page.slug);
+    lintResults.push({
+      check: "Stub pages",
+      count: stubs.length,
+      result: stubs.length === 0 ? "pass" : "check",
+      pages: stubs
+    });
+
+    // Structure: pins to inbox documents
+    const inboxPins = [];
+    for (const page of P) {
+      const pins = parsePins(page.body);
+      for (const pin of pins) {
+        const doc = idToDocument.get(pin.id);
+        if (doc && doc.status === "inbox") {
+          inboxPins.push(page.slug);
+          break;
+        }
+      }
+    }
+    lintResults.push({
+      check: "Pins to documents still in the inbox",
+      count: inboxPins.length,
+      result: inboxPins.length === 0 ? "pass" : "check",
+      pages: inboxPins
+    });
+
+    renderLint();
+  }
+
+  // Render the log
+  function renderLog() {
+    const container = document.getElementById("log-content");
+    container.innerHTML = "";
+
+    const entries = logOrder ? [...log].reverse() : log;
+    for (const entry of entries) {
+      const div = document.createElement("div");
+      div.className = "log-entry";
+
+      const h3 = document.createElement("h3");
+      h3.className = "collapsed";
+      h3.textContent = entry.split("\n")[0].substring(3);
+      h3.addEventListener("click", () => {
+        h3.classList.toggle("collapsed");
+        body.style.display = h3.classList.contains("collapsed") ? "none" : "block";
+      });
+      div.appendChild(h3);
+
+      const body = document.createElement("div");
+      body.className = "body";
+      body.style.display = "none";
+      const pre = document.createElement("pre");
+      pre.textContent = entry;
+      body.appendChild(pre);
+      div.appendChild(body);
+
+      if (entry.includes(`[${new Date().toISOString().split("T")[0]}]`)) {
+        const tag = document.createElement("span");
+        tag.className = "session-tag";
+        tag.textContent = "this session";
+        h3.appendChild(tag);
+      }
+
+      container.appendChild(div);
+    }
+  }
+
+  // Render the tensions register
+  function renderTensions() {
+    const container = document.getElementById("tensions-content");
+    container.innerHTML = "";
+
+    const h2 = document.createElement("h2");
+    h2.textContent = "Tensions register";
+    container.appendChild(h2);
+
+    const entries = tensions.split("\n### ").slice(1);
+    for (const entry of entries) {
+      const div = document.createElement("div");
+      div.className = "tensions-register";
+
+      const h3 = document.createElement("h3");
+      h3.className = "collapsed";
+      const lines = entry.split("\n");
+      h3.textContent = lines[0];
+      h3.addEventListener("click", () => {
+        h3.classList.toggle("collapsed");
+        body.style.display = h3.classList.contains("collapsed") ? "none" : "block";
+      });
+      div.appendChild(h3);
+
+      const body = document.createElement("div");
+      body.className = "entry";
+      body.style.display = "none";
+      const pre = document.createElement("pre");
+      pre.textContent = "### " + entry;
+      body.appendChild(pre);
+
+      const cardMatch = entry.match(/card: \[\[([^\]]+)\]/);
+      if (cardMatch) {
+        const cardLink = document.createElement("span");
+        cardLink.className = "card-link";
+        cardLink.textContent = "Open this card";
+        cardLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          document.querySelector(`#tab-01`).click();
+          setTimeout(() => {
+            const pageLink = document.querySelector(`.page-list a[data-slug="${cardMatch[1]}"]`);
+            if (pageLink) pageLink.click();
+          }, 100);
+        });
+        body.appendChild(cardLink);
+      }
+
+      div.appendChild(body);
+      container.appendChild(div);
+    }
+  }
+
+  // Update the header
+  function updateHeader() {
+    const meta = document.getElementById("header-meta");
+    const types = { source: 0, concept: 0, entity: 0, question: 0 };
+    for (const page of P) {
+      types[page.frontmatter.type]++;
+    }
+    const pins = P.reduce((sum, page) => sum + parsePins(page.body).length, 0);
+    const verified = P.reduce((sum, page) => sum + parsePins(page.body).filter(p => verify(p).verified).length, 0);
+    const inbox = D.filter(doc => doc.status === "inbox").length;
+    meta.innerHTML = `${P.length} pages (${types.source} sources, ${types.concept} concepts, ${types.entity} entities, ${types.question} questions) · ${pins} pins, ${verified} verified by this page · ${D.length} documents, ${inbox} in the inbox · built ${built}`;
+
+    document.getElementById("session-counters").textContent = `Changes this session: ${sessionChanges} · Calls to the model: ${sessionCalls} · Passages that left the browser: ${sessionPassages}`;
+
+    document.getElementById("wiki-source").textContent = `${source}, ${built}`;
+  }
+
+  // Initialize
+  function init() {
+    // Build maps
+    for (const page of P) {
+      slugToPage.set(page.slug, page);
+    }
+    for (const doc of D) {
+      idToDocument.set(doc.id, doc);
+    }
+    buildBacklinks();
+
+    // Render
+    updateHeader();
+    renderPageList();
+    renderIndex();
+    renderAsk();
+    renderIngest();
+    runLint();
+    renderLog();
+    renderTensions();
+
+    // Tabs
+    document.querySelectorAll("[role=tab]").forEach(tab => {
+      tab.addEventListener("click", () => {
+        const tabId = tab.id.replace("tab-", "");
+        document.querySelectorAll("[role=tabpanel]").forEach(panel => {
+          panel.hidden = panel.id !== `panel-${tabId}`;
+        });
+        document.querySelectorAll("[role=tab]").forEach(t => {
+          t.setAttribute("aria-selected", t.id === tab.id);
+        });
+        currentTab = tabId;
+        if (tabId === "01" && currentPage) {
+          renderPage(currentPage);
+        }
+      });
+    });
+
+    // Page filter
+    document.getElementById("page-filter").addEventListener("input", (e) => {
+      renderPageList(e.target.value);
+    });
+
+    // Ask
+    document.getElementById("ask-button").addEventListener("click", askStep1);
+    document.getElementById("ask-question").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        askStep1();
+      }
+    });
+
+    // Lint
+    document.getElementById("lint-button").addEventListener("click", runLint);
+
+    // Log order
+    document.getElementById("log-order").addEventListener("change", (e) => {
+      logOrder = e.target.checked;
+      renderLog();
+    });
+
+    // Download
+    document.getElementById("download-wiki").addEventListener("click", () => {
+      const data = {
+        pages: P,
+        index: WORKSHOP_DATA.wiki.index,
+        log: WORKSHOP_DATA.wiki.log,
+        tensions: WORKSHOP_DATA.wiki.tensions,
+        schema: WORKSHOP_DATA.wiki.schema,
+        count: WORKSHOP_DATA.wiki.count,
+        source: WORKSHOP_DATA.wiki.source,
+        built: WORKSHOP_DATA.wiki.built,
+        changes: changes.map(change => ({
+          date: change.date,
+          kind: change.kind,
+          pages: change.pages
+        })),
+        library_status: D.reduce((obj, doc) => {
+          obj[doc.id] = doc.status;
+          return obj;
+        }, {})
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `wiki-${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById("download-changes").addEventListener("click", () => {
+      const changedPages = P.filter(page => {
+        const original = WORKSHOP_DATA.wiki.pages.find(p => p.slug === page.slug);
+        return !original || original.body !== page.body;
+      });
+      const markdown = changedPages.map(page => {
+        const frontmatter = `---\n${Object.entries(page.frontmatter)
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? `\n  - ${v.join("\n  - ")}` : v}`)
+          .join("\n")}\n---\n`;
+        return `${frontmatter}${page.body}`;
+      }).join("\n\n---\n\n");
+      const blob = new Blob([markdown], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `wiki-changes-${new Date().toISOString().split("T")[0]}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Hash
+    if (window.location.hash) {
+      const slug = window.location.hash.substring(1);
+      if (slugToPage.has(slug)) {
+        document.querySelector(`#tab-01`).click();
+        setTimeout(() => {
+          renderPage(slug);
+        }, 100);
+      }
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

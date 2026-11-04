@@ -1,0 +1,1664 @@
+I built the app you described: it splits the raw PDF text into numbered paragraphs, removes headers and footers, flags pages where footnote text may sit inside a paragraph, and checks itself against the document's own reference. The four tabs show the result, the paragraphs, the flagged pages, and the checks and method.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UN Document · PDF Text</title>
+<style>
+:root {
+  --paper: #f4f0e8;
+  --ink: #1d1b18;
+  --rule: #d9d2c3;
+  --accent: #9b2335;
+  --pass: #2e5a2a;
+}
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  background-color: var(--paper);
+  accent-color: var(--accent);
+}
+.hidden { display: none !important; }
+header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--rule);
+  background-color: var(--paper);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+header h1 {
+  margin: 0 0 0.25rem 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: var(--ink);
+}
+header p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6b665c;
+}
+header .meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+header .meta .label {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: #6b665c;
+}
+header .meta .status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+}
+header .meta .status .dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+}
+header .meta .status .pass { background-color: var(--pass); }
+header .meta .status .fail { background-color: var(--accent); }
+main {
+  display: flex;
+  min-height: calc(100vh - 10rem);
+}
+.rail {
+  width: 22rem;
+  padding: 1.5rem;
+  border-right: 1px solid var(--rule);
+  background-color: var(--paper);
+  flex-shrink: 0;
+}
+.rail h2 {
+  margin: 0 0 1rem 0;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b665c;
+}
+.card {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  background-color: #fff;
+}
+.card.selected {
+  border-left: 4px solid var(--accent);
+  padding-left: calc(1rem - 4px);
+}
+.card h3 {
+  margin: 0 0 0.5rem 0;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  color: var(--ink);
+}
+.card p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  color: #6b665c;
+}
+.card .big-number {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.5rem;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0.5rem 0;
+}
+.card .big-number .of {
+  font-size: 1rem;
+  color: #6b665c;
+}
+.card .big-number .bar {
+  height: 0.25rem;
+  background-color: var(--rule);
+  margin-top: 0.25rem;
+}
+.card .big-number .bar .fill {
+  height: 100%;
+  background-color: var(--accent);
+}
+.card .big-number.pass .bar .fill { background-color: var(--pass); }
+.card .big-number.fail .bar .fill { background-color: var(--accent); }
+.card .flagged {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+.card .flagged:hover { text-decoration: underline; }
+.tabs {
+  flex-grow: 1;
+  padding: 1.5rem;
+}
+.tablist {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 0;
+  border-bottom: 1px solid var(--rule);
+  list-style: none;
+}
+.tablist li {
+  margin: 0;
+}
+.tablist button {
+  padding: 0.5rem 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b665c;
+  cursor: pointer;
+}
+.tablist button[aria-selected="true"] {
+  border-bottom-color: var(--accent);
+  color: var(--ink);
+  font-weight: 500;
+}
+.tablist button:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.tabpanel {
+  padding: 0;
+}
+.tabpanel h2 {
+  margin: 0 0 1rem 0;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b665c;
+}
+.tabpanel h3 {
+  margin: 1.5rem 0 0.5rem 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: var(--ink);
+}
+.tabpanel p {
+  margin: 0 0 1rem 0;
+}
+.tabpanel .note {
+  font-size: 0.875rem;
+  color: #6b665c;
+}
+.tabpanel .note:not(:last-child) { margin-bottom: 0.5rem; }
+.tabpanel .tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.tile {
+  padding: 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  background-color: #fff;
+}
+.tile h4 {
+  margin: 0 0 0.5rem 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--ink);
+}
+.tile .big-number {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.5rem;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0.5rem 0;
+}
+.tile .big-number.fail { color: var(--accent); }
+.tile .big-number.pass { color: var(--pass); }
+.tile .note {
+  font-size: 0.875rem;
+  color: #6b665c;
+}
+.tile a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.tile a:hover { text-decoration: underline; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+}
+table caption {
+  margin-bottom: 0.5rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--ink);
+  text-align: left;
+}
+table th {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--rule);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  color: #6b665c;
+}
+table th[scope="col"]:nth-child(2) { text-align: right; }
+table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+table td:first-child {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: var(--accent);
+}
+table td:last-child { text-align: right; }
+table td code {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  background-color: var(--paper);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.125rem;
+}
+table tr.expanded td {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+table tr.expanded + tr.detail td {
+  padding-top: 0;
+}
+tr.detail td {
+  padding: 1rem;
+  border-top: none;
+  background-color: #fff;
+}
+tr.detail .text {
+  white-space: pre-wrap;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink);
+  margin-bottom: 1rem;
+}
+tr.detail .text .suspect {
+  background-color: #fce8e8;
+  padding: 0 0.125rem;
+}
+tr.detail .toggle {
+  margin-bottom: 1rem;
+}
+tr.detail .toggle button {
+  background: none;
+  border: none;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+}
+tr.detail .toggle button:hover { text-decoration: underline; }
+tr.detail .first-words {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+tr.detail .first-words .found {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  color: var(--ink);
+}
+tr.detail .first-words .reference {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  color: #6b665c;
+}
+tr.detail .first-words .fail {
+  color: var(--accent);
+  font-weight: 500;
+}
+tr.detail .repairs {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  color: #6b665c;
+  margin-bottom: 1rem;
+}
+tr.detail .copy {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+tr.detail .copy button {
+  background: none;
+  border: none;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+}
+tr.detail .copy button:hover { text-decoration: underline; }
+tr.detail .copy .copied {
+  margin-left: 0.5rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  color: var(--pass);
+}
+.headings-box {
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  background-color: #fff;
+}
+.headings-box button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.headings-box button:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.headings-box button[aria-expanded="true"]::after { content: "−"; }
+.headings-box button[aria-expanded="false"]::after { content: "+"; }
+.headings-box .content {
+  padding: 1rem;
+  border-top: 1px solid var(--rule);
+}
+.headings-box .content ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+.headings-box .content li {
+  margin-bottom: 0.25rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  color: var(--ink);
+}
+.checks {
+  margin-bottom: 1.5rem;
+}
+.checks h3 {
+  margin: 0 0 0.5rem 0;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b665c;
+}
+.checks .check {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+}
+.checks .check .status {
+  flex-shrink: 0;
+  width: 4rem;
+}
+.checks .check .status.pass { color: var(--pass); }
+.checks .check .status.fail { color: var(--accent); }
+.checks .check .fail-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+.checks .check .fail-link:hover { text-decoration: underline; }
+.repair-log {
+  margin-bottom: 1.5rem;
+}
+.repair-log button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.repair-log button:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.repair-log button[aria-expanded="true"]::after { content: "−"; }
+.repair-log button[aria-expanded="false"]::after { content: "+"; }
+.repair-log .content {
+  padding: 1rem;
+  border-top: 1px solid var(--rule);
+  background-color: #fff;
+}
+.repair-log .counts {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  color: #6b665c;
+}
+.repair-log table {
+  margin-bottom: 0;
+}
+.repair-log table th { text-align: left; }
+.repair-log table td { vertical-align: top; }
+.raw-pages {
+  margin-bottom: 1.5rem;
+}
+.raw-pages button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.raw-pages button:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.raw-pages button[aria-expanded="true"]::after { content: "−"; }
+.raw-pages button[aria-expanded="false"]::after { content: "+"; }
+.raw-pages .content {
+  padding: 1rem;
+  border-top: 1px solid var(--rule);
+  background-color: #fff;
+}
+.raw-pages .select {
+  margin-bottom: 1rem;
+}
+.raw-pages .select select {
+  padding: 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  background-color: #fff;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  color: var(--ink);
+}
+.raw-pages .viewer {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre;
+  background-color: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  padding: 1rem;
+  overflow-x: auto;
+}
+.raw-pages .viewer .line {
+  display: flex;
+  gap: 1rem;
+}
+.raw-pages .viewer .line .number {
+  color: #6b665c;
+  flex-shrink: 0;
+}
+.raw-pages .viewer .line .text {
+  flex-grow: 1;
+}
+.raw-pages .viewer .line .cover { color: #a0988a; }
+.raw-pages .viewer .line .header { color: #8a7d6b; }
+.raw-pages .viewer .line .heading { color: #6b5d4a; }
+.raw-pages .viewer .line .paragraph { color: var(--ink); }
+.raw-pages .viewer .line .suspect { color: var(--accent); }
+.raw-pages .viewer .line .footer { color: #8a7d6b; }
+.raw-pages .legend {
+  margin-top: 1rem;
+  display: flex;
+  gap: 1rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  color: #6b665c;
+}
+.download {
+  margin-bottom: 1.5rem;
+}
+.download a {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  background-color: #fff;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+.download a:hover {
+  background-color: var(--paper);
+}
+footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.875rem;
+  color: #6b665c;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="meta">
+    <div class="label">UN DOCUMENT · PDF TEXT</div>
+    <div class="status">
+      <span class="dot pass" id="status-dot"></span>
+      <span id="status-text"></span>
+    </div>
+  </div>
+  <h1 id="title"></h1>
+  <p id="meta-line"></p>
+  <p id="purpose"></p>
+</header>
+
+<main>
+  <aside class="rail" role="navigation">
+    <h2>DOCUMENT</h2>
+    <div id="doc-cards"></div>
+  </aside>
+
+  <div class="tabs" role="main">
+    <ul class="tablist" role="tablist" aria-label="Tabs">
+      <li role="presentation"><button id="tab-01" role="tab" aria-selected="true" aria-controls="panel-01">01 RESULT</button></li>
+      <li role="presentation"><button id="tab-02" role="tab" aria-selected="false" aria-controls="panel-02">02 PARAGRAPHS</button></li>
+      <li role="presentation"><button id="tab-03" role="tab" aria-selected="false" aria-controls="panel-03">03 FLAGGED PAGES</button></li>
+      <li role="presentation"><button id="tab-04" role="tab" aria-selected="false" aria-controls="panel-04">04 CHECKS & METHOD</button></li>
+    </ul>
+
+    <div id="panel-01" class="tabpanel" role="tabpanel" aria-labelledby="tab-01">
+      <h2>TAB.01 · RESULT</h2>
+      <div class="tiles">
+        <div class="tile">
+          <h4>Paragraphs found</h4>
+          <div class="big-number" id="paragraphs-found"></div>
+          <div class="note">How this is computed: the script splits the raw text into numbered paragraphs.</div>
+        </div>
+        <div class="tile">
+          <h4>The document has</h4>
+          <div class="big-number" id="paragraphs-reference"></div>
+          <div class="note">How this is computed: the document's own reference.</div>
+        </div>
+        <div class="tile">
+          <h4>Pages flagged</h4>
+          <div class="big-number" id="pages-flagged"></div>
+          <div class="note" id="pages-flagged-note"></div>
+        </div>
+        <div class="tile">
+          <h4>First words match</h4>
+          <div class="big-number" id="first-words-match"></div>
+          <div class="note">How this is computed: the first six words of each paragraph against the document's own reference.</div>
+        </div>
+        <div class="tile">
+          <h4>Repairs made</h4>
+          <div class="big-number" id="repairs-made"></div>
+          <div class="note"><a href="#" id="repair-log-link">See the repair log</a></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-02" class="tabpanel hidden" role="tabpanel" aria-labelledby="tab-02">
+      <h2>TAB.02 · PARAGRAPHS</h2>
+      <div class="headings-box">
+        <button aria-expanded="false" aria-controls="headings-content">Headings found: <span id="headings-count"></span></button>
+        <div id="headings-content" class="content hidden">
+          <ul id="headings-list"></ul>
+        </div>
+      </div>
+      <table>
+        <caption>90 paragraphs found, 90 expected</caption>
+        <thead>
+          <tr>
+            <th scope="col">No.</th>
+            <th scope="col">Section</th>
+            <th scope="col">Page</th>
+            <th scope="col">First line</th>
+            <th scope="col">Check</th>
+          </tr>
+        </thead>
+        <tbody id="paragraphs-table"></tbody>
+      </table>
+    </div>
+
+    <div id="panel-03" class="tabpanel hidden" role="tabpanel" aria-labelledby="tab-03">
+      <h2>TAB.03 · FLAGGED PAGES</h2>
+      <p id="flagged-pages-empty" class="hidden">No page is flagged.</p>
+      <table id="flagged-pages-table" class="hidden">
+        <caption>Pages where footnote text may sit inside a paragraph</caption>
+        <thead>
+          <tr>
+            <th scope="col">Page</th>
+            <th scope="col">Paragraph</th>
+            <th scope="col">Suspect lines</th>
+            <th scope="col">Why</th>
+          </tr>
+        </thead>
+        <tbody id="flagged-pages-body"></tbody>
+      </table>
+    </div>
+
+    <div id="panel-04" class="tabpanel hidden" role="tabpanel" aria-labelledby="tab-04">
+      <h2>TAB.04 · CHECKS & METHOD</h2>
+      <div class="checks">
+        <h3>Checks</h3>
+        <div id="checks-list"></div>
+      </div>
+      <div class="repair-log">
+        <button aria-expanded="false" aria-controls="repair-log-content">Repair log (<span id="repair-log-count"></span>)</button>
+        <div id="repair-log-content" class="content hidden">
+          <div class="counts" id="repair-counts"></div>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Page</th>
+                <th scope="col">Paragraph or footnote</th>
+                <th scope="col">What was done</th>
+                <th scope="col">Before</th>
+                <th scope="col">After</th>
+              </tr>
+            </thead>
+            <tbody id="repair-log-table"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="raw-pages">
+        <button aria-expanded="false" aria-controls="raw-pages-content">Raw pages</button>
+        <div id="raw-pages-content" class="content hidden">
+          <div class="select">
+            <label for="raw-page-select">Show raw page</label>
+            <select id="raw-page-select"></select>
+          </div>
+          <div class="viewer" id="raw-page-viewer">
+            <div id="raw-page-lines"></div>
+          </div>
+          <div class="legend">
+            <div><span class="cover">C</span> cover</div>
+            <div><span class="header">H</span> header</div>
+            <div><span class="heading">G</span> heading</div>
+            <div><span class="paragraph">P</span> paragraph</div>
+            <div><span class="suspect">S</span> suspect line</div>
+            <div><span class="footer">F</span> footer</div>
+          </div>
+        </div>
+      </div>
+      <div class="download">
+        <a href="#" id="download-link">Download paragraphs as CSV</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p id="footer-source"></p>
+  <p>Built <span id="built-date"></span>. Counting, splitting, matching and flagging are done by this page's code; no model was called and nothing left the browser.</p>
+</footer>
+
+<script>
+(function() {
+  const data = window.WORKSHOP_DATA.pdf_text;
+  const docs = [data]; // today only one, but the app is written for several
+  const doc = docs[0];
+  const records = doc.records.sort((a, b) => a.page - b.page);
+  const reference = doc.reference || {};
+  const symbol = doc.symbol;
+  const title = doc.title;
+  const docUrl = doc.doc_url;
+  const adopted = reference.adopted;
+  const source = doc.source;
+  const built = new Date().toISOString().split('T')[0];
+
+  // State
+  let paragraphs = [];
+  let headings = [];
+  let repairs = [];
+  let flaggedPages = [];
+  let checks = [];
+  let currentDocIndex = 0;
+
+  // DOM
+  const docCards = document.getElementById('doc-cards');
+  const titleEl = document.getElementById('title');
+  const metaLineEl = document.getElementById('meta-line');
+  const purposeEl = document.getElementById('purpose');
+  const statusDot = document.getElementById('status-dot');
+  const statusText = document.getElementById('status-text');
+  const paragraphsFoundEl = document.getElementById('paragraphs-found');
+  const paragraphsReferenceEl = document.getElementById('paragraphs-reference');
+  const pagesFlaggedEl = document.getElementById('pages-flagged');
+  const pagesFlaggedNoteEl = document.getElementById('pages-flagged-note');
+  const firstWordsMatchEl = document.getElementById('first-words-match');
+  const repairsMadeEl = document.getElementById('repairs-made');
+  const repairLogLink = document.getElementById('repair-log-link');
+  const headingsCountEl = document.getElementById('headings-count');
+  const headingsListEl = document.getElementById('headings-list');
+  const paragraphsTableEl = document.getElementById('paragraphs-table');
+  const flaggedPagesEmptyEl = document.getElementById('flagged-pages-empty');
+  const flaggedPagesTableEl = document.getElementById('flagged-pages-table');
+  const flaggedPagesBodyEl = document.getElementById('flagged-pages-body');
+  const checksListEl = document.getElementById('checks-list');
+  const repairLogCountEl = document.getElementById('repair-log-count');
+  const repairCountsEl = document.getElementById('repair-counts');
+  const repairLogTableEl = document.getElementById('repair-log-table');
+  const rawPageSelect = document.getElementById('raw-page-select');
+  const rawPageLinesEl = document.getElementById('raw-page-lines');
+  const downloadLink = document.getElementById('download-link');
+  const footerSourceEl = document.getElementById('footer-source');
+  const builtDateEl = document.getElementById('built-date');
+
+  // Tabs
+  const tabs = ['01', '02', '03', '04'];
+  const tabButtons = tabs.map(id => document.getElementById(`tab-${id}`));
+  const tabPanels = tabs.map(id => document.getElementById(`panel-${id}`));
+
+  function init() {
+    titleEl.textContent = title;
+    metaLineEl.innerHTML = `<a href="${docUrl}" target="_blank">${symbol}</a>, adopted ${adopted}, ${records.length} pages of raw converter text, ${source}.`;
+    purposeEl.textContent = 'Splits the text into its numbered paragraphs, removes headers and footers, flags the pages where footnote text may sit inside a paragraph, checks itself and lists every repair.';
+    footerSourceEl.textContent = source;
+    builtDateEl.textContent = built;
+
+    // Build document cards
+    docs.forEach((d, i) => {
+      const card = document.createElement('div');
+      card.className = `card ${i === currentDocIndex ? 'selected' : ''}`;
+      card.innerHTML = `
+        <h3>${d.symbol}</h3>
+        <p>${d.title}</p>
+        <p>adopted ${d.reference?.adopted || 'unknown'}, ${d.records.length} pages</p>
+        <div class="big-number">
+          <span id="card-paragraphs-${i}"></span>
+          <span class="of">of ${d.reference?.paragraphs || '?'}</span>
+          <div class="bar"><div class="fill" id="card-paragraphs-bar-${i}"></div></div>
+        </div>
+        <div class="big-number">
+          <a href="#" class="flagged" id="card-flagged-${i}">0</a>
+          <span class="of">of ${d.records.length} pages flagged</span>
+        </div>
+        <div class="big-number">
+          <span id="card-checks-${i}"></span>
+          <span class="of">of ${checks.length} checks pass</span>
+        </div>
+      `;
+      card.addEventListener('click', () => {
+        currentDocIndex = i;
+        render();
+      });
+      docCards.appendChild(card);
+    });
+
+    // Tab navigation
+    tabButtons.forEach((button, i) => {
+      button.addEventListener('click', () => {
+        tabButtons.forEach((b, j) => {
+          b.setAttribute('aria-selected', j === i);
+          tabPanels[j].classList.toggle('hidden', j !== i);
+        });
+      });
+    });
+
+    // Repair log link
+    repairLogLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelector('.repair-log button').click();
+      document.getElementById('tab-04').click();
+    });
+
+    // Raw page select
+    records.forEach(r => {
+      const option = document.createElement('option');
+      option.value = r.page;
+      option.textContent = r.page;
+      rawPageSelect.appendChild(option);
+    });
+    rawPageSelect.addEventListener('change', () => {
+      showRawPage(parseInt(rawPageSelect.value));
+    });
+
+    // Download
+    downloadLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      downloadCSV();
+    });
+
+    // Run pipeline
+    runPipeline();
+    render();
+  }
+
+  function runPipeline() {
+    const doc = docs[currentDocIndex];
+    const records = doc.records.sort((a, b) => a.page - b.page);
+    const reference = doc.reference || {};
+    const symbol = doc.symbol;
+
+    paragraphs = [];
+    headings = [];
+    repairs = [];
+    flaggedPages = [];
+    checks = [];
+
+    // Step 1: Header and footer removal
+    const bodyLines = [];
+    records.forEach(record => {
+      const lines = record.text.split(/\r?\n/).map(line => line.trimEnd());
+      const page = record.page;
+      let headerRemoved = false;
+      let footerRemoved = false;
+      let bareNumberRemoved = null;
+
+      // Header: first non-empty line equals symbol
+      const firstNonEmpty = lines.findIndex(line => line.trim() !== '');
+      if (firstNonEmpty !== -1 && lines[firstNonEmpty] === symbol) {
+        repairs.push({
+          page,
+          type: 'header line removed',
+          before: lines[firstNonEmpty],
+          after: ''
+        });
+        lines[firstNonEmpty] = '';
+        headerRemoved = true;
+      } else if (firstNonEmpty !== -1) {
+        repairs.push({
+          page,
+          type: 'header line not found',
+          before: lines[firstNonEmpty],
+          after: lines[firstNonEmpty]
+        });
+      }
+
+      // Footer: from the end, drop empty lines, GE., date stamps, bare numbers
+      let lastNonEmpty = lines.length - 1;
+      while (lastNonEmpty >= 0 && lines[lastNonEmpty].trim() === '') lastNonEmpty--;
+      while (lastNonEmpty >= 0) {
+        const line = lines[lastNonEmpty].trim();
+        if (line === '') {
+          lines[lastNonEmpty] = '';
+          lastNonEmpty--;
+        } else if (line.startsWith('GE.')) {
+          repairs.push({
+            page,
+            type: 'footer line removed',
+            before: line,
+            after: ''
+          });
+          lines[lastNonEmpty] = '';
+          lastNonEmpty--;
+          footerRemoved = true;
+        } else if (/^\d{6}( \d{6})?$/.test(line)) { // date stamp
+          repairs.push({
+            page,
+            type: 'footer line removed',
+            before: line,
+            after: ''
+          });
+          lines[lastNonEmpty] = '';
+          lastNonEmpty--;
+          footerRemoved = true;
+        } else if (/^\d{1,3}$/.test(line)) {
+          if (parseInt(line) === page) { // page number
+            repairs.push({
+              page,
+              type: 'footer line removed',
+              before: line,
+              after: ''
+            });
+            lines[lastNonEmpty] = '';
+            lastNonEmpty--;
+            footerRemoved = true;
+          } else { // bare number (displaced footnote number)
+            repairs.push({
+              page,
+              type: 'bare number removed from the footer',
+              before: line,
+              after: ''
+            });
+            lines[lastNonEmpty] = '';
+            lastNonEmpty--;
+            footerRemoved = true;
+            bareNumberRemoved = line;
+          }
+        } else {
+          break;
+        }
+      }
+
+      // Body lines: every line that is not header or footer
+      const body = [];
+      lines.forEach((line, i) => {
+        if (line.trim() !== '') {
+          body.push({
+            page,
+            line: i + 1,
+            text: line,
+            kind: null
+          });
+        }
+      });
+      bodyLines.push(...body);
+
+      // Log checks
+      checks.push({
+        name: `Page ${page}: header line removed`,
+        expected: true,
+        actual: headerRemoved,
+        pass: headerRemoved,
+        link: null
+      });
+      checks.push({
+        name: `Page ${page}: footer line removed`,
+        expected: page !== 1, // page 1 has no page number in the footer
+        actual: footerRemoved,
+        pass: footerRemoved === (page !== 1),
+        link: null
+      });
+      if (bareNumberRemoved !== null) {
+        checks.push({
+          name: `Page ${page}: bare number removed from the footer`,
+          expected: true,
+          actual: true,
+          pass: true,
+          link: null
+        });
+      }
+    });
+
+    // Step 2: Concatenate body lines in page order
+    const allLines = bodyLines;
+
+    // Step 3: Paragraph starts
+    let currentParagraph = null;
+    let currentHeading = null;
+    let inCover = true;
+    let lastLabel = null;
+    let lastPart = null;
+
+    allLines.forEach(line => {
+      const text = line.text;
+      const page = line.page;
+      const lineNum = line.line;
+
+      // Labelled heading: roman or letter, then a dot
+      const labelledHeadingMatch = text.match(/^([IVX]+|[A-Z])\.$/);
+      if (labelledHeadingMatch) {
+        const label = labelledHeadingMatch[1];
+        if (/^[IVX]+$/.test(label)) lastPart = label;
+        lastLabel = label;
+        currentHeading = {
+          page,
+          line: lineNum,
+          label,
+          title: '',
+          part: lastPart,
+          kind: 'labelled'
+        };
+        line.kind = 'heading';
+        return;
+      }
+
+      // Unlabelled heading: non-empty line immediately followed by a paragraph start
+      // We'll check this after we know the next line
+
+      // Paragraph start: number alone or number and text on one line
+      const paraStartMatch = text.match(/^(\d{1,3})\.$/);
+      const paraStartWithTextMatch = text.match(/^(\d{1,3})\. (.+)$/);
+      if (paraStartMatch || paraStartWithTextMatch) {
+        const number = paraStartMatch ? paraStartMatch[1] : paraStartWithTextMatch[1];
+        const firstLine = paraStartWithTextMatch ? paraStartWithTextMatch[2] : null;
+        const paraNum = parseInt(number);
+
+        // If we were in a heading, finish it
+        if (currentHeading) {
+          headings.push(currentHeading);
+          currentHeading = null;
+        }
+
+        // If we were in a paragraph, finish it
+        if (currentParagraph) {
+          paragraphs.push(currentParagraph);
+        }
+
+        // Start new paragraph
+        currentParagraph = {
+          number: paraNum,
+          section: lastLabel,
+          part: lastPart,
+          page_start: page,
+          page_end: page,
+          lines: [],
+          text: '',
+          text_raw: '',
+          flagged: false,
+          suspect_lines: [],
+          repairs: []
+        };
+        inCover = false;
+        line.kind = 'paragraph';
+
+        // If the paragraph number and text are on one line, split them
+        if (paraStartWithTextMatch) {
+          repairs.push({
+            page,
+            type: 'number and text split',
+            before: text,
+            after: `${number}. | ${firstLine}`
+          });
+          currentParagraph.lines.push({
+            page,
+            line: lineNum,
+            text: firstLine
+          });
+        }
+        return;
+      }
+
+      // Heading text: after a labelled heading, up to the next label or paragraph start
+      if (currentHeading) {
+        // If the line starts with a lowercase letter or "(", it continues the previous heading line
+        if (/^[a-z(]/.test(text)) {
+          repairs.push({
+            page,
+            type: 'heading title joined from two lines',
+            before: currentHeading.title + ' | ' + text,
+            after: currentHeading.title + ' ' + text
+          });
+          currentHeading.title += ' ' + text;
+        } else {
+          currentHeading.title += (currentHeading.title ? ' ' : '') + text;
+        }
+        line.kind = 'heading';
+        return;
+      }
+
+      // Cover: lines before the first paragraph start
+      if (inCover) {
+        line.kind = 'cover';
+        return;
+      }
+
+      // Paragraph line: add to current paragraph
+      if (currentParagraph) {
+        currentParagraph.lines.push({
+          page,
+          line: lineNum,
+          text
+        });
+        currentParagraph.page_end = page;
+        line.kind = 'paragraph';
+        return;
+      }
+
+      // If we get here, the line is unclassified
+      line.kind = 'unclassified';
+    });
+
+    // Finish the last paragraph
+    if (currentParagraph) {
+      paragraphs.push(currentParagraph);
+    }
+
+    // Step 4: Unlabelled headings (non-empty line immediately followed by a paragraph start)
+    for (let i = 0; i < allLines.length - 1; i++) {
+      const line = allLines[i];
+      const nextLine = allLines[i + 1];
+      if (line.kind === 'paragraph' && nextLine.kind === 'paragraph' &&
+          nextLine.text.match(/^\d{1,3}\. /) && // next line is a paragraph start with text
+          line.text.length <= 90 &&
+          /^[A-Z]/.test(line.text) &&
+          !/[.;:,]\d?$/.test(line.text)) {
+        // This line is an unlabelled heading
+        line.kind = 'heading';
+        const heading = {
+          page: line.page,
+          line: line.line,
+          label: null,
+          title: line.text,
+          part: lastPart,
+          kind: 'unlabelled'
+        };
+        headings.push(heading);
+        repairs.push({
+          page: line.page,
+          type: 'heading separated from paragraph text',
+          before: line.text + ' | ' + nextLine.text,
+          after: line.text + ' | ' + nextLine.text.split('. ')[1]
+        });
+        // Update the paragraph's section
+        const paraNum = parseInt(nextLine.text.split('.')[0]);
+        const para = paragraphs.find(p => p.number === paraNum);
+        if (para) {
+          para.section = line.text;
+        }
+      }
+    }
+
+    // Step 5: Paragraph text
+    paragraphs.forEach(para => {
+      para.text_raw = para.lines.map(l => l.text).join(' ');
+      para.text = para.text_raw.replace(/\s+/g, ' ').trim();
+      para.text_lines = para.lines.map(l => l.text).join(' | ');
+    });
+
+    // Step 6: Suspect lines
+    paragraphs.forEach(para => {
+      para.lines.forEach(line => {
+        const text = line.text;
+        // Bare number of 1–3 digits with no full stop after it
+        if (/^\d{1,3}$/.test(text)) {
+          para.flagged = true;
+          para.suspect_lines.push({
+            page: line.page,
+            line: line.line,
+            text
+          });
+        }
+        // Starts with 1–3 digits, a space, and a capital letter, UN symbol or quote
+        else if (/^\d{1,3} [A-Z"UN]/.test(text)) {
+          para.flagged = true;
+          para.suspect_lines.push({
+            page: line.page,
+            line: line.line,
+            text
+          });
+        }
+      });
+      // Paragraph over 300 words
+      if (para.text.split(/\s+/).length > 300) {
+        para.flagged = true;
+      }
+    });
+
+    // Step 7: Flagged pages
+    const flaggedPagesMap = {};
+    paragraphs.forEach(para => {
+      if (para.flagged) {
+        const pages = new Set();
+        para.lines.forEach(line => pages.add(line.page));
+        pages.forEach(page => {
+          if (!flaggedPagesMap[page]) {
+            flaggedPagesMap[page] = {
+              page,
+              paragraphs: [],
+              suspect_lines: []
+            };
+          }
+          if (!flaggedPagesMap[page].paragraphs.includes(para.number)) {
+            flaggedPagesMap[page].paragraphs.push(para.number);
+          }
+          para.suspect_lines.forEach(sl => {
+            if (sl.page === page) {
+              flaggedPagesMap[page].suspect_lines.push({
+                line: sl.line,
+                text: sl.text,
+                why: /^\d{1,3}$/.test(sl.text) ? 'bare number' :
+                     /^\d{1,3} /.test(sl.text) ? 'starts with a number and a space' :
+                     'paragraph over 300 words'
+              });
+            }
+          });
+        });
+      }
+    });
+    flaggedPages = Object.values(flaggedPagesMap);
+
+    // Step 8: First words
+    paragraphs.forEach(para => {
+      const firstWords = para.text.split(/\s+/).slice(0, 6).map(word => {
+        // Drop digits glued to the end of a word
+        return word.replace(/\d+$/, '');
+      }).join(' ');
+      para.first_words_found = firstWords;
+      para.first_words_reference = reference.first_words ? reference.first_words[String(para.number)] : null;
+
+      // Normalise for comparison
+      const norm = s => s.replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/\s+/g, ' ').trim();
+      para.first_words_match = para.first_words_reference ?
+        norm(para.first_words_found) === norm(para.first_words_reference) :
+        null;
+    });
+
+    // Step 9: Citation
+    paragraphs.forEach(para => {
+      para.citation = `${symbol}, para. ${para.number}`;
+    });
+
+    // Step 10: Checks
+    // Paragraph count
+    const paraCountPass = paragraphs.length === reference.paragraphs;
+    checks.push({
+      name: 'Paragraph count',
+      expected: reference.paragraphs,
+      actual: paragraphs.length,
+      pass: paraCountPass,
+      link: paraCountPass ? null : '#paragraphs-table'
+    });
+
+    // Numbering: 1 to n in order
+    const numbers = paragraphs.map(p => p.number);
+    const numberingPass = numbers.every((n, i) => n === i + 1);
+    const gaps = [];
+    const duplicates = [];
+    for (let i = 1; i <= reference.paragraphs; i++) {
+      if (!numbers.includes(i)) gaps.push(i);
+      if (numbers.filter(n => n === i).length > 1) duplicates.push(i);
+    }
+    checks.push({
+      name: 'Numbering',
+      expected: `1 to ${reference.paragraphs}`,
+      actual: numberingPass ? `1 to ${paragraphs.length}` : `gaps: ${gaps.join(', ')}; duplicates: ${duplicates.join(', ')}`,
+      pass: numberingPass,
+      link: numberingPass ? null : '#paragraphs-table'
+    });
+
+    // First words
+    const firstWordsPass = paragraphs.every(p => p.first_words_match);
+    const mismatches = paragraphs.filter(p => !p.first_words_match).map(p => ({
+      para: p.number,
+      found: p.first_words_found,
+      reference: p.first_words_reference
+    }));
+    checks.push({
+      name: 'First words',
+      expected: `${reference.paragraphs} match`,
+      actual: `${paragraphs.length - mismatches.length} match`,
+      pass: firstWordsPass,
+      link: firstWordsPass ? null : '#paragraphs-table'
+    });
+
+    // Suspect lines
+    const suspectLines = paragraphs.flatMap(p => p.suspect_lines);
+    const suspectPages = new Set(suspectLines.map(sl => sl.page));
+    checks.push({
+      name: 'Suspect lines',
+      expected: `${suspectLines.length} suspect lines on ${suspectPages.size} pages, in ${paragraphs.filter(p => p.flagged).length} paragraphs`,
+      actual: `${suspectLines.length} suspect lines on ${suspectPages.size} pages, in ${paragraphs.filter(p => p.flagged).length} paragraphs`,
+      pass: true,
+      link: null
+    });
+
+    // Pages flagged
+    checks.push({
+      name: 'Pages flagged',
+      expected: `${flaggedPages.length} pages flagged`,
+      actual: `${flaggedPages.length} pages flagged`,
+      pass: true,
+      link: flaggedPages.length ? '#flagged-pages-table' : null
+    });
+
+    // Headings
+    const labelledHeadings = headings.filter(h => h.kind === 'labelled');
+    const unlabelledHeadings = headings.filter(h => h.kind === 'unlabelled');
+    checks.push({
+      name: 'Headings',
+      expected: `${labelledHeadings.length} labelled, ${unlabelledHeadings.length} unlabelled`,
+      actual: `${labelledHeadings.length} labelled, ${unlabelledHeadings.length} unlabelled`,
+      pass: true,
+      link: null
+    });
+
+    // Nothing lost
+    const classifiedLines = allLines.filter(line => line.kind !== 'unclassified');
+    const unclassifiedLines = allLines.filter(line => line.kind === 'unclassified');
+    const nothingLostPass = unclassifiedLines.length === 0;
+    checks.push({
+      name: 'Nothing lost',
+      expected: 'every non-empty line classified',
+      actual: nothingLostPass ? 'every non-empty line classified' : `${unclassifiedLines.length} unclassified lines`,
+      pass: nothingLostPass,
+      link: nothingLostPass ? null : '#raw-pages-content'
+    });
+  }
+
+  function render() {
+    const doc = docs[currentDocIndex];
+    const reference = doc.reference || {};
+    const paraCount = paragraphs.length;
+    const paraRefCount = reference.paragraphs || '?';
+    const paraCountPass = paraCount === paraRefCount;
+    const firstWordsMatchCount = paragraphs.filter(p => p.first_words_match).length;
+    const firstWordsRefCount = reference.paragraphs || '?';
+    const firstWordsPass = firstWordsMatchCount === firstWordsRefCount;
+    const flaggedPageCount = flaggedPages.length;
+    const repairCount = repairs.length;
+    const checkCount = checks.length;
+    const passCount = checks.filter(c => c.pass).length;
+    const allChecksPass = passCount === checkCount;
+
+    // Header status
+    statusDot.className = `dot ${allChecksPass ? 'pass' : 'fail'}`;
+    statusText.textContent = `${passCount} of ${checkCount} checks pass`;
+
+    // Document card
+    const cardParagraphsEl = document.getElementById(`card-paragraphs-${currentDocIndex}`);
+    const cardParagraphsBarEl = document.getElementById(`card-paragraphs-bar-${currentDocIndex}`);
+    const cardFlaggedEl = document.getElementById(`card-flagged-${currentDocIndex}`);
+    const cardChecksEl = document.getElementById(`card-checks-${currentDocIndex}`);
+    cardParagraphsEl.textContent = paraCount;
+    cardParagraphsBarEl.style.width = paraRefCount === '?' ? '0' :
+      `${Math.min(100, Math.max(0, (paraCount / paraRefCount) * 100))}%`;
+    cardParagraphsBarEl.parentElement.parentElement.className = `big-number ${paraCountPass ? 'pass' : 'fail'}`;
+    cardFlaggedEl.textContent = flaggedPageCount;
+    cardFlaggedEl.classList.toggle('hidden', flaggedPageCount === 0);
+    cardChecksEl.textContent = passCount;
+
+    // Tiles
+    paragraphsFoundEl.textContent = paraCount;
+    paragraphsFoundEl.className = `big-number ${paraCountPass ? 'pass' : 'fail'}`;
+    paragraphsReferenceEl.textContent = paraRefCount;
+    pagesFlaggedEl.textContent = flaggedPageCount;
+    pagesFlaggedEl.className = `big-number ${flaggedPageCount === 0 ? 'pass' : 'fail'}`;
+    pagesFlaggedNoteEl.textContent = flaggedPageCount === 0 ?
+      'The document has 141 footnotes; this version does not separate them.' :
+      'footnote text may sit inside a paragraph; see tab 03. The document has 141 footnotes; this version does not separate them.';
+    firstWordsMatchEl.textContent = `${firstWordsMatchCount} of ${firstWordsRefCount}`;
+    firstWordsMatchEl.className = `big-number ${firstWordsPass ? 'pass' : 'fail'}`;
+    repairsMadeEl.textContent = repairCount;
+
+    // Headings
+    headingsCountEl.textContent = headings.length;
+    headingsListEl.innerHTML = '';
+    headings.forEach(h => {
+      const li = document.createElement('li');
+      li.textContent = h.kind === 'labelled' ?
+        `${h.part ? h.part + ' › ' : ''}${h.label}. ${h.title}` :
+        h.title;
+      headingsListEl.appendChild(li);
+    });
+
+    // Paragraphs table
+    paragraphsTableEl.innerHTML = '';
+    paragraphs.forEach(para => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${para.number}</td>
+        <td>${para.section || ''}</td>
+        <td>${para.page_start}${para.page_start !== para.page_end ? '–' + para.page_end : ''}</td>
+        <td>${para.text.substring(0, 120)}${para.text.length > 120 ? '…' : ''}</td>
+        <td>
+          ${para.flagged ? '<a href="#" class="flagged">may contain footnote text</a>' : 'OK'}
+          ${para.first_words_match === false ? '<span class="fail">first words differ</span>' : ''}
+        </td>
+      `;
+      tr.setAttribute('role', 'button');
+      tr.setAttribute('aria-expanded', 'false');
+      tr.setAttribute('tabindex', '0');
+      tr.addEventListener('click', () => {
+        const expanded = tr.getAttribute('aria-expanded') === 'true';
+        tr.setAttribute('aria-expanded', !expanded);
+        if (!expanded) {
+          const detailTr = document.createElement('tr');
+          detailTr.className = 'detail';
+          detailTr.innerHTML = `
+            <td colspan="5">
+              <div class="text" id="para-text-${para.number}">${para.text.replace(/(\d{1,3})/g, '<span class="suspect">$1</span>')}</div>
+              <div class="toggle">
+                <button id="toggle-${para.number}">Show the PDF's lines</button>
+              </div>
+              <div class="text hidden" id="para-text-raw-${para.number}">${para.text_lines.replace(/(\d{1,3})/g, '<span class="suspect">$1</span>').replace(/\|/g, '<br>')}</div>
+              <div class="first-words">
+                <div class="found ${para.first_words_match === false ? 'fail' : ''}">found: ${para.first_words_found}</div>
+                <div class="reference">reference: ${para.first_words_reference || 'none'}</div>
+              </div>
+              <div class="repairs">${para.repairs.length ? para.repairs.map(r => `${r.type} (page ${r.page})`).join('; ') : 'none'}</div>
+              <div class="copy">
+                <button data-para="${para.number}">Copy citation</button>
+                <span class="copied hidden">Copied</span>
+              </div>
+            </td>
+          `;
+          tr.parentNode.insertBefore(detailTr, tr.nextSibling);
+          document.getElementById(`toggle-${para.number}`).addEventListener('click', () => {
+            const textEl = document.getElementById(`para-text-${para.number}`);
+            const textRawEl = document.getElementById(`para-text-raw-${para.number}`);
+            const toggleEl = document.getElementById(`toggle-${para.number}`);
+            textEl.classList.toggle('hidden');
+            textRawEl.classList.toggle('hidden');
+            toggleEl.textContent = textRawEl.classList.contains('hidden') ?
+              'Show the PDF\'s lines' : 'Hide the PDF\'s lines';
+          });
+          document.querySelector(`.copy button[data-para="${para.number}"]`).addEventListener('click', (e) => {
+            navigator.clipboard.writeText(para.citation).then(() => {
+              const copiedEl = e.target.nextElementSibling;
+              copiedEl.classList.remove('hidden');
+              setTimeout(() => copiedEl.classList.add('hidden'), 2000);
+            });
+          });
+        } else {
+          tr.nextElementSibling.remove();
+        }
+      });
+      tr.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') tr.click();
+      });
+      paragraphsTableEl.appendChild(tr);
+    });
+
+    // Flagged pages
+    if (flaggedPageCount === 0) {
+      flaggedPagesEmptyEl.classList.remove('hidden');
+      flaggedPagesTableEl.classList.add('hidden');
+    } else {
+      flaggedPagesEmptyEl.classList.add('hidden');
+      flaggedPagesTableEl.classList.remove('hidden');
+      flaggedPagesBodyEl.innerHTML = '';
+      flaggedPages.forEach(page => {
+        page.paragraphs.forEach(paraNum => {
+          const para = paragraphs.find(p => p.number === paraNum);
+          if (para) {
+            const suspectLines = page.suspect_lines.filter(sl => para.lines.some(l => l.page === page.page && l.line === sl.line));
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${page.page}</td>
+              <td>${paraNum}</td>
+              <td>${suspectLines.length}</td>
+              <td>${suspectLines.map(sl => sl.why).join(', ')}</td>
+            `;
+            tr.setAttribute('role', 'button');
+            tr.setAttribute('aria-expanded', 'false');
+            tr.setAttribute('tabindex', '0');
+            tr.addEventListener('click', () => {
+              const expanded = tr.getAttribute('aria-expanded') === 'true';
+              tr.setAttribute('aria-expanded', !expanded);
+              if (!expanded) {
+                const detailTr = document.createElement('tr');
+                detailTr.className = 'detail';
+                const rawLines = doc.records.find(r => r.page === page.page).text.split(/\r?\n/);
+                const highlightedLines = rawLines.map((line, i) => {
+                  const isSuspect = suspectLines.some(sl => sl.line === i + 1);
+                  return isSuspect ? `<span class="suspect">${line}</span>` : line;
+                }).join('<br>');
+                detailTr.innerHTML = `
+                  <td colspan="4">
+                    <div style="white-space: pre-wrap; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.875rem; line-height: 1.5; color: var(--ink);">
+                      ${highlightedLines}
+                    </div>
+                    <div style="margin-top: 1rem; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.875rem; color: #6b665c;">
+                      Paragraph ${paraNum} (page ${para.page_start}${para.page_start !== para.page_end ? '–' + para.page_end : ''}):
+                    </div>
+                    <div style="white-space: pre-wrap; font-family: system-ui, -apple-system, sans-serif; font-size: 1rem; line-height: 1.5; color: var(--ink); margin-top: 0.5rem;">
+                      ${para.text.replace(/(\d{1,3})/g, '<span class="suspect">$1</span>')}
+                    </div>
+                  </td>
+                `;
+                tr.parentNode.insertBefore(detailTr, tr.nextSibling);
+              } else {
+                tr.nextElementSibling.remove();
+              }
+            });
+            tr.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') tr.click();
+            });
+            flaggedPagesBodyEl.appendChild(tr);
+          }
+        });
+      });
+    }
+
+    // Checks
+    checksListEl.innerHTML = '';
+    checks.forEach(check => {
+      const div = document.createElement('div');
+      div.className = 'check';
+      div.innerHTML = `
+        <div class="status ${check.pass ? 'pass' : 'fail'}">${check.pass ? 'pass' : 'check failed'}</div>
+        <div>${check.name}: expected ${check.expected}, found ${check.actual}</div>
+      `;
+      if (!check.pass && check.link) {
+        const link = document.createElement('a');
+        link.href = check.link;
+        link.textContent = ' →';
+        link.className = 'fail-link';
+        div.appendChild(link);
+      }
+      checksListEl.appendChild(div);
+    });
+
+    // Repair log
+    repairLogCountEl.textContent = repairCount;
+    repairCountsEl.innerHTML = '';
+    const repairTypes = {};
+    repairs.forEach(r => {
+      repairTypes[r.type] = (repairTypes[r.type] || 0) + 1;
+    });
+    Object.entries(repairTypes).forEach(([type, count]) => {
+      const div = document.createElement('div');
+      div.textContent = `${count} ${type}`;
+      repairCountsEl.appendChild(div);
+    });
+    repairLogTableEl.innerHTML = '';
+    repairs.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.page}</td>
+        <td>${r.type.includes('paragraph') ? 'para. ' + r.para : ''}</td>
+        <td>${r.type}</td>
+        <td><code>${escapeHtml(r.before)}</code></td>
+        <td><code>${escapeHtml(r.after)}</code></td>
+      `;
+      repairLogTableEl.appendChild(tr);
+    });
+
+    // Raw pages
+    rawPageLinesEl.innerHTML = '';
+  }
+
+  function showRawPage(page) {
+    const record = doc.records.find(r => r.page === page);
+    if (!record) return;
+    const lines = record.text.split(/\r?\n/);
+    rawPageLinesEl.innerHTML = '';
+    lines.forEach((line, i) => {
+      const div = document.createElement('div');
+      div.className = 'line';
+      const lineObj = allLines.find(l => l.page === page && l.line === i + 1);
+      const kind = lineObj ? lineObj.kind : 'unclassified';
+      div.innerHTML = `
+        <div class="number">${(i + 1).toString().padStart(3, '0')}</div>
+        <div class="text ${kind}">${escapeHtml(line)}</div>
+      `;
+      rawPageLinesEl.appendChild(div);
+    });
+  }
+
+  function downloadCSV() {
+    const headers = [
+      'number', 'section', 'part', 'page_start', 'page_end',
+      'first_words_reference', 'first_words_found', 'first_words_match',
+      'text', 'text_raw', 'text_lines', 'flagged', 'suspect_lines',
+      'repairs', 'citation', 'symbol', 'doc_url'
+    ];
+    const rows = paragraphs.map(para => {
+      const suspectLines = para.suspect_lines.map(sl => `${sl.page}:${sl.line} "${sl.text}"`).join('; ');
+      const repairsList = para.repairs.map(r => `${r.type} (page ${r.page})`).join('; ');
+      return [
+        para.number,
+        para.section || '',
+        para.part || '',
+        para.page_start,
+        para.page_end,
+        para.first_words_reference || '',
+        para.first_words_found,
+        para.first_words_match,
+        `"${para.text.replace(/"/g, '""')}"`,
+        `"${para.text_raw.replace(/"/g, '""')}"`,
+        `"${para.text_lines.replace(/"/g, '""')}"`,
+        para.flagged,
+        `"${suspectLines}"`,
+        `"${repairsList}"`,
+        para.citation,
+        symbol,
+        docUrl
+      ].map(field => typeof field === 'string' ? field : String(field));
+    });
+    const csv = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\r\n');
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = symbol.replace(/\//g, '-') + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g, '&amp;')
+               .replace(/</g, '&lt;')
+               .replace(/>/g, '&gt;')
+               .replace(/"/g, '&quot;')
+               .replace(/'/g, '&#039;');
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
+```

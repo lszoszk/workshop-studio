@@ -97,10 +97,43 @@
     $('sendBtn').disabled = false;
     renderFooter();
     renderAll();
-    Tour.startOnce();   // the first visit in this browser
+    if (params.get('from')) await fromGallery(params.get('from'));
+    else Tour.startOnce();   // the first visit in this browser
     if (!S.versions.length && !S.talk.length) {
       note(`Hello! Ask me anything, or pick a suggestion below. To build an app, first drag a file from <b>Your files</b> into the chat: ` +
         `your country is <b>${esc(S.country)}</b>, with ${fmt(S.countryCount)} UN recommendations and observations.`);
+    }
+  }
+
+  // A back-up for when a plan or a build fails: a gallery app comes in as a version of its own, with the plan
+  // it was built from as the request, so the next message asks the model to change it. ?from=<model>/<prompt id>
+  async function fromGallery(id) {
+    history.replaceState(null, '', location.pathname + location.search.replace(/[?&]from=[^&]*/, '').replace(/^&/, '?'));
+    const [model, promptId] = id.split('/');
+    try {
+      if (!/^[\w-]+\/[\w-]+$/.test(id)) throw new Error('not a gallery app');
+      const g = await getJSON('gallery/gallery.json');
+      const r = g.results.find((x) => x.model === model && x.prompt === promptId && x.app);
+      const p = S.prompts.find((q) => q.id === promptId);
+      if (!r || !p) throw new Error('not in the gallery');
+      const html = await getText(`gallery/apps/${model}/${promptId}.html`);
+      const name = (g.models[model] || {}).name || model;
+      S.session = p.session;
+      localSet('ws:session', p.session);
+      renderSession();
+      const v = {
+        n: S.versions.length + 1, parent: null, user: `From the gallery: ${p.title}`, files: p.dataset ? [p.dataset] : [],
+        sent: g.prompts.find((x) => x.id === promptId).prompt, model, label: `${name} · from the gallery`, seconds: null, cost: null,
+        recorded: true, promptId, created: Date.now(), html, reply: '```html\n' + html + '\n```', fix: false,
+        summary: `${p.title}, built by ${name} from the plan above. It was loaded from the gallery: ask for a change in your own words, or pick a next step below.`,
+      };
+      S.versions.push(v);
+      S.current = v.n;
+      save();
+      renderAll();
+      await showVersion(v);
+    } catch (e) {
+      note('That app could not be loaded from the gallery. Open the gallery and try again.');
     }
   }
 

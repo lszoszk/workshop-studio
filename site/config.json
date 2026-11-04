@@ -31,16 +31,15 @@
   "models": {
     "mistral": {
       "host_region": "the EU",
-      "label": "Mistral Large 4",
+      "label": "Mistral Large 3",
       "maker": "Mistral AI",
       "origin": "France",
       "region": "Europe",
       "host": "Mistral",
       "host_note": "the developer's own service, in the EU",
-      "openrouter": "mistralai/mistral-large-4-0",
+      "openrouter": "mistralai/mistral-large-2512",
       "provider": "mistral/eu",
-      "price": "$0.77 in / $2.31 out per million tokens",
-      "reasoning": "high"
+      "price": "$0.55 in / $1.65 out per million tokens"
     },
     "claude": {
       "host_region": "the US",
@@ -66,7 +65,7 @@
       "openrouter": "z-ai/glm-5.3",
       "provider": "mistral/nvfp4/eu",
       "price": "$1.54 in / $4.84 out per million tokens",
-      "reasoning": "high"
+      "reasoning": "medium"
     },
     "glm-cn": {
       "host_region": "China",
@@ -79,7 +78,7 @@
       "openrouter": "z-ai/glm-5.3",
       "provider": "z-ai",
       "price": "$1.40 in / $4.40 out per million tokens",
-      "reasoning": "high"
+      "reasoning": "medium"
     }
   },
   "model_groups": [
@@ -128,7 +127,9 @@
       {"name": "HUDOC Researcher", "url": "https://lszoszk.github.io/ECHR-Dashboard/", "repo": "https://github.com/lszoszk/ECHR-Dashboard",
        "blurb": "The judgments of the European Court of Human Rights, paragraph by paragraph: search, citation checking, Cites and Cited by.", "with": "Sebastian Marcisz"},
       {"name": "HRC Voting", "url": "https://lszoszk.github.io/hrc-voting/", "repo": "https://github.com/lszoszk/hrc-voting",
-       "blurb": "UN human rights voting records: the Commission, the Council and the General Assembly Third Committee."}
+       "blurb": "UN human rights voting records: the Commission, the Council and the General Assembly Third Committee."},
+      {"name": "Travaux préparatoires", "url": "https://lszoszk.github.io/travaux-preparatoires/", "repo": "https://github.com/lszoszk/travaux-preparatoires",
+       "blurb": "How the Universal Declaration and the two Covenants were drafted, 1946–66: the speeches, amendments and votes, article by article."}
     ]
   },
   "files": [

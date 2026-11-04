@@ -66,10 +66,10 @@ assert.equal(r.status, 200);
 let ev = events(r.text);
 assert.deepEqual(ev.slice(0, 2), [["message", { reasoning: "thinking" }], ["message", { delta: "hi" }]]);
 assert.ok(!r.text.includes("[DONE]"));
-assert.deepEqual(sent.at(-1).reasoning, { effort: "high" });
+assert.equal(sent.at(-1).reasoning, undefined);              // Mistral Large 3 does not think
 assert.deepEqual(ev.slice(-2).map((e) => e[0]), ["usage", "done"]);
 const u = ev.at(-2)[1];
-assert.deepEqual({ ...u, seconds: 0 }, { model: "mistral", model_label: "Mistral Large 4", openrouter_model: "mistralai/mistral-large-4-0",
+assert.deepEqual({ ...u, seconds: 0 }, { model: "mistral", model_label: "Mistral Large 3", openrouter_model: "mistralai/mistral-large-2512",
   host: "Mistral", host_region: "EU", zdr: true, prompt_tokens: 10, completion_tokens: 2, cost: 0.25, seconds: 0, budget_left: 7.75 });
 const py = execFileSync("python3", ["-c", "import sys,json,pathlib; sys.path.insert(0,'server'); import app; " +
   "print(json.dumps(app.build_system_prompt(pathlib.Path('site/data'))))"], { cwd: ROOT }).toString();
@@ -98,7 +98,7 @@ assert.ok(Number(r.headers.get("retry-after")) > 0);
 kv.set("seat:PQRSTU", JSON.stringify({ country: "Tunisia", budget: 8 }));
 replies.push([503, []]);
 r = await call("/chat", "POST", { ...msg, seat: "PQRSTU", model: "claude" });
-assert.equal(sent.at(-1).model, "mistralai/mistral-large-4-0");
+assert.equal(sent.at(-1).model, "mistralai/mistral-large-2512");
 assert.equal(events(r.text).at(-2)[1].fallback_from, "claude");
 replies.push([503, []], [500, []]);
 r = await call("/chat", "POST", { ...msg, seat: "PQRSTU" });
@@ -118,11 +118,11 @@ r = await call("/chat", "POST", msg); assert.equal(r.status, 503); assert.equal(
 assert.equal((await call("/health")).json().accepting, false);
 assert.equal((await call("/gallery")).status, 404);
 assert.ok(Number(kv.get(`day:${new Date().toISOString().slice(0, 10)}`)) >= 1.0);
-// reasoning effort: high for GLM too (2 Nov 2026: all four workshop apps pass, at 2.5–8 min each)
+// reasoning effort: medium for GLM (4 Nov 2026: at high its thinking used up the answer budget on two of four plans)
 kv.set("cfg", JSON.stringify({}));
 kv.set("seat:VWXYZ2", JSON.stringify({ country: "Georgia", budget: 8 }));
 await call("/chat", "POST", { ...msg, seat: "VWXYZ2", model: "glm-eu" });
-assert.deepEqual(sent.at(-1).reasoning, { effort: "high" });
+assert.deepEqual(sent.at(-1).reasoning, { effort: "medium" });
 
 // OpenRouter's transient in-flight budget 402: retried, then 503 without fallback; other 402s fall back
 const IN_FLIGHT = { error: { code: 402, message: "Insufficient credits", metadata: { reason: "in_flight_budget_exhausted" } } };
@@ -130,7 +130,7 @@ let before = sent.length;
 replies.push([402, IN_FLIGHT]);
 r = await call("/chat", "POST", { ...msg, seat: "VWXYZ2" });
 assert.equal(r.status, 200);
-assert.deepEqual(sent.slice(before).map((q) => q.model), ["mistralai/mistral-large-4-0", "mistralai/mistral-large-4-0"]);
+assert.deepEqual(sent.slice(before).map((q) => q.model), ["mistralai/mistral-large-2512", "mistralai/mistral-large-2512"]);
 kv.set("seat:VWXYZ3", JSON.stringify({ country: "Georgia", budget: 8 }));
 before = sent.length;
 for (let i = 0; i < 10; i++) replies.push([402, IN_FLIGHT]);
@@ -144,5 +144,5 @@ before = sent.length;
 replies.push([402, { error: { code: 402, message: "Insufficient credits" } }]);
 r = await call("/chat", "POST", { ...msg, seat: "VWXYZ3", model: "claude" });
 assert.equal(r.status, 200);
-assert.deepEqual(sent.slice(before).map((q) => q.model), ["anthropic/claude-sonnet-5.5", "mistralai/mistral-large-4-0"]);
+assert.deepEqual(sent.slice(before).map((q) => q.model), ["anthropic/claude-sonnet-5.5", "mistralai/mistral-large-2512"]);
 console.log("worker: all checks passed");

@@ -6,7 +6,7 @@ window.Tour = (function () {
   const STEPS = [
     { title: 'Welcome to Garage Research', wide: true,
       text: ['Many of us lose hours on searching UN documents: finding what a body said on an issue, or checking whether a recommendation was really addressed to a given state. Here you ask a model to build a small tool for such a task, on real UN human rights data.',
-        'The tool searches for you and sends you back to the source: each finding links to the document and paragraph it comes from. It finds and counts; the assessment stays with you.',
+        'Generative AI does not have to write the text you rely on. Here it writes the tool, which shortens the way to the sources you should take into account: each finding links to the document and paragraph it comes from. Reading those sources and judging them stays with you.',
         'Building such tools is also a way to learn where the models help and where they fail (the so-called jagged frontier), and to keep that skill after the workshop.',
         'Every app can be adjusted: ask for a change in your own words. The tour takes one minute.'] },
     { at: '#sessionSwitch', title: 'Two sessions',
@@ -22,7 +22,7 @@ window.Tour = (function () {
     { at: '#toolbar', title: 'Your app',
       text: 'When an app is on the stage: App and Code show what the model wrote, New tab opens it full screen, Save as file keeps a copy that works offline, and Look inside shows how it works and what left this laptop.' },
     { at: '.foot-end', title: 'The gallery, and this tour again',
-      text: 'The Gallery at the top shows the workshop apps, each with the plan it was built from. Tour, down here, starts this again.' },
+      text: 'The Gallery at the top shows what different models built from the same plans. Tour, down here, starts this again.' },
   ];
   let i = 0, root = null, onKey = null;
 

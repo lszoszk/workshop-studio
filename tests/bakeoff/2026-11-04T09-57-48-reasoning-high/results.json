@@ -1,0 +1,232 @@
+[
+ {
+  "model": "mistral",
+  "label": "Mistral Large 4 · France · Mistral (EU)",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true
+  },
+  "passed": 8,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 722,
+  "seconds": 462.6,
+  "first_token": 344.1,
+  "first_thought": 2.9,
+  "reasoning_chars": 141718,
+  "prompt_tokens": 18131,
+  "completion_tokens": 57094,
+  "cost": 0.14584801,
+  "provider": "Mistral"
+ },
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true
+  },
+  "passed": 8,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 1139,
+  "seconds": 854.7,
+  "first_token": 690.8,
+  "first_thought": 5.3,
+  "reasoning_chars": 170439,
+  "prompt_tokens": 18088,
+  "completion_tokens": 62755,
+  "cost": 0.3014452,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "mistral",
+  "label": "Mistral Large 4 · France · Mistral (EU)",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "table_min_rows": false,
+   "text_contains": false,
+   "download": false,
+   "text_matches": false
+  },
+  "passed": 0,
+  "total": 7,
+  "errors": [
+   "no html in reply"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 558.3,
+  "first_token": null,
+  "first_thought": 2.2,
+  "reasoning_chars": 234886,
+  "prompt_tokens": 18981,
+  "completion_tokens": 64000,
+  "cost": 0.16245537,
+  "provider": "Mistral"
+ },
+ {
+  "model": "mistral",
+  "label": "Mistral Large 4 · France · Mistral (EU)",
+  "prompt": "s8-1-verbatim",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "search_box": true,
+   "source_matches": true,
+   "text_contains_after_search": false,
+   "button_matches": false
+  },
+  "passed": 5,
+  "total": 8,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Invalid or unexpected token"
+  ],
+  "network": [],
+  "lines": 779,
+  "seconds": 486.1,
+  "first_token": 358.8,
+  "first_thought": 2.8,
+  "reasoning_chars": 142024,
+  "prompt_tokens": 18504,
+  "completion_tokens": 55277,
+  "cost": 0.14193795,
+  "provider": "Mistral"
+ },
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "table_min_rows": false,
+   "text_contains": false,
+   "download": false,
+   "text_matches": false
+  },
+  "passed": 0,
+  "total": 7,
+  "errors": [
+   "no html in reply"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 1026.9,
+  "first_token": null,
+  "first_thought": 2.2,
+  "reasoning_chars": 247635,
+  "prompt_tokens": 18920,
+  "completion_tokens": 64000,
+  "cost": 0.308088,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "mistral",
+  "label": "Mistral Large 4 · France · Mistral (EU)",
+  "prompt": "s8-5-wiki",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "source_matches": true,
+   "calls_studio_ask": true,
+   "batches_max": true,
+   "controls_min": true
+  },
+  "passed": 7,
+  "total": 7,
+  "errors": [],
+  "network": [],
+  "lines": 978,
+  "seconds": 397.3,
+  "first_token": 286.2,
+  "first_thought": 3.3,
+  "reasoning_chars": 129356,
+  "prompt_tokens": 20770,
+  "completion_tokens": 57191,
+  "cost": 0.14810411,
+  "provider": "Mistral"
+ },
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s8-1-verbatim",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "chart": false,
+   "search_box": false,
+   "button_matches": false,
+   "source_matches": false,
+   "text_contains_after_search": false
+  },
+  "passed": 0,
+  "total": 8,
+  "errors": [
+   "no html in reply"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 1003.6,
+  "first_token": 971.8,
+  "first_thought": 9.3,
+  "reasoning_chars": 225037,
+  "prompt_tokens": 18439,
+  "completion_tokens": 64000,
+  "cost": 0.3074146,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s8-5-wiki",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "source_matches": true,
+   "calls_studio_ask": false,
+   "batches_max": false,
+   "controls_min": true
+  },
+  "passed": 4,
+  "total": 7,
+  "errors": [
+   "Failed to execute 'write' on 'Document': missing ) after argument list"
+  ],
+  "network": [],
+  "lines": 1145,
+  "seconds": 719.0,
+  "first_token": 463.0,
+  "first_thought": 2.2,
+  "reasoning_chars": 98476,
+  "prompt_tokens": 20687,
+  "completion_tokens": 48833,
+  "cost": 0.243827,
+  "provider": "Z.AI"
+ }
+]

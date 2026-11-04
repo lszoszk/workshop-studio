@@ -35,6 +35,8 @@ OUT = ROOT / "tests" / "bakeoff"
 MODELS = {
     "mistral": ("mistralai/mistral-large-4-0", "mistral/eu", "Mistral Large 4 · France · Mistral (EU)"),
     "claude": ("anthropic/claude-sonnet-5.5", "amazon-bedrock/us-east-1", "Claude Sonnet 5.5 · USA · Amazon Bedrock"),
+    # the previous Mistral flagship: no thinking before the answer, so a build takes minutes less
+    "mistral-l3": ("mistralai/mistral-large-2512", "mistral/eu", "Mistral Large 3 · France · Mistral (EU)"),
     "glm-cn": ("z-ai/glm-5.3", "z-ai", "GLM-5.3 · China · Z.AI"),
     "glm-eu": ("z-ai/glm-5.3", "mistral/nvfp4/eu", "GLM-5.3 · China · Mistral (EU)"),
     # candidates for the China slot (DeepSeek's own service refuses zero data retention)

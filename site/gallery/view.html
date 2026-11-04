@@ -6,7 +6,7 @@
 <title>Gallery app</title>
 <meta name="robots" content="noindex, nofollow">
 <script src="../gate.js"></script>
-<link rel="stylesheet" href="../studio.css?v=2026-11-04f">
+<link rel="stylesheet" href="../studio.css?v=2026-11-04h">
 <style>
   body { display: flex; flex-direction: column; }
   .bar { display: flex; gap: 14px; align-items: center; padding: 8px 14px; background: var(--surface); border-bottom: 1px solid var(--line); }
@@ -24,8 +24,8 @@
     <div class="drawer-body" id="drawerBody"></div>
   </aside>
 </div>
-<script src="../pdf-view.js?v=2026-11-04f"></script>
-<script src="../preview-doc.js?v=2026-11-04f"></script>
+<script src="../pdf-view.js?v=2026-11-04h"></script>
+<script src="../preview-doc.js?v=2026-11-04h"></script>
 <script>
 (async function () {
   // ?app=model/prompt: a gallery app; ?wall=id: an app a participant sent to the wall, run on their country and files
@@ -64,6 +64,7 @@
     const m = g.models[model] || { name: model };
     const p = g.prompts.find((x) => x.id === prompt) || { title: prompt };
     what.innerHTML = `<b>${m.name}</b> · ${p.title} · ${country}`;
+    what.insertAdjacentHTML('afterend', `<a href="../?from=${encodeURIComponent(app)}" style="margin-left:auto">Improve it in the studio →</a>`);
     document.title = `${p.title} · ${m.name}`;
   }
   const file = (k) => k === 'uhri' ? (index.countries.find((c) => c.name === country) || index.countries[0]).file : index.datasets[k].file;

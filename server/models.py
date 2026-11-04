@@ -9,7 +9,8 @@ entry's `fallback`, and the usage event says which model answered.
 
 Hosts are OpenRouter endpoint tags (provider slug, optionally /variant/region). The EU and US entries
 use region tags so the badge is true: plain `mistral` or `amazon-bedrock` may be served from
-another region. Checked against https://openrouter.ai/api/v1/endpoints/zdr on 31.10.2026; re-check
+another region. Checked against https://openrouter.ai/api/v1/endpoints/zdr on 31.10.2026 (Mistral Large 3
+on mistral/eu on 4.11.2026); re-check
 before the workshop (RUNBOOK.md, "Before the day").
 
 Prices are USD per million tokens (OpenRouter list prices for the pinned endpoint). They are used
@@ -36,14 +37,16 @@ class Model:
 
 
 MODELS: dict[str, Model] = {m.key: m for m in [
-    Model("mistral", "mistralai/mistral-large-4-0", "mistral/eu", "Mistral Large 4", "Mistral", "EU",
-          0.77, 2.31, fallback="glm-eu", reasoning="high"),
+    # Large 3, not Large 4: Large 4 thinks for 8-10 minutes on a workshop plan whatever the effort, and on the
+    # PDF plan its thinking used up the whole answer budget (bake-off, 4.11.2026); Large 3 answers in 2-5
+    Model("mistral", "mistralai/mistral-large-2512", "mistral/eu", "Mistral Large 3", "Mistral", "EU",
+          0.55, 1.65, fallback="glm-eu"),
     Model("claude", "anthropic/claude-sonnet-5.5", "amazon-bedrock/us-east-1", "Claude Sonnet 5.5",
           "Amazon Bedrock", "US", 2.2, 11.0, fallback="mistral", reasoning="high"),
     Model("glm-cn", "z-ai/glm-5.3", "z-ai", "GLM-5.3 (developer's service)", "Z.AI", "CN",
-          1.4, 4.4, fallback="glm-eu", reasoning="high"),
+          1.4, 4.4, fallback="glm-eu", reasoning="medium"),
     Model("glm-eu", "z-ai/glm-5.3", "mistral/nvfp4/eu", "GLM-5.3 (run in the EU)", "Mistral", "EU",
-          1.54, 4.84, fallback="mistral", reasoning="high"),
+          1.54, 4.84, fallback="mistral", reasoning="medium"),
     Model("fast", "deepseek/deepseek-v4.1-flash", None, "DeepSeek V4.1 Flash", "any ZDR host", None,
           0.45, 1.8, fallback="mistral"),     # the dearest ZDR endpoint, so an estimate never undercharges
 ]}

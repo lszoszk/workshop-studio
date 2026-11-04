@@ -3,15 +3,15 @@
  "models": [
   {
    "key": "mistral",
-   "id": "mistralai/mistral-large-4-0",
+   "id": "mistralai/mistral-large-2512",
    "host": "mistral/eu",
-   "label": "Mistral Large 4",
+   "label": "Mistral Large 3",
    "host_label": "Mistral",
    "host_region": "EU",
-   "price_in": 0.77,
-   "price_out": 2.31,
+   "price_in": 0.55,
+   "price_out": 1.65,
    "fallback": "glm-eu",
-   "reasoning": "high"
+   "reasoning": null
   },
   {
    "key": "claude",
@@ -35,7 +35,7 @@
    "price_in": 1.4,
    "price_out": 4.4,
    "fallback": "glm-eu",
-   "reasoning": "high"
+   "reasoning": "medium"
   },
   {
    "key": "glm-eu",
@@ -47,7 +47,7 @@
    "price_in": 1.54,
    "price_out": 4.84,
    "fallback": "mistral",
-   "reasoning": "high"
+   "reasoning": "medium"
   },
   {
    "key": "fast",

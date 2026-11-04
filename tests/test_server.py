@@ -177,7 +177,7 @@ def test_refused_requests_do_not_use_up_the_rate_limit(env):
 
 # ── model menu, purposes and pinning ──
 
-@pytest.mark.parametrize("model", ["openai/gpt-4o", "mistralai/mistral-large-4-0", "glm", "MISTRAL"])
+@pytest.mark.parametrize("model", ["openai/gpt-4o", "mistralai/mistral-large-2512", "glm", "MISTRAL"])
 def test_model_outside_the_menu_is_400(env, model):
     r = env.client.post("/studio-api/chat", json=body(model=model))
     assert r.status_code == 400 and r.json()["error"] == "This model is not on the menu"
@@ -239,7 +239,7 @@ def test_build_system_message_is_exactly_the_bakeoff_one(env):
 
 def test_inapp_and_question_purposes(env):
     env.client.post("/studio-api/chat", json=body(model="fast", purpose="inapp"))
-    env.client.post("/studio-api/chat", json=body(model="mistral", purpose="question"))
+    env.client.post("/studio-api/chat", json=body(model="claude", purpose="question"))
     inapp, question = env.fake.requests
     assert inapp["messages"][0] == {"role": "system", "content": studio.INAPP_SYSTEM}
     assert (inapp["temperature"], inapp["max_tokens"]) == (0.2, 8000)
@@ -274,19 +274,20 @@ def test_stream_is_normalised_and_ends_with_usage_then_done(env):
                       ("message", {"delta": "<p>hi</p>"})]
     assert "[DONE]" not in r.text and "choices" not in r.text
     assert [e for e, _ in ev[3:]] == ["usage", "done"] and ev[-1][1] == {}
-    assert ev[3][1] == {"model": "mistral", "model_label": "Mistral Large 4",
-                        "openrouter_model": "mistralai/mistral-large-4-0", "host": "Mistral", "host_region": "EU",
+    assert ev[3][1] == {"model": "mistral", "model_label": "Mistral Large 3",
+                        "openrouter_model": "mistralai/mistral-large-2512", "host": "Mistral", "host_region": "EU",
                         "zdr": True, "prompt_tokens": 1200, "completion_tokens": 300, "cost": 0.0123,
                         "seconds": ev[3][1]["seconds"], "budget_left": round(8 - 0.0123, 4)}
 
 
-def test_reasoning_effort_is_high_for_builds_low_for_questions(env):
+def test_reasoning_effort_per_model_for_builds_low_for_questions(env):
+    """Mistral Large 3 does not think; GLM thinks at medium, past which it ran out of its answer budget (4.11.2026)."""
     for key in ("mistral", "claude", "glm-cn", "glm-eu"):
         env.client.post("/studio-api/chat", json=body(model=key))
     env.client.post("/studio-api/chat", json=body(model="mistral", purpose="inapp"))
     env.client.post("/studio-api/chat", json=body(model="claude", purpose="question"))
     efforts = [r.get("reasoning") for r in env.fake.requests]
-    assert efforts == [{"effort": "high"}] * 4 + [None, {"effort": "low"}]
+    assert efforts == [None, {"effort": "high"}, {"effort": "medium"}, {"effort": "medium"}, None, {"effort": "low"}]
 
 
 def test_reasoning_and_text_in_one_chunk_keep_their_order(env):
@@ -308,7 +309,7 @@ def test_in_flight_402_is_retried_until_it_clears(env):
     env.fake.stream(status=402, error=IN_FLIGHT).stream(chunk("ok"), chunk(usage=USAGE))
     r = env.client.post("/studio-api/chat", json=body())
     assert r.status_code == 200 and events(r.text)[0] == ("message", {"delta": "ok"})
-    assert [q["model"] for q in env.fake.requests] == ["mistralai/mistral-large-4-0"] * 2      # same model, no fallback
+    assert [q["model"] for q in env.fake.requests] == ["mistralai/mistral-large-2512"] * 2      # same model, no fallback
 
 
 def test_in_flight_402_that_persists_is_503_busy_and_logged(env, caplog):
@@ -318,7 +319,7 @@ def test_in_flight_402_that_persists_is_503_busy_and_logged(env, caplog):
         r = env.client.post("/studio-api/chat", json=body())
     assert r.status_code == 503 and r.json()["error"] == "The model service is busy, try again in a minute"
     assert r.headers["retry-after"] == "60"
-    assert {q["model"] for q in env.fake.requests} == {"mistralai/mistral-large-4-0"}           # no fallback
+    assert {q["model"] for q in env.fake.requests} == {"mistralai/mistral-large-2512"}           # no fallback
     assert 2 <= len(env.fake.requests) <= 4                                                     # backoff, not a hot loop
     line = json.loads([r.message for r in caplog.records if r.name == "studio"][-1])
     assert line["status"] == "busy" and line["error"] == "in_flight_budget_exhausted"
@@ -329,7 +330,7 @@ def test_other_402_is_not_retried_but_falls_back(env):
     env.fake.stream(status=402, error={"code": 402, "message": "Insufficient credits"})
     r = env.client.post("/studio-api/chat", json=body(model="claude"))
     assert r.status_code == 200
-    assert [q["model"] for q in env.fake.requests] == ["anthropic/claude-sonnet-5.5", "mistralai/mistral-large-4-0"]
+    assert [q["model"] for q in env.fake.requests] == ["anthropic/claude-sonnet-5.5", "mistralai/mistral-large-2512"]
 
 
 def test_out_of_credit_on_both_models_says_so(env):
@@ -433,7 +434,7 @@ def test_fallback_when_the_pinned_host_fails(env):
     env.fake.stream(status=503).stream(chunk("from fallback"), chunk(usage=USAGE))
     r = env.client.post("/studio-api/chat", json=body(model="claude"))
     assert r.status_code == 200
-    assert [q["model"] for q in env.fake.requests] == ["anthropic/claude-sonnet-5.5", "mistralai/mistral-large-4-0"]
+    assert [q["model"] for q in env.fake.requests] == ["anthropic/claude-sonnet-5.5", "mistralai/mistral-large-2512"]
     ev = events(r.text)
     assert ev[0] == ("message", {"delta": "from fallback"})
     u = ev[-2][1]

@@ -1,0 +1,60 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "table_min_rows": false,
+   "text_contains": false,
+   "download": false,
+   "text_matches": false
+  },
+  "passed": 0,
+  "total": 7,
+  "errors": [
+   "no html in reply"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 204.4,
+  "first_token": 203.3,
+  "first_thought": 1.9,
+  "reasoning_chars": 38898,
+  "prompt_tokens": 18695,
+  "completion_tokens": 9848,
+  "cost": 0.05367188,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "mistral",
+  "label": "Mistral Large 4 · France · Mistral (EU)",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "table_min_rows": false,
+   "text_contains": false,
+   "download": false,
+   "text_matches": false
+  },
+  "passed": 0,
+  "total": 7,
+  "errors": [
+   "no html in reply"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 510.7,
+  "first_token": null,
+  "first_thought": 2.2,
+  "reasoning_chars": 237638,
+  "prompt_tokens": 18770,
+  "completion_tokens": 64000,
+  "cost": 0.1622929,
+  "provider": "Mistral"
+ }
+]

@@ -52,7 +52,7 @@ data: {"delta": "I built a dashboard…"}
 data: {"delta": "```html\n<!doctype html>…"}
 …
 event: usage
-data: {"model": "mistral", "model_label": "Mistral Large 4", "openrouter_model": "mistralai/mistral-large-4-0", "host": "Mistral", "host_region": "EU", "zdr": true, "prompt_tokens": 6123, "completion_tokens": 6872, "cost": 0.0809, "seconds": 36.8, "budget_left": 7.34}
+data: {"model": "mistral", "model_label": "Mistral Large 3", "openrouter_model": "mistralai/mistral-large-2512", "host": "Mistral", "host_region": "EU", "zdr": true, "prompt_tokens": 6123, "completion_tokens": 6872, "cost": 0.0809, "seconds": 36.8, "budget_left": 7.34}
 
 event: done
 data: {}

@@ -71,7 +71,7 @@
       "builds_on": null,
       "title": "Paragraphs out of a PDF",
       "blurb": "Turn a UN document's raw text into numbered paragraphs, and check them",
-      "prompt": "Here is the raw text of a UN document, as a PDF converter extracted it, page by page. Build a tool that splits it into its numbered paragraphs (1, 2, 3 …) and its footnotes. Remove the page headers and footers, keep the footnotes out of the paragraph text, and watch for footnote numbers the converter moved away from their footnote. On the left, a card for the document with the paragraphs and footnotes found next to the numbers the document really has. On the right, one question per tab. Tab 01 Result: the counts and how they are computed. Tab 02 Paragraphs: a table with each paragraph's number and first line, marking every paragraph whose first words differ from the reference; clicking a row shows the full paragraph. Tab 03 Footnotes: each footnote's number and text. Tab 04 Checks & method: every check the tool ran on itself, and a download of the paragraphs and the footnotes as CSV.",
+      "prompt": "Here is the raw text of a UN document, as a PDF converter extracted it, page by page. Build a tool that splits it into its numbered paragraphs (1, 2, 3 …) and removes the page headers and footers. Do not try to separate the footnotes in this version: flag every page where footnote text may sit inside a paragraph. On the left, a card for the document with the paragraphs found next to the number the document really has, and the number of pages flagged. On the right, one question per tab. Tab 01 Result: the counts and how they are computed. Tab 02 Paragraphs: a table with each paragraph's number and first line, marking every paragraph whose first words differ from the reference or that may contain footnote text; clicking a row shows the full paragraph. Tab 03 Flagged pages: each flagged page with the lines that look like footnote text. Tab 04 Checks & method: every check the tool ran on itself, and a download of the paragraphs as CSV.",
       "planning": "planning/s7-4-extract.json",
       "lesson": "Give the machine the text; keep the document for the record. A converter damages text in four ways (order, breakage, loss, noise), and a script only repairs the damage you tell it about.",
       "checks": {
@@ -83,7 +83,7 @@
           "90"
         ],
         "download": true,
-        "text_matches": "141\\s*(of|/)\\s*141"
+        "text_matches": "(?i)pages? flagged|flagged pages?"
       }
     },
     {
@@ -94,7 +94,7 @@
       "builds_on": "s7-4-extract",
       "title": "Add a second document",
       "blurb": "Run the same pipeline on another General Comment and compare the two",
-      "prompt": "Add a second document: the Human Rights Committee's general comment No. 32, attached. Run exactly the same pipeline on it, with no rule changed, and give it its own card in the left rail so I can switch between the two documents; every tab and every check works on the selected document. Under the cards, add a small table comparing the two documents: paragraphs found, footnotes found and checks passed, each next to its reference.",
+      "prompt": "Add a second document: the Human Rights Committee's general comment No. 32, attached. Run exactly the same pipeline on it, with no rule changed, and give it its own card in the left rail so I can switch between the two documents; every tab and every check works on the selected document. Under the cards, add a small table comparing the two documents: paragraphs found next to the reference, pages flagged and checks passed.",
       "lesson": "A pipeline that works on one document is a hypothesis about the next. Run it unchanged on a second one, and let its own checks show where the hypothesis breaks.",
       "checks": {
         "no_console_errors": true,
@@ -114,7 +114,7 @@
       "builds_on": "s7-5-second-document",
       "title": "A model for the pages that fail",
       "blurb": "Script first; a model reads only the pages the checks flag, and the code checks the model",
-      "prompt": "Add a button \"Check the flagged pages with the model\". For every page whose checks fail, it sends that page's numbered lines to the model with `studio.ask`, one page per call, and asks only which lines are paragraph text (with the paragraph number), which are footnotes (with their numbers) and which are headers, footers or blank; the model must never retype text. The code cuts the text from those line numbers and runs the same checks again. Accept the model's answer for a page only if every line is used exactly once, the footnote numbers continue from the page before, and every footnote mark in the page's paragraphs has its footnote. Also send one page that passed, as a control, and distrust the model if it disagrees with the script there. Before it runs, say how many pages will leave the browser; show progress and a Stop button. Then show, for each document, what the script found, what the model changed, and the pages that still need a person.",
+      "prompt": "Add a button \"Check the flagged pages with the model\". For every flagged page, where footnote text may sit inside a paragraph, it sends that page's numbered lines to the model with `studio.ask`, one page per call, and asks only which lines are paragraph text (with the paragraph number), which are footnotes (with their numbers) and which are headers, footers or blank; the model must never retype text. The code cuts the text from those line numbers, takes the footnotes out of the paragraphs and runs the checks again, now also counting the footnotes against the reference. Accept the model's answer for a page only if every line is used exactly once, the footnote numbers continue from the page before, and every footnote mark in the page's paragraphs has its footnote. Also send one page that was not flagged, if there is one, as a control, and distrust the model if it disagrees with the script there. Before it runs, say how many pages will leave the browser; show progress and a Stop button. Then show, for each document, what the script found, what the model changed, and the pages that still need a person.",
       "lesson": "Rules are cheap, fast and the same every time, but they break on a new layout. A model adapts, but it costs, varies and can be wrong in silence. Let the rules run, let their checks pick the pages for the model, and check the model with the same checks.",
       "checks": {
         "no_console_errors": true,

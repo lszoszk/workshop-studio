@@ -1,0 +1,31 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "download": true,
+   "text_matches": true
+  },
+  "passed": 4,
+  "total": 7,
+  "errors": [
+   "Cannot read properties of undefined (reading 'D')"
+  ],
+  "network": [],
+  "lines": 812,
+  "seconds": 492.6,
+  "first_token": 357.2,
+  "first_thought": 6.2,
+  "reasoning_chars": 82580,
+  "prompt_tokens": 18849,
+  "completion_tokens": 34881,
+  "cost": 0.179865,
+  "provider": "Z.AI"
+ }
+]

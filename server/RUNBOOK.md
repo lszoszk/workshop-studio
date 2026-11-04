@@ -20,10 +20,10 @@ Host `amuvmuser@150.254.115.204` (Arrakis), next to echr-api (8000), uhri-api (8
 
   | menu id | model | host (OpenRouter endpoint tag) | usage `host` / `host_region` |
   |---|---|---|---|
-  | `mistral` (default) | `mistralai/mistral-large-4-0` | `mistral/eu` | Mistral / EU |
+  | `mistral` (default) | `mistralai/mistral-large-2512` (Large 3, no reasoning) | `mistral/eu` | Mistral / EU |
   | `claude` | `anthropic/claude-sonnet-5.5` | `amazon-bedrock/us-east-1` | Amazon Bedrock / US |
-  | `glm-cn` | `z-ai/glm-5.3` | `z-ai` | Z.AI / CN |
-  | `glm-eu` | `z-ai/glm-5.3` | `mistral/nvfp4/eu` | Mistral / EU |
+  | `glm-cn` | `z-ai/glm-5.3` (medium reasoning) | `z-ai` | Z.AI / CN |
+  | `glm-eu` | `z-ai/glm-5.3` (medium reasoning) | `mistral/nvfp4/eu` | Mistral / EU |
   | `fast` (in-app) | `deepseek/deepseek-v4.1-flash` | any ZDR host | the provider that served it / null |
 
   The region tags matter. Plain `mistral` or `amazon-bedrock` (as in `site/config.json` and `tools/bakeoff.py`) may be served from another region, and then the badge would be wrong.

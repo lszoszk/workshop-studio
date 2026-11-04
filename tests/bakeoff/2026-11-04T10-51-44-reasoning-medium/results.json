@@ -1,0 +1,232 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true
+  },
+  "passed": 8,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 880,
+  "seconds": 214.9,
+  "first_token": 31.9,
+  "first_thought": 8.0,
+  "reasoning_chars": 4787,
+  "prompt_tokens": 18088,
+  "completion_tokens": 16222,
+  "cost": 0.0967,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "mistral",
+  "label": "Mistral Large 4 · France · Mistral (EU)",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "controls_min": true,
+   "links_to": false
+  },
+  "passed": 4,
+  "total": 8,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Invalid or unexpected token"
+  ],
+  "network": [],
+  "lines": 869,
+  "seconds": 411.7,
+  "first_token": 303.0,
+  "first_thought": 2.5,
+  "reasoning_chars": 130796,
+  "prompt_tokens": 18131,
+  "completion_tokens": 53770,
+  "cost": 0.13816957,
+  "provider": "Mistral"
+ },
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "download": true,
+   "text_matches": true
+  },
+  "passed": 7,
+  "total": 7,
+  "errors": [],
+  "network": [],
+  "lines": 875,
+  "seconds": 647.3,
+  "first_token": 473.8,
+  "first_thought": 2.2,
+  "reasoning_chars": 92927,
+  "prompt_tokens": 18920,
+  "completion_tokens": 38366,
+  "cost": 0.17946608,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "mistral",
+  "label": "Mistral Large 4 · France · Mistral (EU)",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "table_min_rows": false,
+   "text_contains": false,
+   "download": false,
+   "text_matches": false
+  },
+  "passed": 0,
+  "total": 7,
+  "errors": [
+   "no html in reply"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 598.8,
+  "first_token": null,
+  "first_thought": 2.2,
+  "reasoning_chars": 237509,
+  "prompt_tokens": 18981,
+  "completion_tokens": 64000,
+  "cost": 0.16245537,
+  "provider": "Mistral"
+ },
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s8-1-verbatim",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "search_box": true,
+   "source_matches": true,
+   "text_contains_after_search": true,
+   "button_matches": false
+  },
+  "passed": 7,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 876,
+  "seconds": 355.3,
+  "first_token": 182.0,
+  "first_thought": 33.7,
+  "reasoning_chars": 27837,
+  "prompt_tokens": 18439,
+  "completion_tokens": 21418,
+  "cost": 0.1200538,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "mistral",
+  "label": "Mistral Large 4 · France · Mistral (EU)",
+  "prompt": "s8-1-verbatim",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "search_box": true,
+   "source_matches": true,
+   "text_contains_after_search": true,
+   "button_matches": true
+  },
+  "passed": 7,
+  "total": 8,
+  "errors": [
+   "ctx.save is not a function"
+  ],
+  "network": [],
+  "lines": 964,
+  "seconds": 452.9,
+  "first_token": 353.4,
+  "first_thought": 2.2,
+  "reasoning_chars": 155771,
+  "prompt_tokens": 18504,
+  "completion_tokens": 60165,
+  "cost": 0.15322923,
+  "provider": "Mistral"
+ },
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s8-5-wiki",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "source_matches": true,
+   "calls_studio_ask": false,
+   "batches_max": false,
+   "controls_min": true
+  },
+  "passed": 4,
+  "total": 7,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Unexpected token ')'"
+  ],
+  "network": [],
+  "lines": 973,
+  "seconds": 402.8,
+  "first_token": 154.5,
+  "first_thought": 4.6,
+  "reasoning_chars": 28987,
+  "prompt_tokens": 20687,
+  "completion_tokens": 27092,
+  "cost": 0.13233428,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "mistral",
+  "label": "Mistral Large 4 · France · Mistral (EU)",
+  "prompt": "s8-5-wiki",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "source_matches": true,
+   "calls_studio_ask": false,
+   "batches_max": false,
+   "controls_min": true
+  },
+  "passed": 4,
+  "total": 7,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Invalid regular expression: /\\\\[\\\\[([^\\\\]|#]+)\\\\]\\\\]/g: Unmatched ')'"
+  ],
+  "network": [],
+  "lines": 930,
+  "seconds": 438.6,
+  "first_token": 284.5,
+  "first_thought": 3.2,
+  "reasoning_chars": 97008,
+  "prompt_tokens": 20770,
+  "completion_tokens": 47274,
+  "cost": 0.12519584,
+  "provider": "Mistral"
+ }
+]

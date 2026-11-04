@@ -1,0 +1,61 @@
+[
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · built in Claude Code (no API)",
+  "prompt": "s7-4-extract",
+  "passed": 7,
+  "total": 7,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "download": true,
+   "text_matches": true
+  },
+  "errors": [],
+  "network": [],
+  "lines": 532,
+  "seconds": null,
+  "cost": 0
+ },
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · built in Claude Code (no API)",
+  "prompt": "s7-5-second-document",
+  "passed": 4,
+  "total": 4,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "text_contains": true
+  },
+  "errors": [],
+  "network": [],
+  "lines": 572,
+  "seconds": null,
+  "cost": 0
+ },
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · built in Claude Code (no API)",
+  "prompt": "s7-6-model-on-flagged-pages",
+  "passed": 6,
+  "total": 6,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "calls_studio_ask": true,
+   "batches_max": true,
+   "text_matches": true
+  },
+  "errors": [],
+  "network": [],
+  "lines": 869,
+  "seconds": null,
+  "cost": 0
+ }
+]

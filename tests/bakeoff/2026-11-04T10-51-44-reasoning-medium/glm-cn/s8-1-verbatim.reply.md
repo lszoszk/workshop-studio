@@ -1,0 +1,882 @@
+Here's the Verbatim finder, built exactly on the plan: Boolean search with exact phrases over `WORKSHOP_DATA.gc`, filter rail, committee chart, verbatim paragraph rows with citations, a draft collector, and a self-check tab.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verbatim finder: General Comments and General Recommendations</title>
+<style>
+  [hidden]{display:none!important}
+  :root{--paper:#f4f0e8;--ink:#1d1b18;--rule:#d9d2c3;--accent:#9b2335;--green:#1e7a34;--amber:#8a6d1a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  a{color:var(--accent)}
+  a:focus,button:focus,input:focus,select:focus,summary:focus{outline:2px solid var(--accent);outline-offset:2px}
+  .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase}
+  header.site{padding:18px 22px 14px;border-bottom:1px solid var(--rule)}
+  .datalabel{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;letter-spacing:.14em;color:#6f675a}
+  h1{font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:30px;margin:6px 0 4px}
+  .meta{font-size:14px;color:#4c463c}
+  .checksline{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:baseline}
+  .dot.ok{background:var(--green)} .dot.bad{background:var(--accent)}
+  nav.tabs{display:flex;gap:0;border-bottom:1px solid var(--rule);padding:0 22px;flex-wrap:wrap}
+  .tab{background:none;border:none;border-bottom:3px solid transparent;padding:12px 16px 9px;cursor:pointer;
+       font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.08em;color:#4c463c}
+  .tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+  .layout{display:flex;align-items:flex-start;min-height:60vh}
+  aside.rail{width:288px;flex:0 0 288px;border-right:1px solid var(--rule);padding:18px 18px 30px}
+  main{flex:1;padding:20px 26px 50px;min-width:0}
+  .bignum{font-family:Georgia,"Times New Roman",serif;font-size:46px;line-height:1.05;margin:8px 0 0}
+  .rail .of{color:#6f675a;font-size:14px;margin-bottom:10px}
+  label.fl{display:block;margin:12px 0 4px}
+  input[type="text"],input[type="number"],select{width:100%;padding:7px 8px;border:1px solid var(--rule);background:#fbf9f4;font:inherit;font-size:14px}
+  input[type="number"]{width:96px}
+  .btn{background:none;border:1px solid var(--ink);padding:6px 12px;cursor:pointer;font:inherit;font-size:13px}
+  .btn:hover{background:#e9e3d6}
+  .btn.primary{border-color:var(--accent);color:var(--accent)}
+  .syntax{border:1px solid var(--rule);background:#fbf9f4;padding:10px 12px;margin-top:6px;font-size:13px}
+  .syntax ul{margin:6px 0 0;padding-left:18px}
+  .ex{display:block;background:none;border:none;border-left:2px solid var(--accent);padding:2px 8px;margin:6px 0 0;cursor:pointer;font:inherit;font-size:13px;color:var(--accent);text-align:left;width:100%}
+  .echo{font-size:13px;color:#4c463c;margin-top:8px;border-top:1px solid var(--rule);padding-top:8px}
+  .err{font-size:13px;color:var(--accent);margin-top:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}
+  .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--accent);color:var(--accent);padding:2px 8px;font-size:12px;background:none;cursor:pointer;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .fhead{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;border:none;border-top:1px solid var(--rule);padding:12px 0 8px;cursor:pointer;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.08em;color:var(--ink)}
+  .fpanel{padding:2px 0 10px}
+  .ck{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;margin:3px 0}
+  .ck input{margin-top:3px}
+  .allnone{background:none;border:none;cursor:pointer;color:var(--accent);font-size:12px;padding:0 4px}
+  .badge{display:inline-block;border:1px solid var(--ink);padding:0 6px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.05em;color:var(--ink)}
+  mark{background:#f3e3a4;font-weight:bold;color:var(--ink)}
+  figure{margin:0 0 8px}
+  figcaption{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;letter-spacing:.1em;margin-bottom:6px}
+  .figwrap{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+  .chartbox{position:relative;flex:1 1 460px;max-width:640px;height:auto}
+  table.mini{border-collapse:collapse;font-size:13px}
+  table.mini td,table.mini th{padding:3px 10px 3px 0;text-align:left;border-bottom:1px solid var(--rule)}
+  table.mini td.n{text-align:right;font-variant-numeric:tabular-nums}
+  .hint{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.04em;color:#6f675a}
+  .how{font-size:13px;color:#6f675a;margin:6px 0 0}
+  .summary{font-family:Georgia,"Times New Roman",serif;font-size:19px;margin:0 0 2px}
+  .orderrow{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin:10px 0 4px}
+  .orderrow select{width:auto}
+  article.rec{border-top:1px solid var(--rule);padding:14px 0 12px;cursor:pointer}
+  article.rec.open{cursor:default}
+  .rechd{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+  .rechd h3{font-size:14px;font-weight:600;margin:0}
+  .pinpoint{color:var(--accent);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+  .yr{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#6f675a}
+  .rtext{white-space:pre-wrap;margin:0 0 6px;max-width:74ch}
+  .rtext .ctx{color:#6f675a}
+  .fnline{font-size:12.5px;color:#6f675a}
+  .fnline button{background:none;border:none;color:#6f675a;text-decoration:underline;cursor:pointer;padding:0;font:inherit;font-size:12.5px}
+  .note-amber{color:var(--amber);font-size:13px;margin:4px 0 0}
+  .rowbtns{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 4px}
+  .ctxlink button{background:none;border:none;color:#4c463c;text-decoration:underline;cursor:pointer;font-size:13px;padding:0}
+  .ctxblock{border-left:2px solid var(--rule);padding:4px 12px;margin:8px 0;color:#4c463c;white-space:pre-wrap;max-width:74ch;font-size:14.5px}
+  .more{background:none;border:none;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit;font-size:13px;padding:0}
+  .pass{color:var(--green);font-weight:600}
+  .fail{color:var(--accent);font-weight:600}
+  .checkline{border-top:1px solid var(--rule);padding:9px 0;font-size:14px}
+  .quirk{border-top:1px solid var(--rule);padding:8px 0;font-size:14px}
+  .copybox{margin:14px 0;border:1px solid var(--rule);background:#fbf9f4;padding:10px}
+  .copybox textarea{width:100%;height:90px;font:12.5px ui-monospace,Menlo,Consolas,monospace;border:1px solid var(--rule)}
+  .draftitem{border-top:1px solid var(--rule);padding:12px 0}
+  .draftitem blockquote{margin:4px 0;font-family:Georgia,"Times New Roman",serif;font-size:16px;white-space:pre-wrap}
+  .draftitem .cit{color:var(--accent)}
+  footer.site{border-top:1px solid var(--rule);padding:12px 22px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.04em;color:#6f675a}
+  h2{font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:24px;margin:6px 0 12px}
+  ul.plain{padding-left:20px}
+  .sectionlab{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;letter-spacing:.12em;color:#6f675a;margin:22px 0 6px}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="datalabel">UN TREATY BODIES · GENERAL COMMENTS</div>
+  <h1>Verbatim finder: General Comments and General Recommendations</h1>
+  <div class="meta" id="metaLine"></div>
+  <div class="checksline" id="checksLine" style="margin-top:6px"></div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button class="tab" id="tab-0" role="tab" aria-selected="true" aria-controls="panel-0">01 OVERVIEW</button>
+  <button class="tab" id="tab-1" role="tab" aria-selected="false" aria-controls="panel-1">02 PARAGRAPHS</button>
+  <button class="tab" id="tab-2" role="tab" aria-selected="false" aria-controls="panel-2">03 DRAFT</button>
+  <button class="tab" id="tab-3" role="tab" aria-selected="false" aria-controls="panel-3">04 CHECK &amp; METHOD</button>
+</nav>
+
+<div class="layout">
+  <aside class="rail" id="rail" aria-label="Filters">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <span class="mono">FILTERS</span>
+      <button class="allnone" id="clearAll">Clear all</button>
+    </div>
+    <div class="bignum" id="hitCount" aria-live="polite">0</div>
+    <div class="of" id="hitOf"></div>
+    <label class="fl mono" for="qbox">SEARCH</label>
+    <div style="display:flex;gap:6px">
+      <input type="text" id="qbox" autocomplete="off" spellcheck="false" placeholder="e.g. &quot;best interests&quot; AND child*">
+      <button class="btn primary" id="qgo">Search</button>
+    </div>
+    <div class="syntax" id="syntaxHelp" hidden>
+      <strong>How to search</strong>
+      <ul>
+        <li>a space or <code>AND</code> joins words</li>
+        <li><code>OR</code> offers a choice</li>
+        <li><code>NOT</code> or a leading <code>-</code> excludes</li>
+        <li>&quot;an exact phrase&quot; in double quotes</li>
+        <li>parentheses group</li>
+        <li>a star at the end of a word finds any ending (child* finds children)</li>
+        <li>operators in capitals — lower-case <code>or</code> is a word</li>
+      </ul>
+      <div class="mono" style="margin-top:8px">EXAMPLES</div>
+      <button class="ex" data-q='"best interests" AND child'>&quot;best interests&quot; AND child</button>
+      <button class="ex" data-q='(torture OR ill-treatment) NOT detention'>(torture OR ill-treatment) NOT detention</button>
+      <button class="ex" data-q='"reasonable accommodation"'>"reasonable accommodation"</button>
+    </div>
+    <div class="hint" style="margin-top:6px">Whole words, any case. Curly and straight quotes, apostrophes, dashes and hyphens count as the same, and footnote marks are skipped, so State's finds State’s and a phrase can cross a footnote.</div>
+    <div class="echo" id="echoLine" hidden></div>
+    <div class="err" id="errLine" hidden></div>
+    <div class="chips" id="chips"></div>
+    <button class="fhead" id="fhead1" aria-expanded="false">01 COMMITTEE, YEARS, DOCUMENT <span id="fmark1" aria-hidden="true">+</span></button>
+    <div class="fpanel" id="fpanel1" hidden>
+      <div class="mono" style="margin-bottom:4px">COMMITTEE <span style="float:right"><button class="allnone" data-ck="all">all</button> / <button class="allnone" data-ck="none">none</button></span></div>
+      <div id="ckList"></div>
+      <div class="mono" style="margin:14px 0 4px">YEARS</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="yFrom" aria-label="year from"> <span class="hint">to</span> <input type="number" id="yTo" aria-label="year to">
+      </div>
+      <div class="mono" style="margin:14px 0 4px">DOCUMENT</div>
+      <select id="docSel"></select>
+    </div>
+  </aside>
+
+  <main>
+    <section id="panel-0" role="tabpanel" aria-labelledby="tab-0">
+      <figure>
+        <figcaption>FIG.01 PARAGRAPHS PER COMMITTEE</figcaption>
+        <div class="figwrap">
+          <div class="chartbox"><canvas id="chart" role="img" height="360"></canvas></div>
+          <table class="mini" id="chartTable"><caption class="hint">Same numbers as the chart</caption></table>
+        </div>
+      </figure>
+      <p class="hint">click a bar = tick that committee alone</p>
+      <p class="how">How this is computed: one count per committee over the paragraphs that match the query and filters. <span id="chartNote" class="hint"></span></p>
+    </section>
+
+    <section id="panel-1" role="tabpanel" aria-labelledby="tab-1" hidden>
+      <p class="summary" id="sumLine" aria-live="polite"></p>
+      <div class="orderrow">
+        <span class="hint" id="orderHint"></span>
+        <label class="hint" for="orderSel">order</label>
+        <select id="orderSel">
+          <option value="year">year, newest first</option>
+          <option value="doc">document order</option>
+          <option value="match">most matches first</option>
+        </select>
+      </div>
+      <p class="hint">This page retrieves; it never writes. Every paragraph shown is a record of the file, as stored.</p>
+      <div id="rows"></div>
+      <button class="btn" id="moreBtn" hidden>Show 25 more</button>
+    </section>
+
+    <section id="panel-2" role="tabpanel" aria-labelledby="tab-2" hidden>
+      <h2 id="draftHd"></h2>
+      <div class="rowbtns" style="margin-bottom:6px">
+        <button class="btn" id="copyAllBtn">Copy all</button>
+        <button class="btn" id="dlTxt">Download .txt</button>
+        <button class="btn" id="dlCsv">Download .csv</button>
+      </div>
+      <p class="hint" id="draftStore"></p>
+      <div id="draftList"></div>
+    </section>
+
+    <section id="panel-3" role="tabpanel" aria-labelledby="tab-3" hidden>
+      <h2>Can I trust this?</h2>
+      <div class="sectionlab">THE APP'S OWN CHECKS</div>
+      <div id="checksPanel"></div>
+      <div class="sectionlab">KNOWN QUIRKS OF THIS FILE</div>
+      <div id="quirksPanel"></div>
+      <div class="sectionlab">HOW THIS IS COMPUTED</div>
+      <ul class="plain" style="font-size:14px;max-width:76ch">
+        <li>Matching runs over each paragraph's normalised text: footnote marks removed, curly quotes and dashes made straight, whitespace collapsed, lower case — so a phrase pasted from Word still matches.</li>
+        <li>A word matches whole words only; a trailing star allows any ending. A hyphen is a word boundary, so <em>state</em> finds <em>non-State</em>.</li>
+        <li>Hits are the records whose Boolean tree is true and that pass the committee, year and document filters.</li>
+        <li>The citation is built only from the record's fields: symbol, pinpoint (para. N, preamble, or subpara. (b)), and, when a symbol holds several General Comments, the committee and document name first. Nothing is invented or corrected.</li>
+        <li>The copied quotation is the stored text with footnote marks removed and its own leading number dropped; the draft keeps the text as stored as well.</li>
+        <li>Counting, matching, sorting and highlighting are done by this page's code; no model is called and nothing leaves the browser.</li>
+      </ul>
+    </section>
+
+    <div class="copybox" id="copyBox" hidden>
+      <div class="mono">CLIPBOARD REFUSED — SELECT AND COPY</div>
+      <textarea id="copyTa" readonly></textarea>
+    </div>
+  </main>
+</div>
+
+<footer class="site" id="foot"></footer>
+
+<script>
+(function(){
+"use strict";
+const D = window.WORKSHOP_DATA.gc;
+const R = D.records;
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+const rescape = s => s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+const CMTY = {
+  CAT:"Committee against Torture", "CAT-OP":"Subcommittee on Prevention of Torture",
+  CCPR:"Human Rights Committee", CED:"Committee on Enforced Disappearances",
+  CEDAW:"Committee on the Elimination of Discrimination against Women",
+  CERD:"Committee on the Elimination of Racial Discrimination",
+  CESCR:"Committee on Economic, Social and Cultural Rights",
+  CMW:"Committee on Migrant Workers", CRC:"Committee on the Rights of the Child",
+  CRPD:"Committee on the Rights of Persons with Disabilities"
+};
+function normalize(t){
+  return t.replace(/\[\[fn:\d+\]\]/g,"")
+    .replace(/[\u201C\u201D\u201E]/g,'"').replace(/[\u2018\u2019\u201A]/g,"'")
+    .replace(/[\u2013\u2014\u00AD]/g,"-")
+    .replace(/\s+/g," ").toLowerCase();
+}
+function symCodes(sym){
+  const codes=[];
+  if(/(^|[^A-Z])CAT\/OP([^A-Z]|$)/.test(sym)) codes.push("CAT-OP");
+  const re=/\b(CAT|CCPR|CED|CEDAW|CERD|CESCR|CMW|CRC|CRPD)\b/g; let m;
+  while((m=re.exec(sym))) if(codes.indexOf(m[1])<0) codes.push(m[1]);
+  return codes;
+}
+function docName(title){ let t=title.split(":")[0]; if(t===title) t=title.split(" on ")[0]; return t.trim(); }
+function pinpoint(r){
+  if(r.paragraph===0) return "preamble";
+  const sm=/^\(([a-z]{1,4})\)/.exec(r.text);
+  if(sm) return "subpara. ("+sm[1]+")";
+  return "para. "+r.paragraph;
+}
+// ---- load-time prep and quirks ----
+const symTitles={};
+R.forEach(r=>{ (symTitles[r.symbol] = symTitles[r.symbol] || new Set()).add(r.title); });
+const pinCount={};
+R.forEach(r=>{
+  r.norm = normalize(r.text);
+  r.marks = (r.text.match(/\[\[fn:\d+\]\]/g)||[]).length;
+  r.shownText = r.text.replace(/\[\[fn:\d+\]\]/g,"");
+  const lm=/^(\d{1,3})\.\s/.exec(r.text); r.leading = lm ? +lm[1] : null;
+  r.pinpoint = pinpoint(r);
+  r.shared = symTitles[r.symbol].size>1;
+  r.committees = Array.from(new Set(symCodes(r.symbol).concat([r.committee])));
+  r.joint = r.committees.length>1 && r.committees.length>1 && /(\u2013|, )/.test(r.symbol) ? true : r.committees.length>1 && symCodes(r.symbol).length>1;
+  r.joint = symCodes(r.symbol).length>1 || (/(\u2013|,)/.test(r.symbol) && r.shared===false && symCodes(r.symbol).length>1);
+  r.joint = /(\u2013|, )/.test(r.symbol) && symCodes(r.symbol).length>1;
+  r.citation = r.shared
+    ? r.committee + ", " + docName(r.title) + " (" + r.symbol + "), " + r.pinpoint
+    : r.symbol + ", " + r.pinpoint;
+  const k=r.title+"|"+r.paragraph; pinCount[k]=(pinCount[k]||0)+1;
+});
+R.forEach(r=>{ r.dupPin = pinCount[r.title+"|"+r.paragraph]>1; });
+function q(list,fn){ return {n:list.length, ex:list[0]||null, fn:fn}; }
+const zero = R.filter(r=>r.paragraph===0);
+const sharedSyms = Object.keys(symTitles).filter(s=>symTitles[s].size>1);
+const jointDocs = R.filter(r=>r.joint);
+const leadMis = R.filter(r=>r.leading!==null && r.leading!==r.paragraph);
+const subparas = R.filter(r=>/^\(([a-z]{1,4})\)/.test(r.text) && r.paragraph>0);
+const dupPinList = R.filter(r=>r.dupPin);
+const years = R.map(r=>r.year);
+const YMIN=Math.min.apply(null,years), YMAX=Math.max.apply(null,years);
+const allCodes=[]; R.forEach(r=>r.committees.forEach(c=>{if(allCodes.indexOf(c)<0)allCodes.push(c);}));
+const titles=[]; R.forEach(r=>{if(titles.indexOf(r.title)<0)titles.push(r.title);});
+// document select options
+const docOptions=[]; const seenTitle={};
+R.slice().sort((a,b)=> a.committee<b.committee?-1:a.committee>b.committee?1:a.short_title<b.short_title?-1:1)
+ .forEach(r=>{ if(seenTitle[r.title])return; seenTitle[r.title]=1; docOptions.push(r); });
+
+// ---- state ----
+const S = { tab:0, tick:new Set(allCodes), from:YMIN, to:YMAX, doc:"", tree:null, echo:"", qerr:"",
+  order:"year", shown:25, hits:[], posTerms:[], allTerms:[], queryStr:"",
+  open:new Set(), full:new Set(), stored:new Set(), ctx:new Set() };
+let draft=[], lsOK=true;
+try{ localStorage.setItem("__t","1"); localStorage.removeItem("__t"); }catch(e){ lsOK=false; }
+try{ const s=localStorage.getItem("vf_draft"); if(s) draft=JSON.parse(s)||[]; }catch(e){}
+function saveDraft(){ try{ localStorage.setItem("vf_draft", JSON.stringify(draft)); }catch(e){} }
+
+// ---- query parser ----
+function tokenize(s){
+  const toks=[]; let i=0;
+  while(i<s.length){
+    const c=s[i];
+    if(/\s/.test(c)){i++;continue;}
+    if(c==='"'||c==="\u201C"||c==="\u201D"){
+      let j=i+1,out="";
+      while(j<s.length && '"\u201C\u201D'.indexOf(s[j])<0){out+=s[j];j++;}
+      if(j>=s.length) throw new Error("a quote is never closed");
+      if(!out.trim()) throw new Error("an empty phrase in quotes");
+      toks.push({t:"phrase",v:out.trim()}); i=j+1;
+    } else if(c==="("){toks.push({t:"("});i++;}
+    else if(c===")"){toks.push({t:")"});i++;}
+    else {
+      let j=i,out="";
+      while(j<s.length && !/[\s()]/.test(s[j]) && '"\u201C\u201D'.indexOf(s[j])<0){out+=s[j];j++;}
+      const up=out.toUpperCase();
+      if(up==="AND"||up==="OR"||up==="NOT"){ toks.push({t:up}); }
+      else if(out[0]==="-" && out.length>1){ toks.push({t:"NOT"}); toks.push({t:"word",v:out.slice(1)}); }
+      else if(out==="-"){ throw new Error("a minus with no word after it"); }
+      else toks.push({t:"word",v:out});
+      i=j;
+    }
+  }
+  return toks;
+}
+function parse(toks){
+  let p=0;
+  const peek=()=>toks[p];
+  function parseOr(){
+    let l=parseAnd();
+    while(peek() && peek().t==="OR"){ p++; const r=parseAnd(); l={op:"OR",l,r}; }
+    return l;
+  }
+  function parseAnd(){
+    let l=parseNot();
+    while(peek() && peek().t!=="OR" && peek().t!==")"){
+      if(peek().t==="AND") p++;
+      const r=parseNot(); l={op:"AND",l,r};
+    }
+    return l;
+  }
+  function parseNot(){
+    if(peek() && peek().t==="NOT"){ p++; return {op:"NOT",a:parseNot()}; }
+    return parsePrim();
+  }
+  function parsePrim(){
+    const t=peek();
+    if(!t) throw new Error("an operator with nothing after it");
+    if(t.t==="("){ p++; const e=parseOr(); if(!peek()||peek().t!==")") throw new Error("a parenthesis is never closed"); p++; return e; }
+    if(t.t===")") throw new Error("a parenthesis is never opened");
+    if(t.t==="AND"||t.t==="OR") throw new Error("two operators in a row");
+    p++; return {op:"term",term:t};
+  }
+  const root=parseOr();
+  if(p<toks.length) throw new Error("something unexpected in the query");
+  return root;
+}
+function echoNode(n){
+  if(n.op==="term") return n.term.t==="phrase" ? "the phrase \u201C"+n.term.v+"\u201D" : "the word "+n.term.v;
+  if(n.op==="NOT") return "not "+echoNode(n.a);
+  return echoNode(n.l)+" "+n.op.toLowerCase()+" "+echoNode(n.r);
+}
+function collectTerms(n,neg,outAll,outPos){
+  if(n.op==="term"){ outAll.push(n); if(!neg) outPos.push(n); }
+  else if(n.op==="NOT") collectTerms(n.a,true,outAll,outPos);
+  else { collectTerms(n.l,neg,outAll,outPos); collectTerms(n.r,neg,outAll,outPos); }
+}
+function normRegex(term){
+  const v=normalize(term.v);
+  if(term.t==="phrase"){
+    const ws=v.split(/\s+/).filter(Boolean).map(rescape);
+    return new RegExp("(?<![\\p{L}\\p{N}])"+ws.join("\\s+")+"(?![\\p{L}\\p{N}])","u");
+  }
+  let w=rescape(v);
+  if(w.slice(-2)==="\\*") w=w.slice(0,-2)+"\\w*";
+  return new RegExp("(?<![\\p{L}\\p{N}])"+w+"(?![\\p{L}\\p{N}])","u");
+}
+function hlWord(w){
+  let s=w, star=false;
+  if(s.slice(-1)==="*"){star=true;s=s.slice(0,-1);}
+  let out="";
+  for(const ch of s){
+    if(ch==="'") out+="['\u2018\u2019]";
+    else if(ch==='"') out+='["\u201C\u201D]';
+    else if(ch==="-") out+="[-\u2013\u2014]";
+    else out+=rescape(ch);
+  }
+  if(star) out+="\\w*";
+  return out;
+}
+function hlPart(term){
+  if(term.t==="phrase"){
+    return term.v.split(/\s+/).filter(Boolean).map(hlWord).join("(?:\\s|\\[\\[fn:\\d+\\]\\])+");
+  }
+  return hlWord(term.v);
+}
+let termRe=new Map(), hlRe=null, notOnly=false;
+function buildQuery(qstr){
+  S.queryStr=qstr; S.qerr=""; S.tree=null; S.echo=""; S.posTerms=[]; termRe=new Map(); hlRe=null; notOnly=false;
+  const s=qstr.trim();
+  if(!s) return;
+  let toks;
+  try{ toks=tokenize(s); }catch(e){ S.qerr="I could not read this query: "+e.message+"."; return; }
+  if(!toks.length) return;
+  let tree;
+  try{ tree=parse(toks); }catch(e){ S.qerr="I could not read this query: "+e.message+"."; return; }
+  S.tree=tree;
+  const all=[]; collectTerms(tree,false,all,S.posTerms);
+  all.forEach(t=>termRe.set(t,normRegex(t.term)));
+  if(S.posTerms.length){
+    hlRe=new RegExp("(?<![\\p{L}\\p{N}])(?:"+S.posTerms.map(t=>hlPart(t.term)).join("|")+")(?![\\p{L}\\p{N}])","giu");
+  }
+  notOnly = S.posTerms.length===0;
+  let e=echoNode(tree);
+  if(notOnly) e="everything "+e;
+  S.echo="Paragraphs containing "+e;
+}
+function evalTree(n,r){
+  if(n.op==="term") return termRe.get(n).test(r.norm);
+  if(n.op==="NOT") return !evalTree(n.a,r);
+  if(n.op==="AND") return evalTree(n.l,r)&&evalTree(n.r,r);
+  return evalTree(n.l,r)||evalTree(n.r,r);
+}
+function computeHits(){
+  S.hits = R.filter(r=>{
+    if(S.tree && !evalTree(S.tree,r)) return false;
+    let ck=false; for(const c of r.committees) if(S.tick.has(c)) ck=true;
+    if(!ck) return false;
+    if(r.year<S.from||r.year>S.to) return false;
+    if(S.doc && r.title!==S.doc) return false;
+    return true;
+  });
+  S.shown=Math.min(S.shown,Math.max(25,S.hits.length)); if(S.hits.length===0)S.shown=25;
+}
+function hasHighlight(r){
+  return !!hlRe && (hlRe.test(r.shownText) || hlRe.test(r.text));
+}
+function sortHits(){
+  const arr=S.hits.slice();
+  if(S.order==="doc"){ arr.sort((a,b)=> a.title<b.title?-1:a.title>b.title?1:a.paragraph-b.paragraph); }
+  else if(S.order==="match"){
+    const c=new Map(); arr.forEach(r=>c.set(r,(r.shownText.match(hlRe||/x^/g)||[]).length));
+    arr.sort((a,b)=> (c.get(b)-c.get(a)) || (b.year-a.year));
+  } else { arr.sort((a,b)=> b.year-a.year || (a.title<b.title?-1:a.title>b.title?1:a.paragraph-b.paragraph)); }
+  return arr;
+}
+
+// ---- DOM refs ----
+const $=id=>document.getElementById(id);
+const rail=$("rail"), qbox=$("qbox");
+
+// header
+(function(){
+  $("metaLine").innerHTML = "<strong>"+R.length+"</strong> paragraphs from "+titles.length+" General Comments (distinct <em>title</em>) of "+allCodes.length+" committees, "+YMIN+"\u2013"+YMAX+" &middot; <a href='"+esc(D.source_url||"")+"' target='_blank' rel='noopener'>"+esc(D.source||"")+"</a>";
+  $("foot").textContent = (D.source||"") + " · built " + (D.built||"n/a") + " · Counting, matching and sorting are done by this page's code; no model is called. · Chart.js (MIT) provides the chart.";
+})();
+
+// tabs
+const tabs=[...document.querySelectorAll(".tab")];
+function setTab(i){
+  S.tab=i;
+  tabs.forEach((t,j)=>{t.setAttribute("aria-selected",j===i?"true":"false");$("panel-"+j).hidden=j!==i;t.classList.toggle("badged",false);});
+  rail.hidden = (i===2);
+  render();
+}
+tabs.forEach((t,i)=>{
+  t.addEventListener("click",()=>setTab(i));
+  t.addEventListener("keydown",e=>{
+    if(e.key==="ArrowRight"){setTab((S.tab+1)%4);tabs[S.tab].focus();e.preventDefault();}
+    if(e.key==="ArrowLeft"){setTab((S.tab+3)%4);tabs[S.tab].focus();e.preventDefault();}
+  });
+});
+
+// search box
+function runSearch(){
+  buildQuery(qbox.value);
+  computeHits(); S.shown=25;
+  $("syntaxHelp").hidden=true;
+  render();
+}
+$("qgo").addEventListener("click",runSearch);
+qbox.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){e.preventDefault();runSearch();}
+  if((e.key==="ArrowDown"||e.key==="ArrowUp") && !$("syntaxHelp").hidden){
+    const ex=$("syntaxHelp").querySelector(".ex"); if(ex){ex.focus();e.preventDefault();}
+  }
+});
+qbox.addEventListener("input",()=>{ $("syntaxHelp").hidden=true; });
+qbox.addEventListener("focus",()=>{ if(!qbox.value.trim()) $("syntaxHelp").hidden=false; });
+qbox.addEventListener("blur",()=>{ setTimeout(()=>{ if(!$("syntaxHelp").contains(document.activeElement)) $("syntaxHelp").hidden=true; },120); });
+$("syntaxHelp").addEventListener("click",e=>{
+  const b=e.target.closest(".ex"); if(!b)return;
+  qbox.value=b.dataset.q; runSearch();
+});
+
+// filters
+$("fhead1").addEventListener("click",()=>{
+  const p=$("fpanel1"), open=p.hidden; p.hidden=!open;
+  $("fhead1").setAttribute("aria-expanded",open?"true":"false");
+  $("fmark1").textContent=open?"+":"\u2212";
+});
+function buildCkList(){
+  const hitsByCode={}; S.hits.forEach(r=>r.committees.forEach(c=>hitsByCode[c]=(hitsByCode[c]||0)+1));
+  const searched = !!S.tree;
+  $("ckList").innerHTML = allCodes.map(c=>{
+    const n=hitsByCode[c]||0;
+    return "<div class='ck'><input type='checkbox' id='ck-"+c+"' "+(S.tick.has(c)?"checked":"")+" data-c='"+c+"'>"+
+      "<label for='ck-"+c+"'><span class='badge'>"+c+"</span> "+esc(CMTY[c]||c)+(searched?" <span class='hint'>["+n+"]</span>":"")+"</label></div>";
+  }).join("");
+  $("ckList").querySelectorAll("input").forEach(inp=>{
+    inp.addEventListener("change",()=>{
+      if(inp.checked)S.tick.add(inp.dataset.c); else S.tick.delete(inp.dataset.c);
+      computeHits(); render();
+    });
+  });
+}
+$("ckList") && document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-ck]"); if(!b)return;
+  if(b.dataset.ck==="all") allCodes.forEach(c=>S.tick.add(c));
+  else S.tick.clear();
+  computeHits(); render();
+});
+$("yFrom").addEventListener("change",()=>{S.from=clampY(+$("yFrom").value,YMIN);$("yFrom").value=S.from;computeHits();render();});
+$("yTo").addEventListener("change",()=>{S.to=clampY(+$("yTo").value,YMAX,S.from);$("yTo").value=S.to;computeHits();render();});
+function clampY(v,dflt,lo){ if(isNaN(v))v=dflt; v=Math.max(YMIN,Math.min(YMAX,v)); if(lo!==undefined&&v<lo)v=lo; return v; }
+(function buildDocSel(){
+  const groups={};
+  docOptions.forEach(r=>{ (groups[r.committee]=groups[r.committee]||[]).push(r); });
+  let h="<option value=''>— all documents —</option>";
+  Object.keys(groups).sort().forEach(c=>{
+    h+="<optgroup label='"+esc(c)+"'>"+groups[c].map(r=>"<option value='"+esc(r.title)+"'>"+esc(r.short_title)+"</option>").join("")+"</optgroup>";
+  });
+  $("docSel").innerHTML=h;
+})();
+$("docSel").addEventListener("change",()=>{S.doc=$("docSel").value;computeHits();S.shown=25;render();});
+$("clearAll").addEventListener("click",()=>{
+  allCodes.forEach(c=>S.tick.add(c)); S.from=YMIN;S.to=YMAX;S.doc="";$("docSel").value="";$("yFrom").value=YMIN;$("yTo").value=YMAX;
+  qbox.value=""; buildQuery(""); computeHits(); render();
+});
+$("orderSel").addEventListener("change",()=>{S.order=$("orderSel").value;render();});
+$("moreBtn").addEventListener("click",()=>{S.shown+=25;render();});
+
+// chips
+function renderChips(){
+  const chips=[];
+  if(S.tick.size<allCodes.length){
+    if(S.tick.size===0) chips.push(["committees: none","tick"]);
+    else S.tick.forEach(c=>chips.push([c,"ck:"+c]));
+  }
+  if(S.from!==YMIN||S.to!==YMAX) chips.push(["years "+S.from+"\u2013"+S.to,"yr"]);
+  if(S.doc){ const r=docOptions.find(x=>x.title===S.doc); chips.push([r?r.short_title:"document","doc"]); }
+  $("chips").innerHTML=chips.map((c,i)=>"<button class='chip' data-i='"+i+"'>"+esc(c[0])+" \u00d7</button>").join("");
+  $("chips").querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>{
+    const [,kind]=chips[+b.dataset.i];
+    if(kind==="tick"){allCodes.forEach(c=>S.tick.add(c));}
+    else if(kind.startsWith("ck:")){S.tick.delete(kind.slice(3));}
+    else if(kind==="yr"){S.from=YMIN;S.to=YMAX;$("yFrom").value=YMIN;$("yTo").value=YMAX;}
+    else if(kind==="doc"){S.doc="";$("docSel").value="";}
+    computeHits(); render();
+  }));
+}
+
+// rail
+function renderRail(){
+  $("hitCount").textContent=S.hits.length;
+  $("hitOf").textContent="matching paragraphs of "+R.length;
+  const e=$("echoLine"), er=$("errLine");
+  if(S.qerr){ e.hidden=true; er.hidden=false; er.textContent=S.qerr; }
+  else if(S.echo){ er.hidden=true; e.hidden=false; e.textContent=S.echo; }
+  else { e.hidden=true; er.hidden=true; }
+  buildCkList(); renderChips();
+}
+
+// chart
+let chart=null;
+function renderOverview(){
+  const counts={}; S.hits.forEach(r=>r.committees.forEach(c=>counts[c]=(counts[c]||0)+1));
+  const jointExtra=S.hits.reduce((a,r)=>a+Math.max(0,r.committees.length-1),0);
+  const data=allCodes.map(c=>({c,n:counts[c]||0})).sort((a,b)=>b.n-a.n);
+  const labels=data.map(d=>d.c), vals=data.map(d=>d.n);
+  const aria="Paragraphs per committee: "+data.map(d=>d.c+" "+d.n).join(", ")+".";
+  const cv=$("chart"); cv.setAttribute("aria-label",aria);
+  cv.replaceChildren(document.createTextNode("Bar chart. "+aria));
+  if(chart) chart.destroy();
+  chart=new Chart(cv,{
+    type:"bar",
+    data:{labels,datasets:[{data:vals,backgroundColor:"#9b2335",borderColor:"#9b2335"}]},
+    options:{
+      indexAxis:"y", responsive:true, maintainAspectRatio:false,
+      animation:false,
+      plugins:{legend:{display:false},tooltip:{enabled:false}},
+      scales:{
+        x:{beginAtZero:true,grid:{color:"#e6dfd0"},ticks:{precision:0,color:"#1d1b18"}},
+        y:{grid:{display:false},ticks:{color:"#1d1b18",font:{family:"ui-monospace, Menlo, Consolas, monospace",size:12}}}
+      },
+      onClick:(e,els)=>{ if(els.length){ const c=labels[els[0].index]; S.tick.clear(); S.tick.add(c); computeHits(); render(); } }
+    },
+    plugins:[{id:"endLabels",afterDatasetsDraw(ch){const ctx=ch.ctx;
+      ch.getDatasetMeta(0).data.forEach((bar,i)=>{ if(!bar)return; ctx.save(); ctx.fillStyle="#1d1b18";
+        ctx.font="13px Georgia, serif"; ctx.textAlign="left"; ctx.textBaseline="middle";
+        ctx.fillText(String(vals[i]), bar.x+6, bar.y); ctx.restore(); });
+    }}]
+  });
+  $("chartTable").innerHTML="<tr><th scope='col'>Committee</th><th scope='col' style='text-align:right'>Paragraphs</th></tr>"+
+    data.map(d=>"<tr><td>"+d.c+"</td><td class='n'>"+d.n+"</td></tr>").join("");
+  $("chartNote").textContent = jointExtra>0 ? "Joint General Comments count under both committees, so the bars can add up to more than the hits." : "";
+}
+
+// rows
+function trunc(t){
+  if(t.length<=700) return null;
+  let s=t.slice(0,700); const sp=s.lastIndexOf(" "); if(sp>500)s=s.slice(0,sp);
+  return s+"\u2026";
+}
+function highlightText(raw){
+  if(!hlRe) return esc(raw);
+  const re=new RegExp(hlRe.source,"giu");
+  let out="",last=0,m;
+  while((m=re.exec(raw))){
+    out+=esc(raw.slice(last,m.index))+"<mark>"+esc(m[0])+"</mark>";
+    last=m.index+m[0].length;
+    if(m.index===re.lastIndex)re.lastIndex++;
+  }
+  return out+esc(raw.slice(last));
+}
+function contextRec(r,d){
+  return R.find(x=>x.title===r.title && x.paragraph===r.paragraph+d) || null;
+}
+function notesFor(r){
+  const n=[];
+  if(r.leading!==null && r.leading!==r.paragraph)
+    n.push("the text begins \u2018"+r.leading+".\u2019 but the record is "+r.pinpoint+": check the document");
+  if(/^\(([a-z]{1,4})\)/.test(r.text) && r.paragraph>0)
+    n.push("a lettered sub-paragraph, numbered "+r.paragraph+" by the file");
+  if(r.dupPin) n.push("two records share this pinpoint");
+  if(r.joint) n.push("joint General Comment");
+  return n;
+}
+function rowsHTML(list){
+  const frag=[];
+  list.forEach(r=>{
+    const id=r.id, open=S.open.has(id), asStored=S.stored.has(id);
+    const base=asStored?r.text:r.shownText;
+    const t=trunc(base), cut=t&&!S.full.has(id);
+    const shown=cut?t:base;
+    frag.push("<article class='rec"+(open?" open":"")+"' data-id='"+id+"'>");
+    frag.push("<div class='rechd'><span class='badge'>"+esc(r.committee)+"</span><h3>"+esc(r.short_title)+"</h3>"+
+      "<a href='"+esc(r.doc_url||"#")+"' target='_blank' rel='noopener'>"+esc(r.symbol)+"</a> "+
+      "<span class='pinpoint'>"+esc(r.pinpoint)+"</span> <span class='yr'>"+r.year+"</span></div>");
+    frag.push("<p class='rtext'>"+highlightText(shown)+"</p>");
+    if(r.marks>0) frag.push("<p class='fnline'>"+r.marks+" footnote mark"+(r.marks>1?"s":"")+" removed &middot; <button type='button' data-act='stored'>"+(asStored?"show as printed":"show as stored")+"</button></p>");
+    if(cut) frag.push("<button type='button' class='more' data-act='full'>Show the full paragraph ("+base.trim().split(/\s+/).length+" words)</button>");
+    notesFor(r).forEach(nt=>frag.push("<p class='note-amber'>"+esc(nt)+"</p>"));
+    if(open){
+      frag.push("<div class='rowbtns'>"+
+        "<button class='btn' type='button' data-act='cit'>Copy citation</button>"+
+        "<button class='btn' type='button' data-act='quo'>Copy quotation</button>"+
+        "<button class='btn primary' type='button' data-act='draft'>Add to draft</button></div>");
+      frag.push("<p class='ctxlink hint'>Context: <button type='button' data-act='ctxp' "+(contextRec(r,-1)?"":"disabled")+">previous</button> | <button type='button' data-act='ctxn' "+(contextRec(r,1)?"":"disabled")+">next</button></p>");
+      if(S.ctx.has(id)){
+        const p=contextRec(r,-1), n=contextRec(r,1);
+        [p,n].forEach(c=>{ if(!c)return;
+          frag.push("<div class='ctxblock'><span class='pinpoint'>"+esc(c.pinpoint)+"</span> "+esc(c.shownText)+"</div>");
+        });
+      }
+      frag.push("<p class='hint' style='margin-top:6px'>Citation style: UN short form</p>");
+    }
+    frag.push("</article>");
+  });
+  return frag.join("");
+}
+function textCopied(r){
+  if(r.leading!==null && r.leading===r.paragraph) return r.shownText.replace(/^\d{1,3}\.\s/,"");
+  return r.shownText;
+}
+function renderRows(){
+  const h=S.hits;
+  const hc=new Set(); h.forEach(r=>r.committees.forEach(c=>hc.add(c)));
+  const yrs=h.map(r=>r.year);
+  let sum = h.length+" of "+R.length+" paragraphs match";
+  if(!S.tree) sum += " (no search words)";
+  if(h.length) sum += " \u00b7 "+hc.size+" committees \u00b7 "+Math.min.apply(null,yrs)+"\u2013"+Math.max.apply(null,yrs);
+  $("sumLine").textContent=sum;
+  $("orderHint").textContent = S.order==="year" ? "sorted by year, newest first, then by document and paragraph" : S.order==="doc" ? "sorted in document order" : "sorted by most matches first";
+  const list=sortHits().slice(0,S.shown);
+  $("rows").innerHTML = list.length? rowsHTML(list) : "<p style='color:#6f675a'>No paragraphs match.</p>";
+  $("moreBtn").hidden = S.shown>=h.length;
+  // events
+  $("rows").querySelectorAll("article.rec").forEach(a=>{
+    a.addEventListener("click",e=>{
+      if(e.target.closest("a,button"))return;
+      const id=a.dataset.id;
+      if(S.open.has(id))S.open.delete(id); else S.open.add(id);
+      renderRows();
+    });
+  });
+  $("rows").querySelectorAll("button[data-act]").forEach(b=>{
+    b.addEventListener("click",e=>{
+      e.stopPropagation();
+      const r=R.find(x=>x.id===b.closest("article").dataset.id); if(!r)return;
+      const act=b.dataset.act;
+      if(act==="stored"){ S.stored.has(r.id)?S.stored.delete(r.id):S.stored.add(r.id); renderRows(); }
+      else if(act==="full"){ S.full.add(r.id); renderRows(); }
+      else if(act==="cit"){ copyText(r.citation); }
+      else if(act==="quo"){ copyText("\u201C"+textCopied(r)+"\u201D "+r.citation); }
+      else if(act==="draft"){
+        if(draft.some(d=>d.id===r.id)){ liveMsg("Already in the draft."); return; }
+        draft.push({id:r.id,citation:r.citation,symbol:r.symbol,paragraph:r.paragraph,pinpoint:r.pinpoint,
+          committee:r.committee,short_title:r.short_title,year:r.year,
+          text_copied:textCopied(r),text_as_stored:r.text,doc_url:r.doc_url});
+        saveDraft(); liveMsg("Added to the draft: "+r.citation); render();
+      }
+      else if(act==="ctxp"||act==="ctxn"){ S.ctx.add(r.id); renderRows(); }
+    });
+  });
+}
+
+// copy + live message
+let liveTimer=null;
+function liveMsg(t){
+  let el=$("liveMsg");
+  if(!el){ el=document.createElement("div"); el.id="liveMsg"; el.setAttribute("aria-live","polite");
+    el.className="hint"; el.style.marginTop="10px"; $("panel-1").appendChild(el); }
+  el.textContent=t; clearTimeout(liveTimer); liveTimer=setTimeout(()=>{el.textContent="";},6000);
+}
+function copyText(t){
+  const done=()=>{ liveMsg("Copied: "+t); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done).catch(()=>fallbackCopy(t));
+  } else fallbackCopy(t);
+}
+function fallbackCopy(t){
+  const box=$("copyBox"); $("copyTa").value=t; box.hidden=false;
+  $("copyTa").focus(); $("copyTa").select();
+  liveMsg("Clipboard refused: the text is in the box below — select and copy.");
+  $("copyTa").addEventListener("blur",()=>{box.hidden=true;},{once:true});
+}
+
+// draft
+function renderDraft(){
+  tabs[2].textContent="03 DRAFT ("+draft.length+")";
+  $("draftHd").textContent="Your draft ("+draft.length+" quotation"+(draft.length===1?"":"s")+")";
+  $("draftStore").textContent = lsOK ? "Kept in this browser's localStorage while it is allowed; in memory otherwise." : "localStorage was refused: the draft is kept in memory for this page only.";
+  $("draftList").innerHTML = draft.map((d,i)=>
+    "<div class='draftitem'><div style='display:flex;justify-content:space-between;gap:10px'>"+
+    "<span class='mono'>"+esc(d.committee)+" · "+esc(d.short_title)+" · "+esc(d.symbol)+" · <span class='pinpoint'>"+esc(d.pinpoint)+"</span> · "+d.year+"</span>"+
+    "<button class='btn' type='button' data-rm='"+i+"'>Remove</button></div>"+
+    "<blockquote>\u201C"+esc(d.text_copied)+"\u201D</blockquote>"+
+    "<div class='cit'>"+esc(d.citation)+"</div></div>").join("");
+  $("draftList").querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",()=>{
+    draft.splice(+b.dataset.rm,1); saveDraft(); render();
+  }));
+}
+function csvField(v){ return '"'+String(v==null?"":v).replace(/"/g,'""')+'"'; }
+$("copyAllBtn").addEventListener("click",()=>{
+  copyText(draft.map(d=>"\u201C"+d.text_copied+"\u201D "+d.citation).join("\n\n"));
+});
+$("dlTxt").addEventListener("click",()=>{
+  download("verbatim-draft.txt","\ufeff"+draft.map(d=>"\u201C"+d.text_copied+"\u201D "+d.citation).join("\n\n")+"\n");
+});
+$("dlCsv").addEventListener("click",()=>{
+  const cols=["citation","symbol","paragraph","pinpoint","committee","short_title","year","text_copied","text_as_stored","doc_url"];
+  const rows=[cols.map(csvField).join(",")].concat(draft.map(d=>cols.map(c=>csvField(d[c])).join(",")));
+  download("verbatim-draft.csv","\ufeff"+rows.join("\r\n")+"\r\n","text/csv");
+});
+function download(name,content,type){
+  const blob=new Blob([content],{type:type||"text/plain"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+// checks
+function computeChecks(){
+  const out=[];
+  const hits=S.hits;
+  const jointExtra=hits.reduce((a,r)=>a+Math.max(0,r.committees.length-1),0);
+  // query
+  out.push({name:"Query understood", pass:!S.qerr,
+    detail: S.qerr ? S.qerr : (S.echo ? S.echo+" ("+termRe.size+" term"+(termRe.size===1?"":"s")+")" : "no search words — every paragraph that passes the filters is listed") });
+  // totals
+  const rendered=Math.min(S.shown,hits.length);
+  const byCode={}; hits.forEach(r=>r.committees.forEach(c=>byCode[c]=(byCode[c]||0)+1));
+  const ckSum=allCodes.reduce((a,c)=>a+(byCode[c]||0),0);
+  out.push({name:"Totals", pass:(rendered===Math.min(S.shown,hits.length)) && (ckSum===hits.length+jointExtra),
+    detail:"rows listed "+rendered+" of "+hits.length+" hits (paged); the committees' bracketed counts sum to "+ckSum+", the hits ("+hits.length+") plus joint memberships ("+jointExtra+")"});
+  // chart total
+  const barSum=allCodes.reduce((a,c)=>a+(byCode[c]||0),0);
+  out.push({name:"Chart total", pass:barSum===hits.length+jointExtra,
+    detail:"bars sum to "+barSum+", hits plus joint memberships "+(hits.length+jointExtra)});
+  // highlight
+  let nohl=[];
+  if(S.tree && !notOnly) nohl=hits.filter(r=>!hasHighlight(r));
+  out.push({name:"Highlight", pass:nohl.length===0,
+    detail: notOnly ? "the query is NOT-only, so nothing is highlighted" :
+      nohl.length ? nohl.length+" hit(s) matched but show no highlight: "+nohl.slice(0,3).map(r=>esc(r.citation)).join("; ")+(nohl.length>3?" …":"")
+      : "every hit shows at least one highlight"});
+  // normalisation
+  if(/['"-]/.test(S.queryStr)){
+    let onlyCurly=0;
+    hits.forEach(r=>{
+      const t=r.text;
+      const hasCurly=/[\u2018\u2019\u201C\u201D\u2013]/.test(t), hasStraight=/['"\u2010-]/.test(t.replace(/\[\[fn:\d+\]\]/g,""));
+      if(hasCurly && !hasStraight) onlyCurly++;
+    });
+    out.push({name:"Normalisation", pass:true,
+      detail:"the query used a straight quote, apostrophe or hyphen: curly and dash forms were matched too; "+onlyCurly+" hit(s) contain only the curly or dash forms"});
+  }
+  // numbering
+  const mis=hits.filter(r=>r.leading!==null&&r.leading!==r.paragraph);
+  const dup=hits.filter(r=>r.dupPin);
+  const sub=hits.filter(r=>/^\(([a-z]{1,4})\)/.test(r.text)&&r.paragraph>0);
+  out.push({name:"Numbering", pass:mis.length===0&&dup.length===0&&sub.length===0,
+    detail:(mis.length? mis.length+" leading-number mismatch(es): "+mis.slice(0,3).map(r=>esc(r.citation)+" (text begins "+r.leading+".)").join("; ")+"; ":"")+
+      (dup.length? dup.length+" record(s) share a pinpoint; ":"")+
+      (sub.length? sub.length+" lettered sub-paragraph(s); ":"")+
+      (mis.length+dup.length+sub.length===0?"every hit's leading number matches its paragraph and pinpoints are unique":"")});
+  // marks
+  let badMarks=hits.filter(r=>{
+    const cnt=(r.text.match(/\[\[fn:/g)||[]).length;
+    return cnt!==r.marks || r.text.replace(/\[\[fn:\d+\]\]/g,"")!==r.shownText;
+  });
+  out.push({name:"Footnote marks", pass:badMarks===undefined||badMarks.length===0,
+    detail:"for every hit, the marks removed equal the count of [[fn: in the stored text and removing them again gives the shown text"});
+  // draft
+  const badDraft=draft.filter(d=>{ const r=R.find(x=>x.id===d.id); return !r || r.text!==d.text_as_stored; });
+  out.push({name:"Draft", pass:badDraft.length===0 && draft.length>=0,
+    detail: draft.length===0 ? "the draft is empty" :
+      badDraft.length ? badDraft.length+" item(s) no longer match the stored text" :
+      "every item's stored text matches its record"});
+  return out;
+}
+function renderChecks(){
+  const checks=computeChecks();
+  const fails=checks.filter(c=>!c.pass).length;
+  const line=$("checksLine");
+  if(fails){ line.innerHTML="<span class='dot bad'></span>"+fails+" check"+(fails>1?"s":"")+" failed — see 04 CHECK & METHOD"; }
+  else { line.innerHTML="<span class='dot ok'></span>"+checks.length+" checks pass"; }
+  if(S.tab===3){
+    $("checksPanel").innerHTML=checks.map(c=>
+      "<div class='checkline'>"+esc(c.name)+": "+c.detail+" — <span class='"+(c.pass?"pass":"fail")+"'>"+(c.pass?"pass":"check failed")+"</span></div>").join("");
+  }
+}
+function renderQuirks(){
+  const q=[
+    ["Records with paragraph 0 (preambles)", zero, r=>esc(r.citation)],
+    ["Symbols shared by several documents ("+sharedSyms.length+" symbols)", R.filter(r=>r.shared), r=>esc(r.symbol+" — "+docName(r.title))],
+    ["Records of joint General Comments", jointDocs, r=>esc(r.symbol)],
+    ["Records sharing a pinpoint with another record of the same document", dupPinList, r=>esc(r.citation)],
+    ["Leading-number mismatches", leadMis, r=>esc(r.citation+" (text begins "+r.leading+".)")],
+    ["Lettered sub-paragraphs numbered by the file", subparas, r=>esc(r.citation)]
+  ];
+  $("quirksPanel").innerHTML=q.map(x=>
+    "<div class='quirk'>"+x[0]+": <strong>"+x[1].length+"</strong>"+(x[1].length?" — e.g. "+x[2](x[1][0]):"")+"</div>").join("");
+}
+
+// render
+function render(){
+  renderRail(); renderChecks();
+  if(S.tab===0) renderOverview();
+  if(S.tab===1) renderRows();
+  if(S.tab===2) renderDraft();
+  if(S.tab===3) renderQuirks();
+}
+
+// init
+$("yFrom").value=YMIN; $("yTo").value=YMAX;
+buildQuery(""); computeHits(); renderQuirks(); render();
+qbox.focus();
+})();
+</script>
+</body>
+</html>
+```
+
+The app runs entirely offline over the attached General Comments file. Search with phrases and Boolean operators in the rail, browse verbatim paragraphs on tab 02, copy citations built only from each record's fields, and collect quotations on the Draft tab; tab 04 lists the app's own checks and the file's known quirks.

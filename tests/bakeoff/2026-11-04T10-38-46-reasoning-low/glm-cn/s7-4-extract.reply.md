@@ -1,0 +1,1 @@
+{"code": 502, "message": "JSON error injected into SSE stream", "metadata": {"error_type": "provider_unavailable"}}

@@ -21,7 +21,7 @@ GALLERY = ROOT / "site" / "gallery"
 
 # what the card says about where the model comes from and who ran it
 MODELS = {
-    "mistral": {"name": "Mistral Large 4", "origin": "France", "host": "Mistral, in the EU", "weights": "closed"},
+    "mistral": {"name": "Mistral Large 3", "origin": "France", "host": "Mistral, in the EU", "weights": "open"},
     "claude": {"name": "Claude Sonnet 5.5", "origin": "USA", "host": "Amazon Bedrock", "weights": "closed"},
     "glm-cn": {"name": "GLM-5.3", "origin": "China", "host": "Z.AI, the developer's service", "weights": "open"},
     "glm-eu": {"name": "GLM-5.3", "origin": "China", "host": "Mistral, in the EU", "weights": "open"},

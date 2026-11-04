@@ -129,7 +129,7 @@ def fake_api():
                 events.append({"delta": "About 2,000, most of them from the Universal Periodic Review."})
             for e in events:
                 self.wfile.write(f"data: {json.dumps(e)}\n\n".encode())
-            usage = {"model": req["model"], "model_label": "Mistral Large 4", "host": "Mistral", "zdr": True,
+            usage = {"model": req["model"], "model_label": "Mistral Large 3", "host": "Mistral", "zdr": True,
                      "prompt_tokens": 100, "completion_tokens": 50, "cost": 0.001, "seconds": 0.2, "budget_left": 7.4}
             self.wfile.write(f"event: usage\ndata: {json.dumps(usage)}\n\nevent: done\ndata: {{}}\n\n".encode())
 
@@ -676,10 +676,10 @@ def test_the_extraction_grows_to_a_second_document(base_url, browser):
     built(page, 2)
     body = app_frame(page).locator("body")
     body.get_by_text("CCPR/C/GC/32").first.wait_for(timeout=20000)
-    assert re.search(r"109\s*of\s*128", body.inner_text()), body.inner_text()[:600]
+    assert re.search(r"17\s*of\s*18", body.inner_text()), body.inner_text()[:600]     # GC 32: pages flagged
     send(page, "A model for the pages that fail", None, 3)
     app_frame(page).get_by_text("CCPR/C/GC/32").first.click()
-    app_frame(page).get_by_role("tab", name=re.compile("model", re.I)).click()   # the step's own tab
+    app_frame(page).get_by_role("tab", name=re.compile("flagged", re.I)).click()   # the step sits with the flagged pages
     assert re.search(r"\d+ pages? will leave the browser", app_frame(page).locator("body").inner_text(), re.I)
     assert not errors, errors
     ctx.close()
@@ -887,7 +887,7 @@ def test_a_plan_is_changed_live_and_built(base_url, browser, fake_api):
     assert len(calls) == n + 1 and calls[-1]["purpose"] == "build" and len(calls[-1]["messages"]) == 1
     asked = calls[-1]["messages"][0]["content"]
     assert compose(PACK, {}, "Colombia").split("\n\n", 1)[1] in asked and "Change the plan: add a line chart" in asked
-    assert "changed live by Mistral Large 4" in page.text_content("#planKicker")
+    assert "changed live by Mistral Large 3" in page.text_content("#planKicker")
     assert "A line chart of the records per year." in page.inner_text("#planDoc") and "revised plan" not in page.inner_text("#planDoc")
     assert page.locator(".plan-msg .thought").last.inner_text().startswith("Thought")
     assert page.locator(".approve button.primary[disabled]").count() == 1   # v1's Build is retired
@@ -996,4 +996,24 @@ def test_no_jargon_in_the_studio_itself(base_url, browser):
     texts.append(page.locator("#drawerBody").evaluate("b => { const c = b.cloneNode(true); c.querySelectorAll('details').forEach(d => d.remove()); return c.innerText; }"))
     hits = [m.group(0) for t in texts for m in JARGON.finditer(t)]
     assert not hits, hits
+    ctx.close()
+
+
+def test_a_gallery_app_comes_into_the_studio(base_url, browser):
+    """The back-up when a plan or a build fails: Improve it in the studio brings a gallery app in as v1, in its
+    session, with the plan it was built from as the request the model will see before the next change."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + "?via=replay&country=Kenya&from=sonnet-tabs%2Fs7-4-extract")
+    started(page)
+    built(page, 1)
+    assert "from=" not in page.url
+    assert page.get_attribute("#sessionSwitch [data-session=S8]", "aria-selected") == "true"
+    assert "From the gallery: Paragraphs out of a PDF" in page.inner_text("#log")
+    app_frame(page).get_by_text(re.compile(r"pages? flagged", re.I)).first.wait_for(timeout=20000)
+    work = page.evaluate("JSON.parse(localStorage.getItem('ws:work:guest'))")
+    assert work["versions"][0]["sent"].startswith("Build this app.") and "```html" in work["versions"][0]["reply"]
+    page.goto(base_url + "?via=replay&country=Kenya&from=nobody%2Fnothing")
+    started(page)
+    assert "could not be loaded" in page.inner_text("#log")
     ctx.close()

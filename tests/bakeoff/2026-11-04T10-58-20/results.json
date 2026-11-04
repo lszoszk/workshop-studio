@@ -1,0 +1,127 @@
+[
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": false,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": false
+  },
+  "passed": 4,
+  "total": 8,
+  "errors": [
+   "Failed to load resource: net::ERR_FAILED",
+   "Cannot access 'themeChart' before initialization"
+  ],
+  "network": [
+   "https://cdn.jsdelivr.net/npm/chart.js"
+  ],
+  "lines": 2189,
+  "seconds": 191.9,
+  "first_token": 1.7,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 19162,
+  "completion_tokens": 20695,
+  "cost": 0.04468585,
+  "provider": "Mistral"
+ },
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "download": true,
+   "text_matches": false
+  },
+  "passed": 3,
+  "total": 7,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Identifier 'passedChecks' has already been declared"
+  ],
+  "network": [],
+  "lines": 1885,
+  "seconds": 152.7,
+  "first_token": 1.6,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 20019,
+  "completion_tokens": 15784,
+  "cost": 0.03705405,
+  "provider": "Mistral"
+ },
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "s8-1-verbatim",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": true,
+   "chart": false,
+   "search_box": true,
+   "source_matches": true,
+   "text_contains_after_search": true,
+   "button_matches": false
+  },
+  "passed": 4,
+  "total": 8,
+  "errors": [
+   "Failed to load resource: net::ERR_FAILED",
+   "Cannot read properties of null (reading 'setAttribute')",
+   "Cannot read properties of null (reading 'setAttribute')",
+   "Cannot read properties of null (reading 'setAttribute')",
+   "Cannot read properties of null (reading 'setAttribute')"
+  ],
+  "network": [
+   "https://cdn.jsdelivr.net/npm/chart.js"
+  ],
+  "lines": 1960,
+  "seconds": 179.2,
+  "first_token": 2.0,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 19564,
+  "completion_tokens": 17654,
+  "cost": 0.0398893,
+  "provider": "Mistral"
+ },
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "s8-5-wiki",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "source_matches": true,
+   "calls_studio_ask": true,
+   "batches_max": true,
+   "controls_min": true
+  },
+  "passed": 7,
+  "total": 7,
+  "errors": [],
+  "network": [],
+  "lines": 3037,
+  "seconds": 287.6,
+  "first_token": 2.1,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 21927,
+  "completion_tokens": 27464,
+  "cost": 0.05737545,
+  "provider": "Mistral"
+ }
+]
