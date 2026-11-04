@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Plan · Paragraphs out of a PDF · Claude Sonnet 5.5 · new plan</title>
+<title>Plan · Paragraphs out of a PDF · Claude Sonnet 5.5</title>
 <meta name="robots" content="noindex, nofollow"><script src="../../../gate.js"></script>
 <style>
 body { margin: 0; background: #f4f0e8; color: #1d1b18; font: 17px/1.6 Georgia, "Times New Roman", serif; }
@@ -10,7 +10,7 @@ h1, h2, h3 { font-weight: 400; } h2 { border-top: 1px solid #d9d2c3; padding-top
 code { font: 14px ui-monospace, Menlo, Consolas, monospace; background: #ebe5d8; padding: 1px 4px; }
 table { border-collapse: collapse; } td, th { border-bottom: 1px solid #d9d2c3; padding: 4px 8px; text-align: left; }
 </style></head><body><main>
-<p class="kicker">The plan this app was built from · Claude Sonnet 5.5 · new plan</p>
+<p class="kicker">The plan this app was built from · Claude Sonnet 5.5</p>
 <h1>Paragraphs out of a PDF: the numbered paragraphs of a General Comment, checked against the reference</h1>
 <h2>Context</h2>
 <p>The user works in an office that quotes UN documents: a national human rights institution, an NGO or a mission in Geneva. To cite a General Comment they open the PDF, copy the paragraph by hand, remove the footnote numbers and page headers that come with it, and type the citation. A PDF converter copies in a second but damages the text in four ways: it reorders (a footnote number lands at the foot of the page), breaks (a paragraph across two pages), loses (the number of footnote 6) and adds noise (headers, footers, date stamps). This app turns the converter's raw text of one document, <code>WORKSHOP_DATA.pdf_text</code>, into numbered paragraphs, compares the result with the document's own reference, and shows every repair it made. The pages are <code>records</code> (<code>page</code>, <code>text</code>); the yardstick is <code>reference</code> (<code>paragraphs</code>, <code>footnotes</code>, <code>adopted</code>, <code>first_words</code>); <code>title</code>, <code>symbol</code> and <code>doc_url</code> describe the document. Nothing is typed in by hand.</p>

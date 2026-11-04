@@ -518,6 +518,10 @@ body.wall .work { grid-template-columns: 1fr; height: calc(100% - var(--top-h));
 .tour-card h3 { margin: 4px 0 6px; font-size: 18px; }
 .tour-card p { margin: 0 0 14px; font-size: 15px; line-height: 1.5; }
 .tour-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.tour-card.wide { max-width: min(540px, calc(100vw - 32px)); padding: 24px 28px 20px; }
+.tour-card.wide h3 { font-size: 26px; margin-bottom: 12px; }
+.tour-card.wide p { margin-bottom: 10px; }
+.tour-card.wide .tour-row { margin-top: 18px; }
 
 /* ---------- the look: paper, with a chat that behaves like any chatbot's ---------- */
 /* serif for names and headings; monospace only for sessions, the App/Code switch and small labels */

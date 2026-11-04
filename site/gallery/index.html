@@ -43,8 +43,9 @@
   .ask .mono { color: var(--muted); }
   .ask q { display: block; font: italic 400 23px/1.4 var(--serif); margin: 6px 0 6px; quotes: "“" "”"; }
   .ask .sub { font-size: 14px; color: var(--muted); }
-  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 24px; }
+  .cards { display: grid; gap: 24px; }
   .card { background: var(--card); border: 1px solid var(--rule); display: flex; flex-direction: column; transition: box-shadow .15s, transform .15s; }
+  @media (min-width: 900px) { .card { flex-direction: row; } .shot { flex: 0 0 62%; border-bottom: 0; border-right: 1px solid var(--rule); } }
   .card:hover { box-shadow: 0 10px 28px rgba(29, 27, 24, .12); transform: translateY(-2px); }
   .shot { display: block; aspect-ratio: 16 / 10; overflow: hidden; border-bottom: 1px solid var(--rule); background: #fff; }
   .shot img { width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block; }
@@ -52,7 +53,6 @@
   .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   .head h2 { font: 400 22px/1.2 var(--serif); margin: 0; }
   .badge { font: 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 4px 7px; border: 1px solid var(--rule); color: var(--muted); }
-  .badge.new { border-color: var(--red); color: var(--red); }
   .where { font-size: 14px; color: var(--muted); }
   .where b { color: var(--ink); font-weight: 600; }
   .facts { display: flex; gap: 16px; flex-wrap: wrap; color: var(--muted); }
@@ -77,9 +77,9 @@
     <a class="back mono" href="../">← Back to the studio</a>
   </header>
   <section class="hero">
-    <div class="mono">Same request, different models</div>
-    <h1>What each model built from the same request</h1>
-    <p>Each model got exactly what the studio sends: the request, the studio's instructions, a description of the data and a few sample records, never the data itself. The apps run here on the full data for <span id="country"></span>. The checks are automatic; how good an app is remains your call.</p>
+    <div class="mono">The workshop apps</div>
+    <h1>What the studio builds from each request</h1>
+    <p>Each app was built from the plan its planning session wrote, with exactly what the studio sends to a model: the request, the studio's instructions, a description of the data and a few sample records, never the data itself. These are also the answers the studio plays in recorded mode. The apps run here on the full data for <span id="country"></span>. The checks are automatic; how good an app is remains your call.</p>
   </section>
   <nav class="tabs" id="tabs" role="tablist" aria-label="Apps"></nav>
   <section class="ask" aria-live="polite">
@@ -116,13 +116,12 @@
     const cur = g.prompts.find((p) => p.id === current);
     document.getElementById('askWho').textContent = cur.problem ? 'What the participant asks' : 'The request';
     document.getElementById('askText').textContent = cur.problem || cur.prompt;
-    document.getElementById('askSub').textContent = cur.problem ? 'From this, a planning session wrote a plan; each card links the plan its app was built from.' : '';
+    document.getElementById('askSub').textContent = cur.problem ? 'From this, a planning session wrote a plan; the card links the plan its app was built from.' : '';
     const rows = g.results.filter((r) => r.prompt === current);
     document.getElementById('cards').innerHTML = rows.map((r) => {
       const m = g.models[r.model] || { name: r.model };
       const view = `view.html?app=${encodeURIComponent(r.model + '/' + r.prompt)}`;
-      const isNew = r.model === 'sonnet-tabs';
-      const name = m.name.replace(' · new plan', '');
+      const name = m.name;
       const facts = [r.seconds != null && `<span><b>${Math.round(r.seconds)}</b> s to build</span>`,
         r.cost != null && `<span><b>$${r.cost.toFixed(3)}</b></span>`, r.lines && `<span><b>${r.lines}</b> lines</span>`].filter(Boolean).join('');
       const checks = r.passed === r.total
@@ -131,12 +130,11 @@
       return `<article class="card">
         <a class="shot" href="${r.app ? view : '#'}" target="_blank" rel="noopener" aria-label="Open the app built by ${esc(name)}"><img src="apps/${r.model}/${r.prompt}.png" alt="" loading="lazy"></a>
         <div class="body">
-          <div class="head"><h2>${esc(name)}</h2>${isNew ? '<span class="badge new">New plan</span>' : ''}<span class="badge">${esc(m.weights || '')} weights</span></div>
+          <div class="head"><h2>${esc(name)}</h2><span class="badge">${esc(m.weights || '')} weights</span></div>
           <div class="where">Made in <b>${esc(m.origin || '')}</b> · ran on <b>${esc(m.host || '')}</b></div>
           ${facts ? `<div class="facts mono">${facts}</div>` : ''}
           <div class="checks">${checks}</div>
           ${r.attempts > 1 ? `<div class="note">${r.attempts} attempts: an app came back ${r.returned}×, passed every check ${r.full}×. Shown: the best one.</div>` : ''}
-          ${isNew ? '<div class="note">Built from the current plan: one question per tab, in the look of the author\'s research tools. The other cards were built from an earlier, shorter plan.</div>' : ''}
           <div class="actions">
             ${r.app ? `<a class="btn primary" href="${view}" target="_blank" rel="noopener">Open the app →</a>` : '<span class="checks"><span class="bad">No app returned</span></span>'}
             ${r.plan ? `<a class="btn" href="${r.plan}" target="_blank" rel="noopener">Read the plan</a>` : ''}

@@ -4,8 +4,11 @@
 window.Tour = (function () {
   'use strict';
   const STEPS = [
-    { title: 'Welcome to Garage Research',
-      text: 'Here you build small tools on UN human rights data by asking a model, and you check every number they show. Eight steps, one minute.' },
+    { title: 'Welcome to Garage Research', wide: true,
+      text: ['Many of us lose hours on searching UN documents: finding what a body said on an issue, or checking whether a recommendation was really addressed to a given state. Here you ask a model to build a small tool for such a task, on real UN human rights data.',
+        'The tool searches for you and sends you back to the source: each finding links to the document and paragraph it comes from. It finds and counts; the assessment stays with you.',
+        'Building such tools is also a way to learn where the models help and where they fail (the so-called jagged frontier), and to keep that skill after the workshop.',
+        'Every app can be adjusted: ask for a change in your own words. The tour takes one minute.'] },
     { at: '#sessionSwitch', title: 'Two sessions',
       text: 'Session 7 and Session 8 offer different apps. Your facilitator will say when to switch.' },
     { at: '#countryChip', title: 'Your country',
@@ -19,7 +22,7 @@ window.Tour = (function () {
     { at: '#toolbar', title: 'Your app',
       text: 'When an app is on the stage: App and Code show what the model wrote, New tab opens it full screen, Save as file keeps a copy that works offline, and Look inside shows how it works and what left this laptop.' },
     { at: '.foot-end', title: 'The gallery, and this tour again',
-      text: 'The Gallery at the top shows what different models built from the same request. Tour, down here, starts this again.' },
+      text: 'The Gallery at the top shows the workshop apps, each with the plan it was built from. Tour, down here, starts this again.' },
   ];
   let i = 0, root = null, onKey = null;
 
@@ -40,9 +43,10 @@ window.Tour = (function () {
     const hole = root.querySelector('.tour-hole'), card = root.querySelector('.tour-card');
     card.querySelector('.tour-n').textContent = `${i + 1} of ${STEPS.length}`;
     card.querySelector('h3').textContent = step.title;
-    card.querySelector('p').textContent = step.text;
+    card.querySelector('.tour-text').replaceChildren(...[].concat(step.text).map((t) => Object.assign(document.createElement('p'), { textContent: t })));
+    card.classList.toggle('wide', !!step.wide);
     card.querySelector('[data-t=back]').hidden = i === 0;
-    card.querySelector('[data-t=next]').textContent = i === STEPS.length - 1 ? 'Start' : 'Next';
+    card.querySelector('[data-t=next]').textContent = i === STEPS.length - 1 ? 'Start' : i === 0 ? 'Show me around' : 'Next';
     if (!r) {   // nothing to point at: the card in the middle, the whole screen dimmed
       hole.style.cssText = 'left:50%;top:50%;width:0;height:0';
       card.style.cssText = 'left:50%;top:50%;transform:translate(-50%,-50%)';
@@ -80,7 +84,7 @@ window.Tour = (function () {
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
     root.setAttribute('aria-label', 'A tour of the studio');
-    root.innerHTML = '<div class="tour-hole"></div><div class="tour-card"><div class="tour-n"></div><h3></h3><p></p>' +
+    root.innerHTML = '<div class="tour-hole"></div><div class="tour-card"><div class="tour-n"></div><h3></h3><div class="tour-text"></div>' +
       '<div class="tour-row"><button type="button" class="linkish" data-t="skip">Skip the tour</button>' +
       '<span><button type="button" class="ghost" data-t="back">Back</button> <button type="button" class="primary" data-t="next">Next</button></span></div></div>';
     document.body.appendChild(root);
