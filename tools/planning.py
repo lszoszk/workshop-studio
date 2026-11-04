@@ -30,6 +30,8 @@ def step_label(e):
             "find": f'every match of /{e.get("arg")}/', "raw": "the raw text"}.get(e["cmd"], e["cmd"])
     if e["dataset"] == "uhri" and e["cmd"] == "overview":
         return "Looked at the data: {country}, {count} records, {years}", "UN recommendations and observations"
+    if e["cmd"] == "raw" and e["dataset"] == "html_doc":
+        return f"Looked at the data: the raw HTML in {e['dataset']}", e.get("summary", "")
     target = f'{e["dataset"]}' + (f' ({e["doc"]})' if e.get("doc") else f', page {e["page"]}' if e["cmd"] == "raw" else "")
     return f"Looked at the data: {what} in {target}", e.get("summary", "")
 

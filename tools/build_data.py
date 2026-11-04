@@ -59,6 +59,12 @@ PDF_DOC = {"symbol": "E/C.12/GC/27", "doc_id": "e-c-12-gc-27",
 PDF_DOC_2 = {"symbol": "CCPR/C/GC/32", "doc_id": "ccpr-c-gc-32", "pdf": ROOT / "site/files/CCPR_C_GC_32.pdf",
              "title": "Human Rights Committee general comment No. 32 (2007), as a PDF converter extracted it, page by page"}
 
+# the same document as OHCHR publishes it in HTML (English html link on its Download.aspx page, fetched on
+# 4 Nov 2026): every numbered paragraph is its own <p>, headings are <h2>/<h3>, and the footnotes are gone
+HTML_DOC = {"symbol": "E/C.12/GC/27", "doc_id": "e-c-12-gc-27", "html": ROOT / "site/files/E_C.12_GC_27.html",
+            "title": "CESCR General comment No. 27 (2025), as OHCHR publishes it in HTML",
+            "source": "The HTML version on the OHCHR treaty body database (tbinternet.ohchr.org, Download.aspx); embedded images and styles removed, nothing else changed"}
+
 
 def ssl_context():
     # python.org builds on macOS ship without a CA bundle; fall back to the system one
@@ -231,6 +237,48 @@ def pdf_text(gc, doc_spec=PDF_DOC, key="pdf_text"):
         "records": [{"page": i + 1, "text": t} for i, t in enumerate(pages)],
         "reference": {"paragraphs": len(paras), "footnotes": notes, "adopted": doc.get("adoptionDate"), "first_words": first},
     }
+
+
+def html_doc(gc, doc_spec=HTML_DOC, key="html_doc"):
+    """One UN document as OHCHR's HTML: the body as published (embedded images and styles removed), and the same
+    `reference` as pdf_text, from the paragraphs of the same document in the UN Human Rights Database."""
+    page = doc_spec["html"].read_text(encoding="utf-8")
+    body = page[page.index("<body"):page.rindex("</body>") + len("</body>")]
+    body = re.sub(r'src="data:[^"]*"', 'src=""', body)
+    body = re.sub(r'href="data:[^"]*"', 'href=""', body)
+    paras = sorted((r for r in gc["records"] if r["symbol"] == doc_spec["symbol"]), key=lambda r: int(r["paragraph"]))
+    first = {str(r["paragraph"]): " ".join(re.sub(r"^\d+\.\s*", "", r["text"]).split()[:6]) for r in paras}
+    notes = sum(len(p.get("footnotes") or []) for p in get_json(UNHRDB + "corpus.json") if p.get("docId") == doc_spec["doc_id"])
+    doc = next(d for d in get_json(UNHRDB + "documents.json") if d.get("docId") == doc_spec["doc_id"])
+    return {
+        "dataset": key,
+        "title": doc_spec["title"],
+        "symbol": doc_spec["symbol"],
+        "doc_url": "https://docs.un.org/en/" + doc_spec["symbol"],
+        "source": doc_spec["source"],
+        "built": date.today().isoformat(),
+        "count": 1,
+        "html": body,
+        "reference": {"paragraphs": len(paras), "footnotes": notes, "adopted": doc.get("adoptionDate"), "first_words": first},
+    }
+
+
+def html_schema(p):
+    return [
+        "## `WORKSHOP_DATA.html_doc`: one UN document as OHCHR publishes it in HTML",
+        "",
+        "`{title, symbol, doc_url, source, html, reference: {...}}`.",
+        f"`html` is the `<body>` of {p['symbol']} exactly as OHCHR's HTML version has it (a string; parse it",
+        "with `new DOMParser().parseFromString(html, 'text/html')`). Each numbered paragraph is a `<p>` whose",
+        "text starts with its number and a full stop, often with no space after it (\"1.The …\"); headings",
+        "are `<h2>` and `<h3>`; the cover lines (symbol, distribution, date) are `<p>` elements before the",
+        "first heading. The footnotes of the published document are not in this HTML at all.",
+        "`reference` lets an app check its own result: `paragraphs` (how many numbered paragraphs",
+        "the document has), `footnotes` (how many footnotes the document has, in its PDF and Word versions),",
+        f"`adopted`, and `first_words` (`{{\"1\": \"{p['reference']['first_words']['1']}\", …}}`: the first six words",
+        "of each numbered paragraph).",
+        "",
+    ]
 
 
 # the library for the wiki exercise: neurotechnology in the administration of justice, ten documents
@@ -809,8 +857,24 @@ def main():
     ap.add_argument("--countries", default=",".join(DEFAULT_COUNTRIES))
     ap.add_argument("--skip-uhri", action="store_true")
     ap.add_argument("--pdf-only", action="store_true", help="rebuild pdf_text.json, library.json and wiki.json only; reuse the other files")
+    ap.add_argument("--html-only", action="store_true", help="build html_doc.json and add it to index.json, schema.md and samples.json")
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
+    if a.html_only:
+        index = json.loads((OUT / "index.json").read_text())
+        h = html_doc(json.loads((OUT / "gc.json").read_text()))
+        write("html_doc.json", h)
+        index["datasets"]["html_doc"] = {"file": "html_doc.json", "count": 1}
+        (OUT / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8")
+        schema = (OUT / "schema.md").read_text()
+        if "WORKSHOP_DATA.html_doc" not in schema:
+            schema = schema.replace("## Rules for every app", "\n".join(html_schema(h)) + "\n## Rules for every app", 1)
+            (OUT / "schema.md").write_text(schema, encoding="utf-8")
+        samples = json.loads((OUT / "samples.json").read_text())
+        samples["html_doc"] = [{"html": h["html"][:1500] + "\n<!-- … the rest of the document omitted in this sample -->"}]
+        (OUT / "samples.json").write_text(json.dumps(samples, ensure_ascii=False, indent=1), encoding="utf-8")
+        print("  html_doc.json, index.json, schema.md, samples.json")
+        return
     if a.pdf_only:
         index = json.loads((OUT / "index.json").read_text())
         packs = {"uhri": json.loads((OUT / index["countries"][0]["file"]).read_text()),

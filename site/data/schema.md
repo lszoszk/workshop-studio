@@ -139,6 +139,19 @@ the document has), `footnotes` (how many footnotes), `adopted`, and `first_words
 The same shape as `pdf_text`: the 18 pages of CCPR/C/GC/32 as the same converter produced them,
 with its own `reference` (65 paragraphs, 128 footnotes).
 
+## `WORKSHOP_DATA.html_doc`: one UN document as OHCHR publishes it in HTML
+
+`{title, symbol, doc_url, source, html, reference: {...}}`.
+`html` is the `<body>` of E/C.12/GC/27 exactly as OHCHR's HTML version has it (a string; parse it
+with `new DOMParser().parseFromString(html, 'text/html')`). Each numbered paragraph is a `<p>` whose
+text starts with its number and a full stop, often with no space after it ("1.The …"); headings
+are `<h2>` and `<h3>`; the cover lines (symbol, distribution, date) are `<p>` elements before the
+first heading. The footnotes of the published document are not in this HTML at all.
+`reference` lets an app check its own result: `paragraphs` (how many numbered paragraphs
+the document has), `footnotes` (how many footnotes the document has, in its PDF and Word versions),
+`adopted`, and `first_words` (`{"1": "A clean, healthy and sustainable environment", …}`: the first six words
+of each numbered paragraph).
+
 ## Rules for every app
 
 - Always show where a number comes from: n of records, the filter applied, and a link

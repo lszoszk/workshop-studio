@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paragraphs out of a UN document</title>
+<style>
+[hidden]{display:none!important}
+:root{--paper:#f4f0e8;--ink:#1d1b18;--rule:#d9d2c3;--red:#9b2335;--green:#2e6b3e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+a{color:var(--red)}
+a:focus,button:focus,.row:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px 40px}
+header.site{border-bottom:1px solid var(--ink);padding:18px 0 14px;position:relative}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.kicker{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.14em;color:#6b655b}
+h1{font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:26px;line-height:1.25;margin:8px 0 6px;max-width:60ch}
+.meta{font-size:13px;color:#4a4640}
+.headstatus{position:absolute;right:0;top:20px;text-align:right;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.08em}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:1px;margin-right:5px}
+.dot.ok{background:var(--green)}.dot.bad{background:var(--red)}
+.dot-limit{background:var(--red)}
+/* tabs */
+nav.tabs{display:flex;gap:0;border-bottom:1px solid var(--rule);margin:0}
+nav.tabs button{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;padding:12px 18px 10px;cursor:pointer;color:#5a544a}
+nav.tabs button[aria-selected="true"]{color:var(--red);border-bottom-color:var(--red)}
+/* layout */
+.grid{display:grid;grid-template-columns:250px 1fr;gap:34px;align-items:start}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+aside.rail{border-right:1px solid var(--rule);padding:18px 22px 18px 0}
+.rail h2{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.14em;font-weight:400;color:#6b655b;margin:0 0 12px}
+.railcard{border-top:2px solid var(--ink);padding:10px 0 4px;margin-bottom:18px}
+.railcard .sym{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+.railcard .st{font-size:13px;margin:3px 0 8px;color:#3c3833}
+.bignum{font-family:Georgia,serif;font-size:44px;line-height:1.05;margin:6px 0 0}
+.bignum small{font-size:17px;color:#6b655b;font-family:Georgia,serif}
+.bar{height:3px;background:var(--rule);margin:8px 0 2px}
+.bar span{display:block;height:3px;background:var(--ink)}
+.bar.short span{background:var(--red)}
+.redline{color:var(--red)}
+.hint{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#6b655b;margin:4px 0 0;letter-spacing:.02em}
+.railpass{font-size:13px;margin-top:16px}
+section.panel{padding:22px 0}
+h2.fig{font-family:Georgia,serif;font-weight:400;font-size:22px;margin:0 0 4px}
+.subnote{font-size:13px;color:#4a4640;margin:0 0 20px;max-width:70ch}
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.tile{background:var(--paper);padding:16px 18px 14px}
+.tile .num{font-family:Georgia,serif;font-size:46px;line-height:1.05}
+.tile .num small{font-size:18px;color:#6b655b}
+.tile .lbl{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#6b655b;margin-top:6px}
+.tile .exp{font-size:13px;margin:2px 0 0}
+.how{font-size:12px;color:#6b655b;margin:6px 0 0}
+/* tables */
+table{border-collapse:collapse;width:100%;margin:8px 0 26px;font-size:14px}
+caption{caption-side:top;text-align:left;font-family:Georgia,serif;font-size:17px;padding:6px 0 8px}
+caption .tno{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.1em;color:#6b655b;margin-right:10px}
+th{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:400;color:#5a544a;text-align:left;border-bottom:1px solid var(--ink);padding:5px 10px 5px 0}
+td{border-bottom:1px solid var(--rule);padding:6px 10px 6px 0;vertical-align:top}
+th.r,td.r{text-align:right;padding-right:10px}
+/* expandable rows */
+button.row{display:grid;grid-template-columns:44px 1fr 2fr 110px;gap:0;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--rule);padding:8px 0;font:inherit;cursor:pointer;align-items:baseline}
+button.row:hover{background:#ede7db}
+button.row .no{font-family:Georgia,serif;font-size:19px;color:var(--red)}
+button.row .sec{font-size:13px;color:#4a4640}
+button.row .fl{font-size:14px}
+button.row .chk{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--green);text-align:right}
+button.row .chk.bad{color:var(--red)}
+tr.detail td{border-bottom:1px solid var(--rule);padding:0}
+.detail-inner{padding:14px 0 18px 44px;max-width:78ch}
+.fulltext{border-left:2px solid var(--rule);padding:4px 0 4px 16px;margin:8px 0 12px;font-size:15px}
+mark.rep{background:none;border:1px solid var(--red);padding:0 1px;color:var(--red)}
+.w6{font-size:13px;margin:8px 0}
+.w6 .k{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#6b655b;display:block}
+.pinnote{font-size:12px;color:#6b655b;margin-top:8px}
+button.copy{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:var(--ink);color:var(--paper);border:none;padding:7px 14px;cursor:pointer}
+button.copy:hover{background:var(--red)}
+/* closed headings */
+button.closed{width:100%;text-align:left;background:none;border:none;border-top:1px solid var(--ink);border-bottom:1px solid var(--rule);font:inherit;padding:10px 0;cursor:pointer;display:flex;justify-content:space-between;align-items:baseline}
+button.closed .t{font-family:Georgia,serif;font-size:16px}
+button.closed .mono{color:#6b655b}
+/* checks */
+.check{border-bottom:1px solid var(--rule);padding:9px 0;font-size:14px}
+.check .name{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#5a544a}
+.check .res{float:right;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+.res.pass{color:var(--green)}.res.fail,.res.limit,.res.notrun{color:var(--red)}
+.check .det{font-size:13px;color:#4a4640;margin-top:2px}
+button.exp{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:none;border:1px solid var(--ink);padding:8px 16px;cursor:pointer}
+button.exp:hover{background:var(--ink);color:var(--paper)}
+footer.site{border-top:1px solid var(--ink);margin-top:30px;padding:12px 0;font-size:12px;color:#5a544a}
+.counter{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#6b655b;letter-spacing:.06em}
+ins.space{text-decoration:none;color:var(--red);font-weight:bold}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="site" id="sitetitle"></header>
+<nav class="tabs" role="tablist" aria-label="Sections" id="tablist"></nav>
+<div class="grid">
+<aside class="rail" id="rail"></aside>
+<main>
+<section class="panel" role="tabpanel" id="panel-0"></section>
+<section class="panel" role="tabpanel" id="panel-1" hidden></section>
+<section class="panel" role="tabpanel" id="panel-2" hidden></section>
+<section class="panel" role="tabpanel" id="panel-3" hidden></section>
+</main>
+</div>
+<footer class="site" id="footer"></footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var D = window.WORKSHOP_DATA && window.WORKSHOP_DATA.html_doc;
+var esc = function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+var hasRef = !!(D && D.reference);
+var refP = hasRef ? D.reference.paragraphs : null;
+var refF = hasRef ? D.reference.footnotes : null;
+var firstWords = hasRef ? (D.reference.first_words||{}) : null;
+
+/* ---------- parse & classify ---------- */
+var elements = [], paragraphs = [], headings = [], repairs = [], titleText = null,
+    committeeLine = null, gluedLabels = 0, unclassified = [];
+var doc = D && D.html ? new DOMParser().parseFromString(D.html,'text/html') : null;
+var curHeading = null, curPart = null, seenTitle = false;
+
+if (doc && doc.body) {
+  var all = doc.body.querySelectorAll('p,h2,h3,table,div');
+  all.forEach(function(el){
+    if (el.closest && el.closest('table')) { elements.push({el:el, cls:'cover'}); return; }
+    var cls, rec = null;
+    var tag = el.tagName.toLowerCase();
+    var text = (el.textContent||'').replace(/\s+/g,' ').trim();
+    if (tag === 'table') cls = 'table';
+    else if (tag === 'div') cls = 'container';
+    else if (tag === 'p') {
+      var m = text.match(/^(\d{1,3})\.\s*([\s\S]*)$/);
+      if (m) {
+        cls = 'paragraph';
+        rec = {number:+m[1], text_raw:m[2].replace(/\s+/g,' ').trim(), section:curHeading, part:curPart};
+      } else if (!committeeLine && !seenTitle) { cls='committee line'; committeeLine = text; }
+      else { cls = 'other paragraph'; }
+    } else { // h2 / h3
+      if (!seenTitle) { cls='title'; titleText = text; seenTitle = true; }
+      else {
+        cls = 'heading';
+        var hm = text.match(/^([IVX]+|[A-Z])\.\s*(.+)$/);
+        var h = {label: hm?hm[1]:'', heading: hm?hm[2]:text, full: text, isPart: tag==='h2'};
+        if (hm) gluedLabels++;
+        headings.push(h);
+        curHeading = h;
+        if (tag==='h2' && h.label && /^[IVX]+$/.test(h.label)) curPart = h;
+        rec = h;
+      }
+    }
+    elements.push({el:el, cls:cls, rec:rec, text:text});
+    if (cls === 'paragraph') paragraphs.push(rec);
+  });
+}
+
+/* ---------- repairs ---------- */
+var rules = {
+  sentence:{re:/([a-z])\.([A-Z])/g, to:'$1. $2', name:'sentence join'},
+  comma:{re:/([a-z]),([A-Za-z])/g, to:'$1, $2', name:'comma join'},
+  quote:{re:/([a-z])“/g, to:'$1 “', name:'quote join'},
+  dash:{re:/–([A-Za-z])/g, to:'– $1', name:'dash join'}
+};
+paragraphs.forEach(function(p){
+  var t = p.text_raw;
+  Object.keys(rules).forEach(function(k){
+    var r = rules[k];
+    t = t.replace(r.re, function(mm, a, b, off){
+      var s = p.text_raw;
+      repairs.push({para:p.number, rule:r.name, key:k,
+        before:s.slice(Math.max(0,off-20), Math.min(s.length, off+21)),
+        after:(a + (k==='quote'?' ':'') )});
+      return a + (k==='sentence'?'. ':k===','?'':'');
+    });
+  });
+  // rebuild carefully: simpler correct approach below (undo the partial above)
+});
+repairs = [];
+paragraphs.forEach(function(p){
+  p.text = p.text_raw; p.repairSpots = [];
+  Object.keys(rules).forEach(function(k){
+    var r = rules[k];
+    p.text = p.text.replace(r.re, function(mm, a, b, off){
+      repairs.push({para:p.number, rule:r.name, key:k, idx:off,
+        ctx:p.text_raw.slice(Math.max(0,off-20), Math.min(p.text_raw.length, off+21))});
+      return (k==='sentence')? a+'. ' : (k==='comma')? a+', ' : (k==='quote')? a+' “' : a+'– ';
+    });
+  });
+});
+
+/* ---------- characters ---------- */
+var chars = [
+  {c:'–', name:'en dash (U+2013)', re:/–/g},
+  {c:'“”', name:'curly double quotes (U+201C/201D)', re:/[“”]/g},
+  {c:'’', name:'right single quote (U+2019)', re:/’/g},
+  {c:'\u2011', name:'non-breaking hyphen (U+2011)', re:/\u2011/g},
+  {c:'\u00A0', name:'non-breaking space (U+00A0)', re:/\u00A0/g}
+];
+chars.forEach(function(ch){
+  ch.count = 0; ch.example = '';
+  paragraphs.forEach(function(p){
+    var m = p.text.match(ch.re);
+    if (m) {
+      ch.count += m.length;
+      if (!ch.example) {
+        var i = p.text.search(ch.re);
+        ch.example = p.text.slice(Math.max(0,i-18), Math.min(p.text.length, i+18));
+      }
+    }
+  });
+});
+
+/* ---------- first words ---------- */
+var norm = function(s){
+  return String(s).replace(/[“”]/g,'"').replace(/’/g,"'").replace(/[–\u2011]/g,'-').replace(/\u00A0/g,' ');
+};
+var sixWords = function(t){ return (norm(t).trim().split(/\s+/).slice(0,6)); };
+paragraphs.forEach(function(p){
+  p.citation = (D.symbol||'') + ', para. ' + p.number;
+  p.firstSix = sixWords(p.text);
+  if (firstWords && firstWords[String(p.number)] !== undefined) {
+    p.first_words_match = p.firstSix.join(' ') === sixWords(firstWords[String(p.number)]).join(' ');
+  } else p.first_words_match = null;
+});
+
+/* ---------- repairs per paragraph, marked html ---------- */
+var markedText = function(p){
+  var s = esc(p.text_raw);
+  Object.keys(rules).forEach(function(k){
+    var r = rules[k];
+    s = s.replace(r.re, function(mm,a,b){
+      if (k==='sentence') return a+'.<mark class="rep" title="space inserted"> </mark>'+b;
+      if (k==='comma') return a+',<mark class="rep" title="space inserted"> </mark>'+b;
+      if (k==='quote') return a+'<mark class="rep" title="space inserted"> </mark>“';
+      return '–<mark class="rep" title="space inserted"> </mark>'+b;
+    });
+  });
+  return s;
+};
+var paraRepairs = {};
+repairs.forEach(function(r){ (paraRepairs[r.para] = paraRepairs[r.para]||[]).push(r); });
+
+/* ---------- checks ---------- */
+var checks = [];
+var foundP = paragraphs.length;
+var numberingOk = true, gaps = [], dups = [];
+(function(){
+  var seen = {};
+  paragraphs.forEach(function(p){ if(seen[p.number]) dups.push(p.number); seen[p.number]=1; });
+  for (var i=1;i<=foundP;i++) if(!seen[i]) gaps.push(i);
+  var inOrder = paragraphs.every(function(p,i){ return p.number === i+1; });
+  numberingOk = inOrder && gaps.length===0 && dups.length===0;
+})();
+var fwMismatch = paragraphs.filter(function(p){return p.first_words_match===false;});
+
+checks.push({name:'Paragraph count', run: refP!=null,
+  status: (refP==null)?'notrun':(foundP===refP?'pass':'fail'),
+  det: refP==null?'not run: no reference in this file':
+    ('found '+foundP+' numbered paragraphs; the reference says the document has '+refP+(foundP!==refP?' — difference '+(foundP-refP):''))});
+checks.push({name:'Numbering', run:true, status:numberingOk?'pass':'fail',
+  det:'expected exactly 1 to '+foundP+' in order; '+
+    (numberingOk?'no gaps, no duplicates':
+      ('gaps: '+(gaps.length?gaps.join(', '):'none')+'; duplicates: '+(dups.length?dups.join(', '):'none')))});
+checks.push({name:'First words', run: firstWords!=null,
+  status: (firstWords==null)?'notrun':(fwMismatch.length===0?'pass':'fail'),
+  det: firstWords==null?'not run: no reference first-words in this file':
+    (fwMismatch.length===0?('all '+foundP+' paragraphs match the reference’s first six words'):
+      (fwMismatch.length+' of '+foundP+' differ in their first six words: '+
+        fwMismatch.map(function(p){return 'para. '+p.number;}).join(', ')))});
+checks.push({name:'Footnotes', run: refF!=null, status:(refF==null)?'notrun':'limit',
+  det: refF==null?'not run: no reference in this file':
+    ('the HTML version has no footnotes ('+refF+' in the document): a limit of the source, not of the app')});
+var byRule = {};
+repairs.forEach(function(r){ byRule[r.rule]=(byRule[r.rule]||0)+1; });
+checks.push({name:'Repairs', run:true, status:'pass',
+  det:repairs.length+' spaces restored in '+Object.keys(paraRepairs).length+' paragraphs ('+
+    Object.keys(byRule).map(function(k){return byRule[k]+' '+k;}).join(', ')+
+    '); every insertion is listed on tab 03 and text_raw keeps the text as found'});
+var h2n = elements.filter(function(e){return e.cls==='heading'&&e.rec.isPart;}).length;
+var h3n = elements.filter(function(e){return e.cls==='heading'&&!e.rec.isPart;}).length;
+checks.push({name:'Headings', run:true, status:'pass',
+  det:h2n+' <h2> and '+h3n+' <h3> headings found; '+gluedLabels+' glued labels separated'});
+(function(){
+  var counts = {};
+  elements.forEach(function(e){counts[e.cls]=(counts[e.cls]||0)+1;});
+  unclassified = elements.filter(function(e){return e.cls==='other paragraph';});
+  var sum = Object.keys(counts).reduce(function(a,k){return a+counts[k];},0);
+  checks.push({name:'Nothing lost', run:true,
+    status: unclassified.length? 'fail':'pass',
+    det:'every block element classified exactly once ('+sum+' of '+elements.length+'); '+
+      Object.keys(counts).map(function(k){return counts[k]+' '+k;}).join(', ')+
+      (unclassified.length?'; UNCLASSIFIED: '+unclassified.map(function(e){return esc(e.text.slice(0,40));}).join(' | '):'')});
+})();
+var records = paragraphs.map(function(p){
+  return {symbol:D.symbol, paragraph:p.number, section:p.section?p.section.heading:null,
+    part:p.part?p.part.label+'. '+p.part.heading:null, text:p.text, text_raw:p.text_raw,
+    first_words_match:p.first_words_match, citation:p.citation, doc_url:D.doc_url,
+    limitations:'no footnotes in this HTML version; the document has '+(refF!=null?refF:'an unknown number of')};
+});
+checks.push({name:'Export round trip', run:records.length>0,
+  status: records.length>0 ? (JSON.parse(JSON.stringify(records)).length===paragraphs.length?'pass':'fail') : 'notrun',
+  det: records.length? 'the JSON to download parses back with '+records.length+' records, equal to the table' :
+    'not run: no paragraphs found'});
+
+var passN = checks.filter(function(c){return c.status==='pass';}).length;
+var failN = checks.filter(function(c){return c.status==='fail';}).length;
+var limitN = checks.filter(function(c){return c.status==='limit';}).length;
+var runnable = checks.filter(function(c){return c.run;}).length;
+
+/* ---------- render: header, rail, tabs, footer ---------- */
+document.getElementById('sitetitle').innerHTML =
+  '<div class="kicker">UN DOCUMENT · HTML</div>'+
+  '<h1>'+esc(D.title)+'</h1>'+
+  '<div class="meta"><a href="'+esc(D.doc_url)+'" target="_blank" rel="noopener">'+esc(D.symbol)+'</a>'+
+  (hasRef && D.reference.adopted ? ' · adopted '+esc(D.reference.adopted) : '')+
+  ' · '+esc(D.source||'')+'</div>'+
+  '<div class="headstatus"><div><span class="dot '+(failN?'bad':'ok')+'"></span>'+
+  (failN? failN+' checks failed' : passN+' of '+runnable+' checks pass')+'</div>'+
+  (limitN?'<div style="margin-top:4px"><span class="dot dot-limit"></span>'+limitN+' source limit</div>':'')+'</div>';
+
+var barCls = (refP!=null && foundP!==refP)?'bar short':'bar';
+var railFw = fwMismatch.length;
+document.getElementById('rail').innerHTML =
+  '<h2>DOCUMENT</h2>'+
+  '<div class="railcard"><div class="sym">'+esc(D.symbol)+'</div><div class="st">'+esc(titleText||D.title)+'</div></div>'+
+  '<div class="railcard"><div class="bignum">'+foundP+' <small>paragraphs of '+(refP!=null?refP:'?')+'</small></div>'+
+  '<div class="bar'+((refP!=null && foundP!==refP)?' short':'')+'"><span style="width:'+(refP?Math.min(100,100*foundP/refP):100)+'%"></span></div>'+
+  '<div class="hint">found vs reference</div></div>'+
+  '<div class="railcard"><div class="bignum redline">0 <small>footnotes of '+(refF!=null?refF:'?')+'</small></div>'+
+  '<div class="hint red-line" style="color:var(--red)">not in this HTML</div></div>'+
+  '<div class="railpass"><a href="#" data-goto="3"><span class="dot '+(failN?'bad':'ok')+'"></span>'+
+  (failN? failN+' checks failed' : passN+' of '+runnable+' checks pass')+'</a></div>';
+
+var tabNames = ['01 RESULT','02 PARAGRAPHS','03 LOST & CHANGED','04 CHECKS & EXPORT'];
+var tablist = document.getElementById('tablist');
+tabNames.forEach(function(n,i){
+  var b = document.createElement('button');
+  b.textContent = n; b.setAttribute('role','tab'); b.id='tab-'+i;
+  b.setAttribute('aria-controls','panel-'+i);
+  b.setAttribute('aria-selected', i===0?'true':'false');
+  b.tabIndex = i===0?0:-1;
+  b.addEventListener('click',function(){selectTab(i);});
+  tablist.appendChild(b);
+});
+function selectTab(i){
+  tabNames.forEach(function(_,j){
+    document.getElementById('tab-'+j).setAttribute('aria-selected', j===i?'true':'false');
+    document.getElementById('tab-'+j).tabIndex = j===i?0:-1;
+    document.getElementById('panel-'+j).hidden = j!==i;
+  });
+  document.getElementById('tab-'+i).focus();
+}
+tablist.addEventListener('keydown',function(e){
+  var i = tabNames.findIndex(function(_,j){return document.getElementById('tab-'+j).getAttribute('aria-selected')==='true';});
+  if (e.key==='ArrowRight'){e.preventDefault();selectTab((i+1)%tabNames.length);}
+  if (e.key==='ArrowLeft'){e.preventDefault();selectTab((i-1+tabNames.length)%tabNames.length);}
+});
+
+/* ---------- tab 01 ---------- */
+var p0 = document.getElementById('panel-0');
+if (!foundP) {
+  p0.innerHTML = '<h2 class="fig">No paragraphs found</h2><p class="subnote">This HTML yielded no &lt;p&gt; elements matching a numbered paragraph. The exports are disabled.</p>';
+} else {
+  var eq = (refP!=null && foundP===refP);
+  p0.innerHTML =
+  '<h2 class="fig">Did the app find everything the document has?</h2>'+
+  '<p class="subnote">The HTML was parsed on load; every number below is counted by this page’s code.</p>'+
+  '<div class="tiles">'+
+  '<div class="tile"><div class="num" style="color:'+(refP==null?'#6b655b':(eq?'var(--green)':'var(--red)'))+'">'+foundP+'</div>'+
+  '<div class="lbl">Paragraphs found</div><div class="exp">the document has '+(refP!=null?refP:'no reference count')+
+  (refP!=null&&!eq?' — difference '+(foundP-refP):'')+'</div>'+
+  '<div class="how">How this is computed: every &lt;p&gt; whose text starts “n.” after the cover table; compared with reference.paragraphs.</div></div>'+
+  '<div class="tile"><div class="num" style="color:'+(firstWords==null?'#6b655b':(railFw?'var(--red)':'var(--green)'))+'">'+(firstWords==null?'—':(foundP-railFw))+' <small>of '+(refP!=null?refP:'?')+'</small></div>'+
+  '<div class="lbl">First words match</div><div class="exp">'+(firstWords==null?'no reference in this file':(railFw? railFw+' differ in their first six words':'all match'))+'</div>'+
+  '<div class="how">How this is computed: the first six words of each paragraph against reference.first_words, after normalising quotes and dashes.</div></div>'+
+  '<div class="tile"><div class="num" style="color:var(--red)">0 <small>of '+(refF!=null?refF:'?')+'</small></div>'+
+  '<div class="lbl">Footnotes</div><div class="exp" style="color:var(--red)">this HTML version has none; <a href="#" data-goto="2">see tab 03</a></div>'+
+  '<div class="how">How this is computed: no footnote text or marks exist in this HTML — a limit of the source.</div></div>'+
+  '<div class="tile"><div class="num">'+repairs.length+'</div>'+
+  '<div class="lbl">Spaces</div><div class="exp">'+repairs.length+' inserted where the characters prove one was there, in '+Object.keys(paraRepairs).length+' paragraphs — <a href="#" data-goto="2">tab 03</a></div>'+
+  '<div class="how">How this is computed: four rules (after a full stop, comma, before an opening quote, after an en dash between letters).</div></div>'+
+  '</div>';
+}
+
+/* ---------- tab 02 ---------- */
+var p1 = document.getElementById('panel-1');
+(function(){
+  var html = '<h2 class="fig">What does each paragraph say, and how do I cite it?</h2>'+
+  '<p class="subnote">'+foundP+' numbered paragraphs, with the heading each sits under. Click a row to read it in full.</p>';
+  html += '<button class="closed" id="headBtn" aria-expanded="false"><span class="t">Headings found: '+headings.length+'</span><span class="mono">click to open</span></button>'+
+  '<div id="headBox" hidden><table><caption><span class="tno">TAB.02a</span>'+headings.length+' headings, in document order</caption>'+
+  '<thead><tr><th scope="col">Level</th><th scope="col">Label</th><th scope="col">Heading</th></tr></thead><tbody>'+
+  headings.map(function(h){return '<tr><td>'+(h.isPart?'part (&lt;h2&gt;)':'(&lt;h3&gt;)')+'</td><td>'+esc(h.label)+'</td><td>'+esc(h.heading)+'</td></tr>';}).join('')+
+  '</tbody></table></div>';
+  html += '<table style="margin-top:18px"><caption><span class="tno">TAB.02b</span>'+foundP+' paragraphs found, '+(refP!=null?refP+' expected':'no reference count')+'</caption></table>';
+  html += '<div id="rows"></div>';
+  p1.innerHTML = html;
+  var headBtn = document.getElementById('headBtn');
+  headBtn.addEventListener('click',function(){
+    var open = headBtn.getAttribute('aria-expanded')==='true';
+    headBtn.setAttribute('aria-expanded', String(!open));
+    document.getElementById('headBox').hidden = open;
+  });
+  var rows = document.getElementById('rows');
+  paragraphs.forEach(function(p,i){
+    var btn = document.createElement('button');
+    btn.className='row'; btn.setAttribute('aria-expanded','false');
+    var fl = p.text.slice(0,120);
+    var cut = fl.lastIndexOf(' ');
+    if (p.text.length>120 && cut>60) fl = fl.slice(0,cut)+'…';
+    var chk = p.first_words_match===null ? '<span class="chk" style="color:#6b655b">no ref</span>'
+      : p.first_words_match? '<span class="chk">OK</span>' : '<span class="chk bad">first words differ</span>';
+    btn.innerHTML = '<span class="no">'+p.number+'</span><span class="sec">'+esc(p.section?p.section.heading:'—')+'</span>'+
+      '<span class="fl">'+esc(fl)+'</span>'+chk;
+    var det = document.createElement('div'); det.hidden = true;
+    var prs = paraRepairs[p.number]||[];
+    var refW = (firstWords && firstWords[String(p.number)]!==undefined)? sixWords(firstWords[String(p.number)]).join(' '):null;
+    det.innerHTML = '<div class="detail-inner">'+
+      '<div class="mono" style="margin-bottom:4px">'+esc(p.part? p.part.label+'. '+p.part.heading : '')+(p.part&&p.section?' › ':'')+esc(p.part&&p.section&&p.part.full!==p.section.full?p.section.full:(p.section&&!p.part?p.section.full:''))+'</div>'+
+      '<div class="fulltext">'+markedText(p)+'</div>'+
+      '<div class="w6"><span class="k">First six words — found</span>'+esc(p.firstSix.join(' '))+
+      (refW!=null? '<span class="k" style="margin-top:5px">First six words — reference</span>'+esc(refW)+(p.first_words_match?'':' <span style="color:var(--red)">· differ</span>') : '')+'</div>'+
+      (prs.length? '<div class="pinnote">'+prs.length+' missing space'+(prs.length>1?'s':'')+' restored in this paragraph ('+prs.map(function(r){return r.rule;}).join(', ')+'), marked with a thin red box above.</div>':'')+
+      '<div style="margin-top:10px"><button class="copy" data-cite="'+esc(p.citation)+'">Copy citation</button> <span class="hint" style="margin-left:10px">'+esc(p.citation)+'</span> <span class="hint" style="margin-left:14px"></span></div>'+
+      '</div>';
+    btn.addEventListener('click',function(){
+      var open = btn.getAttribute('aria-expanded')==='true';
+      btn.setAttribute('aria-expanded',String(!open));
+      det.hidden = open;
+    });
+    rows.appendChild(btn); rows.appendChild(det);
+    det.querySelector('.copy').addEventListener('click',function(e){
+      e.stopPropagation();
+      var b=this, c=b.getAttribute('data-cite');
+      var done=function(){ b.textContent='Copied'; setTimeout(function(){b.textContent='Copy citation';},2000); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(c).then(done, function(){fallback();});
+      else fallback();
+      function fallback(){ var ta=document.createElement('textarea'); ta.value=c; document.body.appendChild(ta); ta.select();
+        try{document.execCommand('copy');}catch(_){} document.body.removeChild(ta); done(); }
+    });
+  });
+})();
+
+/* ---------- tab 03 ---------- */
+var p2 = document.getElementById('panel-2');
+(function(){
+  var html = '<h2 class="fig">What did the HTML version lose or change?</h2>'+
+  '<p class="subnote">Three things: the footnotes are gone entirely, some spaces were lost where paragraphs were joined, and the typography uses characters a keyboard cannot type.</p>';
+  /* lost */
+  html += '<h2 class="fig" style="font-size:18px;margin-top:14px">Lost: footnotes — '+(refF!=null?refF:'?')+' in the document, 0 here</h2>'+
+  '<p class="subnote">The document has '+(refF!=null?refF:'an unknown number of')+' footnotes. This HTML has 0: no footnote text, no footnote marks, and the note the title’s asterisk points to is missing. To cite a footnote, use the PDF or Word version.</p>';
+  /* spaces */
+  html += '<h2 class="fig" style="font-size:18px;margin-top:14px">Changed: spaces — '+repairs.length+' restored</h2>';
+  if (repairs.length){
+    html += '<p class="subnote">Counts per rule: '+Object.keys(byRule).map(function(k){return byRule[k]+' '+k;}).join(', ')+'.</p>'+
+    '<table><caption><span class="tno">TAB.03a</span>'+repairs.length+' missing spaces found and restored</caption>'+
+    '<thead><tr><th scope="col" class="r">Paragraph</th><th scope="col">Before</th><th scope="col">After</th><th scope="col">Rule</th></tr></thead><tbody>'+
+    repairs.map(function(r){
+      var ctx = r.ctx;
+      var after = ctx.replace(rules[r.key].re, function(mm,a,b){
+        return (r.key==='sentence')?a+'. '+b:(r.key==='comma')?a+', '+b:(r.key==='quote')?a+' “':a+'– ';
+      });
+      return '<tr class="reprow" data-para="'+r.para+'" style="cursor:pointer"><td class="r">'+r.para+'</td><td>…'+esc(ctx)+'…</td><td>…'+esc(after)+'…</td><td>'+esc(r.rule)+'</td></tr>';
+    }).join('')+'</tbody></table>';
+  }
+  html += '<p class="subnote">Rules restore a space only where the characters prove it was there. Word pairs such as “Giventhe” are not touched; the first-words check catches them only in a paragraph’s first six words.</p>';
+  /* characters */
+  html += '<h2 class="fig" style="font-size:18px;margin-top:14px">Changed: characters</h2>'+
+  '<table><caption><span class="tno">TAB.03b</span>Characters a keyboard search will miss</caption>'+
+  '<thead><tr><th scope="col">Character</th><th scope="col">Count</th><th scope="col">Example</th></tr></thead><tbody>'+
+  chars.filter(function(c){return c.count>0;}).map(function(c){
+    return '<tr><td><span class="mono">'+esc(c.name)+'</span></td><td class="r">'+c.count+'</td><td>…'+esc(c.example)+'…</td></tr>';
+  }).join('')+'</tbody></table>'+
+  '<p class="subnote"><span class="mono">on a keyboard: a hyphen and straight quotes</span><br>Kept exactly as published, in the table and in every export. A search for “business-related” typed with the hyphen key will not find “business\u2011related”: normalise the text before searching it.</p>';
+  p2.innerHTML = html;
+  p2.querySelectorAll('.reprow').forEach(function(tr){
+    tr.addEventListener('click',function(){
+      var n = +tr.getAttribute('data-para');
+      selectTab(1);
+      var rowBtns = p1.querySelectorAll('button.row');
+      paragraphs.forEach(function(pp,i){
+        if (pp.number===n){
+          var b=rowBtns[i];
+          b.setAttribute('aria-expanded','true');
+          b.nextElementSibling.hidden=false;
+          b.scrollIntoView({block:'center'});
+          b.focus();
+        }
+      });
+    });
+  });
+})();
+
+/* ---------- tab 04 ---------- */
+var p3 = document.getElementById('panel-3');
+(function(){
+  var html = '<h2 class="fig">Can I trust this, and can I take it away?</h2>'+
+  '<p class="subnote">Each check says what was compared and what was found; a failed check never hides a result.</p>';
+  html += checks.map(function(c){
+    var label = c.status==='pass'?'pass':c.status==='fail'?'check failed':c.status==='limit'?'source limit':'not run';
+    return '<div class="check"><span class="res '+c.status+'">'+label+'</span><span class="name">'+esc(c.name)+'</span><div class="det">'+c.det+'</div></div>';
+  }).join('');
+  html += '<h2 class="fig" style="font-size:18px;margin-top:26px">Export</h2>'+
+  '<p class="subnote">'+(foundP?'Two files, named after the symbol with slashes replaced by hyphens. The dataset travels with its source, its fields and its known limitations.':'No paragraphs found: exports are disabled.')+'</p>'+
+  (foundP? '<p><button class="exp" id="dlJson">Download JSON</button> <button class="exp" id="dlMd">Download Markdown</button></p>':'');
+  /* elements found */
+  html += '<button class="closed" id="elBtn" aria-expanded="false" style="margin-top:22px"><span class="t">Elements found ('+elements.length+')</span><span class="mono">click to open</span></button>'+
+  '<div id="elBox" hidden><table><caption><span class="tno">TAB.04a</span>Every block element, in document order</caption>'+
+  '<thead><tr><th scope="col">Tag</th><th scope="col">Classified as</th><th scope="col">Text (first 80 characters)</th></tr></thead><tbody>'+
+  elements.map(function(e){
+    return '<tr><td class="mono">&lt;'+e.el.tagName.toLowerCase()+'&gt;</td><td>'+esc(e.cls)+'</td><td>'+esc(e.text.slice(0,80))+'</td></tr>';
+  }).join('')+'</tbody></table></div>';
+  p3.innerHTML = html;
+  var elBtn = document.getElementById('elBtn');
+  elBtn.addEventListener('click',function(){
+    var open = elBtn.getAttribute('aria-expanded')==='true';
+    elBtn.setAttribute('aria-expanded',String(!open));
+    document.getElementById('elBox').hidden = open;
+  });
+  if (foundP){
+    var fname = (D.symbol||'document').replace(/\//g,'-');
+    function download(content, name, type){
+      var blob = new Blob([content],{type:type+';charset=utf-8'});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a'); a.href=url; a.download=name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){URL.revokeObjectURL(url);},2000);
+    }
+    document.getElementById('dlJson').addEventListener('click',function(){
+      download(JSON.stringify(records,null,2), fname+'.json','application/json');
+    });
+    document.getElementById('dlMd').addEventListener('click',function(){
+      var today = new Date().toISOString().slice(0,10);
+      var md = '---\ntitle: "'+(D.title||'').replace(/"/g,'\\"')+'"\nsymbol: '+D.symbol+
+        '\nadopted: '+(hasRef&&D.reference.adopted?D.reference.adopted:'unknown')+
+        '\nsource_url: '+D.doc_url+'\nextracted: '+today+
+        '\nparagraphs_found: '+foundP+'\nparagraphs_expected: '+(refP!=null?refP:'unknown')+
+        '\nfootnotes: no footnotes in this HTML version; the document has '+(refF!=null?refF:'an unknown number of')+'\n---\n\n';
+      elements.forEach(function(e){
+        if (e.cls==='title') md += '# '+e.text+'\n\n';
+        else if (e.cls==='heading'){
+          md += (e.rec.isPart?'## ':'### ')+(e.rec.label? e.rec.label+'. '+e.rec.heading : e.rec.heading)+'\n\n';
+        } else if (e.cls==='paragraph'){
+          var p = e.rec;
+          md += '**'+p.number+'.** '+p.text+'\n\n';
+        }
+      });
+      download(md, fname+'.md','text/markdown');
+    });
+  }
+})();
+
+/* rail goto links */
+document.getElementById('rail').addEventListener('click',function(e){
+  var a = e.target.closest('a[data-goto]');
+  if (a){ e.preventDefault(); selectTab(+a.getAttribute('data-goto')); }
+});
+p0.addEventListener('click',function(e){
+  var a = e.target.closest('a[data-goto]');
+  if (a){ e.preventDefault(); selectTab(+a.getAttribute('data-goto')); }
+});
+
+/* footer */
+document.getElementById('footer').innerHTML =
+  esc(D.source||'')+(D.built?' · built '+esc(D.built):'')+
+  ' · Done by this page’s code; no model was called and nothing left the browser.';
+})();
+</script>
+</body>
+</html>

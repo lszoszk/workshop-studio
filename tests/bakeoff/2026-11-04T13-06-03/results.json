@@ -1,0 +1,31 @@
+[
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "download": true,
+   "text_matches": false
+  },
+  "passed": 3,
+  "total": 7,
+  "errors": [
+   "Failed to execute 'write' on 'Document': missing ) after argument list"
+  ],
+  "network": [],
+  "lines": 1275,
+  "seconds": 113.0,
+  "first_token": 2.0,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 19077,
+  "completion_tokens": 12233,
+  "cost": 0.0306768,
+  "provider": "Mistral"
+ }
+]

@@ -1,0 +1,1275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verbatim finder – UN document paragraphs</title>
+<style>
+:root {
+  --paper: #f4f0e8;
+  --ink: #1d1b18;
+  --rule: #d9d2c3;
+  --red: #9b2335;
+  --green: #2e6b49;
+}
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  background-color: var(--paper);
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 1rem;
+  padding: 1rem;
+}
+@media (max-width: 800px) {
+  body { grid-template-columns: 1fr; }
+  .rail { display: none; }
+  .rail-toggle { display: block; }
+}
+.rail-toggle {
+  display: none;
+  grid-column: 1 / -1;
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+.rail {
+  padding: 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background-color: #fff;
+}
+header {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+header h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+  font-weight: normal;
+}
+header .label {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  margin-right: 1rem;
+}
+header .meta {
+  font-size: 0.9rem;
+  color: #666;
+}
+header .meta a {
+  color: var(--ink);
+  text-decoration: none;
+}
+header .meta a:hover { text-decoration: underline; }
+header .status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+header .status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+header .status-dot.pass { background-color: var(--green); }
+header .status-dot.fail { background-color: var(--red); }
+header .status-dot.limit { background-color: var(--red); }
+.tablist {
+  grid-column: 2;
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--rule);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tablist button {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.5rem 0;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  color: #666;
+}
+.tablist button[aria-selected="true"] {
+  color: var(--red);
+  border-bottom-color: var(--red);
+}
+.tabpanel {
+  grid-column: 2;
+  display: none;
+}
+.tabpanel[aria-hidden="false"] { display: block; }
+.tabpanel h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.2rem;
+  margin: 1.5rem 0 1rem;
+}
+.tabpanel h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  margin: 1rem 0 0.5rem;
+}
+.tabpanel .how {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.2rem;
+}
+.tabpanel .how a {
+  color: var(--ink);
+  text-decoration: none;
+}
+.tabpanel .how a:hover { text-decoration: underline; }
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.tile {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 1rem;
+  background-color: #fff;
+}
+.tile h4 {
+  margin: 0 0 0.5rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  font-weight: normal;
+}
+.tile .number {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.5rem;
+  font-weight: normal;
+  margin: 0;
+  color: var(--ink);
+}
+.tile .number.fail { color: var(--red); }
+.tile .number.limit { color: var(--red); }
+.tile .meta {
+  font-size: 0.9rem;
+  color: #666;
+}
+.tile .meta.fail { color: var(--red); }
+.tile .meta.limit { color: var(--red); }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+table caption {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  text-align: left;
+  margin-bottom: 0.5rem;
+  color: var(--ink);
+}
+table th, table td {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+}
+table th {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #666;
+}
+table th[scope="col"] { text-align: left; }
+table td { vertical-align: top; }
+table td.num { text-align: right; }
+table td .flag {
+  display: inline-block;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+table td .flag.fail { background-color: var(--red); color: #fff; }
+table td .flag.limit { background-color: var(--red); color: #fff; }
+table td .flag.pass { background-color: var(--green); color: #fff; }
+table .repair {
+  background-color: #fff8f8;
+  border: 1px solid var(--red);
+  padding: 0.1rem 0.2rem;
+  border-radius: 2px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+}
+.rail-card {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 1rem;
+  background-color: #fff;
+  margin-bottom: 1rem;
+}
+.rail-card h3 {
+  margin: 0 0 0.5rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+}
+.rail-card .symbol {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  margin: 0;
+}
+.rail-card .title {
+  font-size: 0.9rem;
+  margin: 0.5rem 0 0;
+  color: #666;
+}
+.rail-numbers {
+  display: flex;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.rail-number {
+  flex: 1;
+  text-align: center;
+}
+.rail-number h4 {
+  margin: 0 0 0.2rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.9rem;
+  font-weight: normal;
+}
+.rail-number .number {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+  margin: 0;
+}
+.rail-number .number.fail { color: var(--red); }
+.rail-number .bar {
+  height: 4px;
+  background-color: var(--rule);
+  margin-top: 0.2rem;
+  border-radius: 2px;
+}
+.rail-number .bar.fail { background-color: var(--red); }
+.rail-number .meta {
+  font-size: 0.8rem;
+  color: #666;
+}
+.rail-number .meta.fail { color: var(--red); }
+.headings-box {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin: 1rem 0;
+  background-color: #fff;
+}
+.headings-box[aria-expanded="false"] .headings { display: none; }
+.headings-box button {
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  color: #666;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.headings-box button::after {
+  content: "▼";
+  font-size: 0.7rem;
+}
+.headings-box[aria-expanded="true"] button::after { content: "▲"; }
+.headings {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+.headings ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+.headings li {
+  margin: 0.2rem 0;
+}
+.paragraph-row {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  margin: 0.5rem 0;
+}
+.paragraph-row button {
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 40px 1fr 2fr 80px;
+  gap: 0.5rem;
+  align-items: center;
+}
+.paragraph-row button .num {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  text-align: right;
+}
+.paragraph-row button .section {
+  font-size: 0.9rem;
+  color: #666;
+}
+.paragraph-row button .first-line {
+  font-size: 0.9rem;
+}
+.paragraph-row button .check {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  text-align: right;
+}
+.paragraph-row button .check.fail { color: var(--red); }
+.paragraph-row[aria-expanded="true"] button {
+  border-bottom: 1px solid var(--rule);
+  border-radius: 4px 4px 0 0;
+}
+.paragraph-details {
+  padding: 1rem;
+  background-color: #fff;
+  border-radius: 0 0 4px 4px;
+  display: none;
+}
+.paragraph-row[aria-expanded="true"] .paragraph-details { display: block; }
+.paragraph-details p {
+  margin: 0 0 1rem;
+  white-space: pre-wrap;
+}
+.paragraph-details .first-words {
+  display: flex;
+  gap: 1rem;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+.paragraph-details .first-words .label {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  color: #666;
+}
+.paragraph-details .first-words .found {
+  flex: 1;
+}
+.paragraph-details .first-words .reference {
+  flex: 1;
+  color: var(--red);
+}
+.paragraph-details .repairs {
+  margin: 0.5rem 0;
+}
+.paragraph-details .repairs .repair {
+  background-color: #fff8f8;
+  border: 1px solid var(--red);
+  padding: 0.2rem;
+  border-radius: 2px;
+  margin: 0.2rem 0;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+}
+.paragraph-details .actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.paragraph-details button.copy {
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.paragraph-details button.copy:hover {
+  background-color: var(--rule);
+}
+.check-panel {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 1rem;
+  background-color: #fff;
+  margin: 1rem 0;
+}
+.check-panel h3 {
+  margin: 0 0 1rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+}
+.check-panel ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.check-panel li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.check-panel li:last-child { border-bottom: none; }
+.check-panel .check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.check-panel .check .flag {
+  display: inline-block;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+.check-panel .check .flag.fail { background-color: var(--red); color: #fff; }
+.check-panel .check .flag.pass { background-color: var(--green); color: #fff; }
+.check-panel .check .flag.limit { background-color: var(--red); color: #fff; }
+.check-panel .check .flag.not-run { background-color: #ccc; color: #fff; }
+.check-panel .check .link {
+  font-size: 0.8rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+.check-panel .check .link:hover { text-decoration: underline; }
+.export {
+  margin: 2rem 0;
+}
+.export h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  margin: 1rem 0 0.5rem;
+}
+.export .buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.export button {
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.export button:hover {
+  background-color: var(--rule);
+}
+.export button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.elements-box {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin: 1rem 0;
+  background-color: #fff;
+}
+.elements-box[aria-expanded="false"] .elements { display: none; }
+.elements-box button {
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  color: #666;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.elements-box button::after {
+  content: "▼";
+  font-size: 0.7rem;
+}
+.elements-box[aria-expanded="true"] button::after { content: "▲"; }
+.elements {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+.elements table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.elements th, .elements td {
+  padding: 0.3rem;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.8rem;
+}
+.elements th {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #666;
+}
+.elements .text {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.elements .unclassified {
+  color: var(--red);
+}
+footer {
+  grid-column: 1 / -1;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+}
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<button class="rail-toggle" aria-label="Toggle document rail">☰ DOCUMENT</button>
+<div class="rail">
+  <div class="rail-card">
+    <h3>Document</h3>
+    <p class="symbol" id="rail-symbol"></p>
+    <p class="title" id="rail-title"></p>
+  </div>
+  <div class="rail-numbers">
+    <div class="rail-number">
+      <h4>Paragraphs</h4>
+      <p class="number" id="rail-paragraphs-found"></p>
+      <p class="meta">of <span id="rail-paragraphs-expected"></span></p>
+      <div class="bar" id="rail-paragraphs-bar"></div>
+    </div>
+    <div class="rail-number">
+      <h4>Footnotes</h4>
+      <p class="number limit" id="rail-footnotes-found">0</p>
+      <p class="meta limit">of <span id="rail-footnotes-expected"></span><br>not in this HTML</p>
+    </div>
+  </div>
+  <div class="rail-card">
+    <h3>Checks</h3>
+    <p><a href="#" id="rail-checks-link"><span id="rail-checks-pass"></span> of <span id="rail-checks-total"></span> pass</a></p>
+  </div>
+</div>
+
+<header>
+  <div>
+    <span class="label">UN DOCUMENT · HTML</span>
+    <h1 id="header-title"></h1>
+  </div>
+  <div class="meta">
+    <a id="header-symbol" target="_blank"></a>, adopted <span id="header-adopted"></span>, <span id="header-source"></span>
+  </div>
+  <div class="status">
+    <span class="status-dot" id="header-status-dot"></span>
+    <span id="header-status-text"></span>
+  </div>
+</header>
+
+<ul class="tablist" role="tablist" aria-label="Document tabs">
+  <li role="presentation"><button id="tab-01" role="tab" aria-selected="true" aria-controls="panel-01">01 RESULT</button></li>
+  <li role="presentation"><button id="tab-02" role="tab" aria-selected="false" aria-controls="panel-02">02 PARAGRAPHS</button></li>
+  <li role="presentation"><button id="tab-03" role="tab" aria-selected="false" aria-controls="panel-03">03 LOST & CHANGED</button></li>
+  <li role="presentation"><button id="tab-04" role="tab" aria-selected="false" aria-controls="panel-04">04 CHECKS & EXPORT</button></li>
+</ul>
+
+<div id="panel-01" class="tabpanel" role="tabpanel" aria-labelledby="tab-01" aria-hidden="false">
+  <div class="tiles">
+    <div class="tile">
+      <h4>Paragraphs found</h4>
+      <p class="number" id="tile-paragraphs-found"></p>
+      <p class="meta">the document has <span id="tile-paragraphs-expected"></span></p>
+      <p class="how">How this is computed: <a href="#check-paragraph-count">paragraph count</a></p>
+    </div>
+    <div class="tile">
+      <h4>First words match</h4>
+      <p class="number" id="tile-first-words-match"></p>
+      <p class="meta">of <span id="tile-first-words-expected"></span></p>
+      <p class="how">How this is computed: <a href="#check-first-words">first words</a></p>
+    </div>
+    <div class="tile">
+      <h4>Footnotes</h4>
+      <p class="number limit" id="tile-footnotes-found">0</p>
+      <p class="meta limit">of <span id="tile-footnotes-expected"></span><br>this HTML version has none; see tab 03</p>
+      <p class="how">How this is computed: <a href="#check-footnotes">footnotes</a></p>
+    </div>
+    <div class="tile">
+      <h4>Spaces</h4>
+      <p class="number" id="tile-spaces-repaired"></p>
+      <p class="meta">repaired or flagged</p>
+      <p class="how">How this is computed: <a href="#check-repairs">repairs</a></p>
+    </div>
+  </div>
+</div>
+
+<div id="panel-02" class="tabpanel" role="tabpanel" aria-labelledby="tab-02" aria-hidden="true">
+  <div class="headings-box" aria-expanded="false">
+    <button aria-controls="headings-list">Headings found: <span id="headings-count"></span></button>
+    <div id="headings-list" class="headings"></div>
+  </div>
+  <table>
+    <caption>Numbered paragraphs in this document</caption>
+    <thead>
+      <tr>
+        <th scope="col" class="num">No.</th>
+        <th scope="col">Section</th>
+        <th scope="col">First line</th>
+        <th scope="col">Check</th>
+      </tr>
+    </thead>
+    <tbody id="paragraphs-table"></tbody>
+  </table>
+</div>
+
+<div id="panel-03" class="tabpanel" role="tabpanel" aria-labelledby="tab-03" aria-hidden="true">
+  <h2>Lost: footnotes</h2>
+  <p>The document has <span id="lost-footnotes-expected"></span> footnotes. This HTML has 0: no footnote text, no footnote marks, and the note the title's asterisk points to is missing. To cite a footnote, use the PDF or Word version.</p>
+
+  <h2>Changed: spaces</h2>
+  <p><span id="changed-spaces-count"></span> missing spaces found and restored by rule:</p>
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Paragraph</th>
+        <th scope="col">Before</th>
+        <th scope="col">After</th>
+        <th scope="col">Rule</th>
+      </tr>
+    </thead>
+    <tbody id="changed-spaces-table"></tbody>
+  </table>
+  <p>Rules restore a space only where the characters prove it was there. Word pairs such as "Giventhe" are not touched; the first-words check catches them only in a paragraph's first six words.</p>
+
+  <h2>Changed: characters</h2>
+  <p>A small sample of the characters this HTML version uses:</p>
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Character</th>
+        <th scope="col">Count</th>
+        <th scope="col">Example</th>
+      </tr>
+    </thead>
+    <tbody id="changed-characters-table"></tbody>
+  </table>
+  <p>Kept exactly as published, in the table and in every export. A search for "business-related" typed with the hyphen key will not find "business‑related": normalise the text before searching it. <span style="font-family: ui-monospace, Menlo, Consolas, monospace;">on a keyboard: a hyphen and straight quotes</span></p>
+</div>
+
+<div id="panel-04" class="tabpanel" role="tabpanel" aria-labelledby="tab-04" aria-hidden="true">
+  <div class="check-panel">
+    <h3>Checks</h3>
+    <ul id="checks-list"></ul>
+  </div>
+  <div class="export">
+    <h3>Export</h3>
+    <div class="buttons">
+      <button id="export-json" disabled>Download JSON</button>
+      <button id="export-markdown" disabled>Download Markdown</button>
+    </div>
+    <div class="elements-box" aria-expanded="false">
+      <button aria-controls="elements-list">Elements found (<span id="elements-count"></span>)</button>
+      <div id="elements-list" class="elements"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span id="footer-source"></span>, <span id="footer-built"></span>, and "Done by this page's code; no model was called and nothing left the browser."
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const data = window.WORKSHOP_DATA.html_doc;
+  const doc = new DOMParser().parseFromString(data.html, 'text/html');
+  const body = doc.body;
+  const reference = data.reference || {};
+  const checks = [];
+  const repairs = [];
+  const paragraphs = [];
+  const headings = [];
+  const elements = [];
+  const characters = {
+    'en-dash': { char: '–', count: 0, example: '' },
+    'double-quote': { char: '“”', count: 0, example: '' },
+    'right-single-quote': { char: '’', count: 0, example: '' },
+    'non-breaking-hyphen': { char: '‑', count: 0, example: '' },
+    'non-breaking-space': { char: ' ', count: 0, example: '' }
+  };
+
+  // Classify elements
+  let inCover = true;
+  let currentPart = '';
+  let currentSection = '';
+  let currentHeading = '';
+  let paragraphCount = 0;
+  let headingCount = 0;
+  let committeeLine = '';
+
+  Array.from(body.children).forEach(el => {
+    const tag = el.tagName.toLowerCase();
+    const text = el.textContent.trim();
+    let classified = false;
+
+    if (inCover && tag === 'table') {
+      elements.push({ tag, class: 'cover', text });
+      classified = true;
+      inCover = false;
+    } else if (tag === 'p') {
+      const match = text.match(/^(\d{1,3})\.\s*(.*)$/s);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        let textRaw = match[2].trim();
+        let textClean = textRaw;
+
+        // Repair spaces
+        const repairsHere = [];
+        const rules = [
+          { regex: /([a-z])\.([A-Z])/g, replacement: '$1. $2', name: 'sentence join' },
+          { regex: /([a-z]),([A-Za-z])/g, replacement: '$1, $2', name: 'comma join' },
+          { regex: /([a-z])“/g, replacement: '$1 “', name: 'quote join' },
+          { regex: /–([A-Za-z])/g, replacement: '– $1', name: 'dash join' }
+        ];
+
+        rules.forEach(rule => {
+          let match;
+          while ((match = rule.regex.exec(textClean)) !== null) {
+            const before = textClean.slice(Math.max(0, match.index - 20), match.index);
+            const after = textClean.slice(match.index + match[0].length, match.index + match[0].length + 20);
+            repairsHere.push({
+              paragraph: num,
+              before: before + match[0] + after,
+              after: before + match[0].replace(rule.regex, rule.replacement) + after,
+              rule: rule.name
+            });
+            textClean = textClean.replace(rule.regex, rule.replacement);
+            rule.regex.lastIndex = 0; // Reset for global regex
+          }
+        });
+
+        repairs.push(...repairsHere);
+
+        // Count special characters
+        Object.keys(characters).forEach(key => {
+          const char = characters[key].char;
+          let count = 0;
+          let pos = 0;
+          while ((pos = textClean.indexOf(char, pos)) !== -1) {
+            count++;
+            pos += char.length;
+          }
+          if (count > 0) {
+            characters[key].count += count;
+            if (!characters[key].example) {
+              const start = Math.max(0, pos - 10);
+              const end = Math.min(textClean.length, pos + 10);
+              characters[key].example = textClean.slice(start, end);
+            }
+          }
+        });
+
+        // First words
+        const firstWordsFound = textClean.split(/\s+/).slice(0, 6).join(' ');
+        const firstWordsRef = reference.first_words ? reference.first_words[String(num)] || '' : '';
+        const firstWordsMatch = normaliseForComparison(firstWordsFound) === normaliseForComparison(firstWordsRef);
+
+        paragraphs.push({
+          number: num,
+          text_raw: textRaw,
+          text: textClean,
+          section: currentSection,
+          part: currentPart,
+          first_words_found: firstWordsFound,
+          first_words_reference: firstWordsRef,
+          first_words_match: firstWordsMatch,
+          repairs: repairsHere.length > 0 ? repairsHere : null
+        });
+        elements.push({ tag, class: 'paragraph', text: `para. ${num}: ${textClean.slice(0, 80)}` });
+        classified = true;
+        paragraphCount++;
+      } else if (!classified) {
+        if (text.match(/^Committee on/)) {
+          committeeLine = text;
+          elements.push({ tag, class: 'committee', text });
+          classified = true;
+        } else {
+          elements.push({ tag, class: 'other', text });
+        }
+      }
+    } else if (tag === 'h2') {
+      if (text.match(/^[IVX]+\./)) {
+        const match = text.match(/^([IVX]+)\.\s*(.+)$/);
+        if (match) {
+          currentPart = match[1];
+          currentSection = match[2];
+          currentHeading = text;
+          headings.push({ level: 'part', label: match[1], heading: match[2], text });
+        }
+      } else if (text === data.title.replace(/\s*\*$/, '')) {
+        elements.push({ tag, class: 'title', text });
+        classified = true;
+      } else {
+        currentSection = text;
+        currentHeading = text;
+        headings.push({ level: 'section', heading: text, text });
+      }
+      elements.push({ tag, class: 'heading', text });
+      classified = true;
+      headingCount++;
+    } else if (tag === 'h3') {
+      const match = text.match(/^([A-Z])\.\s*(.+)$/);
+      if (match) {
+        currentSection = `${match[1]}. ${match[2]}`;
+        currentHeading = text;
+        headings.push({ level: 'subsection', label: match[1], heading: match[2], text });
+      } else {
+        currentSection = text;
+        currentHeading = text;
+        headings.push({ level: 'subsection', heading: text, text });
+      }
+      elements.push({ tag, class: 'heading', text });
+      classified = true;
+      headingCount++;
+    }
+
+    if (!classified) {
+      elements.push({ tag, class: 'unclassified', text });
+    }
+  });
+
+  // Checks
+  checks.push({
+    id: 'paragraph-count',
+    name: 'Paragraph count',
+    expected: reference.paragraphs || 'no reference',
+    found: paragraphCount,
+    status: reference.paragraphs === undefined ? 'not-run' : (paragraphCount === reference.paragraphs ? 'pass' : 'fail'),
+    link: '#paragraphs-table'
+  });
+
+  checks.push({
+    id: 'numbering',
+    name: 'Numbering',
+    expected: `1 to ${paragraphCount}`,
+    found: paragraphs.map(p => p.number).join(', '),
+    status: 'pass',
+    details: []
+  });
+  const numbers = paragraphs.map(p => p.number);
+  const uniqueNumbers = [...new Set(numbers)];
+  if (uniqueNumbers.length !== numbers.length) {
+    const duplicates = numbers.filter((n, i) => numbers.indexOf(n) !== i);
+    checks.find(c => c.id === 'numbering').status = 'fail';
+    checks.find(c => c.id === 'numbering').details.push(`Duplicates: ${[...new Set(duplicates)].join(', ')}`);
+  }
+  const min = Math.min(...numbers);
+  const max = Math.max(...numbers);
+  if (min !== 1 || max !== paragraphCount) {
+    checks.find(c => c.id === 'numbering').status = 'fail';
+    checks.find(c => c.id === 'numbering').details.push(`Gaps: expected 1 to ${paragraphCount}, found ${min} to ${max}`);
+  }
+
+  checks.push({
+    id: 'first-words',
+    name: 'First words',
+    expected: `${paragraphs.filter(p => p.first_words_match).length} of ${paragraphs.length}`,
+    found: `${paragraphs.filter(p => !p.first_words_match).length} mismatches`,
+    status: reference.first_words === undefined ? 'not-run' : (paragraphs.every(p => p.first_words_match) ? 'pass' : 'fail'),
+    link: '#paragraphs-table'
+  });
+
+  checks.push({
+    id: 'footnotes',
+    name: 'Footnotes',
+    expected: reference.footnotes || 'no reference',
+    found: 0,
+    status: 'limit',
+    details: ['the HTML version has no footnotes: a limit of the source, not of the app']
+  });
+
+  checks.push({
+    id: 'repairs',
+    name: 'Repairs',
+    expected: `${repairs.length} spaces in ${new Set(repairs.map(r => r.paragraph)).size} paragraphs`,
+    found: `by rule: ${Object.entries(repairs.reduce((acc, r) => { acc[r.rule] = (acc[r.rule] || 0) + 1; return acc; }, {})).map(([k, v]) => `${k} ${v}`).join(', ')}`,
+    status: 'pass',
+    link: '#changed-spaces-table'
+  });
+
+  checks.push({
+    id: 'headings',
+    name: 'Headings',
+    expected: `${headingCount} headings (${headings.filter(h => h.level === 'part').length} parts, ${headings.filter(h => h.level === 'section').length} sections, ${headings.filter(h => h.level === 'subsection').length} subsections)`,
+    found: `${headings.filter(h => h.label).length} glued labels separated`,
+    status: 'pass'
+  });
+
+  checks.push({
+    id: 'nothing-lost',
+    name: 'Nothing lost',
+    expected: `${elements.length} elements classified`,
+    found: `${elements.filter(e => e.class === 'unclassified').length} unclassified`,
+    status: elements.every(e => e.class !== 'unclassified') ? 'pass' : 'fail',
+    link: '#elements-list'
+  });
+
+  checks.push({
+    id: 'export-round-trip',
+    name: 'Export round trip',
+    expected: `${paragraphs.length} records`,
+    found: 'not run',
+    status: 'not-run'
+  });
+
+  // Render
+  function normaliseForComparison(s) {
+    return s.replace(/[“”]/g, '"').replace(/[–‑]/g, '-').replace(/ /g, ' ');
+  }
+
+  // Header
+  document.getElementById('header-title').textContent = data.title;
+  const symbolLink = document.getElementById('header-symbol');
+  symbolLink.textContent = data.symbol;
+  symbolLink.href = data.doc_url;
+  document.getElementById('header-adopted').textContent = reference.adopted || 'unknown';
+  document.getElementById('header-source').textContent = data.source;
+
+  // Rail
+  document.getElementById('rail-symbol').textContent = data.symbol;
+  document.getElementById('rail-title').textContent = data.title.split(' (')[0];
+  document.getElementById('rail-paragraphs-found').textContent = paragraphCount;
+  document.getElementById('rail-paragraphs-expected').textContent = reference.paragraphs || '?';
+  document.getElementById('rail-paragraphs-bar').classList.toggle('fail', paragraphCount !== reference.paragraphs);
+  document.getElementById('rail-footnotes-expected').textContent = reference.footnotes || '?';
+  const checksPass = checks.filter(c => c.status === 'pass').length;
+  const checksTotal = checks.filter(c => c.status !== 'not-run').length;
+  document.getElementById('rail-checks-pass').textContent = checksPass;
+  document.getElementById('rail-checks-total').textContent = checksTotal;
+  document.getElementById('rail-checks-link').href = '#checks-list';
+  document.getElementById('header-status-dot').className = `status-dot ${checksPass === checksTotal ? 'pass' : 'fail'}`;
+  document.getElementById('header-status-text').textContent = `${checksPass} of ${checksTotal} checks pass`;
+
+  // Tiles
+  document.getElementById('tile-paragraphs-found').textContent = paragraphCount;
+  document.getElementById('tile-paragraphs-found').className = `number ${paragraphCount === reference.paragraphs ? '' : 'fail'}`;
+  document.getElementById('tile-paragraphs-expected').textContent = reference.paragraphs || '?';
+  document.getElementById('tile-first-words-match').textContent = paragraphs.filter(p => p.first_words_match).length;
+  document.getElementById('tile-first-words-expected').textContent = paragraphs.length;
+  document.getElementById('tile-footnotes-expected').textContent = reference.footnotes || '?';
+  document.getElementById('tile-spaces-repaired').textContent = repairs.length;
+
+  // Tab 02: Paragraphs
+  const headingsList = document.getElementById('headings-list');
+  headings.forEach(h => {
+    const li = document.createElement('li');
+    li.textContent = h.text;
+    headingsList.appendChild(li);
+  });
+  document.getElementById('headings-count').textContent = headings.length;
+
+  const paragraphsTable = document.getElementById('paragraphs-table');
+  paragraphs.forEach(p => {
+    const row = document.createElement('tr');
+    row.className = 'paragraph-row';
+    row.setAttribute('aria-expanded', 'false');
+    row.innerHTML = `
+      <td class="num">${p.number}</td>
+      <td class="section">${p.section}</td>
+      <td class="first-line">${p.text.slice(0, 120).replace(/\s+/g, ' ')}…</td>
+      <td class="check">${p.first_words_match ? 'OK' : '<span class="flag fail">first words differ</span>'}</td>
+    `;
+    row.addEventListener('click', () => {
+      const expanded = row.getAttribute('aria-expanded') === 'true';
+      row.setAttribute('aria-expanded', !expanded);
+    });
+    row.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const expanded = row.getAttribute('aria-expanded') === 'true';
+        row.setAttribute('aria-expanded', !expanded);
+      }
+    });
+
+    const details = document.createElement('tr');
+    details.className = 'paragraph-details';
+    details.innerHTML = `
+      <td colspan="4">
+        <p>${p.text}</p>
+        <div class="first-words">
+          <span class="label">First six words:</span>
+          <span class="found">${p.first_words_found}</span>
+          <span class="reference">${p.first_words_reference}</span>
+        </div>
+        ${p.repairs ? `<div class="repairs">${p.repairs.map(r => `<div class="repair">${r.before.replace(r.before.slice(r.before.indexOf(r.before.match(r.rule === 'quote join' ? /[a-z]“/ : r.rule === 'dash join' ? /–[A-Za-z]/ : r.rule === 'comma join' ? /[a-z],[A-Za-z]/ : /[a-z]\.[A-Z]/)[0]), r.before.match(r.rule === 'quote join' ? /[a-z]“/ : r.rule === 'dash join' ? /–[A-Za-z]/ : r.rule === 'comma join' ? /[a-z],[A-Za-z]/ : /[a-z]\.[A-Z]/)[0])} → ${r.after.replace(r.after.slice(r.after.indexOf(r.after.match(r.rule === 'quote join' ? /[a-z] “/ : r.rule === 'dash join' ? /– [A-Za-z]/ : r.rule === 'comma join' ? /[a-z], [A-Za-z]/ : /[a-z]\. [A-Z]/)[0]), r.after.match(r.rule === 'quote join' ? /[a-z] “/ : r.rule === 'dash join' ? /– [A-Za-z]/ : r.rule === 'comma join' ? /[a-z], [A-Za-z]/ : /[a-z]\. [A-Z]/)[0])}</div>`).join('')}</div>` : ''}
+        <div class="actions">
+          <button class="copy" data-citation="${data.symbol}, para. ${p.number}">Copy citation</button>
+        </div>
+      </td>
+    `;
+    row.appendChild(details);
+
+    paragraphsTable.appendChild(row);
+  });
+
+  // Copy citation
+  document.querySelectorAll('button.copy').forEach(button => {
+    button.addEventListener('click', () => {
+      navigator.clipboard.writeText(button.dataset.citation).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied';
+        setTimeout(() => { button.textContent = originalText; }, 2000);
+      });
+    });
+  });
+
+  // Tab 03: Lost & Changed
+  document.getElementById('lost-footnotes-expected').textContent = reference.footnotes || '?';
+  document.getElementById('changed-spaces-count').textContent = repairs.length;
+
+  const changedSpacesTable = document.getElementById('changed-spaces-table');
+  repairs.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.paragraph}</td>
+      <td><code>${escapeHtml(r.before)}</code></td>
+      <td><code>${escapeHtml(r.after)}</code></td>
+      <td>${r.rule}</td>
+    `;
+    tr.addEventListener('click', () => {
+      const tab = document.getElementById('tab-02');
+      tab.click();
+      const row = document.querySelector(`.paragraph-row:nth-child(${r.paragraph + 1})`);
+      if (row) {
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        row.setAttribute('aria-expanded', 'true');
+      }
+    });
+    changedSpacesTable.appendChild(tr);
+  });
+
+  const changedCharactersTable = document.getElementById('changed-characters-table');
+  Object.entries(characters).forEach(([key, { char, count, example }]) => {
+    if (count > 0) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${char}</td>
+        <td>${count}</td>
+        <td><code>${escapeHtml(example)}</code></td>
+      `;
+      changedCharactersTable.appendChild(tr);
+    }
+  });
+
+  // Tab 04: Checks & Export
+  const checksList = document.getElementById('checks-list');
+  checks.forEach(check => {
+    const li = document.createElement('li');
+    const statusClass = check.status === 'pass' ? 'pass' : check.status === 'limit' ? 'limit' : check.status === 'not-run' ? 'not-run' : 'fail';
+    li.innerHTML = `
+      <span>${check.name}</span>
+      <span class="check">
+        <span class="flag ${statusClass}">${check.status}</span>
+        ${check.link ? `<a href="${check.link}" class="link">details</a>` : ''}
+      </span>
+    `;
+    if (check.details && check.details.length > 0) {
+      const details = document.createElement('div');
+      details.style.marginTop = '0.5rem';
+      details.style.fontSize = '0.8rem';
+      details.style.color = '#666';
+      details.textContent = check.details.join('; ');
+      li.appendChild(details);
+    }
+    checksList.appendChild(li);
+  });
+
+  // Export
+  const exportJsonButton = document.getElementById('export-json');
+  const exportMarkdownButton = document.getElementById('export-markdown');
+  if (paragraphs.length > 0) {
+    exportJsonButton.disabled = false;
+    exportMarkdownButton.disabled = false;
+
+    exportJsonButton.addEventListener('click', () => {
+      const json = paragraphs.map(p => ({
+        symbol: data.symbol,
+        paragraph: p.number,
+        section: p.section,
+        part: p.part,
+        text: p.text,
+        text_raw: p.text_raw,
+        first_words_match: p.first_words_match,
+        citation: `${data.symbol}, para. ${p.number}`,
+        doc_url: data.doc_url,
+        limitations: `no footnotes in this HTML version; the document has ${reference.footnotes || '?'}`
+      }));
+      const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.symbol.replace(/\//g, '-') + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+
+      // Check export round trip
+      const parsed = JSON.parse(JSON.stringify(json));
+      checks.find(c => c.id === 'export-round-trip').found = `${parsed.length} records`;
+      checks.find(c => c.id === 'export-round-trip').status = parsed.length === paragraphs.length ? 'pass' : 'fail';
+      const checkItem = checksList.querySelector(`li:nth-child(${checks.findIndex(c => c.id === 'export-round-trip') + 1}) .flag`);
+      checkItem.className = `flag ${parsed.length === paragraphs.length ? 'pass' : 'fail'}`;
+      checkItem.textContent = parsed.length === paragraphs.length ? 'pass' : 'fail';
+    });
+
+    exportMarkdownButton.addEventListener('click', () => {
+      const frontMatter = `---
+title: "${data.title.replace(/"/g, '\\"')}"
+symbol: "${data.symbol}"
+adopted: "${reference.adopted || 'unknown'}"
+source_url: "${data.doc_url}"
+extracted: "${new Date().toISOString().split('T')[0]}"
+paragraphs_found: ${paragraphCount}
+paragraphs_expected: ${reference.paragraphs || '?'}
+footnotes: "no footnotes in this HTML version; the document has ${reference.footnotes || '?'}"
+---`;
+
+      const parts = {};
+      paragraphs.forEach(p => {
+        if (!parts[p.part]) parts[p.part] = [];
+        parts[p.part].push(p);
+      });
+
+      let markdown = frontMatter + '\n\n';
+      Object.entries(parts).forEach(([part, paras]) => {
+        const partHeading = headings.find(h => h.level === 'part' && h.label === part);
+        markdown += `## ${partHeading ? partHeading.text : part}\n\n`;
+        paras.forEach(p => {
+          const sectionHeading = headings.find(h => h.text === p.section);
+          if (sectionHeading && sectionHeading.level === 'section') {
+            markdown += `### ${p.section}\n\n`;
+          } else if (sectionHeading && sectionHeading.level === 'subsection') {
+            markdown += `#### ${p.section}\n\n`;
+          }
+          markdown += `**${p.number}.** ${p.text}\n\n`;
+        });
+      });
+
+      const blob = new Blob([markdown], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.symbol.replace(/\//g, '-') + '.md';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  // Elements
+  const elementsList = document.getElementById('elements-list');
+  const elementsTable = document.createElement('table');
+  elementsTable.innerHTML = `
+    <thead>
+      <tr>
+        <th scope="col">Tag</th>
+        <th scope="col">Classified as</th>
+        <th scope="col">Text</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+  const elementsTbody = elementsTable.querySelector('tbody');
+  elements.forEach(e => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${e.tag}</td>
+      <td class="${e.class === 'unclassified' ? 'unclassified' : ''}">${e.class}</td>
+      <td class="text">${escapeHtml(e.text)}</td>
+    `;
+    elementsTbody.appendChild(tr);
+  });
+  elementsList.appendChild(elementsTable);
+  document.getElementById('elements-count').textContent = elements.length;
+
+  // Footer
+  document.getElementById('footer-source').textContent = data.source;
+  document.getElementById('footer-built').textContent = new Date().toISOString().split('T')[0];
+
+  // Tabs
+  const tablist = document.querySelector('.tablist');
+  const tabpanels = document.querySelectorAll('.tabpanel');
+  tablist.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+      const currentIndex = tabs.findIndex(tab => tab.getAttribute('aria-selected') === 'true');
+      let newIndex;
+      if (e.key === 'ArrowRight') {
+        newIndex = (currentIndex + 1) % tabs.length;
+      } else {
+        newIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+      }
+      tabs[currentIndex].setAttribute('aria-selected', 'false');
+      tabs[currentIndex].setAttribute('tabindex', '-1');
+      tabs[newIndex].setAttribute('aria-selected', 'true');
+      tabs[newIndex].setAttribute('tabindex', '0');
+      tabs[newIndex].focus();
+      tabpanels[currentIndex].setAttribute('aria-hidden', 'true');
+      tabpanels[newIndex].setAttribute('aria-hidden', 'false');
+    }
+  });
+
+  tablist.querySelectorAll('[role="tab"]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+      const currentIndex = tabs.findIndex(t => t === tab);
+      tabs.forEach((t, i) => {
+        t.setAttribute('aria-selected', i === currentIndex ? 'true' : 'false');
+        t.setAttribute('tabindex', i === currentIndex ? '0' : '-1');
+        tabpanels[i].setAttribute('aria-hidden', i !== currentIndex);
+      });
+    });
+  });
+
+  // Rail toggle
+  const railToggle = document.querySelector('.rail-toggle');
+  railToggle.addEventListener('click', () => {
+    const rail = document.querySelector('.rail');
+    rail.style.display = rail.style.display === 'none' ? 'block' : 'none';
+  });
+});
+
+function escapeHtml(unsafe) {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+</script>
+</body>
+</html>

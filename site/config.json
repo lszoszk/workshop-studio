@@ -144,10 +144,8 @@
      "blurb": "40 pages kept the way a research team keeps a wiki: sources, concepts, entities, questions and open disagreements, every claim pinned to a verified quotation. Attached, your app gets the wiki and the library behind it"},
     {"key": "library", "kind": "lib", "label": "Library: neurotechnology and justice (10 PDFs)",
      "blurb": "The Secretary-General's 2026 report, a UNODC–INTERPOL paper, a civil-society submission, a national human rights institution's report, two journal articles, three General Comments, and a 2024 Advisory Committee report not yet in the wiki. Attached, your app gets every passage with its page"},
-    {"key": "pdf_text", "kind": "pdf", "label": "CESCR General comment No. 27 (PDF)", "pdf": "files/E_C.12_GC_27.pdf",
-     "blurb": "A UN document as a PDF. Attached, your app gets its text page by page, as a PDF converter extracts it"},
-    {"key": "pdf_text_2", "kind": "pdf", "label": "CCPR General comment No. 32 (PDF)", "pdf": "files/CCPR_C_GC_32.pdf",
-     "blurb": "A second UN document as a PDF: the Human Rights Committee on fair trial, 2007. Attached, your app gets its text page by page, from the same converter"}
+    {"key": "html_doc", "kind": "html", "label": "CESCR General comment No. 27 (HTML)", "page": "files/E_C.12_GC_27.html",
+     "blurb": "A UN document as OHCHR publishes it on the web. Attached, your app gets its HTML exactly as published"}
   ],
   "trap": {
     "ask": "Quote paragraph 97 of General comment No. 27 (2025) of the UN Committee on Economic, Social and Cultural Rights, and give the document symbol.",
@@ -170,6 +168,10 @@
       "truth": "hrc_resolutions"
     },
     "pdf_text": {
+      "ask": "How many numbered paragraphs does General comment No. 27 (2025) of the UN Committee on Economic, Social and Cultural Rights have, and how many footnotes? Answer with two numbers and one sentence.",
+      "truth": "pdf_count"
+    },
+    "html_doc": {
       "ask": "How many numbered paragraphs does General comment No. 27 (2025) of the UN Committee on Economic, Social and Cultural Rights have, and how many footnotes? Answer with two numbers and one sentence.",
       "truth": "pdf_count"
     }

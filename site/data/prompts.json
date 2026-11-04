@@ -67,23 +67,24 @@
       "id": "s7-4-extract",
       "session": "S8",
       "minute": 10,
-      "dataset": "pdf_text",
+      "dataset": "html_doc",
       "builds_on": null,
-      "title": "Paragraphs out of a PDF",
-      "blurb": "Turn a UN document's raw text into numbered paragraphs, and check them",
-      "prompt": "Here is the raw text of a UN document, as a PDF converter extracted it, page by page. Build a tool that splits it into its numbered paragraphs (1, 2, 3 …) and removes the page headers and footers. Do not try to separate the footnotes in this version: flag every page where footnote text may sit inside a paragraph. On the left, a card for the document with the paragraphs found next to the number the document really has, and the number of pages flagged. On the right, one question per tab. Tab 01 Result: the counts and how they are computed. Tab 02 Paragraphs: a table with each paragraph's number and first line, marking every paragraph whose first words differ from the reference or that may contain footnote text; clicking a row shows the full paragraph. Tab 03 Flagged pages: each flagged page with the lines that look like footnote text. Tab 04 Checks & method: every check the tool ran on itself, and a download of the paragraphs as CSV.",
+      "title": "Paragraphs out of a UN document",
+      "blurb": "Turn a General Comment as published on the web into numbered paragraphs you can check, cite and reuse",
+      "prompt": "Here is a UN document as OHCHR publishes it in HTML. Build a tool that turns it into its numbered paragraphs (1, 2, 3 …), each with the section heading it sits under, and checks itself against the reference the file carries. Show what the HTML version lacks or damaged. On the left, a card for the document with the paragraphs found next to the number the document really has. On the right, one question per tab. Tab 01 Result: the counts and how they are computed. Tab 02 Paragraphs: a table with each paragraph's number, section and first line; clicking a row shows the full paragraph and a citation to copy. Tab 03 Lost & changed: what this version of the document does not have, starting with its footnotes, and what its conversion changed. Tab 04 Checks & export: every check the tool ran on itself, and a download of the paragraphs as JSON and as Markdown.",
       "planning": "planning/s7-4-extract.json",
-      "lesson": "Give the machine the text; keep the document for the record. A converter damages text in four ways (order, breakage, loss, noise), and a script only repairs the damage you tell it about.",
+      "lesson": "The format decides half the work. HTML gives the paragraphs almost for free and loses the footnotes; a PDF keeps everything as text without structure; a Word file keeps the footnotes as structure. A dataset you can trust is made from more than one of them, and checked.",
       "checks": {
         "no_console_errors": true,
         "no_network": true,
         "uses_workshop_data": true,
         "table_min_rows": 30,
         "text_contains": [
-          "90"
+          "90",
+          "141"
         ],
         "download": true,
-        "text_matches": "(?i)pages? flagged|flagged pages?"
+        "text_matches": "(?i)markdown"
       }
     },
     {
@@ -104,7 +105,9 @@
           "CCPR/C/GC/32",
           "E/C.12/GC/27"
         ]
-      }
+      },
+      "hidden": true,
+      "bakeoff": false
     },
     {
       "id": "s7-6-model-on-flagged-pages",
@@ -125,7 +128,9 @@
           "Check the flagged pages"
         ],
         "text_matches": "(?i)leave the browser|left the browser|sent to the model"
-      }
+      },
+      "hidden": true,
+      "bakeoff": false
     },
     {
       "id": "s8-1-verbatim",

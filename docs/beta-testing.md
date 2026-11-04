@@ -27,7 +27,7 @@ Session 7 (pick *Session 7* at the top):
 
 Session 8 (pick *Session 8*):
 
-5. *Paragraphs out of a PDF*, then the next step *Add a second document* (drag *CCPR General comment No. 32* into the chat). The second document is meant to show where the pipeline breaks.
+5. *Paragraphs out of a UN document*: drag *CESCR General comment No. 27 (HTML)* into the chat and build it. The web version of the document gives the paragraphs almost for free, but its footnotes are missing: check whether the app says so, and try the JSON and Markdown downloads. Then *Suggest improvements* (it needs a seat code).
 6. *Verbatim finder for General Comments*: search for something from your own work and copy a citation.
 7. *A research wiki on neurotechnology and justice*: open a page and click a citation. The PDF should open next to the app, at the right page, with the quoted passage marked.
 
@@ -37,7 +37,7 @@ Use *Feedback* in the footer. Please write what you tried, what you expected and
 
 ## Known limitations
 
-- The steps that call a model from inside an app (*A model for the pages that fail*, and *Ask* and *Ingest* in the wiki) need a seat code; in recorded mode they say so.
+- The steps that call a model (*Suggest improvements*, and *Ask* and *Ingest* in the wiki) need a seat code; in recorded mode they say so.
 - *Send to wall* needs a seat code as well.
 - Firefox has not been tested yet.
 - The data are snapshots (the UN Human Rights Index on 1 November 2026, the General Comments on 1 November 2026), so a figure may differ from today's UN websites.

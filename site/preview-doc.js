@@ -4,7 +4,7 @@
    Shared by the studio (studio.js) and the gallery viewer (gallery/view.html). */
 window.PreviewDoc = (function () {
   'use strict';
-  const DATASETS = ['uhri', 'gc', 'hrc', 'pdf_text', 'pdf_text_2', 'library', 'wiki'];
+  const DATASETS = ['uhri', 'gc', 'hrc', 'pdf_text', 'pdf_text_2', 'html_doc', 'library', 'wiki'];
   const CSP = "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; connect-src 'none'; form-action 'none'\">";
 
   const CHART_CDN = /<script\b[^>]*\bsrc=["']https?:\/\/[^"']*\bchart(?:\.js|\.umd|\.min)[^"']*["'][^>]*>\s*<\/script>/gi;

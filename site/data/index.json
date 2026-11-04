@@ -1220,6 +1220,10 @@
   "pdf_text_2": {
    "file": "pdf_text_2.json",
    "count": 18
+  },
+  "html_doc": {
+   "file": "html_doc.json",
+   "count": 1
   }
  }
 }

@@ -1941,7 +1941,7 @@
     const used = new Set(chainOf(v).map((x) => x.promptId));
     const built = new Set(S.versions.map((x) => x.promptId));
     const live = S.route && S.route.type !== 'replay';
-    const mine = (p) => p.session === S.session && p.id !== S.pendingPromptId && !(S.planning && S.planning.p.id === p.id);
+    const mine = (p) => p.session === S.session && !p.hidden && p.id !== S.pendingPromptId && !(S.planning && S.planning.p.id === p.id);
     // Hick's law: a few suggestions at a time, never the whole list
     // a next step continues this app; it may bring a file of its own (a second document to add)
     const next = v ? S.prompts.filter((p) => mine(p) && p.builds_on && p.builds_on !== 'any' && !used.has(p.id) && used.has(p.builds_on)).slice(0, 2) : [];
@@ -2116,6 +2116,7 @@
   async function openFile(key) {
     const f = fileMeta(key);
     if (f.kind === 'pdf') { window.open(f.pdf, '_blank', 'noopener'); return; }
+    if (f.kind === 'html') { window.open(f.page, '_blank', 'noopener'); return; }
     if (f.kind === 'wiki') {
       const w = await dataParsed(key);
       openDrawer(fileLabel(key));

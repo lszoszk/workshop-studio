@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One document, three formats · Garage Research</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root { --paper: #f4f0e8; --ink: #1d1b18; --muted: #57524a; --rule: #d9d2c3; --red: #9b2335; --green: #2f6b3a;
+    --serif: Georgia, "Iowan Old Style", "Times New Roman", serif; --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.45 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+  .slide { max-width: 1280px; min-height: 100vh; margin: 0 auto; padding: 40px 56px 28px; display: grid; grid-template-rows: auto 1fr auto; gap: 22px; }
+  .kicker { font: 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--red); }
+  h1 { font: 400 40px/1.15 var(--serif); margin: 8px 0 0; }
+  table { border-collapse: collapse; width: 100%; align-self: start; }
+  caption { text-align: left; font: 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding-bottom: 10px; }
+  th, td { text-align: left; vertical-align: top; padding: 14px 16px 14px 0; border-bottom: 1px solid var(--rule); }
+  thead th { font: 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid var(--ink); }
+  tbody th { font: 400 24px/1.2 var(--serif); width: 15%; }
+  tbody th small { display: block; font: 13px/1.3 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: var(--muted); margin-top: 4px; }
+  .big { font: 400 30px/1 var(--serif); display: block; margin-bottom: 4px; }
+  .bad { color: var(--red); } .good { color: var(--green); }
+  .work { font: 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+  .db { border-left: 3px solid var(--red); padding: 4px 0 4px 16px; font: 400 21px/1.35 var(--serif); margin: 0; }
+  footer { border-top: 1px solid var(--rule); padding-top: 10px; color: var(--muted); font-size: 13px; }
+  footer a { color: var(--red); }
+  @media (max-width: 860px) { .slide { padding: 24px 16px; } h1 { font-size: 30px; } table, thead, tbody, tr, th, td { display: block; } thead { display: none; } tbody th { width: auto; padding-bottom: 4px; border: 0; } td { padding: 4px 0; border: 0; } tr { border-bottom: 1px solid var(--rule); padding: 10px 0; } }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header>
+    <div class="kicker">Session 8 · One document, three formats</div>
+    <h1>The format decides half the work</h1>
+  </header>
+  <table>
+    <caption>CESCR General comment No. 27 (E/C.12/GC/27), as OHCHR publishes it: 90 numbered paragraphs, 141 footnotes</caption>
+    <thead><tr><th scope="col">Format</th><th scope="col">Paragraphs</th><th scope="col">Footnotes</th><th scope="col">What it damages</th><th scope="col">Work to check and repair</th></tr></thead>
+    <tbody>
+      <tr>
+        <th scope="row">PDF<small>as a converter extracts it</small></th>
+        <td><span class="big">90</span>after six rules: headers, footers, two forms of number, headings, paragraphs across pages</td>
+        <td><span class="big">141</span>in the text, without structure: 12 numbers pushed to the foot of the page; builds lost the count, or the model ran out of its answer budget</td>
+        <td>order, breakage, loss, noise</td>
+        <td><span class="work bad">High</span></td>
+      </tr>
+      <tr>
+        <th scope="row">HTML<small>the web version</small></th>
+        <td><span class="big good">90</span>each paragraph is its own element: one rule finds them all</td>
+        <td><span class="big bad">0</span>the footnotes are not in the file at all</td>
+        <td>every number glued to its text; 78 words glued together in 38 paragraphs; non-breaking hyphens in 7</td>
+        <td><span class="work">Low</span>, and the footnotes cannot be recovered</td>
+      </tr>
+      <tr>
+        <th scope="row">Word<small>the .docx file</small></th>
+        <td><span class="big good">90</span>each a Word paragraph in the UN's body-text style; older documents and other committees style them differently</td>
+        <td><span class="big good">141</span>each a marked element at its exact place in the text</td>
+        <td>little; the structure is there</td>
+        <td><span class="work">Medium</span>: Word's XML has to be read</td>
+      </tr>
+    </tbody>
+  </table>
+  <div>
+    <p class="db">The UN Human Rights Database: paragraph numbers from the PDF, footnotes from Word, then audits and repairs over eleven versions.</p>
+    <footer>Measured on 4 November 2026 on the three versions OHCHR publishes for E/C.12/GC/27 (treaty body database, Download.aspx). The HTML was compared paragraph by paragraph with the <a href="https://lszoszk.github.io/generalcomments/">UN Human Rights Database</a>: 45 of 90 paragraphs identical, 38 differing only by missing spaces, 7 by the hyphen character. The PDF figures come from the workshop's extraction builds of 3 and 4 November.</footer>
+  </div>
+</div>
+</body>
+</html>

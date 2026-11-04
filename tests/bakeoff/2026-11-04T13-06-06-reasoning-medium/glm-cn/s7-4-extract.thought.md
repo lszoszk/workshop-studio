@@ -1,0 +1,1 @@
+Build the full app per spec. Single HTML file, four tabs, left rail, parsing pipeline. Keep under 1500 lines.

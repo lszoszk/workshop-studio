@@ -415,9 +415,9 @@ def test_layout_holds_on_a_small_laptop(base_url, pw, browser, engine):
         b.close()
 
 
-def test_extraction_from_raw_pdf_text(base_url, browser):
-    """The recorded 'Paragraphs out of a PDF' app runs on the raw page text and checks itself
-    against the reference shipped with it."""
+def test_extraction_from_html(base_url, browser):
+    """The recorded 'Paragraphs out of a UN document' app runs on the HTML as OHCHR publishes it, checks
+    itself against the reference shipped with it, and says the footnotes are missing."""
     if not (SITE / "replay/claude/s7-4-extract.md").exists():
         pytest.skip("no recording for s7-4-extract yet")
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
@@ -426,12 +426,16 @@ def test_extraction_from_raw_pdf_text(base_url, browser):
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.goto(base_url + "?via=replay&planpace=1&stage=s8&country=Kenya")   # the extraction is in Session 8
     started(page)
-    send(page, "Paragraphs out of a PDF", "pdf_text", 1)
+    send(page, "Paragraphs out of a UN document", "html_doc", 1)
     body = app_frame(page).locator("body")
     body.get_by_text("E/C.12/GC/27").first.wait_for(timeout=20000)
     text = body.inner_text()
-    assert re.search(r"90\s*(/|of)\s*90", text, re.I), text[:400]
-    assert page.locator(".lesson").inner_text().count("four ways") == 1
+    assert re.search(r"90\s*(paragraphs\s*)?(/|of)\s*90", text, re.I), text[:400]
+    assert "141" in text, text[:400]                                     # the footnotes the HTML lacks
+    assert page.locator(".lesson").inner_text().count("format decides") == 1
+    # the PDF's next steps are hidden: the extraction ends here, with Suggest improvements when live
+    nexts = page.locator("#suggest button b").all_inner_texts()
+    assert "Add a second document" not in nexts and "A model for the pages that fail" not in nexts, nexts
     assert not errors, errors
     ctx.close()
 
@@ -505,9 +509,9 @@ def test_session8_offers_its_apps_first(base_url, browser):
     page.goto(base_url + "?via=replay&planpace=1&stage=s8&country=Kenya")
     started(page)
     titles = page.locator("#suggest button b").all_inner_texts()
-    assert titles[:3] == ["Paragraphs out of a PDF", "Verbatim finder for General Comments", "A research wiki on neurotechnology and justice"], titles
+    assert titles[:3] == ["Paragraphs out of a UN document", "Verbatim finder for General Comments", "A research wiki on neurotechnology and justice"], titles
     assert "Check an AI briefing" not in titles
-    send(page, "Paragraphs out of a PDF", "pdf_text", 1)
+    send(page, "Paragraphs out of a UN document", "html_doc", 1)
     send(page, "Verbatim finder", "gc", 2)
     send(page, "A research wiki", "wiki", 3)
     send(page, "Check an AI briefing", "hrc", 4)
@@ -551,8 +555,8 @@ def test_open_a_file_code_view_and_dark_mode(base_url, browser):
     csv = Path(dl.value.path()).read_text(encoding="utf-8-sig")
     assert csv.startswith("id,symbol,doc_url") and csv.count("\r\nfa") + 1 > 0
     assert dl.value.suggested_filename == "un-recommendations-kenya.csv"
-    # the PDF opens in the browser
-    assert page.locator("#shelf .fcard[data-key=pdf_text] .ficon").inner_text() == "PDF"
+    # the UN document is the HTML OHCHR publishes; it opens in the browser
+    assert page.locator("#shelf .fcard[data-key=html_doc] .ficon").inner_text() == "HTML"
     send(page, DASHBOARD, "uhri", 1)
     page.click("#viewCode")
     assert page.is_visible("#codeView") and "<!doctype html>" in page.inner_text("#codeText").lower()
@@ -653,35 +657,6 @@ def test_the_wiki_links_every_paragraph_to_its_pdf_page(base_url, browser):
         built(page, 2)
         app_frame(page).get_by_role("tab", name=re.compile("map", re.I)).click()
         assert app_frame(page).locator("svg circle, svg rect, svg polygon, svg path").count() >= 40   # 40 pages, any shape
-    ctx.close()
-
-
-def test_the_extraction_grows_to_a_second_document(base_url, browser):
-    """Session 8: the extraction app, then "Add a second document" with CCPR GC 32 dragged in (the app
-    gets both files, though its code never names the second), then the model step, which in recorded
-    mode cannot call a model and says so."""
-    if not (SITE / "replay/claude/s7-6-model-on-flagged-pages.md").exists():
-        pytest.skip("no recording for the extraction's next steps")
-    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
-    page = ctx.new_page()
-    errors = []
-    page.on("pageerror", lambda e: errors.append(str(e)))
-    page.goto(base_url + "?via=replay&planpace=1&stage=s8&country=Kenya")
-    started(page)
-    send(page, "Paragraphs out of a PDF", "pdf_text", 1)
-    pick(page, "Add a second document")
-    assert "CCPR General comment No. 32" in page.inner_text("#needs")
-    add_file(page, "pdf_text_2")
-    page.click("#sendBtn")
-    built(page, 2)
-    body = app_frame(page).locator("body")
-    body.get_by_text("CCPR/C/GC/32").first.wait_for(timeout=20000)
-    assert re.search(r"17\s*of\s*18", body.inner_text()), body.inner_text()[:600]     # GC 32: pages flagged
-    send(page, "A model for the pages that fail", None, 3)
-    app_frame(page).get_by_text("CCPR/C/GC/32").first.click()
-    app_frame(page).get_by_role("tab", name=re.compile("flagged", re.I)).click()   # the step sits with the flagged pages
-    assert re.search(r"\d+ pages? will leave the browser", app_frame(page).locator("body").inner_text(), re.I)
-    assert not errors, errors
     ctx.close()
 
 
@@ -1009,8 +984,8 @@ def test_a_gallery_app_comes_into_the_studio(base_url, browser):
     built(page, 1)
     assert "from=" not in page.url
     assert page.get_attribute("#sessionSwitch [data-session=S8]", "aria-selected") == "true"
-    assert "From the gallery: Paragraphs out of a PDF" in page.inner_text("#log")
-    app_frame(page).get_by_text(re.compile(r"pages? flagged", re.I)).first.wait_for(timeout=20000)
+    assert "From the gallery: Paragraphs out of a UN document" in page.inner_text("#log")
+    app_frame(page).get_by_text(re.compile(r"141")).first.wait_for(timeout=20000)
     work = page.evaluate("JSON.parse(localStorage.getItem('ws:work:guest'))")
     assert work["versions"][0]["sent"].startswith("Build this app.") and "```html" in work["versions"][0]["reply"]
     page.goto(base_url + "?via=replay&country=Kenya&from=nobody%2Fnothing")

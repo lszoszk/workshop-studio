@@ -44,7 +44,7 @@ AXES = [
 def builds():
     out = []
     runs = dict(RUNS)
-    for d in sorted(B.glob("2026-11-04T1[1-9]-*")):   # the new PDF plan, built by the other models
+    for d in sorted(B.glob("2026-11-04T1[12]-*")):   # the new PDF plan (11:xx) and the dashboards (12:xx); the HTML builds (13:xx) are another exercise
         runs[d.name] = "new-pdf:" + (d.name.split("reasoning-")[-1] if "reasoning-" in d.name else "none")
     for run, kind in runs.items():
         f = B / run / "results.json"

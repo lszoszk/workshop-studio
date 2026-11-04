@@ -183,6 +183,7 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 .filechip button { border: 0; background: none; color: inherit; cursor: pointer; padding: 0 2px; font-size: 15px; line-height: 1; }
 .ficon { flex: none; font: 700 9px/1 system-ui, sans-serif; letter-spacing: .03em; color: #fff; border-radius: 3px; padding: 3px 3px; }
 .ficon.pdf { background: #c0392b; }
+.ficon.html { background: #2c5f8a; }
 .ficon.csv { background: #2e8b57; }
 .ficon.lib { background: #7a3e9d; }
 .ficon.wiki { background: #8a5a00; }
