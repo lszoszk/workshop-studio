@@ -792,7 +792,43 @@
     }
   }
 
+  /* ---------- feedback: the tester's words and the page's own context, never data or an app's code ---------- */
+
+  function feedbackContext() {
+    const v = currentVersion();
+    const m = S.config.models[S.model] || {};
+    return {
+      version: (document.querySelector('script[src^="studio.js"]') || {}).src?.split('v=')[1] || '',
+      session: S.session, route: S.route ? S.route.id : '', model: m.label || S.model || '', country: S.country || '',
+      app: v ? `v${v.n} · ${titleOf(v.html)}${v.promptId ? ' · ' + v.promptId : ''} · ${v.label || ''}` : 'no app yet',
+      error: S.lastAppError || '', browser: navigator.userAgent.replace(/^Mozilla\/5\.0 /, ''), screen: `${innerWidth}×${innerHeight}`,
+    };
+  }
+
+  function openFeedback() {
+    const d = $('feedbackDialog'), ctx = feedbackContext();
+    $('feedbackErr').hidden = true;
+    $('feedbackCtx').innerHTML = Object.entries(ctx).filter(([, x]) => x).map(([k, x]) => `<li><b>${esc(k)}</b> ${esc(x)}</li>`).join('');
+    d.onclose = async () => {
+      const text = $('feedbackText').value.trim();
+      if (d.returnValue !== 'send' || !text) return;
+      const base = S.route && S.route.type === 'server' ? S.route.base : (S.config.routes.find((r) => r.type === 'server') || {}).base;
+      try {
+        const res = await fetch(base + '/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ seat: S.seatCode || null, text, context: ctx }) });
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'not sent');
+        $('feedbackText').value = '';
+        note('<b>Thank you.</b> Your message went to the facilitator.');
+      } catch (e) {
+        note('Your message could not be sent (' + esc(e.message) + '). It is still in the Feedback box; try again, or tell the facilitator.');
+      }
+    };
+    d.showModal();
+    $('feedbackText').focus();
+  }
+
   function showAppError(m) {
+    S.lastAppError = String(m.message || '').slice(0, 200);
     const box = $('appError');
     const chain = chainOf(currentVersion());
     let fixes = 0;
@@ -2279,6 +2315,7 @@
   $('viewCode').onclick = () => setView('code');
   $('takeHomeBtn').onclick = takeFurther;
   $('tourBtn').onclick = () => Tour.start();
+  $('feedbackBtn').onclick = openFeedback;
   $('themeBtn').onclick = toggleTheme;
   $('stopBtn').onclick = () => S.ctrl && S.ctrl.abort();
   $('countrySelect').onchange = (e) => changeCountry(e.target.value);

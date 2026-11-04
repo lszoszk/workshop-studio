@@ -154,6 +154,8 @@ What the apps did (1 November 2026, `tools/briefing_probe.py`): Claude's found a
 | A model's host fails | The answer comes from another model: Mistral falls back to GLM run in the EU, Claude to Mistral | Nothing to fix. The app card and *What left this laptop* name the model that answered: worth pointing out if someone chose a model for its origin |
 | No model at all | "Recorded answers" | The workshop requests still work as recordings; free chat does not, nor do the steps that call a model from inside an app (*A model for the pages that fail*, the wiki's *Ask* and *Ingest*). Use the gallery. |
 | One seat out of budget | A message naming the budget | Top up the seat on the admin page |
+| The account is out of credit | "The studio's account with the model service has run out of credit" | Top up OpenRouter; the balance is on the admin page and in `/health`. Recorded answers and saved apps keep working |
+| Someone reports a problem | They press *Feedback* in the footer | Read it on the admin page (Feedback), with the version, browser, app and model it came from |
 | A build takes too long | The thinking or code keeps streaming | Stop, switch to GLM, send again |
 | An app breaks | "Something in the app broke" | *Ask the model to fix it*; after two failed fixes the studio offers a fresh start |
 | Wi‑Fi down | Nothing loads | The saved files (*Save as file*) open offline; continue from the gallery on the facilitator's laptop |

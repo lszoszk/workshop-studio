@@ -332,6 +332,14 @@ def test_other_402_is_not_retried_but_falls_back(env):
     assert [q["model"] for q in env.fake.requests] == ["anthropic/claude-sonnet-5.5", "mistralai/mistral-large-4-0"]
 
 
+def test_out_of_credit_on_both_models_says_so(env):
+    for _ in range(2):
+        env.fake.stream(status=402, error={"code": 402, "message": "Insufficient credits"})
+    r = env.client.post("/studio-api/chat", json=body(model="claude"))
+    assert r.status_code == 503 and r.json()["code"] == "credit" and "run out of credit" in r.json()["error"]
+    assert env.seats.db.execute("SELECT status FROM usage").fetchone()["status"] == "credit"
+
+
 def test_fast_reports_the_host_that_served_it(env):
     env.fake.stream(chunk("[]", provider="DeepInfra"), chunk(usage=USAGE, provider="DeepInfra"))
     u = events(env.client.post("/studio-api/chat", json=body(model="fast", purpose="inapp")).text)[-2][1]
@@ -585,6 +593,22 @@ def test_admin_json_and_gallery_removal(env):
     r = env.client.post("/studio-api/admin", json={"key": "admin-test", "action": "remove_gallery", "value": gid})
     assert r.status_code == 200 and r.json()["ok"] and r.json()["gallery"] == []
     assert env.client.get("/studio-api/gallery").json() == []
+
+
+def test_feedback_is_kept_for_the_facilitator_with_or_without_a_seat(env):
+    r = env.client.post("/studio-api/feedback", json={"seat": "ABCDEF", "text": "The PDF opens on the wrong page",
+                                                       "context": {"app": "Research wiki", "version": "2026-11-04d", "x" * 60: "y" * 400}})
+    assert r.status_code == 200 and r.json()["ok"]
+    assert env.client.post("/studio-api/feedback", json={"text": "  "}).status_code == 400
+    anon = env.client.post("/studio-api/feedback", json={"text": "x" * 5000})   # recorded mode: no seat
+    assert anon.status_code == 200
+    items = env.client.get("/studio-api/admin?key=admin-test&format=json").json()["feedback"]
+    assert len(items) == 2 and {i["seat"] for i in items} == {"ABCDEF", None}
+    long = next(i for i in items if i["seat"] is None)
+    assert len(long["text"]) == 3000
+    first = next(i for i in items if i["seat"] == "ABCDEF")
+    assert first["context"]["app"] == "Research wiki" and all(len(k) <= 40 and len(v) <= 300 for k, v in first["context"].items())
+    assert "The PDF opens on the wrong page" in env.client.get("/studio-api/admin?key=admin-test").text
 
 
 def test_admin_is_off_without_a_configured_key(tmp_path):

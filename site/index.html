@@ -8,7 +8,7 @@
 <meta name="robots" content="noindex, nofollow">
 <script src="gate.js"></script>
 <script>try { const t = localStorage.getItem('ws:theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
-<link rel="stylesheet" href="studio.css?v=2026-11-04d"></head>
+<link rel="stylesheet" href="studio.css?v=2026-11-04e"></head>
 <body>
 <!-- a phone that scanned the badge's QR code gets this instead of the studio -->
 <div class="handoff" id="handoff" hidden>
@@ -149,6 +149,7 @@
   <span class="foot-who" id="footWho"></span>
   <span class="foot-links" id="footLinks"></span>
   <span class="foot-end">
+    <button type="button" class="linkish" id="feedbackBtn">Feedback</button>
     <button type="button" class="linkish" id="tourBtn">Tour</button>
     <button type="button" class="linkish" id="takeHomeBtn">Take it further</button>
     <button type="button" class="linkish" id="themeBtn" aria-pressed="false">Dark mode</button>
@@ -168,9 +169,23 @@
   </form>
 </dialog>
 
-<script src="preview-doc.js?v=2026-11-04d"></script>
-<script src="pdf-view.js?v=2026-11-04d"></script>
-<script src="tour.js?v=2026-11-04d"></script>
-<script src="studio.js?v=2026-11-04d"></script>
+<dialog id="feedbackDialog">
+  <form method="dialog" id="feedbackForm">
+    <h2>Tell us what happened</h2>
+    <p>What did you try, what did you expect, and what did you see? It goes to the facilitator, not to a model.</p>
+    <textarea id="feedbackText" rows="5" maxlength="3000" placeholder="e.g. I clicked a pin in the wiki and the PDF opened on the wrong page"></textarea>
+    <details class="feedback-ctx"><summary>Sent with it</summary><ul id="feedbackCtx"></ul></details>
+    <p class="err" id="feedbackErr" hidden></p>
+    <div class="row">
+      <button value="cancel" class="ghost">Cancel</button>
+      <button value="send" class="primary" id="feedbackSend">Send</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="preview-doc.js?v=2026-11-04e"></script>
+<script src="pdf-view.js?v=2026-11-04e"></script>
+<script src="tour.js?v=2026-11-04e"></script>
+<script src="studio.js?v=2026-11-04e"></script>
 </body>
 </html>

@@ -56,6 +56,9 @@ PLAN_V2 = ("Here is the revised plan.\n\n```markdown\n## Context\nThe same dashb
            "## The app, screen by screen\n1. A line chart of the records per year.\n2. The table of records.\n```")
 
 
+FEEDBACK = []   # what the fake server received from the Feedback form
+
+
 @pytest.fixture(scope="module")
 def fake_api():
     """A stand-in for the studio server (docs/api-contract.md): one seat, canned answers, a wall."""
@@ -102,6 +105,10 @@ def fake_api():
                              "created": "2026-12-04T10:4%d:00" % len(wall), "html": req["html"]})
                 self.head(200, "application/json")
                 return self.wfile.write(json.dumps({"ok": True, "id": gid}).encode())
+            if self.path.endswith("/feedback"):
+                FEEDBACK.append(req)
+                self.head(200, "application/json")
+                return self.wfile.write(json.dumps({"ok": True, "id": "f1"}).encode())
             calls.append(req)
             last = req["messages"][-1]["content"]
             self.head(200, "text/event-stream")
@@ -708,6 +715,30 @@ def test_the_wall_shows_what_participants_sent(base_url, browser, fake_api):
     body.get_by_text("CCPR/C/GC/32").first.wait_for(timeout=20000)   # the second file reached the app
     assert "Two General Comments" in page.inner_text(".bar")
     assert not errors, errors
+    ctx.close()
+
+
+def test_a_tester_sends_feedback_with_its_context(base_url, browser, fake_api):
+    """Feedback in the footer: the tester's words go to the server with the page's context (version,
+    model, the app on stage), shown before sending; never data or an app's code."""
+    api, _ = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + f"?api={api}&planpace=1#s=TEST22")
+    started(page)
+    send(page, DASHBOARD, "uhri", 1)
+    page.click("#feedbackBtn")
+    page.locator("#feedbackDialog summary").click()
+    shown = page.inner_text("#feedbackCtx")
+    assert "model" in shown and "app" in shown and "v1" in shown
+    page.fill("#feedbackText", "The chart labels overlap on a small screen")
+    page.click("#feedbackSend")
+    page.wait_for_function("() => /Thank you/.test(document.getElementById('log').innerText)")
+    sent = FEEDBACK[-1]
+    assert sent["seat"] == "TEST22" and sent["text"] == "The chart labels overlap on a small screen"
+    payload = json.dumps(sent)
+    assert sent["context"]["version"] and "v1" in sent["context"]["app"]
+    assert "<!doctype" not in payload.lower() and "WORKSHOP_DATA" not in payload   # no app code, no data
     ctx.close()
 
 

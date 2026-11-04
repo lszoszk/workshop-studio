@@ -55,6 +55,8 @@ ORIGINS = "https://lszoszk.github.io,http://localhost:8766,http://127.0.0.1:8766
 GALLERY_LINK_HOSTS = ("docs.un.org", "undocs.org", "uhri.ohchr.org", "searchlibrary.ohchr.org")
 GALLERY_MAX_BYTES = 300_000
 GALLERY_PER_SEAT = 20
+FEEDBACK_MAX_CHARS = 3000
+FEEDBACK_MAX_ITEMS = 2000
 MAX_BODY_BYTES = 1_000_000
 MAX_MESSAGES = 40
 MAX_CHARS = 300_000          # whole conversation; earlier versions of the page travel back with it
@@ -193,6 +195,8 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         seats.import_csv(cfg.seats_csv, keep_existing=True)   # a restart never resets a top-up
     gallery_dir = cfg.state_dir / "gallery"
     gallery_dir.mkdir(parents=True, exist_ok=True)
+    feedback_dir = cfg.state_dir / "feedback"
+    feedback_dir.mkdir(parents=True, exist_ok=True)
     systems = {"build": build_system_prompt(cfg.data_dir), "inapp": INAPP_SYSTEM, "question": None}
     client = httpx.AsyncClient(transport=transport, timeout=httpx.Timeout(10.0, read=180.0),
                                limits=httpx.Limits(max_connections=100, max_keepalive_connections=20))
@@ -371,7 +375,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
             resp, err = await open_with_retry(used, messages, purpose)
         if resp is None:
             seconds = round(time.monotonic() - t0, 1)
-            status = "busy" if err == BUSY else "error"
+            status = "busy" if err == BUSY else "credit" if err == "http_402" else "error"
             seats.record(seat["code"], model=used.key, host=used.host or "", purpose=purpose,
                          latency_ms=int(seconds * 1000), status=status, error=err)
             log_event(event="chat", seat=seat["code"], model=used.key, purpose=purpose, first_error=first_error,
@@ -379,6 +383,9 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
             if status == "busy":
                 return JSONResponse({"error": "The model service is busy, try again in a minute", "code": "busy"}, 503,
                                     headers={"Retry-After": "60"})
+            if status == "credit":   # both models refused for lack of credit: say so, so the facilitator can top up
+                return JSONResponse({"error": "The studio's account with the model service has run out of credit. Tell the "
+                                              "facilitator; your apps and the recorded answers still work.", "code": "credit"}, 503)
             return JSONResponse({"error": "The model provider did not respond", "code": "upstream"}, 502)
         prompt_chars = len(systems[purpose] or "") + sum(len(x["content"]) for x in messages)
         return StreamingResponse(relay(resp, used, m, seat, purpose, t0, prompt_chars, first_error),
@@ -438,6 +445,38 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         log_event(event="gallery", seat=seat["code"], id=gid, bytes=len(page.encode("utf-8")))
         return {"ok": True, "id": gid}
 
+    # ── feedback from testers: text and the page's own context, never data or an app's code ──
+    def feedback_items() -> list[dict]:
+        items = []
+        for p in feedback_dir.glob("*.json"):
+            try:
+                items.append(json.loads(p.read_text()))
+            except (OSError, ValueError):
+                continue
+        return sorted(items, key=lambda i: i["created"], reverse=True)
+
+    @app.post("/studio-api/feedback")
+    async def feedback_post(request: Request):
+        try:
+            d = await read_json(request)
+            text = d.get("text")
+            if not isinstance(text, str) or not text.strip():
+                raise Refusal(400, "There is nothing to send", "no_text")
+            if len(list(feedback_dir.glob("*.json"))) >= FEEDBACK_MAX_ITEMS:
+                raise Refusal(429, "The feedback box is full; tell the facilitator in person", "feedback_full")
+            seat = seats.get(d.get("seat")) if d.get("seat") else None   # a recorded-mode visitor has no seat
+            ctx = d.get("context") if isinstance(d.get("context"), dict) else {}
+            ctx = {str(k)[:40]: str(v)[:300] for k, v in list(ctx.items())[:12]}
+        except Refusal as e:
+            return refuse(e)
+        fid = dt.datetime.now().strftime("%m%d-%H%M%S") + "-" + secrets.token_hex(3)
+        item = {"id": fid, "seat": seat["code"] if seat else None, "label": seat.get("label") if seat else None,
+                "text": text.strip()[:FEEDBACK_MAX_CHARS], "context": ctx,
+                "created": dt.datetime.now().isoformat(timespec="seconds")}
+        (feedback_dir / f"{fid}.json").write_text(json.dumps(item, ensure_ascii=False))
+        log_event(event="feedback", seat=item["seat"], id=fid, chars=len(item["text"]))
+        return {"ok": True, "id": fid}
+
     @app.get("/studio-api/gallery")
     async def gallery_list():
         keep = ("id", "seat", "country", "title", "model", "prompt_id", "files", "created")
@@ -489,7 +528,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
     def admin_state() -> dict:
         return {"paused": paused(), "default_model": default_model(), "spent_today": round(seats.spent_today(), 4),
                 "daily_budget": cfg.daily_budget, "balance_usd": balance["value"], "seats": seats.all(),
-                "gallery": gallery_items()}
+                "gallery": gallery_items(), "feedback": feedback_items()[:200]}
 
     def admin_page(key: str, note: str = "") -> HTMLResponse:
         s, e = admin_state(), htmlmod.escape
@@ -513,6 +552,9 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         wall = "".join(f"<li>{e(g['created'])} · {e(g['country'])} · {e(g['title'])} "
                        + form("remove_gallery", "Remove", f'<input type="hidden" name="value" value="{e(g["id"])}">')
                        + "</li>" for g in s["gallery"]) or "<li>empty</li>"
+        fb = "".join(f"<li><b>{e(f['created'])}</b> · {e(f.get('label') or f.get('seat') or 'no seat')} · "
+                     f"{e(f['context'].get('app', ''))}<br>{e(f['text'])}<br><small>{e(' · '.join('%s: %s' % kv for kv in f['context'].items()))}</small></li>"
+                     for f in s["feedback"]) or "<li>none yet</li>"
         bal = "unknown" if s["balance_usd"] is None else f"${s['balance_usd']:.2f}"
         body = f"""<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>Studio admin</title><style>body{{font:14px system-ui;margin:16px}}table{{border-collapse:collapse}}
@@ -524,7 +566,7 @@ td,th{{border-bottom:1px solid #ddd;padding:4px 8px;text-align:left}}form{{displ
 <span>Spent today ${s['spent_today']:.2f} / ${s['daily_budget']:.0f} · OpenRouter balance {bal} · times in UTC</span>
 {form('default_model', 'Set default model', fields=f'<select name="value">{opts}</select>')}</div>
 <table><tr><th>Seat</th><th>Label</th><th>Country</th><th>Spent / budget</th><th>Req</th><th>Err</th><th>Last request</th>
-<th>Last error</th><th></th></tr>{rows}</table><h2>Wall</h2><ul>{wall}</ul>"""
+<th>Last error</th><th></th></tr>{rows}</table><h2>Feedback ({len(s["feedback"])})</h2><ul>{fb}</ul><h2>Wall</h2><ul>{wall}</ul>"""
         return HTMLResponse(body, headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
 
     @app.get("/studio-api/admin")
