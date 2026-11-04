@@ -8,13 +8,23 @@ Written on 4 November 2026, before the rehearsal of about 20 November. Nothing h
 |---|---|---|
 | Logging in (link, password, seat code, country) | 2–4 min per person; 8–10 min for a room if done in the session | session plan |
 | Planning (recorded log, 4–5 question cards) | 2.5–3 min, of which 80 s is the log | `PACE` in `studio.js` |
-| First build, Mistral Large 3 | 2.4–4.8 min; the dashboard and the Verbatim finder each had an error that stops the app | bake-off, 4.11 |
-| First build, GLM-5.3 (medium) | 3.6–8.2 min; one PDF attempt in two stopped before the code, the wiki had a syntax error | bake-off, 4.11 |
+| First build, Mistral Large 3 | 2.4–4.8 min; dashboard, six builds: 2 with no error, 1 with a small one, 3 broken; Verbatim finder: the search does not work | bake-off, 4.11 |
+| First build, GLM-5.3 (medium) | 3.4–8.7 min; dashboard, six builds: 5 with no error, 1 cut off mid-code; one PDF attempt in two stopped before the code; the wiki had a syntax error | bake-off, 4.11 |
 | First build, Claude Sonnet 5.5 | not measured through the studio (built in Claude Code); earlier, shorter plans took 1–2 min | session plan |
 | Any change ("add a column") | as long as a first build: the model rewrites the whole app, 500 to 2,000 lines | how the studio works |
-| *Fix this error* | the same again | |
+| *Fix this error* | the same again, and it may break again | |
+| *Improve it in the studio* (a gallery app as v1) | under a minute; the gallery shows each model's best of six dashboards | since 4.11 |
 
-Two consequences follow. First, the default model (Mistral) gives a broken first dashboard in the bake-off, and the dashboard is the first thing all 30 people build. Second, the 15-minute slot "Modify, in their own words" holds at most two changes per person, and only if nothing breaks.
+Two consequences follow. First, the default model (Mistral) gives a broken first dashboard about half the time, and the dashboard is the first thing all 30 people build: if half the room keeps the default, seven or eight people start with a broken app. Second, the 15-minute slot "Modify, in their own words" holds at most two changes per person, and only if nothing breaks.
+
+## Second pass, 4 November afternoon
+
+The morning was run again on paper after three changes: six dashboards per model were measured; the studio now supplies Chart.js when a model also loads it from the internet (Mistral Large 3 did in every build, which only gave a blocked request and an error in the console); and the gallery shows each model's best of six dashboards, with the count. What this changes:
+
+- **The first dashboard is still the riskiest moment, but it now has a fast way out.** About half of Mistral's first dashboards break. Pressing *Fix this error* costs another three minutes and may break again; *Improve it in the studio* from the gallery gives a working dashboard of the same model in under a minute. The facilitator's instruction at 09:47 should be that one: "If your dashboard is empty, open the gallery and press *Improve it in the studio* under the model you chose."
+- **GLM is now the most reliable of the measured models but has the longest tail** (up to 8.7 minutes), so the video belongs at 09:45, while builds run, not after them.
+- **Nothing from Chart.js reaches *What left this laptop* any more**, so the confidentiality thread is not muddied by a request the participant never asked for.
+- **Still unmeasured, and needing a top-up first:** Claude through the studio, and GLM run in the EU. Until they are measured, the default model for S7 stays an open decision.
 
 ## The five participants
 
@@ -36,13 +46,13 @@ Two consequences follow. First, the default model (Mistral) gives a broken first
 
 **09:43–09:53, the first dashboard.** Everyone sends the dashboard in plan mode. The planning log plays for 80 s; the cards take another minute. Then the build:
 
-- Amara keeps the default, Mistral Large 3. Three minutes later her dashboard shows a header and an empty chart area: the bake-off build had an error ("Cannot access 'themeChart' before initialization") and an attempt to load something from the internet. She does not know whether she did something wrong.
+- Amara keeps the default, Mistral Large 3. Three minutes later her dashboard shows a header and an empty chart area (in the bake-off, three of six dashboards broke like this, on a missing element or a variable declared twice). She does not know whether she did something wrong. A co-facilitator does not press *Fix this error* (another three minutes, and it may break again): she opens the gallery, takes Mistral's working dashboard with *Improve it in the studio*, and Amara has it as her v1 within a minute, in time for the video.
 - Leila chose Claude, because she "trusts the American one more for English". Her build arrives and works.
-- Mr Chen chose GLM from its developer's service, to see a Chinese model and where the badge says his request goes. It works, in under four minutes (the bake-off's 8 of 8).
+- Mr Chen chose GLM from its developer's service, to see a Chinese model and where the badge says his request goes. It works (five of six GLM dashboards did), but GLM took anywhere from 3.4 to 8.7 minutes, so his may still be building at 09:48.
 - Tomás is on his second free-chat app and has missed the plan mode.
 - Fatou is still answering the planning cards.
 
-At 09:48 the video should play. In this room, three of five are not ready: Amara needs *Fix this error* (three more minutes), Fatou's build has just started. The facilitator plays the video anyway and the room splits between the screen and their laptops.
+At 09:48 the video should play. In this room two of five are not ready: Mr Chen's GLM build is still running, and Fatou's has just started. Playing the video at 09:45, while they wait, would catch everyone; at 09:48 the room splits between the screen and their laptops.
 
 **09:53–10:02, Run it three times, Layers, the audit.** Works well for Leila and Mr Chen. Amara's fixed dashboard arrives at 09:55, during *Run it three times*. Mr Chen asks the first hard question: "*Layers* says this number is computed, but the UN labels it counts were assigned by people at OHCHR, sometimes inconsistently. The code is deterministic; the input is not." It is the right point, and *Check ten at random* answers it, 15 minutes later. Say so.
 
@@ -70,7 +80,7 @@ At 09:48 the video should play. In this room, three of five are not ready: Amara
 
 **11:45–11:57, the model step.** Only the facilitator runs it (recorded mode cannot). Before it sends, the app says how many pages will leave the browser: 38 for both documents. This is where Tomás's question from S7 comes back: "So for my witness statements the pages would go to Mistral?" Yes; and that is why S8's cards exist. Mr Chen asks whether GLM's route sends them to China (glm-cn: yes, to Z.AI; glm-eu: no, Mistral in the EU). The model-step limits ("it costs, it varies, errors the checks do not see stay") land well with Leila.
 
-**11:57–12:13, the data already exists; the Verbatim finder.** The reveal works on everyone, especially on Leila, who did not know the General Comments are available paragraph by paragraph. The Verbatim finder build: Mistral's bake-off build had an error that stops the search; GLM's misses one button; Claude's works. Leila searches "proportionality" and asks why the count differs from "proportional": on the earlier library the exact word was in 8 paragraphs and every form in 12, and the session plan's note on this fits here.
+**11:57–12:13, the data already exists; the Verbatim finder.** The reveal works on everyone, especially on Leila, who did not know the General Comments are available paragraph by paragraph. The Verbatim finder build: Mistral's bake-off build had an error that stops the search (one build only; worth measuring like the dashboard); GLM's misses one button; Claude's works. Those whose search does not work take one from the gallery. Leila searches "proportionality" and asks why the count differs from "proportional": on the earlier library the exact word was in 8 paragraphs and every form in 12, and the session plan's note on this fits here.
 
 **12:13–12:28, the cards, the wiki demo, the close.** The eight cards work as a discussion; Mr Chen and Tomás disagree on whether a draft concluding observation may go to a model with zero data retention. The wiki demo works if the facilitator has a seat code and has rehearsed it.
 
