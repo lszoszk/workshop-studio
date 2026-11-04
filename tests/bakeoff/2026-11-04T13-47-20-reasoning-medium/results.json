@@ -1,0 +1,31 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "download": true,
+   "text_matches": true
+  },
+  "passed": 4,
+  "total": 7,
+  "errors": [
+   "Cannot access 'repRx' before initialization"
+  ],
+  "network": [],
+  "lines": 620,
+  "seconds": 140.3,
+  "first_token": 55.5,
+  "first_thought": 1.2,
+  "reasoning_chars": 12856,
+  "prompt_tokens": 17731,
+  "completion_tokens": 12246,
+  "cost": 0.0787058,
+  "provider": "Z.AI"
+ }
+]

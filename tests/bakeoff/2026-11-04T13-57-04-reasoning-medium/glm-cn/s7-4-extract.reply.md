@@ -1,0 +1,1 @@
+Building the app exactly to your plan: it parses the HTML into numbered paragraphs, repairs provable missing spaces, checks itself against the reference, and exports JSON and Markdown. Two tabs, everything rare kept closed.

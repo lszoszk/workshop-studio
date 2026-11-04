@@ -1,509 +1,718 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Verbatim finder – General Comment paragraphs from HTML</title>
-  <style>
-    :root {
-      --paper: #f4f0e8;
-      --ink: #1d1b18;
-      --rule: #d9d2c3;
-      --accent: #9b2335;
-      --pass: #2e6b49;
-    }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 16px;
-      line-height: 1.5;
-      color: var(--ink);
-      background-color: var(--paper);
-      display: grid;
-      grid-template-columns: 240px 1fr;
-      grid-template-rows: auto 1fr auto;
-      min-height: 100vh;
-    }
-    [hidden] { display: none !important; }
-    a { color: inherit; text-decoration: none; }
-    a:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
-    h1, h2, h3 { font-weight: 400; margin: 0; }
-    .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; letter-spacing: 0.05em; }
-    .serif { font-family: Georgia, "Times New Roman", serif; }
-    .small-caps { font-variant: small-caps; }
-    .upper { text-transform: uppercase; }
-
-    /* Header */
-    header {
-      grid-column: 1 / -1;
-      background-color: var(--paper);
-      border-bottom: 1px solid var(--rule);
-      padding: 0.5rem 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .header-left { display: flex; align-items: center; gap: 1rem; }
-    .header-right { display: flex; align-items: center; gap: 1rem; }
-    .status-dot {
-      width: 12px; height: 12px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-    .status-pass { background-color: var(--pass); }
-    .status-fail { background-color: var(--accent); }
-    .status-limit { background-color: var(--accent); }
-
-    /* Left rail */
-    .rail {
-      padding: 1rem;
-      border-right: 1px solid var(--rule);
-      background-color: var(--paper);
-    }
-    .rail-card {
-      background-color: white;
-      border: 1px solid var(--rule);
-      border-radius: 4px;
-      padding: 0.75rem;
-      margin-bottom: 1.5rem;
-    }
-    .rail-card h3 { font-size: 1rem; margin: 0 0 0.5rem 0; }
-    .rail-card .symbol { font-family: ui-monospace, monospace; font-size: 1rem; }
-    .rail-card .short-title { font-size: 0.9rem; color: #555; }
-    .rail-numbers {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-    }
-    .rail-number {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-    }
-    .rail-number .value {
-      font-family: Georgia, serif;
-      font-size: 2rem;
-      line-height: 1;
-    }
-    .rail-number .expected {
-      font-size: 1rem;
-      color: #555;
-    }
-    .rail-number .bar {
-      height: 4px;
-      background-color: var(--accent);
-      margin-top: 0.25rem;
-      border-radius: 2px;
-    }
-    .rail-number.short .bar { background-color: var(--accent); }
-    .rail-number.over .bar { background-color: var(--accent); }
-    .rail-number.ok .bar { background-color: var(--pass); }
-    .rail-checks {
-      font-size: 0.9rem;
-      color: #555;
-    }
-    .rail-checks a { color: var(--ink); text-decoration: underline; }
-
-    /* Tabs */
-    .tabs {
-      display: flex;
-      border-bottom: 1px solid var(--rule);
-      padding-left: 1rem;
-      background-color: white;
-    }
-    .tab {
-      padding: 0.75rem 1rem;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      font-size: 0.9rem;
-      font-weight: 500;
-    }
-    .tab.active {
-      border-bottom-color: var(--accent);
-      color: var(--accent);
-    }
-    .tab:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
-    .tab-panel { padding: 1.5rem; }
-
-    /* Tiles */
-    .tiles {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-    .tile {
-      background-color: white;
-      border: 1px solid var(--rule);
-      border-radius: 4px;
-      padding: 1rem;
-    }
-    .tile h3 {
-      font-size: 1rem;
-      margin: 0 0 0.5rem 0;
-      color: #555;
-    }
-    .tile .value {
-      font-family: Georgia, serif;
-      font-size: 3rem;
-      line-height: 1;
-      margin: 0;
-    }
-    .tile .expected {
-      font-size: 1.5rem;
-      color: #555;
-      margin-left: 0.5rem;
-    }
-    .tile .diff {
-      font-size: 1.5rem;
-      color: var(--accent);
-    }
-    .tile .how {
-      font-size: 0.8rem;
-      color: #777;
-      margin-top: 0.5rem;
-    }
-    .tile.footnotes .value { color: var(--accent); }
-    .tile.footnotes .how { color: var(--accent); }
-    .tile.first-words .diff { color: var(--accent); }
-    .tile.spaces .value { color: var(--accent); }
-
-    /* Tables */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 1rem 0;
-    }
-    caption {
-      font-family: Georgia, serif;
-      font-size: 1.2rem;
-      text-align: left;
-      margin-bottom: 0.5rem;
-      font-weight: 400;
-    }
-    caption .fig {
-      font-family: ui-monospace, monospace;
-      font-size: 0.8rem;
-      color: #555;
-      margin-left: 0.5rem;
-    }
-    th, td {
-      padding: 0.5rem 0.75rem;
-      text-align: left;
-      border-bottom: 1px solid var(--rule);
-    }
-    th { font-weight: 500; }
-    th[scope="col"] { font-weight: 500; }
-    td { vertical-align: top; }
-    td.num { text-align: right; font-family: ui-monospace, monospace; }
-    .flag {
-      display: inline-block;
-      padding: 0.1rem 0.3rem;
-      border-radius: 3px;
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
-    .flag.ok { background-color: #e6f3ec; color: var(--pass); }
-    .flag.fail { background-color: #fce8e8; color: var(--accent); }
-    .flag.limit { background-color: #fce8e8; color: var(--accent); }
-
-    /* Expandable rows */
-    .row-button {
-      width: 100%;
-      background: none;
-      border: none;
-      text-align: left;
-      padding: 0.5rem 0.75rem;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .row-button:focus { outline: 2px solid var(--accent); }
-    .row-button[aria-expanded="true"] .arrow::after { content: "▼"; }
-    .row-button[aria-expanded="false"] .arrow::after { content: "▶"; }
-    .arrow { font-size: 0.8rem; color: #777; }
-    .expanded-row {
-      padding: 0 0.75rem 1rem 0.75rem;
-      border-bottom: 1px solid var(--rule);
-    }
-    .expanded-row p { margin: 0.5rem 0; }
-    .expanded-row .first-words {
-      display: flex;
-      gap: 1rem;
-      margin: 0.5rem 0;
-    }
-    .expanded-row .first-words .label {
-      font-size: 0.8rem;
-      color: #555;
-      min-width: 80px;
-    }
-    .expanded-row .first-words .words {
-      font-family: ui-monospace, monospace;
-      font-size: 0.9rem;
-    }
-    .expanded-row .first-words .diff::before { content: "→ "; }
-    .expanded-row .repairs {
-      margin: 0.5rem 0;
-      font-size: 0.9rem;
-    }
-    .expanded-row .repair {
-      display: inline-block;
-      background-color: #fce8e8;
-      border: 1px solid var(--accent);
-      border-radius: 3px;
-      padding: 0.1rem 0.3rem;
-      margin: 0.1rem;
-      font-family: ui-monospace, monospace;
-      font-size: 0.9rem;
-    }
-    .expanded-row .actions {
-      margin-top: 0.5rem;
-    }
-    .copy-button {
-      background-color: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 3px;
-      padding: 0.3rem 0.6rem;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-    .copy-button:focus { outline: 2px solid var(--ink); }
-    .copied {
-      margin-left: 0.5rem;
-      font-size: 0.8rem;
-      color: var(--accent);
-    }
-
-    /* Lost & changed */
-    .block {
-      background-color: white;
-      border: 1px solid var(--rule);
-      border-radius: 4px;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .block h3 {
-      font-size: 1.2rem;
-      margin: 0 0 0.5rem 0;
-      font-family: Georgia, serif;
-    }
-    .block .count {
-      font-family: Georgia, serif;
-      font-size: 1.5rem;
-      color: var(--accent);
-    }
-    .block table td.before, .block table td.after {
-      font-family: ui-monospace, monospace;
-      font-size: 0.9rem;
-    }
-    .block table td.rule { font-size: 0.8rem; color: #555; }
-    .block table td.mark { color: var(--accent); font-weight: bold; }
-
-    /* Checks */
-    .checks {
-      background-color: white;
-      border: 1px solid var(--rule);
-      border-radius: 4px;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .checks h3 {
-      font-size: 1.2rem;
-      margin: 0 0 0.5rem 0;
-      font-family: Georgia, serif;
-    }
-    .check {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.3rem 0;
-      border-bottom: 1px solid var(--rule);
-    }
-    .check:last-child { border-bottom: none; }
-    .check .label { flex: 2; }
-    .check .found, .check .expected { flex: 1; text-align: right; }
-    .check .found { font-family: ui-monospace, monospace; }
-    .check .expected { color: #555; }
-    .check .result {
-      flex: 1;
-      text-align: right;
-      font-weight: 500;
-    }
-    .check .result.pass { color: var(--pass); }
-    .check .result.fail { color: var(--accent); }
-    .check .result.limit { color: var(--accent); }
-    .check .result.not-run { color: #777; }
-    .check a { color: var(--accent); text-decoration: underline; }
-
-    /* Export */
-    .export {
-      background-color: white;
-      border: 1px solid var(--rule);
-      border-radius: 4px;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .export h3 {
-      font-size: 1.2rem;
-      margin: 0 0 0.5rem 0;
-      font-family: Georgia, serif;
-    }
-    .export-buttons {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-    .export-button {
-      background-color: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 3px;
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-    .export-button:focus { outline: 2px solid var(--ink); }
-    .export-button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
-    }
-    .export-disabled {
-      font-size: 0.9rem;
-      color: #777;
-    }
-    .elements-button {
-      background: none;
-      border: none;
-      padding: 0;
-      cursor: pointer;
-      font-size: 0.9rem;
-      color: var(--ink);
-      text-decoration: underline;
-    }
-    .elements-button:focus { outline: 2px solid var(--accent); }
-    .elements-table {
-      margin-top: 1rem;
-    }
-    .elements-table th, .elements-table td {
-      padding: 0.3rem 0.5rem;
-      font-size: 0.9rem;
-    }
-    .elements-table td.tag { font-family: ui-monospace, monospace; }
-    .elements-table td.text { font-size: 0.8rem; color: #555; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    /* Footer */
-    footer {
-      grid-column: 1 / -1;
-      padding: 0.75rem 1rem;
-      font-size: 0.8rem;
-      color: #555;
-      border-top: 1px solid var(--rule);
-      background-color: var(--paper);
-    }
-    .credits {
-      font-size: 0.7rem;
-      color: #777;
-      margin-top: 0.5rem;
-    }
-  </style>
+<meta charset="utf-8">
+<title>Paragraphs from HTML – UN General Comment</title>
+<style>
+:root {
+  --paper: #f4f0e8;
+  --ink: #1d1b18;
+  --rule: #d9d2c3;
+  --accent: #9b2335;
+  --pass: #2e6b49;
+}
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--paper);
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+}
+[hidden] { display: none !important; }
+a { color: var(--ink); }
+a:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: Georgia, "Times New Roman", serif; }
+h1 { font-size: 24px; margin: 0; }
+h2 { font-size: 20px; margin: 1.5em 0 0.5em; }
+h3 { font-size: 18px; margin: 1.2em 0 0.4em; }
+p { margin: 0.5em 0; }
+.mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; letter-spacing: 0.5px; }
+.small { font-size: 14px; }
+.serif { font-family: Georgia, "Times New Roman", serif; }
+.big { font-size: 40px; line-height: 1; }
+.big-2 { font-size: 32px; line-height: 1; }
+.big-3 { font-size: 28px; line-height: 1; }
+.red { color: var(--accent); }
+.green { color: var(--pass); }
+.rail {
+  padding: 16px;
+  border-right: 1px solid var(--rule);
+  background: var(--paper);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.rail h2 { font-size: 14px; margin: 1.5em 0 0.5em; }
+.rail-card {
+  background: white;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+.rail-card p { margin: 0.2em 0; }
+.rail-num {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 12px 0;
+}
+.rail-bar {
+  height: 4px;
+  background: var(--accent);
+  margin-top: 4px;
+  border-radius: 2px;
+}
+.rail-bar.short { background: var(--accent); opacity: 0.5; }
+.rail-bar.over { background: var(--accent); }
+.rail-checks { margin-top: 16px; }
+.rail-checks p { margin: 0.3em 0; }
+.header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  background: white;
+}
+.header-left { display: flex; align-items: baseline; gap: 12px; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.header-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.header-dot.pass { background: var(--pass); }
+.header-dot.fail { background: var(--accent); }
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--rule);
+  background: white;
+  padding: 0 16px;
+}
+.tab {
+  padding: 12px 0;
+  margin-right: 24px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+.tab[aria-selected="true"] {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+}
+.tab:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tab-panel { padding: 24px; }
+.tile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+.tile {
+  background: white;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 16px;
+}
+.tile h3 {
+  font-size: 14px;
+  margin: 0 0 8px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  letter-spacing: 0.5px;
+}
+.tile-num { font-size: 56px; margin: 8px 0; }
+.tile-num-2 { font-size: 48px; margin: 8px 0; }
+.tile-num-3 { font-size: 40px; margin: 8px 0; }
+.tile-note {
+  font-size: 14px;
+  color: #666;
+  margin-top: 8px;
+}
+.tile-note a { color: var(--ink); }
+.tile-list {
+  margin-top: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 8px;
+  background: white;
+}
+.tile-list p { margin: 0.3em 0; font-size: 14px; }
+.tile-list a { color: var(--accent); }
+.export-buttons {
+  display: flex;
+  gap: 12px;
+  margin: 24px 0;
+}
+.export-buttons button {
+  padding: 12px 24px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+.export-buttons button:focus { outline: 2px solid var(--accent); }
+.export-buttons button:disabled { opacity: 0.5; cursor: not-allowed; }
+.check-panel {
+  margin-top: 24px;
+}
+.check-panel h3 {
+  font-size: 14px;
+  margin: 1.5em 0 0.5em;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  letter-spacing: 0.5px;
+}
+.check-panel button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-align: left;
+  width: 100%;
+}
+.check-panel button:focus { outline: 2px solid var(--accent); }
+.check-panel button[aria-expanded="true"]::after { content: " −"; }
+.check-panel button[aria-expanded="false"]::after { content: " +"; }
+.check-panel div[role="region"] { margin-top: 8px; }
+.check-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+.check-table th, .check-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+}
+.check-table th { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+.check-table td { font-size: 14px; }
+.check-table tr:last-child th, .check-table tr:last-child td { border-bottom: none; }
+.check-table tr:hover { background: #f9f7f4; }
+.check-table a { color: var(--accent); }
+.spaces-panel {
+  margin-top: 24px;
+}
+.spaces-panel h3 {
+  font-size: 14px;
+  margin: 1.5em 0 0.5em;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  letter-spacing: 0.5px;
+}
+.spaces-panel button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-align: left;
+  width: 100%;
+}
+.spaces-panel button:focus { outline: 2px solid var(--accent); }
+.spaces-panel button[aria-expanded="true"]::after { content: " −"; }
+.spaces-panel button[aria-expanded="false"]::after { content: " +"; }
+.spaces-panel div[role="region"] { margin-top: 8px; }
+.spaces-summary {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.spaces-summary div {
+  background: white;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 8px 12px;
+  flex: 1;
+}
+.spaces-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+.spaces-table th, .spaces-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+}
+.spaces-table th { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+.spaces-table td { font-size: 14px; }
+.spaces-table tr:last-child th, .spaces-table tr:last-child td { border-bottom: none; }
+.spaces-table tr:hover { background: #f9f7f4; }
+.spaces-table a { color: var(--accent); }
+.para-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+.para-table caption {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  text-align: left;
+  margin-bottom: 12px;
+}
+.para-table th {
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+.para-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+.para-table tr:last-child td { border-bottom: none; }
+.para-table tr[aria-expanded="true"] { background: #f9f7f4; }
+.para-table tr[aria-expanded="true"] td { border-bottom: none; }
+.para-table tr[aria-expanded="true"] + tr td { border-top: none; }
+.para-table .para-num { font-family: Georgia, "Times New Roman", serif; font-size: 18px; color: var(--accent); }
+.para-table .para-num a { color: var(--accent); }
+.para-table .para-section { font-size: 14px; }
+.para-table .para-first { font-size: 14px; }
+.para-table .para-check { font-size: 14px; }
+.para-table .para-check.fail { color: var(--accent); }
+.para-expanded {
+  padding: 16px;
+  background: #f9f7f4;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule;
+}
+.para-expanded p { margin: 0.5em 0; }
+.para-expanded .para-text { white-space: pre-wrap; }
+.para-expanded .para-words { margin: 8px 0; font-size: 14px; }
+.para-expanded .para-words span { background: #ffeb3b; }
+.para-expanded .para-spaces { margin: 8px 0; font-size: 14px; }
+.para-expanded .para-spaces span { border: 1px solid var(--accent); padding: 0 2px; }
+.para-expanded .para-cite {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+.para-expanded .para-cite button {
+  padding: 8px 16px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+.para-expanded .para-cite button:focus { outline: 2px solid var(--accent); }
+.para-expanded .para-cite .copied {
+  padding: 8px 16px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: white;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: var(--pass);
+}
+.headings-box {
+  background: white;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+.headings-box h3 {
+  font-size: 14px;
+  margin: 0 0 8px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  letter-spacing: 0.5px;
+}
+.headings-box button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-align: left;
+  width: 100%;
+}
+.headings-box button:focus { outline: 2px solid var(--accent); }
+.headings-box button[aria-expanded="true"]::after { content: " −"; }
+.headings-box button[aria-expanded="false"]::after { content: " +"; }
+.headings-box div[role="region"] { margin-top: 8px; }
+.headings-list {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.footer {
+  padding: 16px;
+  border-top: 1px solid var(--rule);
+  background: white;
+  font-size: 14px;
+  grid-column: 1 / -1;
+}
+</style>
 </head>
 <body>
-  <header>
+
+<div class="rail">
+  <h2 class="mono">DOCUMENT</h2>
+  <div class="rail-card">
+    <p class="mono" style="font-size: 14px; font-weight: bold;"><?= WORKSHOP_DATA.html_doc.symbol ?></p>
+    <p class="small"><?= WORKSHOP_DATA.html_doc.title.replace(/ \*$/, '') ?></p>
+  </div>
+
+  <div class="rail-num">
+    <div>
+      <p class="big serif" id="rail-paras-found">0</p>
+      <p class="small">paragraphs of <span id="rail-paras-expected">0</span></p>
+    </div>
+    <div class="rail-bar" id="rail-paras-bar"></div>
+  </div>
+
+  <div class="rail-num">
+    <div>
+      <p class="big serif red">0</p>
+      <p class="small red">footnotes of <span id="rail-footnotes-expected">0</span></p>
+      <p class="small red">not in this HTML</p>
+    </div>
+  </div>
+
+  <div class="rail-checks">
+    <p class="mono"><span id="rail-checks-pass">0</span> of <span id="rail-checks-total">0</span> checks pass</p>
+  </div>
+</div>
+
+<div class="main">
+  <header class="header">
     <div class="header-left">
       <span class="mono">UN DOCUMENT · HTML</span>
-      <h1 class="serif"></h1>
+      <h1 class="serif"><?= WORKSHOP_DATA.html_doc.title.replace(/ \*$/, '') ?></h1>
+      <p class="mono">
+        <a href="<?= WORKSHOP_DATA.html_doc.doc_url ?>" target="_blank"><?= WORKSHOP_DATA.html_doc.symbol ?></a>
+        · adopted <?= WORKSHOP_DATA.html_doc.reference.adopted ?>
+        · <?= WORKSHOP_DATA.html_doc.source ?>
+      </p>
     </div>
     <div class="header-right">
-      <span class="status-dot status-pass" id="header-status-dot"></span>
-      <span id="header-status-text"></span>
+      <span class="header-dot" id="header-dot"></span>
+      <span class="mono" id="header-checks">0 of 0 checks pass</span>
       <span class="mono">1 source limit</span>
     </div>
   </header>
 
-  <aside class="rail">
-    <div class="rail-card">
-      <h3 class="mono">DOCUMENT</h3>
-      <div class="symbol" id="rail-symbol"></div>
-      <div class="short-title" id="rail-title"></div>
-    </div>
-    <div class="rail-numbers">
-      <div class="rail-number" id="rail-paragraphs">
-        <div>
-          <span class="value" id="rail-paragraphs-value"></span>
-          <span class="expected" id="rail-paragraphs-expected"></span>
-        </div>
-        <div class="bar" id="rail-paragraphs-bar"></div>
-      </div>
-      <div class="rail-number">
-        <div>
-          <span class="value" id="rail-footnotes-value"></span>
-          <span class="expected" id="rail-footnotes-expected"></span>
-        </div>
-        <div class="bar"></div>
-      </div>
-    </div>
-    <div class="rail-checks">
-      <span id="rail-checks-value"></span> of <span id="rail-checks-total"></span> checks pass
-      (<a href="#" id="rail-checks-link">see tab 04</a>)
-    </div>
-  </aside>
+  <div class="tabs" role="tablist" aria-label="Tabs">
+    <button class="tab" id="tab-01" role="tab" aria-selected="true" aria-controls="panel-01">01 RESULT</button>
+    <button class="tab" id="tab-02" role="tab" aria-selected="false" aria-controls="panel-02">02 PARAGRAPHS</button>
+  </div>
 
   <main>
-    <div class="tabs" role="tablist" aria-label="Tabs">
-      <button class="tab active" id="tab-01" role="tab" aria-selected="true" aria-controls="panel-01">01 RESULT</button>
-      <button class="tab" id="tab-02" role="tab" aria-selected="false" aria-controls="panel-02">02 PARAGRAPHS</button>
-      <button class="tab" id="tab-03" role="tab" aria-selected="false" aria-controls="panel-03">03 LOST & CHANGED</button>
-      <button class="tab" id="tab-04" role="tab" aria-selected="false" aria-controls="panel-04">04 CHECKS & EXPORT</button>
-    </div>
-
-    <div class="tab-panel" id="panel-01" role="tabpanel" aria-labelledby="tab-01">
-      <div class="tiles">
+    <div id="panel-01" class="tab-panel" role="tabpanel" aria-labelledby="tab-01">
+      <div class="tile-grid">
         <div class="tile">
-          <h3>Paragraphs found</h3>
-          <div>
-            <span class="value" id="tile-paragraphs-value"></span>
-            <span class="expected" id="tile-paragraphs-expected"></span>
-            <span class="diff" id="tile-paragraphs-diff"></span>
-          </div>
-          <div class="how">How this is computed: counted the numbered &lt;p&gt; elements in the HTML.</div>
+          <h3 class="mono">FIG.01 PARAGRAPHS FOUND</h3>
+          <p class="big-2 serif" id="tile-paras-found">0</p>
+          <p class="tile-note">How this is computed: every &lt;p&gt; whose text starts with a number and a full stop.</p>
         </div>
-        <div class="tile first-words">
-          <h3>First words match</h3>
-          <div>
-            <span class="value" id="tile-first-words-value"></span>
-            <span class="expected"> of <span id="tile-first-words-expected"></span></span>
-            <span class="diff" id="tile-first-words-diff"></span>
-          </div>
-          <div class="how">How this is computed: the first six words of each paragraph against the document's own reference.</div>
+        <div class="tile">
+          <h3 class="mono">FIG.02 THE DOCUMENT HAS</h3>
+          <p class="big-2 serif" id="tile-paras-expected">0</p>
+          <p class="tile-note">How this is computed: the reference in the file.</p>
         </div>
-        <div class="tile footnotes">
-          <h3>Footnotes</h3>
-          <div>
-            <span class="value" id="tile-footnotes-value"></span>
-            <span class="expected"> of <span id="tile-footnotes-expected"></span></span>
+        <div class="tile">
+          <h3 class="mono">FIG.03 FIRST WORDS MATCH</h3>
+          <p class="big-2 serif" id="tile-first-words-match">0</p>
+          <p class="tile-note">of <span id="tile-first-words-expected">0</span>. How this is computed: the first six words of each paragraph against the reference.</p>
+          <div class="tile-list" id="tile-first-words-list" hidden>
+            <!-- filled by JS -->
           </div>
-          <div class="how">This HTML version has none; see tab 03.</div>
         </div>
-        <div class="tile spaces">
-          <h3>Spaces</h3>
-          <div>
-            <span class="value" id="tile-spaces-value"></span>
+        <div class="tile">
+          <h3 class="mono red">FIG.04 FOOTNOTES</h3>
+          <p class="big-2 serif red">0</p>
+          <p class="tile-note red">of <span id="tile-footnotes-expected">0</span>. This HTML version has none: no footnote text, no footnote marks. To cite a footnote, use the PDF or Word version.</p>
+        </div>
+        <div class="tile">
+          <h3 class="mono">FIG.05 SPACES</h3>
+          <p class="big-2 serif" id="tile-spaces-restored">0</p>
+          <p class="tile-note">in <span id="tile-spaces-paras">0</span> paragraphs. How this is computed: rules that prove a space was missing.</p>
+        </div>
+      </div>
+
+      <div class="export-buttons">
+        <button id="export-json" disabled>Download JSON</button>
+        <button id="export-md" disabled>Download Markdown</button>
+      </div>
+
+      <div class="check-panel">
+        <h2 class="mono">03 EVERY CHECK (<span id="checks-total">0</span>)</h2>
+        <button id="checks-toggle" aria-expanded="false" aria-controls="checks-region">01 PARAGRAPH COUNT</button>
+        <div id="checks-region" role="region" hidden>
+          <table class="check-table">
+            <tr>
+              <th>What</th>
+              <th>Found</th>
+              <th>Expected</th>
+              <th>Result</th>
+            </tr>
+            <tr>
+              <td>Paragraphs</td>
+              <td id="check-paras-found">0</td>
+              <td id="check-paras-expected">0</td>
+              <td id="check-paras-result">not run</td>
+            </tr>
+          </table>
+        </div>
+
+        <button id="check-numbering-toggle" aria-expanded="false" aria-controls="check-numbering-region">02 NUMBERING</button>
+        <div id="check-numbering-region" role="region" hidden>
+          <table class="check-table">
+            <tr>
+              <th>What</th>
+              <th>Found</th>
+              <th>Expected</th>
+              <th>Result</th>
+            </tr>
+            <tr>
+              <td>Numbering</td>
+              <td id="check-numbering-found">–</td>
+              <td>1 to n in order</td>
+              <td id="check-numbering-result">not run</td>
+            </tr>
+            <tr id="check-numbering-gaps-row" hidden>
+              <td>Gaps</td>
+              <td id="check-numbering-gaps" colspan="2">–</td>
+              <td></td>
+            </tr>
+            <tr id="check-numbering-dupes-row" hidden>
+              <td>Duplicates</td>
+              <td id="check-numbering-dupes" colspan="2">–</td>
+              <td></td>
+            </tr>
+          </table>
+        </div>
+
+        <button id="check-first-words-toggle" aria-expanded="false" aria-controls="check-first-words-region">03 FIRST WORDS</button>
+        <div id="check-first-words-region" role="region" hidden>
+          <table class="check-table">
+            <tr>
+              <th>What</th>
+              <th>Found</th>
+              <th>Expected</th>
+              <th>Result</th>
+            </tr>
+            <tr>
+              <td>First words</td>
+              <td id="check-first-words-found">0</td>
+              <td id="check-first-words-expected">0</td>
+              <td id="check-first-words-result">not run</td>
+            </tr>
+          </table>
+        </div>
+
+        <button id="check-footnotes-toggle" aria-expanded="false" aria-controls="check-footnotes-region">04 FOOTNOTES</button>
+        <div id="check-footnotes-region" role="region" hidden>
+          <table class="check-table">
+            <tr>
+              <th>What</th>
+              <th>Found</th>
+              <th>Expected</th>
+              <th>Result</th>
+            </tr>
+            <tr>
+              <td>Footnotes</td>
+              <td>0</td>
+              <td id="check-footnotes-expected">0</td>
+              <td class="red">source limit</td>
+            </tr>
+            <tr>
+              <td colspan="4" class="small">The HTML version has no footnotes: a limit of the source, not of the app.</td>
+            </tr>
+          </table>
+        </div>
+
+        <button id="check-repairs-toggle" aria-expanded="false" aria-controls="check-repairs-region">05 REPAIRS</button>
+        <div id="check-repairs-region" role="region" hidden>
+          <table class="check-table">
+            <tr>
+              <th>Rule</th>
+              <th>Spaces</th>
+              <th>Paragraphs</th>
+            </tr>
+            <tr>
+              <td>Sentence join</td>
+              <td id="check-repairs-sentence">0</td>
+              <td id="check-repairs-sentence-paras">0</td>
+            </tr>
+            <tr>
+              <td>Comma join</td>
+              <td id="check-repairs-comma">0</td>
+              <td id="check-repairs-comma-paras">0</td>
+            </tr>
+            <tr>
+              <td>Quote join</td>
+              <td id="check-repairs-quote">0</td>
+              <td id="check-repairs-quote-paras">0</td>
+            </tr>
+            <tr>
+              <td>Dash join</td>
+              <td id="check-repairs-dash">0</td>
+              <td id="check-repairs-dash-paras">0</td>
+            </tr>
+            <tr>
+              <td>Total</td>
+              <td id="check-repairs-total">0</td>
+              <td id="check-repairs-total-paras">0</td>
+            </tr>
+          </table>
+        </div>
+
+        <button id="check-headings-toggle" aria-expanded="false" aria-controls="check-headings-region">06 HEADINGS</button>
+        <div id="check-headings-region" role="region" hidden>
+          <table class="check-table">
+            <tr>
+              <th>What</th>
+              <th>Found</th>
+              <th>Expected</th>
+            </tr>
+            <tr>
+              <td>&lt;h2&gt;</td>
+              <td id="check-headings-h2">0</td>
+              <td>–</td>
+            </tr>
+            <tr>
+              <td>&lt;h3&gt;</td>
+              <td id="check-headings-h3">0</td>
+              <td>–</td>
+            </tr>
+            <tr>
+              <td>Glued labels</td>
+              <td id="check-headings-glued">0</td>
+              <td>–</td>
+            </tr>
+          </table>
+        </div>
+
+        <button id="check-classification-toggle" aria-expanded="false" aria-controls="check-classification-region">07 NOTHING LOST</button>
+        <div id="check-classification-region" role="region" hidden>
+          <table class="check-table">
+            <tr>
+              <th>Class</th>
+              <th>Count</th>
+            </tr>
+            <tr>
+              <td>Cover</td>
+              <td id="check-classification-cover">0</td>
+            </tr>
+            <tr>
+              <td>Committee line</td>
+              <td id="check-classification-committee">0</td>
+            </tr>
+            <tr>
+              <td>Title</td>
+              <td id="check-classification-title">0</td>
+            </tr>
+            <tr>
+              <td>Heading</td>
+              <td id="check-classification-heading">0</td>
+            </tr>
+            <tr>
+              <td>Paragraph</td>
+              <td id="check-classification-paragraph">0</td>
+            </tr>
+            <tr>
+              <td>Total</td>
+              <td id="check-classification-total">0</td>
+            </tr>
+            <tr id="check-classification-unclassified-row" hidden>
+              <td colspan="2" class="red" id="check-classification-unclassified">0 unclassified elements</td>
+            </tr>
+          </table>
+        </div>
+
+        <button id="check-export-toggle" aria-expanded="false" aria-controls="check-export-region">08 EXPORT ROUND TRIP</button>
+        <div id="check-export-region" role="region" hidden>
+          <table class="check-table">
+            <tr>
+              <th>What</th>
+              <th>Found</th>
+              <th>Expected</th>
+              <th>Result</th>
+            </tr>
+            <tr>
+              <td>Export round trip</td>
+              <td id="check-export-found">0</td>
+              <td id="check-export-expected">0</td>
+              <td id="check-export-result">not run</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="spaces-panel">
+        <h2 class="mono">04 THE SPACES RESTORED (<span id="spaces-total">0</span>)</h2>
+        <button id="spaces-toggle" aria-expanded="false" aria-controls="spaces-region">01 RULES</button>
+        <div id="spaces-region" role="region" hidden>
+          <div class="spaces-summary">
+            <div>
+              <p class="mono">Sentence join: <span id="spaces-sentence">0</span></p>
+              <p class="mono">Comma join: <span id="spaces-comma">0</span></p>
+            </div>
+            <div>
+              <p class="mono">Quote join: <span id="spaces-quote">0</span></p>
+              <p class="mono">Dash join: <span id="spaces-dash">0</span></p>
+            </div>
           </div>
-          <div class="how">Repaired or flagged; <a href="#" id="tile-spaces-link">see tab 03</a>.</div>
+          <p class="small">Rules restore a space only where the characters prove it was there. Word pairs such as "Giventhe" are not touched.</p>
+          <table class="spaces-table">
+            <thead>
+              <tr>
+                <th>Paragraph</th>
+                <th>Before</th>
+                <th>After</th>
+                <th>Rule</th>
+              </tr>
+            </thead>
+            <tbody id="spaces-table-body">
+              <!-- filled by JS -->
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <div class="tab-panel" id="panel-02" role="tabpanel" aria-labelledby="tab-02" hidden>
-      <div class="block">
-        <h3>Headings found: <span id="headings-count"></span></h3>
-        <div id="headings-list"></div>
+    <div id="panel-02" class="tab-panel" role="tabpanel" aria-labelledby="tab-02" hidden>
+      <div class="headings-box">
+        <h2 class="mono">HEADINGS FOUND: <span id="headings-found">0</span></h2>
+        <button id="headings-toggle" aria-expanded="false" aria-controls="headings-region">Show headings</button>
+        <div id="headings-region" role="region" hidden>
+          <div class="headings-list" id="headings-list">
+            <!-- filled by JS -->
+          </div>
+        </div>
       </div>
-      <table>
-        <caption class="serif">The numbered paragraphs of <span id="table-caption-symbol"></span><span class="fig">TAB.02</span></caption>
+
+      <table class="para-table">
+        <caption class="serif">Paragraphs of <?= WORKSHOP_DATA.html_doc.symbol ?>, with the heading each sits under</caption>
         <thead>
           <tr>
             <th scope="col">No.</th>
@@ -512,715 +721,612 @@
             <th scope="col">Check</th>
           </tr>
         </thead>
-        <tbody id="paragraphs-table">
-          <!-- Filled by JS -->
+        <tbody id="para-table-body">
+          <!-- filled by JS -->
         </tbody>
       </table>
     </div>
-
-    <div class="tab-panel" id="panel-03" role="tabpanel" aria-labelledby="tab-03" hidden>
-      <div class="block">
-        <h3>Lost: footnotes</h3>
-        <div class="count" id="lost-footnotes-count"></div>
-        <p>The document has <span id="lost-footnotes-expected"></span> footnotes. This HTML has 0: no footnote text, no footnote marks, and the note the title's asterisk points to is missing. To cite a footnote, use the PDF or Word version.</p>
-      </div>
-      <div class="block">
-        <h3>Changed: spaces</h3>
-        <div class="count" id="changed-spaces-count"></div>
-        <p>Rules restore a space only where the characters prove it was there. Word pairs such as "Giventhe" are not touched; the first-words check catches them only in a paragraph's first six words.</p>
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Paragraph</th>
-              <th scope="col">Before</th>
-              <th scope="col">After</th>
-              <th scope="col">Rule</th>
-            </tr>
-          </thead>
-          <tbody id="spaces-table">
-            <!-- Filled by JS -->
-          </tbody>
-        </table>
-      </div>
-      <div class="block">
-        <h3>Changed: characters</h3>
-        <p>Kept exactly as published, in the table and in every export. A search for "business-related" typed with the hyphen key will not find "business‑related": normalise the text before searching it.</p>
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Character</th>
-              <th scope="col">Count</th>
-              <th scope="col">Example</th>
-            </tr>
-          </thead>
-          <tbody id="characters-table">
-            <!-- Filled by JS -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="tab-panel" id="panel-04" role="tabpanel" aria-labelledby="tab-04" hidden>
-      <div class="checks">
-        <h3>Checks</h3>
-        <div id="checks-list">
-          <!-- Filled by JS -->
-        </div>
-      </div>
-      <div class="export">
-        <h3>Export</h3>
-        <div class="export-buttons">
-          <button class="export-button" id="export-json" disabled>Download JSON</button>
-          <button class="export-button" id="export-md" disabled>Download Markdown</button>
-        </div>
-        <div id="export-disabled" hidden>No paragraphs found; exports disabled.</div>
-        <button class="elements-button" id="elements-button" aria-expanded="false" aria-controls="elements-table">Elements found (<span id="elements-count"></span>)</button>
-        <div id="elements-table" hidden>
-          <table class="elements-table">
-            <thead>
-              <tr>
-                <th scope="col">Tag</th>
-                <th scope="col">Classified as</th>
-                <th scope="col">Text</th>
-              </tr>
-            </thead>
-            <tbody id="elements-list">
-              <!-- Filled by JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
   </main>
 
-  <footer>
-    <div id="footer-source"></div>
-    <div id="footer-built"></div>
-    <div class="credits">Done by this page's code; no model was called and nothing left the browser.</div>
+  <footer class="footer">
+    <p><?= WORKSHOP_DATA.html_doc.source ?> · built <?= new Date().toISOString().split('T')[0] ?> · Done by this page's code; no model was called and nothing left the browser.</p>
   </footer>
+</div>
 
-  <script>
-    // Data
-    const data = window.WORKSHOP_DATA.html_doc;
-    const doc = new DOMParser().parseFromString(data.html, 'text/html');
-    const body = doc.body;
-    const reference = data.reference || {};
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const data = window.WORKSHOP_DATA.html_doc;
+  const doc = new DOMParser().parseFromString(data.html, 'text/html');
+  const ref = data.reference || {};
+  const parasExpected = ref.paragraphs || 0;
+  const footnotesExpected = ref.footnotes || 0;
+  const firstWordsRef = ref.first_words || {};
 
-    // State
-    let paragraphs = [];
-    let headings = [];
-    let repairs = [];
-    let checks = [];
-    let elements = [];
-    let firstWordsMismatches = [];
-    let numberingGaps = [];
-    let numberingDuplicates = [];
-    let unclassifiedElements = [];
+  // Classification
+  const elements = doc.body.querySelectorAll('table, p, h2, h3');
+  const cover = [];
+  const committeeLine = [];
+  const title = [];
+  const headings = [];
+  const paragraphs = [];
+  const unclassified = [];
 
-    // Classification
-    function classifyElements() {
-      let inCover = true;
-      let currentPart = null;
-      let currentSection = null;
+  let inCover = true;
+  let foundTitle = false;
 
-      Array.from(body.children).forEach(el => {
-        const tag = el.tagName.toLowerCase();
-        const text = el.textContent.trim();
-
-        // Cover table
-        if (inCover && tag === 'table') {
-          elements.push({ tag, class: 'cover', text });
-          return;
-        }
-        if (inCover && tag === 'p' && text === 'Committee on Economic, Social and Cultural Rights') {
-          elements.push({ tag, class: 'committee', text });
-          inCover = false;
-          return;
-        }
-
-        // Title
-        if (!inCover && tag === 'h2' && text.endsWith(' *')) {
-          elements.push({ tag, class: 'title', text });
-          return;
-        }
-
-        // Headings
-        if (!inCover && (tag === 'h2' || tag === 'h3')) {
-          const match = text.match(/^([IVX]+|[A-Z])\.\s*(.+)$/);
-          let label = null;
-          let heading = text;
-          if (match) {
-            label = match[1];
-            heading = match[2];
-          }
-          if (tag === 'h2' && label && /^[IVX]+$/.test(label)) {
-            currentPart = heading;
-            currentSection = null;
-          } else if (tag === 'h3') {
-            currentSection = heading;
-          }
-          headings.push({ tag, label, heading, part: currentPart, section: currentSection });
-          elements.push({ tag, class: 'heading', text });
-          return;
-        }
-
-        // Paragraphs
-        if (!inCover && tag === 'p') {
-          const match = text.match(/^(\d{1,3})\.\s*(.*)$/s);
-          if (match) {
-            const number = parseInt(match[1], 10);
-            const rawText = match[2].trim();
-            const paragraph = {
-              number,
-              text_raw: rawText,
-              text: rawText,
-              part: currentPart,
-              section: currentSection,
-              repairs: []
-            };
-            paragraphs.push(paragraph);
-            elements.push({ tag, class: 'paragraph', text });
-            return;
-          }
-        }
-
-        // Unclassified
-        elements.push({ tag, class: 'unclassified', text });
-        unclassifiedElements.push(el);
-      });
+  elements.forEach(el => {
+    if (inCover && el.tagName === 'TABLE') {
+      cover.push(el);
+      return;
     }
+    inCover = false;
 
-    // Repairs
-    function repairText() {
-      const rules = [
-        { name: 'sentence', regex: /([a-z])\.([A-Z])/g, replacement: '$1. $2' },
-        { name: 'comma', regex: /([a-z]),([A-Za-z])/g, replacement: '$1, $2' },
-        { name: 'quote', regex: /([a-z])“/g, replacement: '$1 “' },
-        { name: 'dash', regex: /–([A-Za-z])/g, replacement: '– $1' }
-      ];
-
-      paragraphs.forEach(p => {
-        let text = p.text_raw;
-        rules.forEach(rule => {
-          text = text.replace(rule.regex, (match, ...groups) => {
-            const before = text.slice(Math.max(0, groups[groups.length - 2] - 20), groups[groups.length - 2]);
-            const after = text.slice(groups[groups.length - 2] + match.length, groups[groups.length - 2] + match.length + 20);
-            repairs.push({
-              paragraph: p.number,
-              rule: rule.name,
-              before: before + match + after,
-              after: before + rule.replacement + after
-            });
-            return rule.replacement;
-          });
-        });
-        p.text = text;
-        p.repairs = repairs.filter(r => r.paragraph === p.number);
-      });
-    }
-
-    // First words
-    function checkFirstWords() {
-      if (!reference.first_words) return;
-
-      paragraphs.forEach(p => {
-        const foundWords = p.text.split(/\s+/).slice(0, 6).join(' ');
-        const refWords = reference.first_words[String(p.number)] || '';
-        const normalise = s => s.replace(/[“”]/g, '"').replace(/[–‑]/g, '-').replace(/\u00A0/g, ' ');
-        const foundNorm = normalise(foundWords);
-        const refNorm = normalise(refWords);
-
-        p.first_words_match = foundNorm === refNorm;
-        if (!p.first_words_match) {
-          firstWordsMismatches.push({
-            paragraph: p.number,
-            found: foundWords,
-            reference: refWords
-          });
-        }
-      });
-    }
-
-    // Numbering
-    function checkNumbering() {
-      const numbers = paragraphs.map(p => p.number);
-      const min = Math.min(...numbers);
-      const max = Math.max(...numbers);
-      const expected = Array.from({ length: max - min + 1 }, (_, i) => min + i);
-
-      numberingGaps = expected.filter(n => !numbers.includes(n));
-      numberingDuplicates = numbers.filter((n, i) => numbers.indexOf(n) !== i);
-    }
-
-    // Characters
-    function countCharacters() {
-      const counts = {
-        'en dash (–)': { char: '\u2013', count: 0, example: '' },
-        'double quotes (“”)': { char: ['\u201C', '\u201D'], count: 0, example: '' },
-        'right single quote (’)': { char: '\u2019', count: 0, example: '' },
-        'non-breaking hyphen (‑)': { char: '\u2011', count: 0, example: '' },
-        'non-breaking space': { char: '\u00A0', count: 0, example: '' }
-      };
-
-      paragraphs.forEach(p => {
-        const text = p.text;
-        Object.entries(counts).forEach(([name, obj]) => {
-          if (Array.isArray(obj.char)) {
-            obj.char.forEach(c => {
-              const n = (text.match(new RegExp(`\\${c}`, 'g')) || []).length;
-              obj.count += n;
-              if (n > 0 && !obj.example) obj.example = text.slice(text.indexOf(c) - 10, text.indexOf(c) + 10);
-            });
-          } else {
-            const n = (text.match(new RegExp(`\\${obj.char}`, 'g')) || []).length;
-            obj.count += n;
-            if (n > 0 && !obj.example) obj.example = text.slice(text.indexOf(obj.char) - 10, text.indexOf(obj.char) + 10);
-          }
-        });
-      });
-
-      return counts;
-    }
-
-    // Checks
-    function runChecks() {
-      checks = [];
-
-      // Paragraph count
-      checks.push({
-        label: 'Paragraph count',
-        found: paragraphs.length,
-        expected: reference.paragraphs || 'no reference',
-        result: reference.paragraphs === undefined ? 'not-run' :
-                paragraphs.length === reference.paragraphs ? 'pass' : 'fail',
-        link: '#paragraphs-table'
-      });
-
-      // Numbering
-      checks.push({
-        label: 'Numbering (1 to n, no gaps or duplicates)',
-        found: numberingGaps.length === 0 && numberingDuplicates.length === 0 ?
-               'no gaps or duplicates' : `gaps: ${numberingGaps.join(', ')}; duplicates: ${numberingDuplicates.join(', ')}`,
-        expected: 'no gaps or duplicates',
-        result: numberingGaps.length === 0 && numberingDuplicates.length === 0 ? 'pass' : 'fail',
-        link: '#paragraphs-table'
-      });
-
-      // First words
-      checks.push({
-        label: 'First words match the document\'s reference',
-        found: `${firstWordsMismatches.length} mismatches`,
-        expected: '0 mismatches',
-        result: firstWordsMismatches.length === 0 ? 'pass' : 'fail',
-        link: '#paragraphs-table'
-      });
-
-      // Footnotes
-      checks.push({
-        label: 'Footnotes in this HTML version',
-        found: 0,
-        expected: reference.footnotes || 'no reference',
-        result: 'limit',
-        note: 'The HTML version has no footnotes: a limit of the source, not of the app.'
-      });
-
-      // Repairs
-      checks.push({
-        label: 'Spaces repaired',
-        found: repairs.length,
-        expected: 'n/a',
-        result: 'pass'
-      });
-
-      // Headings
-      checks.push({
-        label: 'Headings found',
-        found: headings.length,
-        expected: 'n/a',
-        result: 'pass'
-      });
-
-      // Nothing lost
-      checks.push({
-        label: 'Every block element classified exactly once',
-        found: unclassifiedElements.length === 0 ? 'all classified' : `${unclassifiedElements.length} unclassified`,
-        expected: 'all classified',
-        result: unclassifiedElements.length === 0 ? 'pass' : 'fail'
-      });
-
-      // Export round trip
-      checks.push({
-        label: 'Export round trip (JSON)',
-        found: 'not run',
-        expected: 'n/a',
-        result: 'not-run'
-      });
-    }
-
-    // Render
-    function render() {
-      // Header
-      document.querySelector('h1.serif').textContent = data.title;
-      document.querySelector('#rail-symbol').textContent = data.symbol;
-      document.querySelector('#rail-title').textContent = data.title.split(' (')[0];
-      document.querySelector('#footer-source').textContent = data.source;
-      document.querySelector('#footer-built').textContent = `Built ${new Date().toISOString().split('T')[0]}`;
-
-      // Rail
-      document.querySelector('#rail-paragraphs-value').textContent = paragraphs.length;
-      document.querySelector('#rail-paragraphs-expected').textContent = reference.paragraphs ? ` of ${reference.paragraphs}` : '';
-      const paraBar = document.querySelector('#rail-paragraphs-bar');
-      if (reference.paragraphs === undefined) {
-        paraBar.classList.add('not-run');
-      } else if (paragraphs.length === reference.paragraphs) {
-        paraBar.classList.add('ok');
-      } else if (paragraphs.length < reference.paragraphs) {
-        paraBar.classList.add('short');
+    if (el.tagName === 'P') {
+      const text = el.textContent.trim();
+      const paraMatch = text.match(/^(\d{1,3})\.\s*(.*)$/s);
+      if (paraMatch) {
+        const num = parseInt(paraMatch[1], 10);
+        const raw = paraMatch[2].trim();
+        paragraphs.push({ el, num, raw, text: raw });
+      } else if (!foundTitle) {
+        title.push(el);
+        foundTitle = true;
       } else {
-        paraBar.classList.add('over');
+        committeeLine.push(el);
       }
-      document.querySelector('#rail-footnotes-value').textContent = 0;
-      document.querySelector('#rail-footnotes-expected').textContent = reference.footnotes ? ` of ${reference.footnotes}` : '';
-      const checksPass = checks.filter(c => c.result === 'pass').length;
-      const checksTotal = checks.length;
-      document.querySelector('#rail-checks-value').textContent = checksPass;
-      document.querySelector('#rail-checks-total').textContent = checksTotal;
-      document.querySelector('#rail-checks-link').addEventListener('click', e => {
-        e.preventDefault();
-        document.querySelector('#tab-04').click();
-      });
-
-      // Tiles
-      document.querySelector('#tile-paragraphs-value').textContent = paragraphs.length;
-      document.querySelector('#tile-paragraphs-expected').textContent = reference.paragraphs || '?';
-      document.querySelector('#tile-paragraphs-diff').textContent = reference.paragraphs ?
-        (paragraphs.length === reference.paragraphs ? '' : ` (${paragraphs.length - reference.paragraphs})`) : '';
-      document.querySelector('#tile-first-words-value').textContent = paragraphs.filter(p => p.first_words_match).length;
-      document.querySelector('#tile-first-words-expected').textContent = reference.paragraphs || '?';
-      document.querySelector('#tile-first-words-diff').textContent = reference.paragraphs ?
-        (paragraphs.length - paragraphs.filter(p => p.first_words_match).length) : '';
-      document.querySelector('#tile-footnotes-value').textContent = 0;
-      document.querySelector('#tile-footnotes-expected').textContent = reference.footnotes || '?';
-      document.querySelector('#tile-spaces-value').textContent = repairs.length;
-      document.querySelector('#tile-spaces-link').addEventListener('click', e => {
-        e.preventDefault();
-        document.querySelector('#tab-03').click();
-      });
-
-      // Header status
-      const headerStatusDot = document.querySelector('#header-status-dot');
-      const headerStatusText = document.querySelector('#header-status-text');
-      if (checksPass === checksTotal) {
-        headerStatusDot.classList.add('status-pass');
-        headerStatusText.textContent = `${checksPass} checks pass`;
+    } else if (el.tagName === 'H2' || el.tagName === 'H3') {
+      const text = el.textContent.trim();
+      const headingMatch = text.match(/^([IVX]+|[A-Z])\.\s*(.+)$/);
+      if (headingMatch) {
+        const label = headingMatch[1];
+        const heading = headingMatch[2];
+        headings.push({ el, tag: el.tagName, label, heading, text });
       } else {
-        headerStatusDot.classList.add('status-fail');
-        headerStatusText.textContent = `${checksTotal - checksPass} checks failed`;
+        headings.push({ el, tag: el.tagName, label: null, heading: text, text });
       }
-
-      // Tab 01
-      // (Tiles already filled)
-
-      // Tab 02
-      document.querySelector('#table-caption-symbol').textContent = data.symbol;
-      const headingsList = document.querySelector('#headings-list');
-      headingsList.innerHTML = '';
-      const uniqueHeadings = [...new Set(headings.map(h => h.heading))];
-      uniqueHeadings.forEach(h => {
-        const div = document.createElement('div');
-        div.textContent = h;
-        headingsList.appendChild(div);
-      });
-      document.querySelector('#headings-count').textContent = uniqueHeadings.length;
-
-      const tableBody = document.querySelector('#paragraphs-table');
-      tableBody.innerHTML = '';
-      paragraphs.forEach(p => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="num">${p.number}</td>
-          <td>${p.section || p.part || ''}</td>
-          <td>${p.text.slice(0, 120).replace(/\s+/g, ' ')}…</td>
-          <td><span class="flag ${p.first_words_match ? 'ok' : 'fail'}">${p.first_words_match ? 'OK' : 'first words differ'}</span></td>
-        `;
-        const button = document.createElement('button');
-        button.className = 'row-button';
-        button.setAttribute('aria-expanded', 'false');
-        button.innerHTML = `
-          <span>${p.number}</span>
-          <span class="arrow"></span>
-        `;
-        button.addEventListener('click', () => {
-          const expanded = button.getAttribute('aria-expanded') === 'true';
-          button.setAttribute('aria-expanded', !expanded);
-          const expandedRow = tr.querySelector('.expanded-row') || document.createElement('tr');
-          if (!expanded) {
-            expandedRow.className = 'expanded-row';
-            expandedRow.innerHTML = `
-              <td colspan="4">
-                <p>${p.text}</p>
-                <div class="first-words">
-                  <div class="label">First words:</div>
-                  <div class="words">${p.first_words_match ? p.text.split(/\s+/).slice(0, 6).join(' ') : `
-                    <span>${p.text.split(/\s+/).slice(0, 6).join(' ')}</span>
-                    <span class="diff">${reference.first_words ? reference.first_words[String(p.number)] : 'no reference'}</span>
-                  `}</div>
-                </div>
-                ${p.repairs.length > 0 ? `
-                <div class="repairs">
-                  <div>Repaired in this paragraph:</div>
-                  ${p.repairs.map(r => `<span class="repair">${r.rule}</span>`).join('')}
-                </div>
-                ` : ''}
-                <div class="actions">
-                  <button class="copy-button" data-citation="${data.symbol}, para. ${p.number}">Copy citation</button>
-                  <span class="copied" hidden>Copied</span>
-                </div>
-              </td>
-            `;
-            tr.appendChild(expandedRow);
-            expandedRow.querySelector('.copy-button').addEventListener('click', e => {
-              navigator.clipboard.writeText(e.target.dataset.citation);
-              const copied = e.target.nextElementSibling;
-              copied.hidden = false;
-              setTimeout(() => { copied.hidden = true; }, 2000);
-            });
-          } else {
-            expandedRow.remove();
-          }
-        });
-        tr.prepend(button);
-        tableBody.appendChild(tr);
-      });
-
-      // Tab 03
-      document.querySelector('#lost-footnotes-count').textContent = reference.footnotes || '?';
-      document.querySelector('#lost-footnotes-expected').textContent = reference.footnotes || '?';
-
-      const spacesTable = document.querySelector('#spaces-table');
-      spacesTable.innerHTML = '';
-      const repairsByRule = {};
-      repairs.forEach(r => {
-        if (!repairsByRule[r.rule]) repairsByRule[r.rule] = 0;
-        repairsByRule[r.rule]++;
-      });
-      Object.entries(repairsByRule).forEach(([rule, count]) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td colspan="4" class="rule">${count} ${rule} join${count !== 1 ? 's' : ''}</td>
-        `;
-        spacesTable.appendChild(tr);
-      });
-      repairs.forEach(r => {
-        const tr = document.createElement('tr');
-        const before = r.before.replace(/ /g, '·');
-        const after = r.after.replace(/ /g, '·');
-        const markPos = after.indexOf('·');
-        const beforeMark = after.slice(0, markPos);
-        const afterMark = after.slice(markPos + 1);
-        tr.innerHTML = `
-          <td>${r.paragraph}</td>
-          <td class="before">${before}</td>
-          <td class="after">${beforeMark}<span class="mark">·</span>${afterMark}</td>
-          <td class="rule">${r.rule}</td>
-        `;
-        tr.addEventListener('click', () => {
-          document.querySelector('#tab-02').click();
-          const row = document.querySelector(`#paragraphs-table tr:nth-child(${r.paragraph}) .row-button`);
-          if (row) row.click();
-        });
-        spacesTable.appendChild(tr);
-      });
-      document.querySelector('#changed-spaces-count').textContent = repairs.length;
-
-      const charactersTable = document.querySelector('#characters-table');
-      charactersTable.innerHTML = '';
-      const charCounts = countCharacters();
-      Object.entries(charCounts).forEach(([name, obj]) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${name}</td>
-          <td>${obj.count}</td>
-          <td>${obj.example || ''}</td>
-        `;
-        charactersTable.appendChild(tr);
-      });
-
-      // Tab 04
-      const checksList = document.querySelector('#checks-list');
-      checksList.innerHTML = '';
-      checks.forEach(c => {
-        const div = document.createElement('div');
-        div.className = 'check';
-        div.innerHTML = `
-          <div class="label">${c.label}</div>
-          <div class="found">${c.found}</div>
-          <div class="expected">${c.expected}</div>
-          <div class="result ${c.result}">${c.result === 'pass' ? 'pass' : c.result === 'limit' ? 'source limit' : c.result === 'not-run' ? 'not run' : 'check failed'}${c.note ? ` (${c.note})` : ''}</div>
-        `;
-        if (c.link && c.result !== 'pass' && c.result !== 'limit' && c.result !== 'not-run') {
-          const a = document.createElement('a');
-          a.href = c.link;
-          a.textContent = '→';
-          div.querySelector('.result').appendChild(a);
-        }
-        checksList.appendChild(div);
-      });
-
-      // Export
-      const exportJson = document.querySelector('#export-json');
-      const exportMd = document.querySelector('#export-md');
-      const exportDisabled = document.querySelector('#export-disabled');
-      if (paragraphs.length === 0) {
-        exportJson.disabled = true;
-        exportMd.disabled = true;
-        exportDisabled.hidden = false;
-      } else {
-        exportJson.disabled = false;
-        exportMd.disabled = false;
-        exportDisabled.hidden = true;
-
-        exportJson.addEventListener('click', () => {
-          const json = paragraphs.map(p => ({
-            symbol: data.symbol,
-            paragraph: p.number,
-            section: p.section,
-            part: p.part,
-            text: p.text,
-            text_raw: p.text_raw,
-            first_words_match: p.first_words_match,
-            citation: `${data.symbol}, para. ${p.number}`,
-            doc_url: data.doc_url,
-            limitations: `no footnotes in this HTML version; the document has ${reference.footnotes || '?'}`
-          }));
-          const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = data.symbol.replace(/\//g, '-') + '.json';
-          a.click();
-          URL.revokeObjectURL(url);
-
-          // Round-trip check
-          try {
-            const parsed = JSON.parse(JSON.stringify(json));
-            const check = checks.find(c => c.label === 'Export round trip (JSON)');
-            check.found = `${parsed.length} records`;
-            check.result = parsed.length === paragraphs.length ? 'pass' : 'fail';
-            renderChecks();
-          } catch (e) {
-            const check = checks.find(c => c.label === 'Export round trip (JSON)');
-            check.found = 'parse error';
-            check.result = 'fail';
-            renderChecks();
-          }
-        });
-
-        exportMd.addEventListener('click', () => {
-          const frontMatter = `---
-title: "${data.title}"
-symbol: ${data.symbol}
-adopted: ${reference.adopted || '?'}
-source_url: ${data.doc_url}
-extracted: ${new Date().toISOString().split('T')[0]}
-paragraphs_found: ${paragraphs.length}
-paragraphs_expected: ${reference.paragraphs || '?'}
-footnotes: no footnotes in this HTML version; the document has ${reference.footnotes || '?'}
----`;
-
-          const headingsByPart = {};
-          headings.forEach(h => {
-            if (!headingsByPart[h.part]) headingsByPart[h.part] = [];
-            headingsByPart[h.part].push(h);
-          });
-
-          let md = frontMatter + '\n\n';
-          Object.entries(headingsByPart).forEach(([part, hs]) => {
-            md += `## ${part}\n\n`;
-            hs.forEach(h => {
-              if (h.section) md += `### ${h.section}\n\n`;
-            });
-            paragraphs.filter(p => p.part === part).forEach(p => {
-              md += `**${p.number}.** ${p.text}\n\n`;
-            });
-          });
-
-          const blob = new Blob([md], { type: 'text/markdown' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = data.symbol.replace(/\//g, '-') + '.md';
-          a.click();
-          URL.revokeObjectURL(url);
-        });
-      }
-
-      // Elements
-      const elementsButton = document.querySelector('#elements-button');
-      const elementsTable = document.querySelector('#elements-table');
-      const elementsList = document.querySelector('#elements-list');
-      elementsList.innerHTML = '';
-      elements.forEach(el => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="tag">${el.tag}</td>
-          <td>${el.class}</td>
-          <td class="text">${el.text.slice(0, 80)}</td>
-        `;
-        elementsList.appendChild(tr);
-      });
-      elementsButton.addEventListener('click', () => {
-        const expanded = elementsButton.getAttribute('aria-expanded') === 'true';
-        elementsButton.setAttribute('aria-expanded', !expanded);
-        elementsTable.hidden = expanded;
-      });
-      document.querySelector('#elements-count').textContent = elements.length;
+    } else {
+      unclassified.push(el);
     }
+  });
 
-    function renderChecks() {
-      const checksList = document.querySelector('#checks-list');
-      checksList.innerHTML = '';
-      checks.forEach(c => {
-        const div = document.createElement('div');
-        div.className = 'check';
-        div.innerHTML = `
-          <div class="label">${c.label}</div>
-          <div class="found">${c.found}</div>
-          <div class="expected">${c.expected}</div>
-          <div class="result ${c.result}">${c.result === 'pass' ? 'pass' : c.result === 'limit' ? 'source limit' : c.result === 'not-run' ? 'not run' : 'check failed'}${c.note ? ` (${c.note})` : ''}</div>
-        `;
-        if (c.link && c.result !== 'pass' && c.result !== 'limit' && c.result !== 'not-run') {
-          const a = document.createElement('a');
-          a.href = c.link;
-          a.textContent = '→';
-          div.querySelector('.result').appendChild(a);
-        }
-        checksList.appendChild(div);
-      });
+  // Repairs
+  const repairs = [];
+  const repairCounts = { sentence: 0, comma: 0, quote: 0, dash: 0 };
+  const repairParas = { sentence: new Set(), comma: new Set(), quote: new Set(), dash: new Set() };
+
+  paragraphs.forEach(p => {
+    let text = p.raw;
+    const original = text;
+    const log = [];
+
+    // Sentence join: lowercase . Capital
+    const sentenceRe = /([a-z])\.([A-Z])/g;
+    let sentenceMatch;
+    while ((sentenceMatch = sentenceRe.exec(text)) !== null) {
+      const before = text.slice(Math.max(0, sentenceMatch.index - 20), sentenceMatch.index);
+      const after = text.slice(sentenceMatch.index + 2, sentenceMatch.index + 22);
+      log.push({ rule: 'sentence', before, after, pos: sentenceMatch.index });
+      repairCounts.sentence++;
+      repairParas.sentence.add(p.num);
     }
+    text = text.replace(sentenceRe, '$1. $2');
 
-    // Tabs
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => {
-          t.classList.remove('active');
-          t.setAttribute('aria-selected', 'false');
-        });
-        document.querySelectorAll('.tab-panel').forEach(p => p.hidden = true);
+    // Comma join: letter , letter
+    const commaRe = /([a-z]),([A-Za-z])/g;
+    let commaMatch;
+    while ((commaMatch = commaRe.exec(text)) !== null) {
+      const before = text.slice(Math.max(0, commaMatch.index - 20), commaMatch.index);
+      const after = text.slice(commaMatch.index + 2, commaMatch.index + 22);
+      log.push({ rule: 'comma', before, after, pos: commaMatch.index });
+      repairCounts.comma++;
+      repairParas.comma.add(p.num);
+    }
+    text = text.replace(commaRe, '$1, $2');
 
-        tab.classList.add('active');
-        tab.setAttribute('aria-selected', 'true');
-        document.querySelector(`#${tab.getAttribute('aria-controls')}`).hidden = false;
-      });
+    // Quote join: letter “
+    const quoteRe = /([a-z])“/g;
+    let quoteMatch;
+    while ((quoteRe.exec(text)) !== null) {
+      const before = text.slice(Math.max(0, quoteRe.lastIndex - 21), quoteRe.lastIndex - 1);
+      const after = text.slice(quoteRe.lastIndex, quoteRe.lastIndex + 20);
+      log.push({ rule: 'quote', before, after, pos: quoteRe.lastIndex - 1 });
+      repairCounts.quote++;
+      repairParas.quote.add(p.num);
+    }
+    text = text.replace(quoteRe, '$1 “');
+
+    // Dash join: – letter
+    const dashRe = /–([A-Za-z])/g;
+    let dashMatch;
+    while ((dashMatch = dashRe.exec(text)) !== null) {
+      const before = text.slice(Math.max(0, dashMatch.index - 20), dashMatch.index);
+      const after = text.slice(dashMatch.index + 1, dashMatch.index + 21);
+      log.push({ rule: 'dash', before, after, pos: dashMatch.index });
+      repairCounts.dash++;
+      repairParas.dash.add(p.num);
+    }
+    text = text.replace(dashRe, '– $1');
+
+    p.text = text;
+    p.repairs = log;
+    repairs.push(...log);
+  });
+
+  // Section and part
+  let currentPart = null;
+  let currentSection = null;
+  const headingStack = [];
+
+  headings.forEach(h => {
+    if (h.tag === 'H2' && /^[IVX]+$/.test(h.label)) {
+      currentPart = h.heading;
+      currentSection = null;
+    } else if (h.tag === 'H3') {
+      currentSection = h.heading;
+    }
+    headingStack.push({ part: currentPart, section: currentSection });
+  });
+
+  paragraphs.forEach((p, i) => {
+    const h = headingStack[i] || {};
+    p.part = h.part;
+    p.section = h.section;
+  });
+
+  // First words
+  const firstWordsMismatches = [];
+  paragraphs.forEach(p => {
+    const words = p.text.split(/\s+/).slice(0, 6).join(' ');
+    const norm = (s) => s.replace(/[“”]/g, '"').replace(/[–‑]/g, '-').replace(/\u00A0/g, ' ');
+    const found = norm(words);
+    const expected = norm(firstWordsRef[String(p.num)] || '');
+    p.firstWordsMatch = found === expected;
+    if (!p.firstWordsMatch) {
+      firstWordsMismatches.push(p.num);
+    }
+  });
+
+  // Citation
+  paragraphs.forEach(p => {
+    p.citation = `${data.symbol}, para. ${p.num}`;
+  });
+
+  // Checks
+  const checks = [];
+  let checksPass = 0;
+  let checksTotal = 0;
+
+  // 01 Paragraph count
+  checksTotal++;
+  const parasFound = paragraphs.length;
+  const parasCheck = parasFound === parasExpected ? 'pass' : 'check failed';
+  if (parasCheck === 'pass') checksPass++;
+  checks.push({
+    id: 'paras',
+    name: 'Paragraph count',
+    found: parasFound,
+    expected: parasExpected,
+    result: parasCheck,
+    link: parasCheck === 'check failed' ? '#panel-02' : null
+  });
+
+  // 02 Numbering
+  checksTotal++;
+  const numbers = paragraphs.map(p => p.num);
+  const numberingSet = new Set(numbers);
+  const numberingGaps = [];
+  const numberingDupes = [];
+  for (let i = 1; i <= parasExpected; i++) {
+    if (!numberingSet.has(i)) numberingGaps.push(i);
+  }
+  numbers.forEach((n, i) => {
+    if (numbers.indexOf(n) !== i) numberingDupes.push(n);
+  });
+  const numberingCheck = numberingGaps.length === 0 && numberingDupes.length === 0 ? 'pass' : 'check failed';
+  if (numberingCheck === 'pass') checksPass++;
+  checks.push({
+    id: 'numbering',
+    name: 'Numbering',
+    found: numberingGaps.length === 0 && numberingDupes.length === 0 ? '1 to n in order' : 'gaps or duplicates',
+    expected: '1 to n in order',
+    result: numberingCheck,
+    link: numberingCheck === 'check failed' ? '#panel-02' : null,
+    gaps: numberingGaps,
+    dupes: [...new Set(numberingDupes)]
+  });
+
+  // 03 First words
+  checksTotal++;
+  const firstWordsMatch = paragraphs.filter(p => p.firstWordsMatch).length;
+  const firstWordsCheck = firstWordsMatch === parasExpected ? 'pass' : 'check failed';
+  if (firstWordsCheck === 'pass') checksPass++;
+  checks.push({
+    id: 'first-words',
+    name: 'First words',
+    found: firstWordsMatch,
+    expected: parasExpected,
+    result: firstWordsCheck,
+    link: firstWordsCheck === 'check failed' ? '#panel-02' : null
+  });
+
+  // 04 Footnotes (source limit)
+  checksTotal++;
+  checks.push({
+    id: 'footnotes',
+    name: 'Footnotes',
+    found: 0,
+    expected: footnotesExpected,
+    result: 'source limit',
+    link: null
+  });
+
+  // 05 Repairs
+  checksTotal++;
+  const repairsTotal = repairCounts.sentence + repairCounts.comma + repairCounts.quote + repairCounts.dash;
+  const repairsParasTotal = new Set([
+    ...repairParas.sentence,
+    ...repairParas.comma,
+    ...repairParas.quote,
+    ...repairParas.dash
+  ]).size;
+  checks.push({
+    id: 'repairs',
+    name: 'Repairs',
+    found: repairsTotal,
+    expected: '–',
+    result: 'pass',
+    link: null
+  });
+
+  // 06 Headings
+  checksTotal++;
+  const h2Count = headings.filter(h => h.tag === 'H2').length;
+  const h3Count = headings.filter(h => h.tag === 'H3').length;
+  const gluedCount = headings.filter(h => h.label && !h.text.includes(' ')).length;
+  checks.push({
+    id: 'headings',
+    name: 'Headings',
+    found: `${h2Count} h2, ${h3Count} h3, ${gluedCount} glued labels`,
+    expected: '–',
+    result: 'pass',
+    link: null
+  });
+
+  // 07 Classification
+  checksTotal++;
+  const classificationTotal = cover.length + committeeLine.length + title.length + headings.length + paragraphs.length;
+  const classificationCheck = classificationTotal === elements.length && unclassified.length === 0 ? 'pass' : 'check failed';
+  if (classificationCheck === 'pass') checksPass++;
+  checks.push({
+    id: 'classification',
+    name: 'Nothing lost',
+    found: classificationTotal,
+    expected: elements.length,
+    result: classificationCheck,
+    link: classificationCheck === 'check failed' ? null : null,
+    unclassified: unclassified.length
+  });
+
+  // 08 Export round trip
+  checksTotal++;
+  const exportCheck = 'not run';
+  checks.push({
+    id: 'export',
+    name: 'Export round trip',
+    found: '–',
+    expected: parasFound,
+    result: exportCheck,
+    link: null
+  });
+
+  // Update UI
+  document.getElementById('rail-paras-found').textContent = parasFound;
+  document.getElementById('rail-paras-expected').textContent = parasExpected;
+  document.getElementById('rail-paras-bar').className = parasFound === parasExpected ? 'rail-bar' : parasFound < parasExpected ? 'rail-bar short' : 'rail-bar over';
+  document.getElementById('rail-footnotes-expected').textContent = footnotesExpected;
+  document.getElementById('rail-checks-pass').textContent = checksPass;
+  document.getElementById('rail-checks-total').textContent = checksTotal;
+
+  document.getElementById('tile-paras-found').textContent = parasFound;
+  document.getElementById('tile-paras-expected').textContent = parasExpected;
+  document.getElementById('tile-first-words-match').textContent = firstWordsMatch;
+  document.getElementById('tile-first-words-expected').textContent = parasExpected;
+  document.getElementById('tile-footnotes-expected').textContent = footnotesExpected;
+  document.getElementById('tile-spaces-restored').textContent = repairsTotal;
+  document.getElementById('tile-spaces-paras').textContent = repairsParasTotal;
+
+  const headerDot = document.getElementById('header-dot');
+  headerDot.className = checksPass === checksTotal ? 'header-dot pass' : 'header-dot fail';
+  document.getElementById('header-checks').textContent = `${checksPass} of ${checksTotal} checks pass`;
+
+  // First words mismatches
+  const firstWordsList = document.getElementById('tile-first-words-list');
+  if (firstWordsMismatches.length > 0) {
+    firstWordsList.hidden = false;
+    firstWordsMismatches.slice(0, 10).forEach(num => {
+      const p = paragraphs.find(p => p.num === num);
+      const div = document.createElement('p');
+      div.innerHTML = `para. ${num}: <span class="mono">${p.text.split(/\s+/).slice(0, 6).join(' ')}</span> / <span class="mono">${firstWordsRef[String(num)]}</span>`;
+      firstWordsList.appendChild(div);
+    });
+    if (firstWordsMismatches.length > 10) {
+      const div = document.createElement('p');
+      div.textContent = `and ${firstWordsMismatches.length - 10} more`;
+      firstWordsList.appendChild(div);
+    }
+  }
+
+  // Checks panel
+  const checksRegion = document.getElementById('checks-region');
+  const checksToggle = document.getElementById('checks-toggle');
+  checksToggle.textContent = `01 PARAGRAPH COUNT (${checks[0].result})`;
+  document.getElementById('check-paras-found').textContent = checks[0].found;
+  document.getElementById('check-paras-expected').textContent = checks[0].expected;
+  document.getElementById('check-paras-result').textContent = checks[0].result;
+  document.getElementById('check-paras-result').className = checks[0].result;
+
+  const numberingRegion = document.getElementById('check-numbering-region');
+  const numberingToggle = document.getElementById('check-numbering-toggle');
+  numberingToggle.textContent = `02 NUMBERING (${checks[1].result})`;
+  document.getElementById('check-numbering-found').textContent = checks[1].found;
+  document.getElementById('check-numbering-result').textContent = checks[1].result;
+  document.getElementById('check-numbering-result').className = checks[1].result;
+  if (checks[1].gaps.length > 0) {
+    document.getElementById('check-numbering-gaps-row').hidden = false;
+    document.getElementById('check-numbering-gaps').textContent = checks[1].gaps.join(', ');
+  }
+  if (checks[1].dupes.length > 0) {
+    document.getElementById('check-numbering-dupes-row').hidden = false;
+    document.getElementById('check-numbering-dupes').textContent = checks[1].dupes.join(', ');
+  }
+
+  const firstWordsRegion = document.getElementById('check-first-words-region');
+  const firstWordsToggle = document.getElementById('check-first-words-toggle');
+  firstWordsToggle.textContent = `03 FIRST WORDS (${checks[2].result})`;
+  document.getElementById('check-first-words-found').textContent = checks[2].found;
+  document.getElementById('check-first-words-expected').textContent = checks[2].expected;
+  document.getElementById('check-first-words-result').textContent = checks[2].result;
+  document.getElementById('check-first-words-result').className = checks[2].result;
+
+  const footnotesRegion = document.getElementById('check-footnotes-region');
+  const footnotesToggle = document.getElementById('check-footnotes-toggle');
+  footnotesToggle.textContent = `04 FOOTNOTES (source limit)`;
+  document.getElementById('check-footnotes-expected').textContent = checks[3].expected;
+
+  const repairsRegion = document.getElementById('check-repairs-region');
+  const repairsToggle = document.getElementById('check-repairs-toggle');
+  repairsToggle.textContent = `05 REPAIRS (pass)`;
+  document.getElementById('check-repairs-sentence').textContent = repairCounts.sentence;
+  document.getElementById('check-repairs-sentence-paras').textContent = repairParas.sentence.size;
+  document.getElementById('check-repairs-comma').textContent = repairCounts.comma;
+  document.getElementById('check-repairs-comma-paras').textContent = repairParas.comma.size;
+  document.getElementById('check-repairs-quote').textContent = repairCounts.quote;
+  document.getElementById('check-repairs-quote-paras').textContent = repairParas.quote.size;
+  document.getElementById('check-repairs-dash').textContent = repairCounts.dash;
+  document.getElementById('check-repairs-dash-paras').textContent = repairParas.dash.size;
+  document.getElementById('check-repairs-total').textContent = repairsTotal;
+  document.getElementById('check-repairs-total-paras').textContent = repairsParasTotal;
+
+  const headingsRegion = document.getElementById('check-headings-region');
+  const headingsToggle = document.getElementById('check-headings-toggle');
+  headingsToggle.textContent = `06 HEADINGS (pass)`;
+  document.getElementById('check-headings-h2').textContent = h2Count;
+  document.getElementById('check-headings-h3').textContent = h3Count;
+  document.getElementById('check-headings-glued').textContent = gluedCount;
+
+  const classificationRegion = document.getElementById('check-classification-region');
+  const classificationToggle = document.getElementById('classification-toggle');
+  classificationToggle.textContent = `07 NOTHING LOST (${checks[6].result})`;
+  document.getElementById('check-classification-cover').textContent = cover.length;
+  document.getElementById('check-classification-committee').textContent = committeeLine.length;
+  document.getElementById('check-classification-title').textContent = title.length;
+  document.getElementById('check-classification-heading').textContent = headings.length;
+  document.getElementById('check-classification-paragraph').textContent = paragraphs.length;
+  document.getElementById('check-classification-total').textContent = classificationTotal;
+  if (checks[6].unclassified > 0) {
+    document.getElementById('check-classification-unclassified-row').hidden = false;
+    document.getElementById('check-classification-unclassified').textContent = `${checks[6].unclassified} unclassified elements`;
+  }
+
+  const exportRegion = document.getElementById('check-export-region');
+  const exportToggle = document.getElementById('check-export-toggle');
+  exportToggle.textContent = `08 EXPORT ROUND TRIP (not run)`;
+  document.getElementById('check-export-expected').textContent = parasFound;
+
+  // Spaces panel
+  document.getElementById('spaces-total').textContent = repairsTotal;
+  document.getElementById('spaces-sentence').textContent = repairCounts.sentence;
+  document.getElementById('spaces-comma').textContent = repairCounts.comma;
+  document.getElementById('spaces-quote').textContent = repairCounts.quote;
+  document.getElementById('spaces-dash').textContent = repairCounts.dash;
+
+  const spacesTableBody = document.getElementById('spaces-table-body');
+  repairs.forEach(r => {
+    const tr = document.createElement('tr');
+    const before = r.before + (r.before.length === 20 ? '' : '…');
+    const after = '…' + r.after.slice(0, 20);
+    tr.innerHTML = `
+      <td><a href="#para-${r.para}">${r.para}</a></td>
+      <td class="mono">${before}<span style="border: 1px solid var(--accent); padding: 0 2px;">${r.rule === 'quote' ? '“' : r.rule === 'dash' ? '–' : r.rule === 'sentence' ? '.' : ','}</span>${after}</td>
+      <td class="mono">${before} ${r.rule === 'quote' ? '“' : r.rule === 'dash' ? '–' : r.rule === 'sentence' ? '.' : ','} ${after}</td>
+      <td>${r.rule} join</td>
+    `;
+    spacesTableBody.appendChild(tr);
+  });
+
+  // Headings
+  const headingsList = document.getElementById('headings-list');
+  const headingsFound = headings.length;
+  document.getElementById('headings-found').textContent = headingsFound;
+  headings.forEach(h => {
+    const div = document.createElement('div');
+    div.textContent = h.text;
+    headingsList.appendChild(div);
+  });
+
+  // Paragraphs table
+  const paraTableBody = document.getElementById('para-table-body');
+  paragraphs.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.setAttribute('aria-expanded', 'false');
+    tr.setAttribute('tabindex', '0');
+    tr.id = `para-${p.num}`;
+    tr.innerHTML = `
+      <td class="para-num"><a href="#para-${p.num}">${p.num}</a></td>
+      <td class="para-section">${p.section || ''}</td>
+      <td class="para-first">${p.text.slice(0, 120).replace(/\s+/g, ' ')}…</td>
+      <td class="para-check ${p.firstWordsMatch ? '' : 'fail'}">${p.firstWordsMatch ? 'OK' : 'first words differ'}</td>
+    `;
+    tr.addEventListener('click', () => togglePara(tr, p));
+    tr.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') togglePara(tr, p);
+    });
+    paraTableBody.appendChild(tr);
+
+    const expandedTr = document.createElement('tr');
+    expandedTr.hidden = true;
+    expandedTr.innerHTML = `
+      <td colspan="4" class="para-expanded">
+        <p class="para-text">${escapeHtml(p.text)}</p>
+        <p class="para-words">First six words: <span>${escapeHtml(p.text.split(/\s+/).slice(0, 6).join(' '))}</span> / <span>${escapeHtml(firstWordsRef[String(p.num)] || '')}</span></p>
+        ${p.repairs.length > 0 ? `<p class="para-spaces">Spaces restored: ${p.repairs.map(r => `<span>${escapeHtml(r.rule === 'quote' ? '“' : r.rule === 'dash' ? '–' : r.rule === 'sentence' ? '.' : ',')}</span>`).join('')}</p>` : ''}
+        <div class="para-cite">
+          <button class="copy-cite" data-cite="${escapeHtml(p.citation)}">Copy citation</button>
+        </div>
+      </td>
+    `;
+    paraTableBody.appendChild(expandedTr);
+  });
+
+  // Export buttons
+  const exportJson = document.getElementById('export-json');
+  const exportMd = document.getElementById('export-md');
+  if (parasFound > 0) {
+    exportJson.disabled = false;
+    exportMd.disabled = false;
+
+    exportJson.addEventListener('click', () => {
+      const json = paragraphs.map(p => ({
+        symbol: data.symbol,
+        paragraph: p.num,
+        section: p.section,
+        part: p.part,
+        text: p.text,
+        text_raw: p.raw,
+        first_words_match: p.firstWordsMatch,
+        citation: p.citation,
+        doc_url: data.doc_url,
+        limitations: `no footnotes in this HTML version; the document has ${footnotesExpected}`
+      }));
+      const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.symbol.replace(/\//g, '-') + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+
+      // Export round trip check
+      const parsed = JSON.parse(JSON.stringify(json));
+      const exportFound = parsed.length;
+      const exportCheck = exportFound === parasFound ? 'pass' : 'check failed';
+      document.getElementById('check-export-found').textContent = exportFound;
+      document.getElementById('check-export-result').textContent = exportCheck;
+      document.getElementById('check-export-result').className = exportCheck;
+      exportToggle.textContent = `08 EXPORT ROUND TRIP (${exportCheck})`;
     });
 
-    // Run
-    classifyElements();
-    repairText();
-    checkFirstWords();
-    checkNumbering();
-    runChecks();
-    render();
-  </script>
+    exportMd.addEventListener('click', () => {
+      let md = `---\n`;
+      md += `title: "${data.title.replace(/ \*$/, '')}"\n`;
+      md += `symbol: ${data.symbol}\n`;
+      md += `adopted: ${data.reference.adopted}\n`;
+      md += `source_url: ${data.doc_url}\n`;
+      md += `extracted: ${new Date().toISOString().split('T')[0]}\n`;
+      md += `paragraphs_found: ${parasFound}\n`;
+      md += `paragraphs_expected: ${parasExpected}\n`;
+      md += `footnotes: "no footnotes in this HTML version; the document has ${footnotesExpected}"\n`;
+      md += `---\n\n`;
+
+      let currentPart = null;
+      let currentSection = null;
+      paragraphs.forEach(p => {
+        if (p.part && p.part !== currentPart) {
+          md += `## ${p.part}\n\n`;
+          currentPart = p.part;
+          currentSection = null;
+        }
+        if (p.section && p.section !== currentSection) {
+          md += `### ${p.section}\n\n`;
+          currentSection = p.section;
+        }
+        md += `**${p.num}.** ${p.text}\n\n`;
+      });
+
+      const blob = new Blob([md], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.symbol.replace(/\//g, '-') + '.md';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  // Tabs
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.tab-panel');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = document.getElementById(tab.getAttribute('aria-controls'));
+      tabs.forEach(t => {
+        t.setAttribute('aria-selected', 'false');
+        document.getElementById(t.getAttribute('aria-controls')).hidden = true;
+      });
+      tab.setAttribute('aria-selected', 'true');
+      target.hidden = false;
+    });
+  });
+
+  // Expandable sections
+  const expandables = document.querySelectorAll('[aria-expanded]');
+  expandables.forEach(el => {
+    el.addEventListener('click', () => {
+      const expanded = el.getAttribute('aria-expanded') === 'true';
+      el.setAttribute('aria-expanded', !expanded);
+      const target = document.getElementById(el.getAttribute('aria-controls'));
+      target.hidden = expanded;
+    });
+  });
+
+  // Copy citation
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('copy-cite')) {
+      const cite = e.target.getAttribute('data-cite');
+      navigator.clipboard.writeText(cite).then(() => {
+        const button = e.target;
+        const original = button.textContent;
+        button.textContent = 'Copied';
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.textContent = original;
+          button.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  });
+
+  function togglePara(tr, p) {
+    const expanded = tr.getAttribute('aria-expanded') === 'true';
+    tr.setAttribute('aria-expanded', !expanded);
+    const nextTr = tr.nextElementSibling;
+    nextTr.hidden = expanded;
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+});
+</script>
 </body>
 </html>

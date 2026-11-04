@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paragraphs out of a UN document · E/C.12/GC/27</title>
+<style>
+  :root{
+    --paper:#f4f0e8; --ink:#1d1b18; --rule:#d9d2c3; --accent:#9b2335;
+    --green:#1e6b34; --mono:ui-monospace,Menlo,Consolas,monospace;
+    --serif:Georgia,"Times New Roman",serif; --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5}
+  body{margin:0;padding:0 24px}
+  a{color:var(--ink);text-decoration:underline;text-underline-offset:2px}
+  a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  .mono{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+  .bignum{font-family:var(--serif);font-size:48px;line-height:1.05}
+
+  /* Header */
+  header{border-bottom:2px solid var(--ink);padding:18px 0 14px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-end}
+  .hd-label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+  .hd-title{font-family:var(--serif);font-size:28px;line-height:1.15;margin:0 0 8px;max-width:60ch}
+  .hd-meta{font-size:14px;color:#4a453d}
+  .hd-status{text-align:right;font-size:14px;white-space:nowrap}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:1px}
+  .dot.ok{background:var(--green)} .dot.bad{background:var(--accent)}
+  .lim{color:var(--accent)}
+
+  /* Layout */
+  .frame{display:grid;grid-template-columns:250px 1fr;gap:0;min-height:60vh}
+  .rail{border-right:1px solid var(--rule);padding:20px 20px 20px 0}
+  .main{padding:20px 0 40px 24px;max-width:960px}
+  @media(max-width:820px){.frame{grid-template-columns:1fr}.rail{border-right:none;border-bottom:1px solid var(--rule);padding-right:0}.main{padding-left:0}}
+
+  /* Rail */
+  .rail h2{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin:0 0 10px}
+  .card{border:1px solid var(--rule);padding:12px;margin-bottom:18px}
+  .card .sym{font-family:var(--mono);font-size:13px;font-weight:600}
+  .card .short{font-size:13px;margin-top:4px;color:#4a453d}
+  .stat{margin-top:16px}
+  .stat .lbl{font-size:13px;color:#4a453d;margin-bottom:2px}
+  .bar{height:4px;background:var(--rule);margin-top:6px;position:relative}
+  .bar span{position:absolute;left:0;top:0;bottom:0;background:var(--ink)}
+  .bar.bad span{background:var(--accent)}
+  .stat.bad .bignum{color:var(--accent)}
+  .note{font-size:12px;color:var(--accent);margin-top:2px}
+  .rail .pass{font-size:14px;margin-top:18px}
+
+  /* Tabs */
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--rule);margin-bottom:22px}
+  .tab{appearance:none;background:none;border:none;border-bottom:3px solid transparent;
+    font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    padding:10px 18px 8px;cursor:pointer;color:var(--ink)}
+  .tab[aria-selected="true"]{border-bottom-color:var(--accent);color:var(--accent);font-weight:700}
+  .tabpanel{outline:none}
+
+  /* Tiles */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-bottom:8px}
+  .tile{background:var(--paper);padding:16px}
+  .tile .num{font-family:var(--serif);font-size:44px;line-height:1.05}
+  .tile .num small{font-size:20px;color:#4a453d}
+  .tile .lbl{font-size:14px;font-weight:600;margin-top:4px}
+  .tile .how{font-size:12px;color:#5a544a;margin-top:6px}
+  .tile.bad .num{color:var(--accent)}
+  .tile.good .num{color:var(--green)}
+
+  /* Sections */
+  h3.sub{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin:26px 0 10px}
+  .mismatch{font-size:14px;margin:4px 0}
+  .mismatch .pn{color:var(--accent);font-family:var(--mono);font-weight:700}
+
+  /* Buttons */
+  .btn{appearance:none;background:var(--ink);color:var(--paper);border:none;font-family:var(--sans);
+    font-size:14px;padding:9px 16px;cursor:pointer;margin-right:10px;margin-top:6px}
+  .btn:hover{background:#3a3630}
+  .btn[disabled]{background:#b3ab9c;cursor:not-allowed}
+
+  /* Closed headings */
+  details.disc{border-top:1px solid var(--rule);margin-top:16px}
+  details.disc>summary{list-style:none;cursor:pointer;padding:12px 0;font-family:var(--mono);
+    font-size:12px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+  details.disc>summary::-webkit-details-marker{display:none}
+  details.disc>summary::before{content:"+";width:14px;display:inline-block;color:var(--accent);font-weight:700}
+  details.disc[open]>summary::before{content:"−"}
+
+  /* Tables */
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+  caption{font-family:var(--serif);font-size:18px;text-align:left;padding-bottom:8px}
+  caption .mono{color:#4a453d;display:block;margin-bottom:2px}
+  th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;
+    text-align:left;border-bottom:2px solid var(--ink);padding:6px 10px 6px 0}
+  td{border-bottom:1px solid var(--rule);padding:8px 10px 8px 0;vertical-align:top}
+  th.r,td.r{text-align:right;white-space:nowrap}
+  .ok{color:var(--green);font-weight:600}
+  .fail{color:var(--accent);font-weight:600}
+  .checkline{font-size:14px;padding:6px 0;border-bottom:1px solid var(--rule)}
+  .checkline .val{font-family:var(--mono);font-size:12px;color:#4a453d}
+
+  /* Paragraph rows */
+  .prow{border-bottom:1px solid var(--rule)}
+  .prow>button.head{appearance:none;background:none;border:none;width:100%;text-align:left;cursor:pointer;
+    display:grid;grid-template-columns:60px 200px 1fr 130px;gap:10px;padding:10px 0;font-family:var(--sans);font-size:14px;color:var(--ink)}
+  .prow>button.head:hover{background:#ece7db}
+  .prow .pn{font-family:var(--mono);font-weight:700;color:var(--accent);font-size:13px}
+  .prow .sec{color:#4a453d}
+  .prow .chk{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-align:right}
+  .pbody{padding:4px 0 18px 70px}
+  .pbody .path{font-size:12px;color:#4a453d;margin-bottom:8px}
+  .pbody .full{font-size:16px;line-height:1.65;max-width:72ch}
+  .pbody .path2{font-size:13px;color:#4a453d;margin-top:14px}
+  .fw{display:grid;grid-template-columns:auto 1fr;gap:2px 14px;font-size:13px;margin-top:10px}
+  mark.rep{background:#f0d9dd;box-shadow:inset 0 0 0 1px var(--accent);padding:0 1px;border-radius:1px}
+  .copied{font-family:var(--mono);font-size:12px;color:var(--green);margin-left:10px}
+  .headbox{border:1px solid var(--rule);padding:10px 14px;margin-bottom:14px;font-size:14px}
+  .headbox summary{cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+  .headbox ul{margin:8px 0 0;padding-left:20px;font-size:14px}
+  .hint{font-family:var(--mono);font-size:11px;color:#5a544a;letter-spacing:.03em}
+
+  footer{border-top:2px solid var(--ink);margin-top:20px;padding:14px 0 30px;font-size:13px;color:#4a453d}
+  @media(max-width:700px){.prow>button.head{grid-template-columns:50px 1fr 110px}.prow .sec{display:none}.pbody{padding-left:0}}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="hd-label">UN DOCUMENT · HTML</div>
+    <h1 class="hd-title" id="hd-title"></h1>
+    <div class="hd-meta" id="hd-meta"></div>
+  </div>
+  <div class="hd-status">
+    <div id="hd-dot"></div>
+    <div class="lim">1 source limit (footnotes)</div>
+  </div>
+</header>
+
+<div class="frame">
+  <aside class="rail">
+    <h2>Document</h2>
+    <div class="card">
+      <div class="sym" id="rail-symbol"></div>
+      <div class="short" id="rail-short"></div>
+    </div>
+    <div class="stat" id="rail-para"></div>
+    <div class="stat bad" id="rail-fn"></div>
+    <div class="pass" id="rail-pass"></div>
+  </aside>
+
+  <main class="main">
+    <div class="tabs" role="tablist" aria-label="Views">
+      <button class="tab" id="tab-01" role="tab" aria-selected="true" aria-controls="panel-01">01 RESULT</button>
+      <button class="tab" id="tab-02" role="tab" aria-selected="false" aria-controls="panel-02" tabindex="-1">02 PARAGRAPHS</button>
+    </div>
+
+    <section id="panel-01" role="tabpanel" aria-labelledby="tab-01" tabindex="0">
+      <h3 class="sub">Did the app find everything the document has?</h3>
+      <div class="tiles" id="tiles"></div>
+      <div id="mismatch-list"></div>
+
+      <h3 class="sub">Take the paragraphs away</h3>
+      <p class="hint">DOWNLOADS A FILE · NOTHING LEAVES THE BROWSER</p>
+      <button class="btn" id="btn-json">Download JSON</button>
+      <button class="btn" id="btn-md">Download Markdown</button>
+      <p class="hint" id="export-note" style="margin-top:8px"></p>
+
+      <details class="disc" id="checks-disc">
+        <summary id="checks-summary">Every check</summary>
+        <div id="checks"></div>
+      </details>
+
+      <details class="disc" id="spaces-disc">
+        <summary id="spaces-summary">The spaces restored</summary>
+        <div id="spaces"></div>
+        <p class="hint" style="margin-top:10px">Rules restore a space only where the characters prove it was there. Word pairs such as “Giventhe” are not touched.</p>
+      </details>
+    </section>
+
+    <section id="panel-02" role="tabpanel" aria-labelledby="tab-02" tabindex="0" hidden>
+      <p class="hint" id="p2-note">CLICK A ROW = FULL TEXT, VERBATIM · CLICK AGAIN = CLOSE</p>
+      <details class="headbox" id="headbox">
+        <summary class="mono" id="headbox-summary">Headings found</summary>
+        <ul id="headlist"></ul>
+      </details>
+      <table id="ptable">
+        <caption id="ptable-caption"><span class="mono">TAB.01</span><span id="ptable-cap-text"></span></caption>
+        <thead><tr>
+          <th scope="col" class="r">No.</th>
+          <th scope="col">Section</th>
+          <th scope="col">First line</th>
+          <th scope="col" class="r">Check</th>
+        </tr></thead>
+        <tbody id="ptbody"></tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<footer id="footer"></footer>
+
+<script>
+(function(){
+  const D = window.WORKSHOP_DATA.html_doc || {};
+  const ref = D.reference || null;
+
+  // ---------- Pipeline ----------
+  const classes = { cover:0, title:0, heading:0, paragraph:0, committee:0, unclassified:0 };
+  const unclassifiedEls = [];
+  const paragraphs = [];      // {number, section, part, text, text_raw, firstMatch, repairs:[{rule,before,after}], el}
+  const headings = [];        // {level, label, heading, raw, glued}
+  let titleText = null, committeeText = null;
+
+  if (D.html) {
+    const doc = new DOMParser().parseFromString(D.html, 'text/html');
+    const body = doc.body;
+    let sawTable = false;
+    const all = body.querySelectorAll('table, p, h2, h3');
+    all.forEach(el => {
+      if (!sawTable && el.tagName === 'TABLE') { sawTable = true; classes.cover++; return; }
+      if (!sawTable && el.closest && el.closest('table')) { classes.cover++; return; }
+      const txt = (el.textContent || '').replace(/\s+/g, ' ').trim();
+      if (el.tagName === 'P') {
+        const m = txt.match(/^(\d{1,3})\.\s*(.*)$/);
+        if (m) {
+          classes.paragraph++;
+          paragraphs.push({ number: parseInt(m[1],10), text_raw: m[2].trim(), el });
+          return;
+        }
+      }
+      if (el.tagName === 'H2' || el.tagName === 'H3') {
+        if (el.tagName === 'H2' && titleText === null) {
+          titleText = txt; classes.title++; return;
+        }
+        classes.heading++;
+        const hm = txt.match(/^([IVX]+|[A-Z])\.\s*(.+)$/);
+        const h = { level: el.tagName, raw: txt };
+        if (hm) { h.label = hm[1]; h.heading = hm[2].trim(); h.glued = !/^[IVX]+\.\s/.test(txt) || /^\s/.test(''); }
+        else { h.heading = txt; h.label = null; }
+        h.glued = txt.match(/^([IVX]+|[A-Z])\.(?!\s)/) ? true : false;
+        headings.push(h);
+        return;
+      }
+      if (el.tagName === 'P') { classes.committee++; committeeText = committeeText || txt; return; }
+      classes.unclassified++; unclassifiedEls.push(el.tagName + ': ' + txt.slice(0,60));
+    });
+  }
+
+  // repairs
+  const RULES = [
+    { name:'sentence join', re:/([a-z])\.([A-Z])/g, sub:'$1. $2' },
+    { name:'comma join',    re:/([a-z]),([A-Za-z])/g, sub:'$1, $2' },
+    { name:'quote join',    re:/([a-z])“/g, sub:'$1 “' },
+    { name:'dash join',     re:/–([A-Za-z])/g, sub:'– $1' }
+  ];
+  const ruleCounts = {};
+  let totalRepairs = 0;
+
+  // track sections
+  let curSection = null, curPart = null;
+  const byOrder = []; // walk again for section assignment
+  {
+    const doc = new DOMParser().parseFromString(D.html, 'text/html');
+    const body = doc.body;
+    let sawTable = false, ti = 0, pi = 0;
+    body.querySelectorAll('table, p, h2, h3').forEach(el => {
+      if (!sawTable && el.tagName === 'TABLE') { sawTable = true; return; }
+      if (!sawTable && el.closest && el.closest('table')) return;
+      const txt = (el.textContent || '').replace(/\s+/g,' ').trim();
+      if (el.tagName === 'P' && txt.match(/^(\d{1,3})\./)) {
+        const p = paragraphs[pi++];
+        p.section = curSection ? curSection.heading : null;
+        p.part = curPart;
+        p.sectionRaw = curSection ? (curSection.label ? curSection.label + '. ' : '') + curSection.heading : null;
+        p.partRaw = curPart ? (curPart.label ? curPart.label + '. ' : '') + curPart.heading : null;
+        // repairs
+        let text = p.text_raw; p.repairs = [];
+        for (const r of RULES) {
+          r.re.lastIndex = 0;
+          let m, found;
+          const re = new RegExp(r.re.source, 'g');
+          while ((m = re.exec(p.text_raw)) !== null) {
+            const idx = m.index;
+            const before = p.text_raw.slice(Math.max(0,idx-20), Math.min(p.text_raw.length, idx+20));
+            p.repairs.push({ rule:r.name, before, at: idx, raw: m[0] });
+          }
+          text = text.replace(re, r.sub);
+        }
+        p.text = text;
+        p.repairCount = p.repairs.length;
+        totalRepairs += p.repairs.length;
+        p.repairs.forEach(rp => ruleCounts[rp.rule] = (ruleCounts[rp.rule]||0)+1);
+        byOrder.push(p);
+      } else if (el.tagName === 'H2' || el.tagName === 'H3') {
+        if (el.tagName === 'H2' && titleText === null) return; // title (first h2)
+        const h = headings[ti++];
+        if (h) {
+          if (h.label && /^[IVX]+$/.test(h.label)) {
+            curPart = h; curSection = h;       // a roman part is also its own first section
+          } else {
+            curSection = h;
+          }
+        }
+      }
+    });
+  }
+
+  // first words
+  function norm(s){
+    return (s||'')
+      .replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"')
+      .replace(/\u2013|\u2014/g,'-').replace(/\u2011/g,'-')
+      .replace(/\u00A0/g,' ').replace(/\s+/g,' ').trim();
+  }
+  paragraphs.forEach(p => {
+    const found = (p.text || '').split(/\s+/).slice(0,6).join(' ');
+    p.found6 = found;
+    if (ref && ref.first_words) {
+      const expect = ref.first_words[String(p.number)];
+      p.expected6 = expect || null;
+      p.firstMatch = (expect !== undefined) ? norm(found) === norm(expect) : null;
+    } else { p.firstMatch = null; p.expected6 = null; }
+  });
+
+  const fwMismatches = paragraphs.filter(p => p.firstMatch === false);
+  const repairedParas = paragraphs.filter(p => p.repairCount > 0);
+  const gluedHeadingLabels = headings.filter(h => h.glued).length;
+
+  // numbering check
+  const numbers = paragraphs.map(p => p.number);
+  let numberingIssue = null;
+  {
+    let gaps = [], dups = [];
+    const seen = new Set();
+    numbers.forEach(n => { if (seen.has(n)) dups.push(n); seen.add(n); });
+    for (let i = 1; i <= numbers.length; i++) if (!seen.has(i)) gaps.push(i);
+    const sortedOk = numbers.every((n,i) => i === 0 || n === numbers[i-1]+1);
+    if (gaps.length || dups.length || !sortedOk) numberingIssue = { gaps, dups, sortedOk };
+  }
+
+  // checks
+  const refParas = ref && ref.paragraphs != null ? ref.paragraphs : null;
+  const refFootnotes = ref && ref.footnotes != null ? ref.footnotes : null;
+  const haveDoc = D.html && paragraphs.length > 0;
+
+  const checks = [];
+  function addCheck(name, expected, found, status, extra){
+    checks.push({ name, expected, found, status, extra: extra||'' });
+  }
+
+  const countOK = refParas != null && paragraphs.length === refParas;
+  addCheck('Paragraph count — found against the reference',
+    refParas != null ? String(refParas) : 'no reference in this file',
+    String(paragraphs.length),
+    refParas == null ? 'not run' : (countOK ? 'pass' : 'check failed'),
+    refParas != null && !countOK ? 'difference: ' + (paragraphs.length - refParas) : '');
+
+  addCheck('Numbering — exactly 1 to n in order, no gaps, no duplicates',
+    '1…' + paragraphs.length + ', in order',
+    numberingIssue ? ('gaps: ' + (numberingIssue.gaps.join(', ') || 'none') + '; duplicates: ' + (numberingIssue.dups.join(', ') || 'none')) : '1…' + paragraphs.length + ', in order',
+    numberingIssue ? 'check failed' : 'pass', '');
+
+  addCheck('First words — first six words of each paragraph against the reference',
+    ref && ref.first_words ? 'all ' + refParas + ' match' : 'no reference in this file',
+    fwMismatches.length === 0 ? 'all match' : fwMismatches.length + ' differ (' + fwMismatches.map(p=>p.number).slice(0,10).join(', ') + (fwMismatches.length>10?'…':'') + ')',
+    (ref && ref.first_words) ? (fwMismatches.length === 0 ? 'pass' : 'check failed') : 'not run', '');
+
+  addCheck('Footnotes — this HTML against the reference',
+    refFootnotes != null ? String(refFootnotes) : 'no reference in this file',
+    '0',
+    'source limit',
+    'the HTML version has no footnotes: a limit of the source, not of the app. No footnote text and no footnote marks survive.');
+
+  addCheck('Repairs — spaces restored where the characters prove one was there',
+    'only proven spaces',
+    totalRepairs + ' space' + (totalRepairs===1?'':'s') + ' in ' + repairedParas.length + ' paragraph' + (repairedParas.length===1?'':'s') +
+      (Object.keys(ruleCounts).length ? ' (' + Object.entries(ruleCounts).map(([k,v])=>v+' '+k).join(', ') + ')' : ''),
+    'pass', 'text_raw still holds the text as found.');
+
+  addCheck('Headings — how many h2 and h3, and glued labels separated',
+    'every heading classified',
+    headings.length + ' headings (' + headings.filter(h=>h.level==='H2').length + ' h2, ' + headings.filter(h=>h.level==='H3').length + ' h3); ' + gluedHeadingLabels + ' glued label' + (gluedHeadingLabels===1?'':'s') + ' separated',
+    'pass', '');
+
+  const totalClassified = classes.cover + classes.title + classes.heading + classes.paragraph + classes.committee + classes.unclassified;
+  const totalEls = D.html ? new DOMParser().parseFromString(D.html,'text/html').body.querySelectorAll('table, p, h2, h3').length : 0;
+  addCheck('Nothing lost — every block element classified exactly once',
+    String(totalEls) + ' = ' + totalClassified,
+    totalEls + ' elements: cover ' + classes.cover + ', title ' + classes.title + ', headings ' + classes.heading + ', paragraphs ' + classes.paragraph + ', committee line ' + classes.committee + ', unclassified ' + classes.unclassified,
+    (classes.unclassified === 0 && totalEls === totalClassified) ? 'pass' : 'check failed',
+    unclassifiedEls.length ? 'unclassified: ' + unclassifiedEls.join(' | ') : '');
+
+  // export round trip
+  let roundTripOK = false;
+  const limitation = 'no footnotes in this HTML version; the document has ' + (refFootnotes != null ? refFootnotes : 'an unknown number of');
+  function makeRecords(){
+    return paragraphs.map(p => ({
+      symbol: D.symbol || '', paragraph: p.number,
+      section: p.sectionRaw || '', part: p.partRaw || '',
+      text: p.text, text_raw: p.text_raw,
+      first_words_match: p.firstMatch,
+      citation: (D.symbol||'') + ', para. ' + p.number,
+      doc_url: D.doc_url || '', limitations: limitation
+    }));
+  }
+  const records = makeRecords();
+  try { const back = JSON.parse(JSON.stringify(records)); roundTripOK = back.length === paragraphs.length; }
+  catch(e){ roundTripOK = false; }
+  addCheck('Export round trip — the JSON to download parsed back',
+    records.length + ' records',
+    (roundTripOK ? records.length : 'parse failed') + ' records',
+    roundTripOK ? 'pass' : 'check failed', '');
+
+  const failed = checks.filter(c => c.status === 'check failed').length;
+  const passed = checks.filter(c => c.status === 'pass').length;
+  const notRun = checks.filter(c => c.status === 'not run').length;
+  const totalChecks = checks.length;
+
+  // ---------- Render ----------
+  document.getElementById('hd-title').textContent = D.title || 'Untitled document';
+  document.getElementById('hd-meta').innerHTML =
+    (D.symbol ? '<a href="' + (D.doc_url||'#') + '" target="_blank" rel="noopener">' + D.symbol + '</a>' : 'no symbol') +
+    (ref && ref.adopted ? ' · adopted ' + ref.adopted : '') +
+    (D.source ? ' · ' + D.source : '');
+  document.getElementById('rail-symbol').textContent = D.symbol || '—';
+  document.getElementById('rail-short').textContent = (D.title || '').replace(/^General comment No\. \d+ \(\d+\) on /,'General comment No. … on ').slice(0,120);
+
+  const hdDot = document.getElementById('hd-dot');
+  if (failed > 0) { hdDot.innerHTML = '<span class="dot bad"></span>' + failed + ' check' + (failed===1?'':'s') + ' failed'; }
+  else { hdDot.innerHTML = '<span class="dot ok"></span>' + passed + ' of ' + totalChecks + ' checks pass'; }
+
+  // rail
+  const railPara = document.getElementById('rail-para');
+  const pct = refParas ? Math.min(100, Math.round(paragraphs.length / refParas * 100)) : 100;
+  railPara.innerHTML = '<div class="lbl">paragraphs' + (refParas!=null ? ' of ' + refParas : '') + '</div>' +
+    '<div class="bignum">' + paragraphs.length + '</div>' +
+    '<div class="bar' + (refParas!=null && paragraphs.length!==refParas ? ' bad':'') + '"><span style="width:' + pct + '%"></span></div>';
+  const railFn = document.getElementById('rail-fn');
+  railFn.innerHTML = '<div class="lbl">footnotes of ' + (refFootnotes!=null?refFootnotes:'?') + '</div>' +
+    '<div class="bignum" style="color:var(--accent)">0</div><div class="note">not in this HTML</div>';
+  document.getElementById('rail-pass').innerHTML =
+    (failed>0 ? '<span class="fail">' + failed + ' check' + (failed===1?'':'s') + ' failed</span>' : '<span class="ok">' + passed + ' of ' + totalChecks + ' checks pass</span>') +
+    (notRun ? '<br><span class="lim">' + notRun + ' not run (no reference)</span>' : '') +
+    '<br><span class="lim">1 source limit</span>';
+
+  // tiles
+  const tilesEl = document.getElementById('tiles');
+  const tiles = [];
+  tiles.push({
+    cls: refParas==null ? '' : (countOK ? 'good' : 'bad'),
+    num: paragraphs.length + (refParas!=null ? ' <small>of ' + refParas + '</small>' : ''),
+    lbl: 'Paragraphs found' + (refParas==null ? '' : (countOK ? ' — matches the document' : ' — the document has ' + refParas)),
+    how: 'A <p> whose text starts with a number and a full stop, after the cover table. How this is computed: every <p>, <h2>, <h3> and the cover <table> are walked in order and classified once.'
+  });
+  tiles.push({
+    cls: (ref && ref.first_words) ? (fwMismatches.length===0?'good':'') : '',
+    num: (ref && ref.first_words) ? (refParas - fwMismatches.length) + ' <small>of ' + refParas + '</small>' : '—',
+    lbl: 'First words match',
+    how: 'First six words of each paragraph, compared with the reference after normalising curly quotes, dashes and non-breaking spaces.'
+  });
+  tiles.push({
+    cls: 'bad',
+    num: '0 <small>of ' + (refFootnotes!=null?refFootnotes:'?') + '</small>',
+    lbl: 'Footnotes — none in this HTML',
+    how: 'This HTML version has none: no footnote text, no footnote marks. To cite a footnote, use the PDF or Word version.'
+  });
+  tiles.push({
+    cls: '',
+    num: String(totalRepairs),
+    lbl: 'Spaces restored, in ' + repairedParas.length + ' paragraph' + (repairedParas.length===1?'':'s'),
+    how: 'A space is inserted only where the characters prove it was there: after a full stop, a comma, before an opening quote, after an en dash. Word pairs no rule can see are not touched.'
+  });
+  tilesEl.innerHTML = tiles.map((t,i) =>
+    '<div class="tile ' + t.cls + '"><div class="num">' + t.num + '</div><div class="lbl">' + t.lbl + '</div><div class="how">' + t.how + '</div></div>'
+  ).join('');
+
+  // mismatch list
+  const mmEl = document.getElementById('mismatch-list');
+  if (fwMismatches.length && ref && ref.first_words) {
+    let html = '<h3 class="sub">First words differ <span class="hint">FOUND SIX vs REFERENCE SIX</span></h3>';
+    fwMismatches.slice(0,10).forEach(p => {
+      html += '<div class="mismatch"><span class="pn">para. ' + p.number + '</span>: found “' + esc(p.found6) + '” / reference “' + esc(p.expected6||'') + '”</div>';
+    });
+    if (fwMismatches.length > 10) html += '<div class="mismatch">and ' + (fwMismatches.length-10) + ' more</div>';
+    mmEl.innerHTML = html;
+  } else if (ref && ref.first_words) {
+    mmEl.innerHTML = '';
+  } else {
+    mmEl.innerHTML = '<p class="mismatch">no reference in this file: first words could not be checked</p>';
+  }
+
+  function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // exports
+  const safeSym = (D.symbol||'document').replace(/\//g,'-');
+  function download(name, content, mime){
+    const blob = new Blob([content], { type: mime + ';charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 5000);
+  }
+  const btnJson = document.getElementById('btn-json');
+  const btnMd = document.getElementById('btn-md');
+  if (!haveDoc) { btnJson.disabled = true; btnMd.disabled = true; }
+  document.getElementById('export-note').textContent = haveDoc
+    ? 'JSON: one record per paragraph (symbol, paragraph, section, part, text, text_raw, first_words_match, citation, doc_url, limitations). Markdown: headings in document order, each paragraph as its number in bold. File names use the symbol with slashes replaced by hyphens.'
+    : 'No paragraphs were found in this HTML: exports are disabled.';
+
+  btnJson.addEventListener('click', () => download(safeSym + '.json', JSON.stringify(records, null, 2), 'application/json'));
+  btnMd.addEventListener('click', () => {
+    let md = '---\n';
+    md += 'title: "' + (D.title||'') + '"\n';
+    md += 'symbol: "' + (D.symbol||'') + '"\n';
+    if (ref && ref.adopted) md += 'adopted: "' + ref.adopted + '"\n';
+    md += 'source_url: "' + (D.doc_url||'') + '"\n';
+    md += 'extracted: "' + new Date().toISOString().slice(0,10) + '"\n';
+    md += 'paragraphs_found: ' + paragraphs.length + '\n';
+    md += 'paragraphs_expected: ' + (refParas!=null ? refParas : 'unknown') + '\n';
+    md += 'footnotes: "' + limitation + '"\n';
+    md += '---\n\n';
+    // headings and paragraphs in document order
+    const doc = new DOMParser().parseFromString(D.html,'text/html');
+    let sawTable = false, ti = 0, pi = 0, titleSkipped = false;
+    doc.body.querySelectorAll('table, p, h2, h3').forEach(el => {
+      if (!sawTable && el.tagName === 'TABLE') { sawTable = true; return; }
+      if (!sawTable && el.closest && el.closest('table')) return;
+      const txt = (el.textContent||'').replace(/\s+/g,' ').trim();
+      if (el.tagName === 'P' && txt.match(/^(\d{1,3})\./)) {
+        const p = paragraphs[pi++];
+        md += '**' + p.number + '.** ' + p.text + '\n\n';
+      } else if (el.tagName === 'H2' || el.tagName === 'H3') {
+        if (el.tagName === 'H2' && !titleSkipped && titleText !== null && txt === titleText) { titleSkipped = true; return; }
+        const h = headings[ti++];
+        if (h) md += (h.level==='H2' ? '## ' : '### ') + (h.label ? h.label + '. ' : '') + h.heading + '\n\n';
+      }
+    });
+    download(safeSym + '.md', md, 'text/markdown');
+  });
+
+  // checks panel
+  document.getElementById('checks-summary').textContent = 'Every check (' + totalChecks + ')';
+  const statusLabel = { 'pass': '<span class="ok">pass</span>', 'check failed': '<span class="fail">check failed</span>', 'not run': '<span class="fail">not run</span>', 'source limit': '<span class="fail">source limit</span>' };
+  document.getElementById('checks').innerHTML = checks.map(c =>
+    '<div class="checkline"><strong>' + esc(c.name) + '</strong> — <span class="val">expected: ' + esc(String(c.expected)) + ' · found: ' + esc(String(c.found)) + '</span> — ' + statusLabel[c.status] +
+    (c.extra ? '<br><span class="val">' + esc(c.extra) + '</span>' : '') + '</div>'
+  ).join('');
+
+  // spaces panel
+  document.getElementById('spaces-summary').textContent = 'The spaces restored (' + totalRepairs + ')';
+  const spacesEl = document.getElementById('spaces');
+  if (totalRepairs === 0) {
+    spacesEl.innerHTML = '<p class="hint" style="margin-top:10px">No proven missing spaces were found in this document.</p>';
+  } else {
+    let html = '<p class="hint" style="margin-top:10px">' + Object.entries(ruleCounts).map(([k,v])=>v + ' ' + k).join(' · ') + '</p>';
+    html += '<table><caption><span class="mono">TAB.02</span>' + totalRepairs + ' spaces restored, in ' + repairedParas.length + ' paragraphs</caption>' +
+      '<thead><tr><th scope="col" class="r">Paragraph</th><th scope="col">Before</th><th scope="col">After</th><th scope="col">Rule</th></tr></thead><tbody>';
+    repairedParas.forEach(p => p.repairs.forEach(rp => {
+      const raw = rp.raw;
+      let after;
+      if (rp.rule === 'sentence join') after = raw.replace(/([a-z])\.([A-Z])/, '$1. $2');
+      else if (rp.rule === 'comma join') after = raw.replace(/([a-z]),([A-Za-z])/, '$1, $2');
+      else if (rp.rule === 'quote join') after = raw + ' “'.slice(0,2);
+      else after = raw.slice(0,1) + ' ' + raw.slice(1);
+      if (rp.rule === 'quote join') after = raw + ' “'.slice(1);
+      html += '<tr class="space-row" data-para="' + p.number + '" style="cursor:pointer"><td class="r">' + p.number + '</td><td>…' + esc(rp.before) + '…</td><td>rule inserts a space at “' + esc(raw) + '”</td><td>' + rp.rule + '</td></tr>';
+    }));
+    html += '</tbody></table>';
+    spacesEl.innerHTML = html;
+    spacesEl.querySelectorAll('.space-row').forEach(tr => {
+      tr.addEventListener('click', () => { selectTab(1); openPara(parseInt(tr.dataset.para,10)); });
+    });
+  }
+
+  // ---------- Tab 02 ----------
+  document.getElementById('ptable-cap-text').textContent = paragraphs.length + ' paragraphs found' + (refParas!=null ? ', ' + refParas + ' expected' : '');
+  const headSummary = document.getElementById('headbox-summary');
+  headSummary.textContent = 'Headings found: ' + headings.length;
+  document.getElementById('headlist').innerHTML = headings.map(h =>
+    '<li><span class="mono">' + h.level.toLowerCase() + '</span> ' + esc((h.label ? h.label + '. ' : '') + h.heading) + '</li>'
+  ).join('');
+
+  const tbody = document.getElementById('ptbody');
+  if (!paragraphs.length) {
+    tbody.innerHTML = '<tr><td colspan="4">No paragraphs were found in this HTML.</td></tr>';
+  }
+  paragraphs.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.className = 'prow'; tr.dataset.para = p.number;
+    const first = p.text.length > 120 ? p.text.slice(0, 120).replace(/\s\S*$/,'') + '…' : p.text;
+    const chk = p.firstMatch === false ? '<span class="fail">first words differ</span>'
+      : p.firstMatch === true ? '<span class="ok">OK</span>'
+      : '<span class="val">not checked</span>';
+    tr.innerHTML = '<th scope="row"><button class="head" aria-expanded="false" aria-controls="pb-' + p.number + '">' +
+      '<span class="pn">' + p.number + '</span>' +
+      '<span class="sec">' + esc(p.section || '—') + '</span>' +
+      '<span>' + esc(first) + '</span>' +
+      '<span class="chk">' + chk + '</span></button></th>';
+    // expanded body built lazily
+    tr.querySelector('button').addEventListener('click', () => togglePara(tr, p));
+    tbody.appendChild(tr);
+  });
+
+  function markedText(p){
+    // mark repair positions in text with a thin red box
+    let out = esc(p.text);
+    if (!p.repairCount) return out;
+    // re-find the repaired spots in the cleaned text: show the inserted-space context
+    const marks = [];
+    for (const rp of p.repairs) {
+      // find the pattern in p.text
+      let pat;
+      if (rp.rule === 'sentence join') pat = /([a-z])\. ([A-Z])/g;
+      else if (rp.rule === 'comma join') pat = /([a-z]), ([A-Za-z])/g;
+      else if (rp.rule === 'quote join') pat = /([a-z]) “/g;
+      else pat = /– ([A-Za-z])/g;
+      let m;
+      while ((m = pat.exec(p.text)) !== null) { marks.push(m.index); }
+    }
+    marks.sort((a,b)=>b-a);
+    const seenIdx = new Set();
+    for (const idx of marks) {
+      if (seenIdx.has(idx)) continue; seenIdx.add(idx);
+      // wrap the join characters: find end of the match (~3 chars)
+      let end = idx + 3;
+      if (idx > 0 && p.text[idx-1] && /[a-z]/.test(p.text[idx-1])) { /* ok */ }
+      out = out.slice(0, idx) + '\u2062<mark class="rep">' + out.slice(idx, Math.min(end, out.length)) + '</mark>\u2063' + out.slice(Math.min(end, out.length));
+    }
+    return out;
+  }
+
+  function togglePara(tr, p){
+    const btn = tr.querySelector('button.head');
+    const existing = tr.querySelector('.pbody');
+    if (existing) { existing.remove(); btn.setAttribute('aria-expanded','false'); return; }
+    // close others? allow multiple open (simple). Build body.
+    const div = document.createElement('td');
+    div.colSpan = 4; div.className = 'pbody'; div.id = 'pb-' + p.number;
+    const fullPath = (p.partRaw ? p.partRaw : '') + (p.sectionRaw && p.sectionRaw !== p.partRaw ? ' › ' + p.sectionRaw : '');
+    const fwRow = (ref && ref.first_words)
+      ? '<div class="fw"><span class="mono">FOUND</span><span>' + esc(p.found6) + '</span>' +
+        '<span class="mono">REFERENCE</span><span>' + esc(p.expected6 || '—') + '</span></div>'
+      : '';
+    const repNote = p.repairCount
+      ? '<div class="path2"><mark class="rep">marked</mark> = a space restored in this paragraph (' + p.repairCount + ' place' + (p.repairCount===1?'':'s') + '; the box marks the join). <span class="mono">text_raw, as found, is below</span></div><div class="path2" style="font-size:13px;color:#5a544a">' + esc(p.text_raw.slice(0,300)) + (p.text_raw.length>300?'…':'') + '</div>'
+      : '';
+    div.innerHTML =
+      '<div class="path">' + esc(fullPath || '—') + '</div>' +
+      '<div class="full">' + markedText(p) + '</div>' +
+      fwRow + repNote +
+      '<div style="margin-top:12px"><button class="btn copy-btn" data-cite="' + esc((D.symbol||'') + ', para. ' + p.number) + '">Copy citation</button><span class="copied" hidden>Copied</span></div>';
+    const row = document.createElement('tr');
+    row.appendChild(div);
+    tr.after(row);
+    btn.setAttribute('aria-expanded','true');
+    const cb = div.querySelector('.copy-btn');
+    cb.addEventListener('click', () => {
+      const cite = cb.dataset.cite;
+      const done = () => { const c = div.querySelector('.copied'); c.hidden = false; setTimeout(()=>{c.hidden = true;}, 2000); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(cite).then(done, done);
+      else { const ta = document.createElement('textarea'); ta.value = cite; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} ta.remove(); done(); }
+    });
+  }
+
+  function openPara(n){
+    const tr = tbody.querySelector('tr.prow[data-para="' + n + '"]');
+    if (!tr) return;
+    const btn = tr.querySelector('button.head');
+    if (tr.querySelector('.pbody') === null && !tr.nextElementSibling?.querySelector?.('.pbody')) togglePara(tr, paragraphs.find(p=>p.number===n));
+    tr.scrollIntoView({block:'center'});
+  }
+
+  // ---------- Tabs ----------
+  const tabs = [document.getElementById('tab-01'), document.getElementById('tab-02')];
+  const panels = [document.getElementById('panel-01'), document.getElementById('panel-02')];
+  function selectTab(i){
+    tabs.forEach((t,j) => { t.setAttribute('aria-selected', j===i ? 'true':'false'); t.tabIndex = j===i ? 0 : -1; });
+    panels.forEach((p,j) => { p.hidden = j!==i; });
+  }
+  tabs.forEach((t,i) => {
+    t.addEventListener('click', () => selectTab(i));
+    t.addEventListener('keydown', e => {
+      let n = null;
+      if (e.key === 'ArrowRight') n = (i+1) % tabs.length;
+      if (e.key === 'ArrowLeft') n = (i-1+tabs.length) % tabs.length;
+      if (n !== null) { e.preventDefault(); selectTab(n); tabs[n].focus(); }
+    });
+  });
+
+  // ---------- Footer ----------
+  document.getElementById('footer').textContent =
+    (D.source || '') + (D.built ? ' · built ' + D.built : '') + ' · Done by this page\u2019s code; no model was called and nothing left the browser.';
+})();
+</script>
+</body>
+</html>

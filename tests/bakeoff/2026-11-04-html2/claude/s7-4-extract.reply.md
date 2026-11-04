@@ -1,0 +1,704 @@
+I built a two-tab reader for the General Comment's HTML. The Result tab compares what it found with the document's own reference and says plainly that this HTML version has no footnotes, and the Paragraphs tab opens each paragraph in place with a copyable citation. You can download the paragraphs as JSON or Markdown.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Paragraphs out of a UN document</title>
+<style>
+:root{--paper:#f4f0e8;--ink:#1d1b18;--rule:#d9d2c3;--red:#9b2335;--green:#1f6b3a;--muted:#5c564a;
+--serif:Georgia,"Times New Roman",serif;--mono:ui-monospace,Menlo,Consolas,monospace;
+--sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 var(--sans)}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+a{color:var(--ink)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.mono{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.hint{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.02em}
+.serif{font-family:var(--serif)}
+.red{color:var(--red)}.green{color:var(--green)}.muted{color:var(--muted)}
+header.wrap{padding-top:22px;padding-bottom:14px;border-bottom:1px solid var(--rule)}
+.hrow{display:flex;gap:24px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+h1{font:400 30px/1.2 var(--serif);margin:6px 0 6px;max-width:46em}
+.meta{margin:0;font-size:15px}
+.status{font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-align:right;line-height:1.8}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:var(--muted)}
+.dot.ok{background:var(--green)}.dot.bad{background:var(--red)}
+.layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:36px;padding-top:22px;padding-bottom:30px}
+@media(max-width:820px){.layout{grid-template-columns:1fr;gap:18px}}
+aside{border-right:1px solid var(--rule);padding-right:22px}
+@media(max-width:820px){aside{border-right:0;border-bottom:1px solid var(--rule);padding:0 0 16px}}
+.card{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:10px 0;margin:8px 0 18px}
+.card .sym{font-family:var(--mono);font-size:14px;word-break:break-all}
+.card .shortt{font-size:15px}
+.big{font:400 52px/1 var(--serif);margin:6px 0 2px}
+.bar{height:5px;background:var(--rule);margin:8px 0 18px}
+.bar i{display:block;height:100%;background:var(--green)}
+.bar i.bad{background:var(--red)}
+[role=tablist]{display:flex;gap:4px;border-bottom:1px solid var(--rule);margin-bottom:20px;flex-wrap:wrap}
+[role=tab]{font:inherit;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;background:none;border:0;border-bottom:3px solid transparent;color:var(--ink);padding:12px 14px 9px;cursor:pointer;margin-bottom:-1px}
+[role=tab] b{font-weight:400;color:var(--muted);margin-right:6px}
+[role=tab][aria-selected=true]{color:var(--red);border-bottom-color:var(--red)}
+[role=tab][aria-selected=true] b{color:var(--red)}
+h2.q{font:400 24px/1.25 var(--serif);margin:0 0 16px}
+.notice{border-left:3px solid var(--red);padding:6px 12px;margin:0 0 16px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:0 36px}
+.tile{border-top:1px solid var(--rule);padding:12px 0 16px}
+.tile .big{font-size:48px}
+.tile .big small{font-size:20px;color:var(--muted)}
+.tile p{margin:4px 0}
+.how{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.01em}
+.diffs{border-top:1px solid var(--rule);padding:12px 0;margin-bottom:6px}
+.diffs ul{list-style:none;margin:6px 0 0;padding:0;font-family:var(--mono);font-size:12px;line-height:1.7}
+.away{border-top:1px solid var(--rule);padding:14px 0 16px}
+.away h3,.sechead{font:400 20px/1.3 var(--serif);margin:0 0 8px}
+.btn{font:inherit;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);background:transparent;border:1px solid var(--ink);padding:10px 16px;margin:0 10px 8px 0;cursor:pointer}
+.btn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.disc{display:block;width:100%;text-align:left;font:inherit;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;background:none;border:0;border-top:1px solid var(--rule);color:var(--ink);padding:14px 0;cursor:pointer}
+.disc span.pm{display:inline-block;width:1.4em;color:var(--red)}
+.panelbox{padding:0 0 16px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+caption{text-align:left;padding:0 0 8px;font:400 18px/1.3 var(--serif)}
+caption .tn{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--red);margin-right:10px}
+th{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;text-align:left;font-weight:400;color:var(--muted);border-bottom:1px solid var(--ink);padding:6px 10px 6px 0}
+td{border-bottom:1px solid var(--rule);padding:8px 10px 8px 0;vertical-align:top}
+th.num,td.num{text-align:right}
+td.mono2{font-family:var(--mono);font-size:12px;white-space:pre-wrap;word-break:break-word}
+.rowbtn{font:inherit;font-family:var(--mono);font-weight:700;color:var(--red);background:none;border:0;padding:2px 4px;cursor:pointer;min-width:2.4em;text-align:right}
+tr.row{cursor:pointer}
+tr.row:hover td{background:rgba(155,35,53,.05)}
+tr.row.open td{border-bottom-color:transparent}
+td.detail{background:#efe9dc;padding:14px 18px;border-bottom:1px solid var(--ink)}
+.detail .lab{display:block;margin:12px 0 2px;color:var(--muted)}
+.detail .lab:first-child{margin-top:0}
+.detail .full{margin:2px 0 6px;font-size:17px;max-width:46em}
+mark.fix,mark.flag{background:transparent;color:inherit;outline:1px solid var(--red);outline-offset:1px;border-radius:1px}
+mark.ins{background:transparent;outline:1px solid var(--red);white-space:pre}
+.bad{color:var(--red)}
+.ok{color:var(--green)}
+.cite{font-family:var(--mono);font-size:13px;margin-right:10px;user-select:all}
+.btn.small{padding:6px 10px;margin:4px 8px 0 0}
+.hlist{list-style:none;margin:0 0 14px;padding:0;font-size:15px;columns:2 320px}
+.hlist li{padding:2px 0;break-inside:avoid}
+.hlist li.l3{padding-left:20px}
+.hlist .t{font-family:var(--mono);font-size:11px;color:var(--muted);margin-right:8px}
+ul.checks{list-style:none;margin:0;padding:0}
+ul.checks li{border-top:1px solid var(--rule);padding:10px 0}
+ul.checks li:first-child{border-top:0}
+.chk-h{display:flex;justify-content:space-between;gap:12px}
+.st{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.story{margin:2px 0;font-size:15px}
+.vals{margin:2px 0;font-family:var(--mono);font-size:12px}
+.linkbtn{font:inherit;font-family:var(--mono);font-size:12px;color:var(--red);background:none;border:0;border-bottom:1px solid var(--red);padding:0;cursor:pointer;margin-top:2px}
+.rulecount{margin:0 0 10px;font-family:var(--mono);font-size:12px}
+.status-line{font-family:var(--mono);font-size:12px;color:var(--muted);min-height:1.5em;margin:0}
+footer.wrap{border-top:1px solid var(--rule);padding-top:12px;padding-bottom:28px;color:var(--muted)}
+footer p{margin:2px 0;font-size:14px}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="mono muted">UN DOCUMENT · HTML</div>
+  <div class="hrow">
+    <div>
+      <h1 id="doc-title"></h1>
+      <p class="meta" id="doc-meta"></p>
+    </div>
+    <div class="status" id="doc-status" role="status"></div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <aside id="rail" aria-label="Document summary"></aside>
+  <main>
+    <div role="tablist" aria-label="Views" id="tabs">
+      <button role="tab" id="tab-1" aria-selected="true" aria-controls="panel-1" tabindex="0"><b>01</b>Result</button>
+      <button role="tab" id="tab-2" aria-selected="false" aria-controls="panel-2" tabindex="-1"><b>02</b>Paragraphs</button>
+    </div>
+    <section role="tabpanel" id="panel-1" aria-labelledby="tab-1"></section>
+    <section role="tabpanel" id="panel-2" aria-labelledby="tab-2" hidden></section>
+  </main>
+</div>
+
+<footer class="wrap" id="foot"></footer>
+
+<script>
+(function () {
+'use strict';
+
+/* ---------- helpers ---------- */
+function $(id) { return document.getElementById(id); }
+function el(tag, props) {
+  var e = document.createElement(tag), k, ev, i, c;
+  if (props) {
+    for (k in props) {
+      var v = props[k];
+      if (v === null || v === undefined || v === false) continue;
+      if (k === 'class') e.className = v;
+      else if (k === 'text') e.textContent = v;
+      else if (k === 'on') { for (ev in v) e.addEventListener(ev, v[ev]); }
+      else e.setAttribute(k, v === true ? '' : v);
+    }
+  }
+  for (i = 2; i < arguments.length; i++) {
+    c = arguments[i];
+    if (c === null || c === undefined || c === false) continue;
+    if (Array.isArray(c)) c.forEach(function (x) { if (x !== null && x !== undefined) e.appendChild(typeof x === 'string' ? document.createTextNode(x) : x); });
+    else e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  }
+  return e;
+}
+function norm(s) { return String(s === null || s === undefined ? '' : s).replace(/\s+/g, ' ').trim(); }
+function num(v) {
+  if (typeof v === 'number' && isFinite(v)) return v;
+  if (typeof v === 'string' && /^\d+$/.test(v.trim())) return +v;
+  return null;
+}
+function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+function today() {
+  var d = new Date(), z = function (x) { return (x < 10 ? '0' : '') + x; };
+  return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
+}
+function firstLine(t) {
+  if (t.length <= 120) return t;
+  var cut = t.slice(0, 120), sp = cut.lastIndexOf(' ');
+  if (sp > 40) cut = cut.slice(0, sp);
+  return cut.replace(/[\s,;:.\-–]+$/, '') + '…';
+}
+function fw(s) {
+  return norm(s).replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–‑]/g, '-');
+}
+function sixWords(t) { return (t.match(/\S+/g) || []).slice(0, 6); }
+
+/* ---------- the data ---------- */
+var WD = window.WORKSHOP_DATA || {};
+var D = WD.html_doc;
+if (Array.isArray(D)) D = D[0];
+D = D || {};
+var REF = (D.reference && typeof D.reference === 'object') ? D.reference : null;
+var refPar = REF ? num(REF.paragraphs) : null;
+var refFn = REF ? num(REF.footnotes) : null;
+var refAdopted = (REF && REF.adopted) ? String(REF.adopted) : '';
+var refFW = (REF && REF.first_words && typeof REF.first_words === 'object') ? REF.first_words : null;
+var SYM = String(D.symbol || '');
+var DOCURL = String(D.doc_url || '');
+var SOURCE = String(D.source || '');
+
+/* ---------- 1. parse and classify every block element once ---------- */
+var parsed = new DOMParser().parseFromString(String(D.html || ''), 'text/html');
+var coverTable = parsed.querySelector('table');
+var els = [].slice.call(parsed.body.querySelectorAll('table,p,h1,h2,h3,h4,h5,h6,li,blockquote,pre'));
+var counts = { cover: 0, title: 0, heading: 0, paragraph: 0, committee: 0, unclassified: 0 };
+var SEQ = [], P = [], HEADS = [], UNCL = [];
+var titleText = '', titleSeen = false, curPart = '', curSection = '';
+var pElements = 0, domHeads = 0;
+
+els.forEach(function (e) {
+  var tag = e.tagName.toLowerCase(), t = norm(e.textContent), m;
+  var inCover = coverTable && (e === coverTable || coverTable.contains(e));
+  if (tag === 'p') pElements++;
+  if (inCover) { counts.cover++; return; }
+  if (tag === 'p') {
+    m = /^(\d{1,3})\.\s*(.*)$/s.exec(t);
+    if (m) {
+      counts.paragraph++;
+      var pr = { idx: P.length, number: +m[1], textRaw: norm(m[2]), part: curPart, section: curSection };
+      P.push(pr); SEQ.push({ kind: 'paragraph', p: pr });
+    } else counts.committee++;
+    return;
+  }
+  if (tag === 'h2' || tag === 'h3') {
+    domHeads++;
+    if (tag === 'h2' && !titleSeen) { titleSeen = true; titleText = t; counts.title++; return; }
+    m = /^([IVX]+|[A-Z])\.\s*(.+)$/.exec(t);
+    var label = m ? m[1] : '', head = m ? m[2] : t;
+    var glued = !!m && !/^([IVX]+|[A-Z])\.\s/.test(t);
+    var disp = label ? label + '. ' + head : head;
+    if (tag === 'h2' && /^[IVX]+$/.test(label)) curPart = disp;
+    curSection = disp;
+    var h = { tag: tag, label: label, heading: head, display: disp, glued: glued };
+    HEADS.push(h); SEQ.push({ kind: 'heading', h: h });
+    counts.heading++;
+    return;
+  }
+  counts.unclassified++;
+  UNCL.push({ tag: tag, text: t.slice(0, 70) });
+});
+/* part is the nearest roman-numbered h2: a heading met later must not leak back */
+P.forEach(function (p) {
+  p.path = p.section ? ((p.part && p.part !== p.section) ? p.part + ' › ' + p.section : p.section) : (p.part || '');
+});
+
+/* ---------- 2. repairs: a space only where the characters prove it ---------- */
+var RULES = [
+  { key: 'sentence', label: 'sentence join', ex: 'lowercase.Capital', re: /([a-z])\.([A-Z])/, at: 2 },
+  { key: 'comma', label: 'comma join', ex: 'letter,letter', re: /([a-z]),([A-Za-z])/, at: 2 },
+  { key: 'quote', label: 'quote join', ex: 'letter“', re: /([a-z])“/, at: 1 },
+  { key: 'dash', label: 'dash join', ex: '–letter', re: /–([A-Za-z])/, at: 1 }
+];
+function repair(raw) {
+  var cur = raw, fixes = [];
+  RULES.forEach(function (r) {
+    var re = new RegExp(r.re.source, 'g'), m, pts = [], i, out = '', last = 0;
+    while ((m = re.exec(cur))) pts.push(m.index + r.at);
+    if (!pts.length) return;
+    fixes.forEach(function (f) { f.pos += pts.filter(function (p) { return p <= f.pos; }).length; });
+    pts.forEach(function (p, k) {
+      out += cur.slice(last, p) + ' ';
+      last = p;
+      fixes.push({ rule: r.key, pos: p + k, left: cur.slice(Math.max(0, p - 20), p), right: cur.slice(p, p + 20) });
+    });
+    cur = out + cur.slice(last);
+  });
+  fixes.sort(function (a, b) { return a.pos - b.pos; });
+  return { text: cur, fixes: fixes };
+}
+var R = [], ruleCount = {}, parasFixed = 0;
+RULES.forEach(function (r) { ruleCount[r.key] = 0; });
+P.forEach(function (p) {
+  var res = repair(p.textRaw);
+  p.text = res.text; p.fixes = res.fixes;
+  if (p.fixes.length) parasFixed++;
+  p.fixes.forEach(function (f) { ruleCount[f.rule]++; R.push({ p: p, f: f }); });
+});
+
+/* ---------- 3. first words against the reference ---------- */
+P.forEach(function (p) {
+  p.found6 = sixWords(p.text).join(' ');
+  var r = refFW ? refFW[String(p.number)] : undefined;
+  p.ref6 = (typeof r === 'string') ? r : null;
+  p.match = refFW ? (p.ref6 === null ? false : fw(p.found6) === fw(p.ref6)) : null;
+});
+var matchCount = P.filter(function (p) { return p.match === true; }).length;
+var diffs = [];
+P.forEach(function (p) { if (p.match === false) diffs.push({ n: p.number, found: p.found6, ref: p.ref6, idx: p.idx }); });
+if (refFW) {
+  var have = {};
+  P.forEach(function (p) { have[p.number] = 1; });
+  Object.keys(refFW).forEach(function (k) {
+    if (/^\d+$/.test(k) && !have[+k]) diffs.push({ n: +k, found: null, ref: String(refFW[k]), idx: -1 });
+  });
+}
+diffs.sort(function (a, b) { return a.n - b.n; });
+
+/* ---------- 4. the export (built once, used by buttons and by the round-trip check) ---------- */
+var dispTitle = (norm(D.title) || titleText || 'Untitled document').replace(/\s*\*+\s*$/, '');
+var limitation = 'no footnotes in this HTML version' + (refFn !== null ? '; the document has ' + refFn : '');
+function cite(n) { return (SYM ? SYM + ', para. ' : 'para. ') + n; }
+function fileBase() { return (SYM || 'document').replace(/\//g, '-'); }
+function buildJSON() {
+  return JSON.stringify(P.map(function (p) {
+    return {
+      symbol: SYM, paragraph: p.number, section: p.section || null, part: p.part || null,
+      text: p.text, text_raw: p.textRaw, first_words_match: p.match,
+      citation: cite(p.number), doc_url: DOCURL, limitations: limitation
+    };
+  }), null, 2);
+}
+function buildMD() {
+  var q = function (s) { return JSON.stringify(String(s)); };
+  var L = ['---', 'title: ' + q(dispTitle), 'symbol: ' + q(SYM), 'adopted: ' + q(refAdopted), 'source_url: ' + q(DOCURL),
+    'extracted: ' + today(), 'paragraphs_found: ' + P.length,
+    'paragraphs_expected: ' + (refPar !== null ? refPar : q('no reference in this file')),
+    'footnotes: ' + q(limitation), '---', ''];
+  SEQ.forEach(function (s) {
+    if (s.kind === 'heading') L.push((s.h.tag === 'h2' ? '## ' : '### ') + s.h.display, '');
+    else L.push('**' + s.p.number + '.** ' + s.p.text, '');
+  });
+  return L.join('\n');
+}
+function download(name, mime, content) {
+  var url = URL.createObjectURL(new Blob([content], { type: mime + ';charset=utf-8' }));
+  var a = el('a', { href: url, download: name });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+}
+
+/* ---------- 5. the checks ---------- */
+var checks = [];
+var ST = { pass: ['pass', 'ok'], fail: ['check failed', 'bad'], limit: ['source limit', 'bad'], notrun: ['not run', 'muted'] };
+var firstDiff = diffs.filter(function (d) { return d.idx >= 0; })[0];
+
+(function buildChecks() {
+  var nums = P.map(function (p) { return p.number; });
+  var nr = 'no reference in this file';
+
+  checks.push({ name: 'Paragraph count',
+    story: 'Given the HTML of ' + (SYM || 'the document') + ', having counted every numbered paragraph after the cover, we expect the number the reference gives.',
+    vals: 'found ' + P.length + ' · expected ' + (refPar !== null ? refPar : nr),
+    status: refPar === null ? 'notrun' : (P.length === refPar ? 'pass' : 'fail'),
+    link: null });
+
+  var seen = {}, dups = [], gaps = [], disorder = [], mx = 0, firstBad = -1;
+  nums.forEach(function (n, i) {
+    if (seen[n] && dups.indexOf(n) < 0) dups.push(n);
+    seen[n] = 1; if (n > mx) mx = n;
+    if (i > 0 && n < nums[i - 1]) disorder.push(n);
+    if (firstBad < 0 && n !== i + 1) firstBad = i;
+  });
+  for (var g = 1; g <= mx; g++) if (!seen[g]) gaps.push(g);
+  var lst = function (a) { return a.length ? a.slice(0, 10).join(', ') + (a.length > 10 ? ' and ' + (a.length - 10) + ' more' : '') : 'none'; };
+  var numOk = P.length > 0 && firstBad < 0;
+  checks.push({ name: 'Numbering',
+    story: 'Given the paragraphs in the order found, having compared each number with its place in the sequence 1 to ' + (P.length || 'n') + ', we expect no gap, no duplicate and nothing out of order.',
+    vals: 'gaps: ' + lst(gaps) + ' · duplicates: ' + lst(dups) + ' · out of order: ' + lst(disorder),
+    status: numOk ? 'pass' : 'fail',
+    link: (!numOk && firstBad >= 0 && firstBad < P.length) ? { label: 'show the first row out of place', idx: firstBad } : null });
+
+  checks.push({ name: 'First words',
+    story: 'Given each paragraph as found, having compared its first six words with the reference (curly quotes, dashes and non-breaking spaces straightened, case kept), we expect no difference.',
+    vals: refFW ? (diffs.length + ' differ · ' + matchCount + ' match') : nr,
+    status: !refFW ? 'notrun' : (diffs.length === 0 ? 'pass' : 'fail'),
+    link: (refFW && firstDiff) ? { label: 'show the first row concerned', idx: firstDiff.idx } : null });
+
+  checks.push({ name: 'Footnotes',
+    story: 'Given the HTML, having looked for footnote text and footnote marks, we expect the number of footnotes the reference gives.',
+    vals: 'found 0 · expected ' + (refFn !== null ? refFn : nr),
+    note: refFn !== null && refFn > 0 ? 'The HTML version has no footnotes: a limit of the source, not of the app. Counted apart from failures.' : '',
+    status: refFn === null ? 'notrun' : (refFn > 0 ? 'limit' : 'pass'),
+    link: null });
+
+  var undone = 0, total = R.length;
+  P.forEach(function (p) {
+    var s = p.text;
+    for (var i = p.fixes.length - 1; i >= 0; i--) {
+      var f = p.fixes[i];
+      if (s.charAt(f.pos) !== ' ') { undone++; return; }
+      s = s.slice(0, f.pos) + s.slice(f.pos + 1);
+    }
+    if (s !== p.textRaw) undone++;
+  });
+  checks.push({ name: 'Repairs',
+    story: 'Given the text as found, having applied four space rules, we expect every inserted space to be logged, and text_raw to still hold the text as found.',
+    vals: total + ' spaces restored in ' + plural(parasFixed, 'paragraph') + ' (' + RULES.map(function (r) { return ruleCount[r.key] + ' ' + r.key; }).join(', ') + ') · log does not match in ' + undone,
+    status: undone === 0 ? 'pass' : 'fail', link: null });
+
+  var h2n = HEADS.filter(function (h) { return h.tag === 'h2'; }).length;
+  var h3n = HEADS.filter(function (h) { return h.tag === 'h3'; }).length;
+  var gl = HEADS.filter(function (h) { return h.glued; }).length;
+  checks.push({ name: 'Headings',
+    story: 'Given the h2 and h3 elements of the document, having classed one as the title and the rest as headings, we expect every one to be accounted for.',
+    vals: 'h2: ' + (h2n + counts.title) + ' (one is the title) · h3: ' + h3n + ' · glued labels separated: ' + gl + ' of ' + HEADS.length,
+    status: (counts.title + counts.heading === domHeads) ? 'pass' : 'fail', link: null });
+
+  var sum = counts.cover + counts.title + counts.heading + counts.paragraph + counts.committee + counts.unclassified;
+  checks.push({ name: 'Nothing lost',
+    story: 'Given every block element of the HTML, having put each into exactly one class, we expect the classes to add up to the total and none to be left over.',
+    vals: els.length + ' elements = cover ' + counts.cover + ' + title ' + counts.title + ' + headings ' + counts.heading + ' + paragraphs ' + counts.paragraph + ' + committee line ' + counts.committee + ' + unclassified ' + counts.unclassified,
+    status: (sum === els.length && counts.unclassified === 0) ? 'pass' : 'fail',
+    unclassified: UNCL, link: null });
+
+  var rtOk = false, rtTxt = '';
+  try {
+    var back = JSON.parse(buildJSON());
+    rtOk = Array.isArray(back) && back.length === P.length && back.every(function (r, i) { return r.paragraph === P[i].number && r.text === P[i].text && r.citation === cite(P[i].number); });
+    rtTxt = 'JSON parsed back: ' + back.length + ' records · table: ' + P.length;
+  } catch (e) { rtTxt = 'JSON could not be parsed back'; }
+  checks.push({ name: 'Export round trip',
+    story: 'Given the JSON file to download, having parsed it back, we expect as many records as the table has rows, with the same numbers and texts.',
+    vals: rtTxt, status: rtOk ? 'pass' : 'fail', link: null });
+})();
+
+var nPass = checks.filter(function (c) { return c.status === 'pass'; }).length;
+var nFail = checks.filter(function (c) { return c.status === 'fail'; }).length;
+var nLimit = checks.filter(function (c) { return c.status === 'limit'; }).length;
+var nNot = checks.filter(function (c) { return c.status === 'notrun'; }).length;
+
+/* ---------- 6. header and rail ---------- */
+$('doc-title').textContent = dispTitle;
+(function () {
+  var m = $('doc-meta');
+  if (SYM && DOCURL) m.appendChild(el('a', { href: DOCURL, target: '_blank', rel: 'noopener noreferrer', text: SYM }));
+  else m.appendChild(document.createTextNode(SYM || 'symbol not given'));
+  m.appendChild(document.createTextNode(' · ' + (refAdopted ? 'adopted ' + refAdopted : 'adoption date not in this file') + (SOURCE ? ' · ' + SOURCE : '')));
+  var s = $('doc-status');
+  var okLine = nFail === 0 && nNot === 0;
+  s.appendChild(el('div', {}, el('span', { class: 'dot ' + (nFail > 0 ? 'bad' : (okLine ? 'ok' : '')) }),
+    nFail > 0 ? plural(nFail, 'check') + ' failed' : nPass + ' of ' + checks.length + ' checks pass' + (nNot ? ' · ' + nNot + ' not run' : '')));
+  if (nLimit > 0) s.appendChild(el('div', { class: 'red', text: nLimit + ' source limit' + (nLimit === 1 ? '' : 's') }));
+})();
+
+function shortTitle(t) {
+  var s = t.split(/\s+on\s+/i)[0];
+  if (s.length >= 6 && s.length < t.length) return s;
+  return t.length > 70 ? t.slice(0, 70).replace(/\s+\S*$/, '') + '…' : t;
+}
+(function () {
+  var r = $('rail');
+  var pctOK = refPar !== null && P.length === refPar;
+  r.appendChild(el('div', { class: 'mono muted', text: 'Document' }));
+  r.appendChild(el('div', { class: 'card' }, el('div', { class: 'sym', text: SYM || '—' }), el('div', { class: 'shortt', text: shortTitle(dispTitle) })));
+  r.appendChild(el('div', { class: 'mono muted', text: 'Paragraphs found' }));
+  r.appendChild(el('div', { class: 'big ' + (refPar === null ? '' : (pctOK ? 'green' : 'red')), text: String(P.length) }));
+  r.appendChild(el('div', { class: 'hint', text: refPar !== null ? 'of ' + refPar + ' in the document' : 'no reference in this file' }));
+  if (refPar !== null && refPar > 0) r.appendChild(el('div', { class: 'bar' }, el('i', { class: pctOK ? '' : 'bad', style: 'width:' + Math.min(100, Math.round(P.length / refPar * 100)) + '%' })));
+  else r.appendChild(el('div', { class: 'bar' }));
+  r.appendChild(el('div', { class: 'mono muted', text: 'Footnotes found' }));
+  r.appendChild(el('div', { class: 'big red', text: '0' }));
+  r.appendChild(el('div', { class: 'hint', text: (refFn !== null ? 'of ' + refFn + ' · ' : '') + 'not in this HTML' }));
+  r.appendChild(el('div', { class: 'bar' }));
+  r.appendChild(el('div', { class: 'mono ' + (nFail ? 'red' : ''), text: nPass + ' of ' + checks.length + ' checks pass' }));
+})();
+
+/* ---------- 7. tab 01 ---------- */
+function disclosure(label, box) {
+  var b = el('button', { type: 'button', class: 'disc', 'aria-expanded': 'false' }, el('span', { class: 'pm', 'aria-hidden': 'true', text: '+' }), label);
+  b.addEventListener('click', function () {
+    var open = b.getAttribute('aria-expanded') === 'true';
+    b.setAttribute('aria-expanded', open ? 'false' : 'true');
+    b.firstChild.textContent = open ? '+' : '−';
+    box.hidden = open;
+  });
+  return b;
+}
+function marked(p, withBoxes) {
+  /* the paragraph text, with a thin red box around every restored space and the first words when they differ */
+  var rg = [], out = [], pos = 0;
+  if (withBoxes) {
+    p.fixes.forEach(function (f) { rg.push({ s: Math.max(0, f.pos - 1), e: Math.min(p.text.length, f.pos + 2), k: 'fix' }); });
+    if (p.match === false) {
+      var re = /\S+/g, n = 0, m, end = 0;
+      while (n < 6 && (m = re.exec(p.text))) { end = m.index + m[0].length; n++; }
+      if (end) rg.push({ s: 0, e: end, k: 'flag' });
+    }
+  }
+  rg.sort(function (a, b) { return a.s - b.s; });
+  var merged = [];
+  rg.forEach(function (x) {
+    var l = merged[merged.length - 1];
+    if (l && x.s <= l.e) { l.e = Math.max(l.e, x.e); if (x.k === 'fix') l.k = 'fix'; } else merged.push({ s: x.s, e: x.e, k: x.k });
+  });
+  merged.forEach(function (x) {
+    if (x.s > pos) out.push(p.text.slice(pos, x.s));
+    out.push(el('mark', { class: x.k, title: x.k === 'fix' ? 'a space was restored here' : 'first words differ from the reference', text: p.text.slice(x.s, x.e) }));
+    pos = x.e;
+  });
+  out.push(p.text.slice(pos));
+  return out;
+}
+function ruleLabel(k) { return RULES.filter(function (r) { return r.key === k; })[0].label; }
+
+function renderResult() {
+  var box = $('panel-1');
+  box.appendChild(el('h2', { class: 'q', text: 'Did the app find everything the document has?' }));
+  if (pElements === 0) box.appendChild(el('p', { class: 'notice red', text: 'This file holds no paragraph (<p>) elements, so there is nothing to read and the downloads are off.' }));
+
+  var diff = refPar !== null ? P.length - refPar : 0;
+  var t1 = el('div', { class: 'tile' }, el('div', { class: 'mono muted', text: 'Paragraphs found' }),
+    el('div', { class: 'big ' + (refPar === null ? '' : (diff === 0 ? 'green' : 'red')) }, String(P.length), el('small', { text: refPar !== null ? '  beside ' + refPar : '' })),
+    el('p', { class: refPar === null ? 'muted' : (diff === 0 ? 'green' : 'red'),
+      text: refPar === null ? 'no reference in this file' : (diff === 0 ? 'The document has ' + refPar + '. They agree.' : 'The document has ' + refPar + ': ' + Math.abs(diff) + (diff < 0 ? ' short.' : ' over.')) }),
+    el('p', { class: 'how', text: 'How this is computed: every <p> after the cover table whose text starts with a number and a full stop.' }));
+  var t2 = el('div', { class: 'tile' }, el('div', { class: 'mono muted', text: 'First words match' }),
+    el('div', { class: 'big ' + (!refFW ? '' : (diffs.length === 0 ? 'green' : 'red')) }, refFW ? String(matchCount) : '—', el('small', { text: refPar !== null ? '  of ' + refPar : '' })),
+    el('p', { class: !refFW ? 'muted' : (diffs.length ? 'red' : 'green'), text: !refFW ? 'no reference in this file' : (diffs.length ? plural(diffs.length, 'paragraph') + ' differ.' : 'No paragraph differs.') }),
+    el('p', { class: 'how', text: 'How this is computed: the first six words of each paragraph against the reference, quotes and dashes straightened, case kept.' }));
+  var t3 = el('div', { class: 'tile' }, el('div', { class: 'mono muted', text: 'Footnotes' }),
+    el('div', { class: 'big red' }, '0', el('small', { text: refFn !== null ? '  of ' + refFn : '' })),
+    el('p', { class: 'red', text: 'This HTML version has none: no footnote text, no footnote marks. To cite a footnote, use the PDF or Word version.' }),
+    el('p', { class: 'how', text: 'How this is computed: the app reads none; the number beside is the document’s own, from the reference.' }));
+  var t4 = el('div', { class: 'tile' }, el('div', { class: 'mono muted', text: 'Spaces' }),
+    el('div', { class: 'big' }, String(R.length), el('small', { text: '  in ' + plural(parasFixed, 'paragraph') })),
+    el('p', { text: 'restored where the characters prove a space was lost.' }),
+    el('p', { class: 'how', text: 'How this is computed: four rules (lowercase.Capital, letter,letter, letter“, –letter); text_raw keeps the text as found.' }));
+  box.appendChild(el('div', { class: 'tiles' }, t1, t2, t3, t4));
+
+  if (diffs.length) {
+    var ul = el('ul');
+    diffs.slice(0, 10).forEach(function (d) {
+      ul.appendChild(el('li', { text: 'para. ' + d.n + ': found ' + (d.found === null ? '(not found)' : '“' + d.found + '”') + ' / reference ' + (d.ref === null ? '(not in the reference)' : '“' + d.ref + '”') }));
+    });
+    if (diffs.length > 10) ul.appendChild(el('li', { class: 'muted', text: 'and ' + (diffs.length - 10) + ' more' }));
+    box.appendChild(el('div', { class: 'diffs' }, el('div', { class: 'mono red', text: 'First words differ' }), ul));
+  }
+
+  var msg = el('p', { class: 'status-line', role: 'status' });
+  var off = P.length === 0;
+  var bj = el('button', { type: 'button', class: 'btn', disabled: off, text: 'Download JSON' });
+  var bm = el('button', { type: 'button', class: 'btn', disabled: off, text: 'Download Markdown' });
+  bj.addEventListener('click', function () { download(fileBase() + '.json', 'application/json', buildJSON()); msg.textContent = 'Started: ' + fileBase() + '.json, ' + plural(P.length, 'record') + '.'; });
+  bm.addEventListener('click', function () { download(fileBase() + '.md', 'text/markdown', buildMD()); msg.textContent = 'Started: ' + fileBase() + '.md, ' + plural(P.length, 'paragraph') + '.'; });
+  box.appendChild(el('div', { class: 'away' }, el('h3', { class: 'sechead', text: 'Take the paragraphs away' }), bj, bm,
+    el('p', { class: 'hint', text: 'JSON: one record per paragraph, with citation and limitations. Markdown: headings and numbered paragraphs, with front matter.' }), msg));
+
+  /* Every check */
+  var cl = el('ul', { class: 'checks' });
+  checks.forEach(function (c) {
+    var st = ST[c.status];
+    var li = el('li', {}, el('div', { class: 'chk-h' }, el('span', { class: 'mono', text: c.name }), el('span', { class: 'st ' + st[1], text: st[0] })),
+      el('p', { class: 'story', text: c.story }), el('p', { class: 'vals', text: c.vals }));
+    if (c.note) li.appendChild(el('p', { class: 'story red', text: c.note }));
+    if (c.unclassified && c.unclassified.length) {
+      var u = el('ul', { class: 'vals red' });
+      c.unclassified.slice(0, 10).forEach(function (x) { u.appendChild(el('li', { text: '<' + x.tag + '> ' + x.text })); });
+      li.appendChild(u);
+    }
+    if (c.link) li.appendChild(el('button', { type: 'button', class: 'linkbtn', text: c.link.label, on: { click: function () { goPara(c.link.idx); } } }));
+    cl.appendChild(li);
+  });
+  var checkBox = el('div', { class: 'panelbox', hidden: true }, cl);
+  box.appendChild(disclosure('Every check (' + checks.length + ')', checkBox));
+  box.appendChild(checkBox);
+
+  /* The spaces restored */
+  var tb = el('tbody');
+  R.forEach(function (x) {
+    var tr = el('tr', { class: 'row' }, el('td', { class: 'num' }, el('button', { type: 'button', class: 'rowbtn', 'aria-label': 'Open paragraph ' + x.p.number + ' on tab 02', text: String(x.p.number) })),
+      el('td', { class: 'mono2', text: x.f.left + x.f.right }),
+      el('td', { class: 'mono2' }, x.f.left, el('mark', { class: 'ins', text: ' ' }), x.f.right),
+      el('td', { text: ruleLabel(x.f.rule) }));
+    tr.addEventListener('click', function () { goPara(x.p.idx); });
+    tb.appendChild(tr);
+  });
+  var spaceBox = el('div', { class: 'panelbox', hidden: true },
+    el('p', { class: 'rulecount', text: RULES.map(function (r) { return r.label + ' ' + ruleCount[r.key]; }).join(' · ') }),
+    R.length ? el('table', {}, el('caption', {}, el('span', { class: 'tn', text: 'TAB.01' }), R.length + ' spaces restored in ' + plural(parasFixed, 'paragraph')),
+      el('thead', {}, el('tr', {}, el('th', { scope: 'col', class: 'num', text: 'Paragraph' }), el('th', { scope: 'col', text: 'Before' }), el('th', { scope: 'col', text: 'After' }), el('th', { scope: 'col', text: 'Rule' }))), tb)
+      : el('p', { text: 'No space needed restoring in this document.' }),
+    el('p', { class: 'hint', text: 'Rules restore a space only where the characters prove it was there. Word pairs such as “Giventhe” are not touched.' }));
+  box.appendChild(disclosure('The spaces restored (' + R.length + ')', spaceBox));
+  box.appendChild(spaceBox);
+}
+
+/* ---------- 8. tab 02 ---------- */
+function copyText(s, done) {
+  function fallback() {
+    try {
+      var ta = el('textarea', { 'aria-hidden': 'true' });
+      ta.value = s; ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+      document.body.appendChild(ta); ta.select();
+      var ok = document.execCommand('copy'); ta.remove(); return ok;
+    } catch (e) { return false; }
+  }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(s).then(function () { done(true); }, function () { done(fallback()); });
+      return;
+    }
+  } catch (e) { /* fall through */ }
+  done(fallback());
+}
+function buildDetail(p) {
+  var d = el('td', { class: 'detail', colspan: '4' });
+  d.appendChild(el('span', { class: 'mono lab', text: 'Full path' }));
+  d.appendChild(el('div', { text: p.path || '(before the first heading)' }));
+  d.appendChild(el('span', { class: 'mono lab', text: 'Full text' }));
+  d.appendChild(el('p', { class: 'full' }, marked(p, true)));
+  d.appendChild(el('span', { class: 'mono lab', text: 'First six words' }));
+  d.appendChild(el('div', { class: 'cite', text: 'found: ' + (p.found6 || '(none)') }));
+  d.appendChild(el('div', { class: 'cite', text: 'reference: ' + (refFW ? (p.ref6 === null ? '(not in the reference)' : p.ref6) : 'no reference in this file') }));
+  if (p.fixes.length) {
+    d.appendChild(el('span', { class: 'mono lab', text: plural(p.fixes.length, 'space') + ' restored here (boxed in the text)' }));
+    var ul = el('ul', { class: 'vals' });
+    p.fixes.forEach(function (f) { ul.appendChild(el('li', {}, ruleLabel(f.rule) + ': ', f.left, el('mark', { class: 'ins', text: ' ' }), f.right)); });
+    d.appendChild(ul);
+  } else d.appendChild(el('div', { class: 'hint', text: 'No space was restored in this paragraph.' }));
+  d.appendChild(el('span', { class: 'mono lab', text: 'Citation' }));
+  var c = cite(p.number), btn = el('button', { type: 'button', class: 'btn small', text: 'Copy citation' });
+  btn.addEventListener('click', function (ev) {
+    ev.stopPropagation();
+    copyText(c, function (ok) {
+      btn.textContent = ok ? 'Copied' : 'Copy blocked: select the text';
+      setTimeout(function () { btn.textContent = 'Copy citation'; }, 2000);
+    });
+  });
+  var cc = el('span', { class: 'cite' });
+  if (SYM && DOCURL) { cc.appendChild(el('a', { href: DOCURL, target: '_blank', rel: 'noopener noreferrer', text: SYM })); cc.appendChild(document.createTextNode(', para. ' + p.number)); }
+  else cc.textContent = c;
+  d.appendChild(el('div', {}, cc, btn));
+  d.addEventListener('click', function (ev) { ev.stopPropagation(); });
+  return d;
+}
+function toggleRow(tr, force) {
+  var b = tr.querySelector('.rowbtn'), open = tr.classList.contains('open'), want = force === undefined ? !open : force;
+  if (want === open) return;
+  var p = P[+tr.getAttribute('data-idx')];
+  if (want) {
+    var id = 'detail-' + p.idx, row = el('tr', { id: id, class: 'drow' }, buildDetail(p));
+    tr.parentNode.insertBefore(row, tr.nextSibling);
+    tr.classList.add('open'); b.setAttribute('aria-expanded', 'true'); b.setAttribute('aria-controls', id);
+  } else {
+    var nx = tr.nextSibling;
+    if (nx && nx.classList && nx.classList.contains('drow')) nx.remove();
+    tr.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); b.removeAttribute('aria-controls');
+  }
+}
+function renderParagraphs() {
+  var box = $('panel-2');
+  box.appendChild(el('h2', { class: 'q', text: 'What does each paragraph say, and how do I cite it?' }));
+
+  var hl = el('ul', { class: 'hlist' });
+  if (titleText) hl.appendChild(el('li', {}, el('span', { class: 't', text: 'TITLE' }), titleText.replace(/\s*\*+\s*$/, '')));
+  HEADS.forEach(function (h) {
+    hl.appendChild(el('li', { class: h.tag === 'h3' ? 'l3' : '' }, el('span', { class: 't', text: h.tag.toUpperCase() }), h.display, h.glued ? el('span', { class: 'hint', text: '  (label was glued)' }) : null));
+  });
+  var hbox = el('div', { class: 'panelbox', hidden: true }, HEADS.length ? hl : el('p', { text: 'No heading was found in this document.' }));
+  box.appendChild(disclosure('Headings found: ' + HEADS.length, hbox));
+  box.appendChild(hbox);
+
+  var tb = el('tbody');
+  P.forEach(function (p) {
+    var chk = p.match === null ? el('td', { class: 'muted', text: 'no reference' }) : el('td', { class: p.match ? 'ok' : 'bad', text: p.match ? 'OK' : (p.ref6 === null ? 'not in reference' : 'first words differ') });
+    var tr = el('tr', { class: 'row', 'data-idx': String(p.idx) },
+      el('td', { class: 'num' }, el('button', { type: 'button', class: 'rowbtn', 'aria-expanded': 'false', 'aria-label': 'Paragraph ' + p.number, text: String(p.number) })),
+      el('td', { text: p.section || '—' }), el('td', { text: firstLine(p.text) }), chk);
+    tr.addEventListener('click', function () { toggleRow(tr); });
+    tb.appendChild(tr);
+  });
+  var cap = el('caption', {}, el('span', { class: 'tn', text: 'TAB.02' }),
+    plural(P.length, 'paragraph') + ' found, ' + (refPar !== null ? refPar + ' expected' : 'no reference in this file'));
+  if (!P.length) { box.appendChild(el('p', { class: 'notice red', text: 'No numbered paragraph was found in this document.' })); return; }
+  box.appendChild(el('table', { id: 'ptable' }, cap,
+    el('thead', {}, el('tr', {}, el('th', { scope: 'col', class: 'num', text: 'No.' }), el('th', { scope: 'col', text: 'Section' }), el('th', { scope: 'col', text: 'First line' }), el('th', { scope: 'col', text: 'Check' }))), tb));
+  box.appendChild(el('p', { class: 'hint', text: 'click a row = show the full text, the six words and the citation' }));
+}
+function goPara(idx) {
+  select(1, false);
+  var tr = document.querySelector('#ptable tr.row[data-idx="' + idx + '"]');
+  if (!tr) return;
+  toggleRow(tr, true);
+  tr.scrollIntoView({ block: 'center' });
+  var b = tr.querySelector('.rowbtn'); if (b) b.focus();
+}
+
+/* ---------- 9. tabs ---------- */
+var tabBtns = [$('tab-1'), $('tab-2')], panels = [$('panel-1'), $('panel-2')];
+function select(i, focus) {
+  tabBtns.forEach(function (b, j) {
+    b.setAttribute('aria-selected', j === i ? 'true' : 'false');
+    b.setAttribute('tabindex', j === i ? '0' : '-1');
+    panels[j].hidden = j !== i;
+  });
+  if (focus) tabBtns[i].focus();
+}
+tabBtns.forEach(function (b, i) { b.addEventListener('click', function () { select(i, false); }); });
+$('tabs').addEventListener('keydown', function (e) {
+  var i = tabBtns.indexOf(document.activeElement), n = tabBtns.length;
+  if (i < 0) return;
+  if (e.key === 'ArrowRight') i = (i + 1) % n;
+  else if (e.key === 'ArrowLeft') i = (i - 1 + n) % n;
+  else if (e.key === 'Home') i = 0;
+  else if (e.key === 'End') i = n - 1;
+  else return;
+  e.preventDefault(); select(i, true);
+});
+
+/* ---------- 10. go ---------- */
+renderResult();
+renderParagraphs();
+(function () {
+  var f = $('foot');
+  f.appendChild(el('p', { text: 'Source: ' + (SOURCE || 'not given') + (D.built ? ' · built ' + D.built : '') }));
+  f.appendChild(el('p', { class: 'hint', text: 'Done by this page’s code; no model was called and nothing left the browser.' }));
+})();
+})();
+</script>
+</body>
+</html>
+```

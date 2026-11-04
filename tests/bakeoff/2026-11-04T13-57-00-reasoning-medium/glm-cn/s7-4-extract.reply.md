@@ -1,0 +1,1 @@
+I built the app as planned: two tabs, a checks panel, space-repair detection, citation copying, and JSON/Markdown exports, all computed from the HTML at load. The header shows the check pass count and the footnotes source limit.

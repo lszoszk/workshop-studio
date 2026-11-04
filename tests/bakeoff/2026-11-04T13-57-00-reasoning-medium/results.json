@@ -1,0 +1,31 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": false,
+   "uses_workshop_data": false,
+   "table_min_rows": false,
+   "text_contains": false,
+   "download": false,
+   "text_matches": false
+  },
+  "passed": 0,
+  "total": 7,
+  "errors": [
+   "no html in reply"
+  ],
+  "network": [],
+  "lines": 0,
+  "seconds": 3.0,
+  "first_token": 1.9,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 17789,
+  "completion_tokens": 52,
+  "cost": 0.00492348,
+  "provider": "Z.AI"
+ }
+]
