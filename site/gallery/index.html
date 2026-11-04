@@ -3,45 +3,92 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Same request, different models</title>
+<title>Gallery · Garage Research</title>
 <meta name="robots" content="noindex, nofollow">
 <script src="../gate.js"></script>
-<link rel="stylesheet" href="../studio.css?v=2026-11-04b">
 <style>
-  body { overflow: auto; }
-  .wrap { max-width: 1500px; margin: 0 auto; padding: 22px 24px 60px; }
-  h1 { margin: 0 0 4px; font-size: 26px; }
-  .lead { color: var(--muted); margin: 0 0 18px; max-width: 900px; }
-  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-  .tabs button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
-  .tabs button[aria-selected=true] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-  .prompt { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 16px; }
-  .prompt .who { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
-  .card a.shot { display: block; aspect-ratio: 1440 / 900; background: var(--bg); overflow: hidden; }
-  .card img { width: 100%; display: block; }
-  .card .body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
-  .card h3 { margin: 0; font-size: 16px; }
-  .where { font-size: 13px; color: var(--muted); }
-  .where b { color: var(--ink); }
-  .stats { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; }
-  .stats span b { font-size: 15px; }
-  .checks { font-size: 12px; }
-  .checks.ok { color: #1e6b34; }
-  .checks.bad { color: var(--danger); }
-  .note { font-size: 13px; background: var(--truth-bg); border-left: 3px solid var(--script); padding: 6px 8px; }
-  .open { margin-top: auto; align-self: flex-start; }
-  .tag { font-size: 11px; padding: 1px 7px; border-radius: 4px; background: var(--bg); color: var(--muted); margin-left: 6px; font-weight: 600; }
+  /* The look of the apps participants build: paper, ink, one red accent, serif for titles, monospace for labels. */
+  :root {
+    --paper: #f4f0e8; --card: #fbf9f4; --ink: #1d1b18; --muted: #5b564c; --rule: #d9d2c3; --red: #9b2335;
+    --ok: #1f6b3a; --bad: #9b2335;
+    --serif: Georgia, "Times New Roman", serif; --mono: ui-monospace, Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper: #191816; --card: #22201d; --ink: #ede8de; --muted: #a59f93; --rule: #3a3631; --red: #e0707f; --ok: #6cc28a; --bad: #e0707f; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.5 var(--sans); }
+  a { color: inherit; }
+  .mono { font: 12px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 28px 64px; }
+  .bar { display: flex; align-items: center; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--rule); }
+  .bar svg { height: 26px; width: auto; display: block; }
+  .bar .name { font-weight: 600; }
+  .bar .back { margin-left: auto; color: var(--muted); text-decoration: none; }
+  .bar .back:hover { color: var(--red); }
+  .hero { padding: 34px 0 10px; max-width: 900px; }
+  .hero .mono { color: var(--muted); }
+  .hero h1 { font: 400 40px/1.15 var(--serif); margin: 8px 0 12px; }
+  .hero p { margin: 0; color: var(--muted); }
+  nav.tabs { display: flex; flex-direction: column; margin: 30px 0 0; }
+  .group { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--rule); }
+  .group .mono { color: var(--muted); width: 110px; padding: 0 0 12px; }
+  .tabs button { font: 12px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; background: none; border: 0;
+    border-bottom: 3px solid transparent; color: var(--ink); padding: 10px 12px 11px; cursor: pointer; }
+  .tabs button:hover { color: var(--red); }
+  .tabs button[aria-selected=true] { color: var(--red); border-bottom-color: var(--red); }
+  .tabs button:focus-visible, .btn:focus-visible, .shot:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .ask { margin: 26px 0 26px; padding: 0 0 0 18px; border-left: 3px solid var(--red); max-width: 920px; }
+  .ask .mono { color: var(--muted); }
+  .ask q { display: block; font: italic 400 23px/1.4 var(--serif); margin: 6px 0 6px; quotes: "“" "”"; }
+  .ask .sub { font-size: 14px; color: var(--muted); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 24px; }
+  .card { background: var(--card); border: 1px solid var(--rule); display: flex; flex-direction: column; transition: box-shadow .15s, transform .15s; }
+  .card:hover { box-shadow: 0 10px 28px rgba(29, 27, 24, .12); transform: translateY(-2px); }
+  .shot { display: block; aspect-ratio: 16 / 10; overflow: hidden; border-bottom: 1px solid var(--rule); background: #fff; }
+  .shot img { width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block; }
+  .body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .head h2 { font: 400 22px/1.2 var(--serif); margin: 0; }
+  .badge { font: 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 4px 7px; border: 1px solid var(--rule); color: var(--muted); }
+  .badge.new { border-color: var(--red); color: var(--red); }
+  .where { font-size: 14px; color: var(--muted); }
+  .where b { color: var(--ink); font-weight: 600; }
+  .facts { display: flex; gap: 16px; flex-wrap: wrap; color: var(--muted); }
+  .facts b { color: var(--ink); font-weight: 600; }
+  .checks { font-size: 14px; }
+  .checks .ok { color: var(--ok); font-weight: 600; }
+  .checks .bad { color: var(--bad); font-weight: 600; }
+  .note { font-size: 14px; color: var(--muted); }
+  .actions { margin-top: auto; padding-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn { font: 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; padding: 11px 14px; border: 1px solid var(--ink); }
+  .btn.primary { background: var(--red); border-color: var(--red); color: #fff; }
+  .btn:hover { opacity: .88; }
+  footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 14px; max-width: 920px; }
+  @media (max-width: 600px) { .wrap { padding: 0 16px 48px; } .hero h1 { font-size: 30px; } .cards { grid-template-columns: 1fr; } .group .mono { width: 100%; padding: 10px 0 0; } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Same request, different models</h1>
-  <p class="lead">Each model got exactly what the studio sends: the request, the studio's instructions, a description of the data and three sample records. The apps run here on the full data for <span id="country"></span>. Checks are automatic (runs without errors, sends nothing out, uses the data, has the chart, table or buttons the request asked for); how good the app is remains your call.</p>
-  <div class="tabs" id="tabs" role="tablist"></div>
-  <div class="prompt"><div class="who" id="promptWho">Request</div><div id="promptText"></div></div>
-  <div class="cards" id="cards"></div>
+  <header class="bar">
+    <svg viewBox="0 0 98 40" role="img" aria-label="Garage Research"><rect width="98" height="40" rx="8" fill="#141414"/><text x="12" y="28.5" fill="#fff" font-family="'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="23" letter-spacing="-0.5">GR</text><text x="55" y="28.5" fill="#5bd45b" font-family="ui-monospace, Menlo, Consolas, monospace" font-weight="700" font-size="23">&gt;_</text></svg>
+    <span class="name">Garage Research</span><span class="mono" style="color:var(--muted)">· Gallery</span>
+    <a class="back mono" href="../">← Back to the studio</a>
+  </header>
+  <section class="hero">
+    <div class="mono">Same request, different models</div>
+    <h1>What each model built from the same request</h1>
+    <p>Each model got exactly what the studio sends: the request, the studio's instructions, a description of the data and a few sample records, never the data itself. The apps run here on the full data for <span id="country"></span>. The checks are automatic; how good an app is remains your call.</p>
+  </section>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Apps"></nav>
+  <section class="ask" aria-live="polite">
+    <div class="mono" id="askWho">What the participant asks</div>
+    <q id="askText"></q>
+    <div class="sub" id="askSub"></div>
+  </section>
+  <main class="cards" id="cards"></main>
+  <footer>Screenshots show each app's first screen. <b>Open the app</b> runs it in your browser on the data; <b>Read the plan</b> shows the plan it was built from. Nothing here calls a model.</footer>
 </div>
 <script>
 (async function () {
@@ -60,33 +107,41 @@
   let current = new URLSearchParams(location.search).get('prompt') || g.prompts[0].id;
 
   function render() {
-    document.getElementById('tabs').innerHTML = g.prompts.map((p) =>
-      `<button role="tab" aria-selected="${p.id === current}" data-id="${p.id}">${esc(p.session)} · ${esc(p.title)}</button>`).join('');
+    // tabs grouped by session, in the order of the morning
+    const sessions = [...new Set(g.prompts.map((p) => p.session))];
+    document.getElementById('tabs').innerHTML = sessions.map((s) => `<div class="group"><span class="mono">${esc(s.replace('S', 'Session '))}</span>` +
+      g.prompts.filter((p) => p.session === s).map((p) =>
+        `<button role="tab" aria-selected="${p.id === current}" data-id="${p.id}">${esc(p.title)}</button>`).join('') + '</div>').join('');
     document.querySelectorAll('#tabs button').forEach((b) => { b.onclick = () => { current = b.dataset.id; history.replaceState(null, '', '?prompt=' + current); render(); }; });
-    // with a planning session the participant asks in a sentence and each model builds from a plan, linked on its card
     const cur = g.prompts.find((p) => p.id === current);
-    document.getElementById('promptWho').textContent = cur.problem ? 'What the participant asks · each card links the plan its app was built from' : 'Request';
-    document.getElementById('promptText').textContent = cur.problem || cur.prompt;
+    document.getElementById('askWho').textContent = cur.problem ? 'What the participant asks' : 'The request';
+    document.getElementById('askText').textContent = cur.problem || cur.prompt;
+    document.getElementById('askSub').textContent = cur.problem ? 'From this, a planning session wrote a plan; each card links the plan its app was built from.' : '';
     const rows = g.results.filter((r) => r.prompt === current);
     document.getElementById('cards').innerHTML = rows.map((r) => {
       const m = g.models[r.model] || { name: r.model };
       const view = `view.html?app=${encodeURIComponent(r.model + '/' + r.prompt)}`;
-      return `<div class="card">
-        <a class="shot" href="${r.app ? view : '#'}" target="_blank"><img src="apps/${r.model}/${r.prompt}.png" alt="Screenshot of the app built by ${esc(m.name)}" loading="lazy"></a>
+      const isNew = r.model === 'sonnet-tabs';
+      const name = m.name.replace(' · new plan', '');
+      const facts = [r.seconds != null && `<span><b>${Math.round(r.seconds)}</b> s to build</span>`,
+        r.cost != null && `<span><b>$${r.cost.toFixed(3)}</b></span>`, r.lines && `<span><b>${r.lines}</b> lines</span>`].filter(Boolean).join('');
+      const checks = r.passed === r.total
+        ? `<span class="ok">${r.passed} of ${r.total} checks</span>`
+        : `<span class="bad">${r.passed} of ${r.total} checks</span> · missed: ${esc(r.failed.map((k) => CHECK[k] || k).join(', '))}`;
+      return `<article class="card">
+        <a class="shot" href="${r.app ? view : '#'}" target="_blank" rel="noopener" aria-label="Open the app built by ${esc(name)}"><img src="apps/${r.model}/${r.prompt}.png" alt="" loading="lazy"></a>
         <div class="body">
-          <h3>${esc(m.name)}<span class="tag">${esc(m.weights || '')} model</span></h3>
+          <div class="head"><h2>${esc(name)}</h2>${isNew ? '<span class="badge new">New plan</span>' : ''}<span class="badge">${esc(m.weights || '')} weights</span></div>
           <div class="where">Made in <b>${esc(m.origin || '')}</b> · ran on <b>${esc(m.host || '')}</b></div>
-          <div class="stats">
-            <span><b>${r.seconds != null ? Math.round(r.seconds) : '–'}</b> s</span>
-            <span><b>${r.cost != null ? '$' + r.cost.toFixed(3) : '–'}</b></span>
-            <span><b>${r.lines || '–'}</b> lines</span>
+          ${facts ? `<div class="facts mono">${facts}</div>` : ''}
+          <div class="checks">${checks}</div>
+          ${r.attempts > 1 ? `<div class="note">${r.attempts} attempts: an app came back ${r.returned}×, passed every check ${r.full}×. Shown: the best one.</div>` : ''}
+          ${isNew ? '<div class="note">Built from the current plan: one question per tab, in the look of the author\'s research tools. The other cards were built from an earlier, shorter plan.</div>' : ''}
+          <div class="actions">
+            ${r.app ? `<a class="btn primary" href="${view}" target="_blank" rel="noopener">Open the app →</a>` : '<span class="checks"><span class="bad">No app returned</span></span>'}
+            ${r.plan ? `<a class="btn" href="${r.plan}" target="_blank" rel="noopener">Read the plan</a>` : ''}
           </div>
-          <div class="checks ${r.passed === r.total ? 'ok' : 'bad'}">${r.passed}/${r.total} checks${r.failed.length ? ' · missed: ' + esc(r.failed.map((k) => CHECK[k] || k).join(', ')) : ''}</div>
-          ${r.attempts > 1 ? `<div class="checks ${r.full === r.attempts ? 'ok' : 'bad'}">${r.attempts} attempts: an app came back ${r.returned}×, passed every check ${r.full}×. Shown: the best one.</div>` : ''}
-          ${m.note ? `<div class="note">${esc(m.note)}</div>` : ''}
-          ${r.app ? `<a class="tool open" href="${view}" target="_blank">Open the app</a>` : '<span class="checks bad">No app returned</span>'}
-          ${r.plan ? `<a class="tool" href="${r.plan}" target="_blank">Read the plan</a>` : ''}
-        </div></div>`;
+        </div></article>`;
     }).join('');
   }
   render();

@@ -3,38 +3,63 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The wall · Workshop Studio</title>
+<title>The wall · Garage Research</title>
 <meta name="robots" content="noindex, nofollow">
 <script src="gate.js"></script>
-<link rel="stylesheet" href="studio.css?v=2026-11-04b">
 <style>
-  /* The facilitator's projector: every app a participant sent with Send to wall, live, on their own data. */
-  body { overflow: auto; background: var(--bg); }
-  .wall-head { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; padding: 18px 24px 6px; }
-  .wall-head h1 { margin: 0; font-size: 24px; }
-  .wall-head .sub { color: var(--muted); }
-  .wall-head .stamp { margin-left: auto; color: var(--faint); font-size: 13px; }
-  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; padding: 12px 24px 32px; }
-  .tile { display: block; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; color: inherit; text-decoration: none; }
-  .tile:hover, .tile:focus-visible { border-color: var(--accent); box-shadow: var(--shadow); }
-  .thumb { position: relative; overflow: hidden; background: #fff; border-bottom: 1px solid var(--line); }
+  /* The facilitator's projector: every app a participant sent with Send to wall, live, on their own data.
+     The look of the gallery and of the apps: paper, ink, one red accent, serif titles, monospace labels. */
+  :root {
+    --paper: #f4f0e8; --card: #fbf9f4; --ink: #1d1b18; --muted: #5b564c; --rule: #d9d2c3; --red: #9b2335;
+    --serif: Georgia, "Times New Roman", serif; --mono: ui-monospace, Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper: #191816; --card: #22201d; --ink: #ede8de; --muted: #a59f93; --rule: #3a3631; --red: #e0707f; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.5 var(--sans); }
+  .mono { font: 12px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+  .wrap { max-width: 1680px; margin: 0 auto; padding: 0 28px 48px; }
+  .bar { display: flex; align-items: center; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--rule); }
+  .bar svg { height: 26px; width: auto; display: block; }
+  .bar .name { font-weight: 600; }
+  .bar .live { margin-left: auto; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .bar .live i { width: 9px; height: 9px; border-radius: 50%; background: #2ea043; box-shadow: 0 0 0 3px rgba(46, 160, 67, .2); }
+  .hero { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; padding: 24px 0 18px; }
+  .hero h1 { font: 400 38px/1.1 var(--serif); margin: 0; }
+  .hero .sub { color: var(--muted); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 22px; }
+  .tile { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--rule); color: inherit; text-decoration: none;
+    transition: box-shadow .15s, transform .15s; animation: arrive .5s ease-out; }
+  .tile:hover, .tile:focus-visible { box-shadow: 0 10px 28px rgba(29, 27, 24, .14); transform: translateY(-2px); outline: none; border-color: var(--red); }
+  @keyframes arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .thumb { position: relative; overflow: hidden; background: #fff; border-bottom: 1px solid var(--rule); }
   .thumb iframe { position: absolute; top: 0; left: 0; width: 1280px; height: 800px; border: 0; transform-origin: 0 0; pointer-events: none; }
-  .thumb .wait { position: absolute; inset: 0; display: grid; place-items: center; color: var(--faint); font-size: 13px; }
-  .cap { padding: 10px 12px; font-size: 14px; }
-  .cap b { display: block; font-size: 15px; margin-bottom: 2px; }
-  .cap span { color: var(--muted); }
-  .empty { padding: 60px 24px; text-align: center; color: var(--muted); font-size: 18px; }
+  .thumb .wait { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font: 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+  .cap { padding: 12px 14px 14px; }
+  .cap b { display: block; font: 400 19px/1.25 var(--serif); margin-bottom: 4px; }
+  .cap span { font: 12px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .empty { padding: 90px 24px; text-align: center; }
+  .empty b { display: block; font: 400 30px/1.2 var(--serif); margin-bottom: 8px; }
+  .empty span { color: var(--muted); }
 </style>
 </head>
 <body>
-<header class="wall-head">
-  <h1>The wall</h1>
-  <span class="sub" id="sub">Apps sent with <b>Send to wall</b>. Click one to open it full screen.</span>
-  <span class="stamp" id="stamp"></span>
-</header>
-<main class="tiles" id="tiles"></main>
-<p class="empty" id="empty" hidden>Nothing on the wall yet. In the studio, <b>Send to wall</b> puts your app here.</p>
-<script src="preview-doc.js?v=2026-11-04b"></script>
+<div class="wrap">
+  <header class="bar">
+    <svg viewBox="0 0 98 40" role="img" aria-label="Garage Research"><rect width="98" height="40" rx="8" fill="#141414"/><text x="12" y="28.5" fill="#fff" font-family="'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="23" letter-spacing="-0.5">GR</text><text x="55" y="28.5" fill="#5bd45b" font-family="ui-monospace, Menlo, Consolas, monospace" font-weight="700" font-size="23">&gt;_</text></svg>
+    <span class="name">Garage Research</span><span class="mono" style="color:var(--muted)">· The wall</span>
+    <span class="live mono"><i></i><span id="stamp">Live</span></span>
+  </header>
+  <section class="hero">
+    <h1>Apps from the room</h1>
+    <span class="sub" id="sub">Sent with <b>Send to wall</b>. Click one to open it full screen.</span>
+  </section>
+  <main class="tiles" id="tiles"></main>
+  <p class="empty" id="empty" hidden><b>Nothing on the wall yet.</b><span>In the studio, <b>Send to wall</b> puts your app here.</span></p>
+</div>
+<script src="preview-doc.js?v=2026-11-04c"></script>
 <script>
 (async function () {
   const W = 1280, H = 800;   // the size an app is drawn at before it is scaled into its tile

@@ -60,8 +60,9 @@ MAX_MESSAGES = 40
 MAX_CHARS = 300_000          # whole conversation; earlier versions of the page travel back with it
 KEEPALIVE_S = 10             # a silent upstream gets an SSE comment, so nginx and the browser stay awake
 BUSY = "in_flight_budget_exhausted"   # OpenRouter 402 reason: transient, "retry after in-flight requests settle"
-# purpose → (temperature, max_tokens)
-PURPOSES = {"build": (0.3, 64000), "inapp": (0.2, 8000), "question": (0.8, 1200)}
+# purpose → (temperature, max_tokens); a question's budget holds a reasoning model's thinking (GLM-5.3 thinks
+# for about 1,000 tokens before it answers) as well as the answer
+PURPOSES = {"build": (0.3, 64000), "inapp": (0.2, 8000), "question": (0.8, 4000)}
 INAPP_SYSTEM = ("You are called from inside a data app built in a workshop. Answer only what is asked. "
                 "If JSON is requested, reply with JSON only, no prose and no code fences.")
 PLACEHOLDER_BUILD = ("Return one complete HTML document in a single ```html code block. All data is in "
@@ -91,7 +92,9 @@ class Config:
     seats_csv: Path | None = field(default_factory=lambda: Path(p) if (p := os.environ.get("STUDIO_SEATS_CSV")) else None)
     seat_budget: float = field(default_factory=lambda: float(os.environ.get("STUDIO_SEAT_BUDGET", "8")))
     daily_budget: float = field(default_factory=lambda: float(os.environ.get("STUDIO_DAILY_BUDGET", "200")))
-    rate_limit: int = field(default_factory=lambda: int(os.environ.get("STUDIO_RATE_LIMIT", "20")))
+    # 60 requests per seat in 5 minutes: a page-by-page model step sends 18 at once (CCPR GC 32); the seat's
+    # budget, not this limit, caps the cost
+    rate_limit: int = field(default_factory=lambda: int(os.environ.get("STUDIO_RATE_LIMIT", "60")))
     rate_window: int = field(default_factory=lambda: int(os.environ.get("STUDIO_RATE_WINDOW", "300")))
     origins: list = field(default_factory=lambda: os.environ.get("STUDIO_ORIGINS", ORIGINS).split(","))
     build: str = field(default_factory=lambda: os.environ.get("STUDIO_BUILD", ""))
@@ -233,6 +236,8 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
                    "messages": ([{"role": "system", "content": system}] if system else []) + messages}
         if purpose == "build" and m.reasoning:
             payload["reasoning"] = {"effort": m.reasoning}
+        elif purpose == "question" and m.reasoning:   # a quick question: think briefly (GLM-5.3 otherwise thinks past its budget)
+            payload["reasoning"] = {"effort": "low"}
         req = client.build_request("POST", f"{OPENROUTER}/chat/completions", json=payload, headers=headers())
         try:
             r = await client.send(req, stream=True)

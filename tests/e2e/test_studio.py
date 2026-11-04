@@ -279,9 +279,10 @@ def test_participant_path(base_url, browser, tmp_path):
     # Run x3: three identical checksums
     look(page, "run3Btn")
     page.wait_for_selector(".verdict", timeout=60000)
-    fps = page.locator("#runs code").all_inner_texts()
-    assert len(set(fps)) == 1 and re.fullmatch(r"[0-9a-f]{8}", fps[0])
-    assert "Identical" in page.inner_text(".verdict")
+    rows = page.locator(".runs3 tbody tr")
+    assert rows.count() >= 3 and page.locator(".runs3 tr.differs").count() == 0   # the app's numbers, in words
+    assert "2,264" in page.inner_text(".runs3") and not re.search(r"\b0\d [A-Z]", page.inner_text(".runs3"))   # no "01 OVERVIEW" labels
+    assert "The same answer, three times" in page.inner_text(".verdict")
     page.click("#drawerClose")
 
     # Trace: one recorded build, nothing sent, data kept
@@ -699,7 +700,7 @@ def test_the_wall_shows_what_participants_sent(base_url, browser, fake_api):
     page.goto(base_url + f"wall.html?api={api}")
     page.wait_for_function("() => document.querySelectorAll('.tile').length === 2")
     caps = page.locator(".tile .cap").all_inner_texts()
-    assert "Colombia" in caps[1] and "Kenya" in caps[0], caps   # newest first; the studio sent the seat's country
+    assert "COLOMBIA" in caps[1].upper() and "KENYA" in caps[0].upper(), caps   # newest first; the studio sent the seat's country
     page.wait_for_function("() => document.querySelectorAll('.thumb iframe').length === 2", timeout=30000)
     page.locator(".tile").first.click()
     page.wait_for_url("**/gallery/view.html?wall=*")
@@ -707,6 +708,27 @@ def test_the_wall_shows_what_participants_sent(base_url, browser, fake_api):
     body.get_by_text("CCPR/C/GC/32").first.wait_for(timeout=20000)   # the second file reached the app
     assert "Two General Comments" in page.inner_text(".bar")
     assert not errors, errors
+    ctx.close()
+
+
+def test_the_tour_from_the_footer(base_url, browser):
+    """The tour lights one part of the studio at a time; Tour in the footer starts it again. It does not
+    start by itself in an automated browser, so it never stands in the way of the other tests."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + "?via=replay&planpace=1&country=Kenya")
+    started(page)
+    assert page.locator(".tour").count() == 0
+    page.click("#tourBtn")
+    titles = []
+    for _ in range(8):
+        titles.append(page.locator(".tour-card h3").inner_text())
+        page.locator(".tour-card [data-t=next]").click()
+    assert titles[0] == "Welcome to Garage Research" and len(set(titles)) == 8
+    assert page.locator(".tour").count() == 0 and page.evaluate("localStorage.getItem('ws:toured')") == "1"
+    page.click("#tourBtn")
+    page.keyboard.press("Escape")
+    assert page.locator(".tour").count() == 0
     ctx.close()
 
 

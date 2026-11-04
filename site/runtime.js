@@ -11,7 +11,7 @@
   window.studio = {
     ask: function (prompt, opts) {
       if (!inStudio) {
-        return Promise.reject(new Error('AI steps only work inside the Workshop Studio. This saved copy runs without a model.'));
+        return Promise.reject(new Error('AI steps only work inside Garage Research. This saved copy runs without a model.'));
       }
       return new Promise(function (resolve, reject) {
         var id = ++seq;
@@ -42,6 +42,25 @@
     var h = 0x811c9dc5;
     for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
     return ('0000000' + h.toString(16)).slice(-8);
+  }
+
+  // what a run shows, in words a reader can compare: the first short lines with a number in them (the
+  // innermost element that holds the whole line), and how many numbers and charts the screen has
+  function shown() {
+    var picks = [], els = [], all = document.body ? document.body.querySelectorAll('*') : [];
+    for (var i = 0; i < all.length && picks.length < 6; i++) {
+      var el = all[i];
+      if (/^(SCRIPT|STYLE|OPTION|TEXTAREA|SELECT|BUTTON)$/.test(el.tagName) || !el.offsetParent) continue;
+      if (els.some(function (p) { return p.contains(el); }) || el.closest('[role=tablist], nav')) continue;
+      if (el.querySelector('button, input, select, [role=tab]')) continue;   // a control bar, not a result
+      var t = (el.innerText || '').replace(/\s+/g, ' ').trim();
+      // a result: a number that is not a numbered label ("01 Keyword")
+      if (!t || t.length > 70 || !/(^|[^\d])[1-9]/.test(t) || picks.indexOf(t) >= 0) continue;
+      picks.push(t); els.push(el);
+    }
+    var text = document.body ? document.body.innerText : '';
+    var charts = window.Chart && Chart.instances ? Object.keys(Chart.instances).length : 0;
+    return { picks: picks, numbers: (text.match(/\d[\d,.]*/g) || []).length, charts: charts };
   }
 
   // Layers: which words on screen the model wrote into its code (amber), which the code computed from
@@ -192,7 +211,7 @@
   });
   window.addEventListener('load', function () {
     setTimeout(function () {
-      post({ type: 'studio:ready', fingerprint: fingerprint(), chars: document.body ? document.body.innerText.length : 0 });
+      post({ type: 'studio:ready', fingerprint: fingerprint(), shown: shown(), chars: document.body ? document.body.innerText.length : 0 });
     }, 700);
   });
 })();

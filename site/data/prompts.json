@@ -31,16 +31,15 @@
       "minute": 50,
       "dataset": "uhri",
       "builds_on": "s7-1-dashboard",
-      "title": "Check ten at random",
-      "blurb": "Draw ten records and judge the UN's labels yourself",
-      "prompt": "Add a button \"Check 10 at random\". It draws 10 random records from the current filter and shows, for each, the full text and the SDGs the UN index assigned to it. For each record I mark the SDGs as right, wrong or arguable. When all 10 are marked, show the agreement rate and the wrong and arguable examples, and let me download the 10 records with my marks as CSV. Add a \"Draw again\" button.",
-      "lesson": "Validation turns a chart into evidence. Guess your error rate before you start; the UN's own labels are a second opinion, not a marking scheme.",
+      "title": "Check and correct the labels",
+      "blurb": "Judge the UN's labels on ten records at random, and correct the wrong ones, visibly",
+      "prompt": "In the check of ten records drawn at random (add one on the Check tab if the app has none), let me correct a label I mark wrong or arguable: remove it, or add one from the labels that occur in the data. Keep the UN's own labels; never overwrite them silently. My corrections change every count, chart and filter in the app at once, and show wherever the record shows: a small \"corrected by you\" tag, my label in its own style, and the UN's label struck through beside it. Under the title, one line: \"n labels corrected by you; the UN's own labels are kept\", and a switch \"UN labels / with my corrections\". Let me undo any correction, download my corrections as CSV (symbol, paragraph, the UN's labels, my labels, my mark), and load such a CSV again to restore them.",
+      "lesson": "Validation turns a chart into evidence, and a correction is a claim of your own. Keep the original, mark every change, and let anyone switch back: that is what an audit trail looks like.",
       "checks": {
         "no_console_errors": true,
         "no_network": true,
         "uses_workshop_data": true,
-        "button_matches": "(?i)10 at random|check 10|random",
-        "source_matches": "Math\\.random|crypto\\.getRandomValues",
+        "text_matches": "(?i)corrected by you|my corrections",
         "download": true
       }
     },

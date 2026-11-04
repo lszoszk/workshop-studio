@@ -65,11 +65,7 @@ a { color: var(--accent); }
 :focus-visible { outline: 3px solid #8cbbe6; outline-offset: 2px; }
 
 /* the mark: three bars in the colours of the three layers (model, script, AI) */
-.logo { display: inline-flex; align-items: flex-end; gap: 3px; width: 26px; height: 26px; padding: 4px; border-radius: 7px; background: var(--code-bg); flex: none; }
-.logo i { flex: 1; border-radius: 2px; }
-.logo i:nth-child(1) { height: 55%; background: var(--model); }
-.logo i:nth-child(2) { height: 100%; background: var(--script); }
-.logo i:nth-child(3) { height: 75%; background: var(--ai); }
+.logo { display: block; height: 28px; width: auto; flex: none; }
 
 /* top bar */
 .top {
@@ -330,7 +326,7 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 }
 .drawer.wide { width: min(860px, 74%); }
 .drawer.wide .drawer-body { overflow: hidden; flex: 1; min-height: 0; }   /* the PDF fills the drawer; nothing scrolls the header away */
-.drawer-body .pdf { flex: 1; min-height: 0; width: 100%; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.drawer-body iframe.pdf { flex: 1; min-height: 0; width: 100%; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .src-head { font-size: 14px; color: var(--muted); }
 .drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); }
 .drawer-head h3 { margin: 0; font-size: 18px; }
@@ -465,7 +461,7 @@ dialog::backdrop { background: rgba(14, 22, 33, .45); }
 body.handoff-mode .top, body.handoff-mode .work, body.handoff-mode .foot { display: none; }
 .handoff { min-height: 100%; display: grid; place-items: center; padding: 24px 16px; }
 .handoff-card { background: var(--panel); border-radius: 18px; box-shadow: var(--shadow); padding: 24px 20px; max-width: 420px; width: 100%; }
-.handoff-card .logo { width: 34px; height: 34px; }
+.handoff-card .logo { height: 36px; }
 .handoff h1 { font-size: 24px; line-height: 1.25; margin: 14px 0 8px; }
 .handoff p { color: var(--muted); }
 .handoff-code { font: 700 34px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .18em; padding: 12px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); text-align: center; }
@@ -502,3 +498,19 @@ body.wall .work { grid-template-columns: 1fr; height: calc(100% - var(--top-h));
 .pdfpage canvas { display: block; width: 100%; height: 100%; }
 .pdfmark { position: absolute; background: rgba(155, 35, 53, .22); border-bottom: 2px solid #9b2335; pointer-events: none; }
 .fcard .from { font-size: 13px; color: var(--muted); }
+.runs3 { width: 100%; border-collapse: collapse; font-size: 14px; }
+.runs3 th { text-align: left; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); padding: 4px 6px; }
+.runs3 td { padding: 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.runs3 td.mark { color: var(--ok, #2ea043); font-weight: 700; text-align: center; width: 1.5em; }
+.runs3 tr.differs td { background: rgba(207, 34, 46, .08); }
+.runs3 tr.differs td.mark { color: #cf222e; }
+.drawer-body .small { font-size: 12px; }
+
+/* the tour: the screen dimmed around one lit element, a card beside it */
+.tour { position: fixed; inset: 0; z-index: 1000; }
+.tour-hole { position: fixed; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(10, 14, 22, .55); outline: 2px solid #fff; transition: all .25s ease; pointer-events: none; }
+.tour-card { position: fixed; max-width: 360px; background: var(--panel); color: var(--ink); border-radius: 12px; box-shadow: 0 20px 50px rgba(0, 0, 0, .35); padding: 16px 18px; transition: top .25s ease, left .25s ease; }
+.tour-n { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.tour-card h3 { margin: 4px 0 6px; font-size: 18px; }
+.tour-card p { margin: 0 0 14px; font-size: 15px; line-height: 1.5; }
+.tour-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }

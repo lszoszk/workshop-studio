@@ -244,7 +244,8 @@ def test_inapp_and_question_purposes(env):
     assert inapp["messages"][0] == {"role": "system", "content": studio.INAPP_SYSTEM}
     assert (inapp["temperature"], inapp["max_tokens"]) == (0.2, 8000)
     assert [m["role"] for m in question["messages"]] == ["user"]          # no system message, no data
-    assert (question["temperature"], question["max_tokens"]) == (0.8, 1200)
+    assert (question["temperature"], question["max_tokens"]) == (0.8, 4000)
+    assert question["reasoning"] == {"effort": "low"} and "reasoning" not in inapp
 
 
 def test_missing_data_pack_gives_a_placeholder(tmp_path):
@@ -279,13 +280,13 @@ def test_stream_is_normalised_and_ends_with_usage_then_done(env):
                         "seconds": ev[3][1]["seconds"], "budget_left": round(8 - 0.0123, 4)}
 
 
-def test_reasoning_effort_is_set_per_model_for_build_only(env):
+def test_reasoning_effort_is_high_for_builds_low_for_questions(env):
     for key in ("mistral", "claude", "glm-cn", "glm-eu"):
         env.client.post("/studio-api/chat", json=body(model=key))
     env.client.post("/studio-api/chat", json=body(model="mistral", purpose="inapp"))
     env.client.post("/studio-api/chat", json=body(model="claude", purpose="question"))
     efforts = [r.get("reasoning") for r in env.fake.requests]
-    assert efforts == [{"effort": "high"}] * 4 + [None, None]
+    assert efforts == [{"effort": "high"}] * 4 + [None, {"effort": "low"}]
 
 
 def test_reasoning_and_text_in_one_chunk_keep_their_order(env):

@@ -30,7 +30,7 @@ const MAX_CHARS = 300_000;
 const KEEPALIVE_MS = 10_000;
 const BUSY = "in_flight_budget_exhausted";   // OpenRouter 402 reason: transient, retry after in-flight requests settle
 // purpose → [temperature, max_tokens]; the same as PURPOSES in server/app.py (a test checks)
-const PURPOSES = {"build": [0.3, 64000], "inapp": [0.2, 8000], "question": [0.8, 1200]};
+const PURPOSES = {"build": [0.3, 64000], "inapp": [0.2, 8000], "question": [0.8, 4000]};
 const INAPP_SYSTEM = "You are called from inside a data app built in a workshop. Answer only what is asked. If JSON is requested, reply with JSON only, no prose and no code fences.";
 const PLACEHOLDER_BUILD = "Return one complete HTML document in a single ```html code block. All data is in " +
   "window.WORKSHOP_DATA before your script runs; never use fetch() or load anything from the internet. " +
@@ -127,6 +127,7 @@ async function openUpstream(env, m, system, messages, purpose) {
     messages: [...(system ? [{ role: "system", content: system }] : []), ...messages],
   };
   if (purpose === "build" && m.reasoning) payload.reasoning = { effort: m.reasoning };
+  else if (purpose === "question" && m.reasoning) payload.reasoning = { effort: "low" };   // a quick question: think briefly
   try {
     const r = await fetch(`${OPENROUTER}/chat/completions`, {
       method: "POST", body: JSON.stringify(payload),

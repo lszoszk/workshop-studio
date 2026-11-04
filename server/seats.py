@@ -79,7 +79,7 @@ def kv_entries(seats: list[dict], default_budget: float) -> list[dict]:
 
 class Seats:
     def __init__(self, path: Path, default_budget: float = 8.0, daily_budget: float = 200.0,
-                 rate_limit: int = 20, rate_window: int = 300):
+                 rate_limit: int = 60, rate_window: int = 300):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.default_budget = default_budget

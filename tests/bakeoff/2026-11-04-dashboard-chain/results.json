@@ -1,0 +1,42 @@
+[
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · built in Claude Code (no API)",
+  "prompt": "s7-3-check-ten",
+  "passed": 5,
+  "total": 5,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "text_matches": true,
+   "download": true
+  },
+  "errors": [],
+  "network": [],
+  "lines": 1216,
+  "seconds": null,
+  "cost": 0
+ },
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · built in Claude Code (no API)",
+  "prompt": "s7-2-who-recommends",
+  "passed": 7,
+  "total": 7,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "source_matches": true,
+   "text_matches": true
+  },
+  "errors": [],
+  "network": [],
+  "lines": 1094,
+  "seconds": null,
+  "cost": 0
+ }
+]

@@ -57,7 +57,7 @@
     $('handoff').hidden = false;
     $('handoffCode').textContent = code || 'on your badge';
     $('handoffUrl').textContent = (location.host + location.pathname).replace(/\/$/, '');
-    $('handoffMail').href = 'mailto:?subject=' + encodeURIComponent('Workshop Studio') + '&body=' + encodeURIComponent(link);
+    $('handoffMail').href = 'mailto:?subject=' + encodeURIComponent('Garage Research') + '&body=' + encodeURIComponent(link);
     $('handoffCopy').onclick = async () => {
       try { await navigator.clipboard.writeText(link); $('handoffCopy').textContent = 'Copied'; } catch (e) { $('handoffCopy').textContent = link; }
     };
@@ -97,6 +97,7 @@
     $('sendBtn').disabled = false;
     renderFooter();
     renderAll();
+    Tour.startOnce();   // the first visit in this browser
     if (!S.versions.length && !S.talk.length) {
       note(`Hello! Ask me anything, or pick a suggestion below. To build an app, first drag a file from <b>Your files</b> into the chat: ` +
         `your country is <b>${esc(S.country)}</b>, with ${fmt(S.countryCount)} UN recommendations and observations.`);
@@ -283,16 +284,17 @@
     try {
       res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
-        headers: { Authorization: 'Bearer ' + S.key, 'Content-Type': 'application/json', 'X-Title': 'Workshop Studio' },
+        headers: { Authorization: 'Bearer ' + S.key, 'Content-Type': 'application/json', 'X-Title': 'Garage Research' },
         body: JSON.stringify({
           model: m.openrouter,
           messages: (sys ? [{ role: 'system', content: sys }] : []).concat(o.messages),
           stream: true,
           temperature: { build: 0.3, inapp: 0.2, question: 0.8 }[o.purpose],
-          max_tokens: { build: 64000, inapp: 8000, question: 1200 }[o.purpose],
+          max_tokens: { build: 64000, inapp: 8000, question: 4000 }[o.purpose],
           provider: { only: [m.provider], allow_fallbacks: false, zdr: true },
           usage: { include: true },
           ...(m.reasoning && o.purpose === 'build' ? { reasoning: { effort: m.reasoning } } : {}),
+          ...(m.reasoning && o.purpose === 'question' ? { reasoning: { effort: 'low' } } : {}),   // a quick question: think briefly
         }),
         signal: o.signal,
       });
@@ -732,7 +734,7 @@
   window.addEventListener('message', (e) => {
     const m = e.data || {};
     if (typeof m.type !== 'string' || !m.type.startsWith('studio:')) return;
-    if (m.type === 'studio:ready' && Run3.waiting && e.source === Run3.frame.contentWindow) return Run3.got(m.fingerprint);
+    if (m.type === 'studio:ready' && Run3.waiting && e.source === Run3.frame.contentWindow) return Run3.got({ fp: m.fingerprint, shown: m.shown || { picks: [] } });
     const fromTab = tabs.has(e.source);
     if (fromTab && m.type === 'studio:tab-ready') return sendToTab(e.source);
     if (e.source !== Preview.win() && !fromTab) return;
@@ -847,7 +849,7 @@
       }
       const fp = new Promise((resolve) => {
         this.waiting = resolve;
-        setTimeout(() => { if (this.waiting === resolve) { this.waiting = null; resolve('no answer'); } }, 15000);
+        setTimeout(() => { if (this.waiting === resolve) { this.waiting = null; resolve({ fp: 'no answer', shown: { picks: [] } }); } }, 15000);
       });
       this.frame.srcdoc = PreviewDoc.forFrame(doc);
       return fp;
@@ -857,19 +859,28 @@
   async function run3() {
     const v = currentVersion();
     if (!v) return;
-    openDrawer('Run the app three times');
+    openDrawer('Same data, same answer?');
     const body = $('drawerBody');
-    body.innerHTML = '<p>The studio starts your app three times from scratch, on the same data, and turns everything it shows (text and chart values) into a short checksum. If a single number differed, the checksum would differ too.</p><div class="runs" id="runs"><div>Run 1<code>…</code></div><div>Run 2<code>…</code></div><div>Run 3<code>…</code></div></div><div id="runVerdict"></div>';
+    body.innerHTML = '<p>The studio opened your app three times from scratch, on the same data, and read what it shows each time. Here are its first numbers, side by side.</p><div id="runTable"><p class="faint">Running…</p></div><div id="runVerdict"></div>';
     const doc = await fullDoc(v);
-    const fps = [];
-    for (let i = 0; i < 3; i++) {
-      fps.push(await Run3.once(doc));
-      $('runs').children[i].querySelector('code').textContent = fps[i];
-    }
-    const same = fps.every((f) => f === fps[0]) && fps[0] !== 'no answer';
-    $('runVerdict').innerHTML = same
-      ? '<div class="verdict same"><b>Identical, three times.</b> The model wrote this code once. Running it does not involve the model: the code counts, filters and draws from the data the same way every time. That is what makes the numbers checkable.</div>'
-      : '<div class="verdict diff"><b>Not identical.</b> Something in the app changes from run to run, usually on purpose (a random sample, the current time). Ask the model which part it is: code can use chance on purpose, but it should say so.</div>';
+    const runs = [];
+    for (let i = 0; i < 3; i++) runs.push(await Run3.once(doc));
+    const ok = runs[0].fp !== 'no answer';
+    const same = ok && runs.every((r) => r.fp === runs[0].fp);
+    const rows = runs[0].shown.picks.map((t, k) => {
+      const cells = runs.map((r) => r.shown.picks[k] || '–');
+      const agree = cells.every((c) => c === cells[0]);
+      return `<tr${agree ? '' : ' class="differs"'}>${cells.map((c) => `<td>${esc(c)}</td>`).join('')}<td class="mark">${agree ? '✓' : '≠'}</td></tr>`;
+    }).join('');
+    const sh = runs[0].shown;
+    $('runTable').innerHTML = rows ? `<table class="runs3"><thead><tr><th>Run 1</th><th>Run 2</th><th>Run 3</th><th></th></tr></thead><tbody>${rows}</tbody></table>` +
+      `<p>${same ? 'Not only these: all' : 'All'} ${fmt(sh.numbers)} numbers on the screen${sh.charts ? ` and the values behind ${sh.charts} chart${sh.charts === 1 ? '' : 's'}` : ''} ${same ? 'are identical in all three runs.' : 'were compared, and something differs.'}</p>`
+      : '<p>The app shows no numbers on its first screen; everything it shows was compared instead.</p>';
+    $('runVerdict').innerHTML = (same
+      ? '<div class="verdict same"><b>The same answer, three times.</b> The model wrote this code once and takes no part when it runs: the code counts and draws from the data in the same way every time. Run it a hundred times and you get the same numbers, which is what makes them checkable. Compare <b>Ask the model directly</b>: the same question three times, and the answers vary.</div>'
+      : ok ? '<div class="verdict diff"><b>Not the same every time.</b> Something in the app changes from run to run, usually on purpose (a random sample, the current time). Ask the model which part it is: code can use chance on purpose, but it should say so.</div>'
+        : '<div class="verdict diff"><b>The app did not finish starting.</b> Try again, or ask the model to fix the app.</div>') +
+      `<details class="faint small"><summary>For the technically minded</summary>A checksum of everything on the screen, per run: ${runs.map((r) => esc(r.fp)).join(' · ')}.</details>`;
   }
 
   async function truth(kind) {
@@ -877,6 +888,11 @@
       const d = await dataParsed('uhri');
       const upr = d.records.filter((r) => r.mechanism === 'Universal Periodic Review').length;
       return `${fmt(d.count)} records in total, of which ${fmt(upr)} come from the Universal Periodic Review (UHRI snapshot of ${d.built}).`;
+    }
+    if (kind === 'gc36_count') {   // a document the models think they know: on 4 Nov GLM said 79, 70, 79 and Mistral 70, 74, 70
+      const d = await dataParsed('gc');
+      const n = d.records.filter((r) => r.symbol === 'CCPR/C/GC/36').length;
+      return `${fmt(n)} numbered paragraphs in CCPR/C/GC/36, counted in the UN Human Rights Database (${d.built}).`;
     }
     if (kind === 'gc_climate') {
       const d = await dataParsed('gc');
@@ -1861,7 +1877,8 @@
     // a next step continues this app; it may bring a file of its own (a second document to add)
     const next = v ? S.prompts.filter((p) => mine(p) && p.builds_on && p.builds_on !== 'any' && !used.has(p.id) && used.has(p.builds_on)).slice(0, 2) : [];
     if (v && live) next.push(...S.prompts.filter((p) => p.builds_on === 'any' && p.id !== S.pendingPromptId));   // "Suggest improvements"
-    const starters = S.prompts.filter((p) => mine(p) && !p.builds_on && !built.has(p.id)).slice(0, !v ? 3 : S.session === 'S8' ? 2 : 1);
+    // Hick's law: Session 8 keeps its three apps in view (PDF, Verbatim finder, wiki); Session 7 has one
+    const starters = S.prompts.filter((p) => mine(p) && !p.builds_on && !built.has(p.id)).slice(0, !v || S.session === 'S8' ? 3 : 1);
     const group = (label, list, fresh) => {
       if (!list.length) return;
       const l = document.createElement('div');
@@ -2261,6 +2278,7 @@
   $('viewApp').onclick = () => setView('app');
   $('viewCode').onclick = () => setView('code');
   $('takeHomeBtn').onclick = takeFurther;
+  $('tourBtn').onclick = () => Tour.start();
   $('themeBtn').onclick = toggleTheme;
   $('stopBtn').onclick = () => S.ctrl && S.ctrl.abort();
   $('countrySelect').onchange = (e) => changeCountry(e.target.value);

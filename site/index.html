@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Workshop Studio</title>
+<title>Garage Research</title>
 <meta name="robots" content="noindex, nofollow">
 <script src="gate.js"></script>
 <script>try { const t = localStorage.getItem('ws:theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
-<link rel="stylesheet" href="studio.css?v=2026-11-04b">
+<link rel="stylesheet" href="studio.css?v=2026-11-04c">
 </head>
 <body>
 <!-- a phone that scanned the badge's QR code gets this instead of the studio -->
 <div class="handoff" id="handoff" hidden>
   <div class="handoff-card">
-    <span class="logo" aria-hidden="true"><i></i><i></i><i></i></span>
+    <svg class="logo" viewBox="0 0 98 40" role="img" aria-label="Garage Research"><rect width="98" height="40" rx="8" fill="#141414"/><text x="12" y="28.5" fill="#fff" font-family="'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="23" letter-spacing="-0.5">GR</text><text x="55" y="28.5" fill="#5bd45b" font-family="ui-monospace, Menlo, Consolas, monospace" font-weight="700" font-size="23">&gt;_</text></svg>
     <h1>Open the studio on your laptop</h1>
     <p>The studio needs a bigger screen. Your seat code:</p>
     <div class="handoff-code" id="handoffCode">—</div>
@@ -28,9 +28,9 @@
 
 <header class="top">
   <div class="brand" id="brand">
-    <span class="logo" aria-hidden="true"><i></i><i></i><i></i></span>
+    <svg class="logo" viewBox="0 0 98 40" role="img" aria-label="Garage Research"><rect width="98" height="40" rx="8" fill="#141414"/><text x="12" y="28.5" fill="#fff" font-family="'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="23" letter-spacing="-0.5">GR</text><text x="55" y="28.5" fill="#5bd45b" font-family="ui-monospace, Menlo, Consolas, monospace" font-weight="700" font-size="23">&gt;_</text></svg>
     <div>
-      <div class="name">Workshop Studio</div>
+      <div class="name">Garage Research</div>
       <div class="event" id="event"></div>
     </div>
   </div>
@@ -150,6 +150,7 @@
   <span class="foot-who" id="footWho"></span>
   <span class="foot-links" id="footLinks"></span>
   <span class="foot-end">
+    <button type="button" class="linkish" id="tourBtn">Tour</button>
     <button type="button" class="linkish" id="takeHomeBtn">Take it further</button>
     <button type="button" class="linkish" id="themeBtn" aria-pressed="false">Dark mode</button>
   </span>
@@ -168,8 +169,9 @@
   </form>
 </dialog>
 
-<script src="preview-doc.js?v=2026-11-04b"></script>
-<script src="pdf-view.js?v=2026-11-04b"></script>
-<script src="studio.js?v=2026-11-04b"></script>
+<script src="preview-doc.js?v=2026-11-04c"></script>
+<script src="pdf-view.js?v=2026-11-04c"></script>
+<script src="tour.js?v=2026-11-04c"></script>
+<script src="studio.js?v=2026-11-04c"></script>
 </body>
 </html>

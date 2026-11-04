@@ -18,7 +18,7 @@
     f.setAttribute('style', 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;' +
       'background:#f2f4f7;font:16px system-ui,sans-serif;visibility:visible;color:#16202b');
     f.innerHTML = '<div style="background:#fff;padding:28px 32px;border-radius:12px;box-shadow:0 4px 16px rgba(16,30,54,.12);max-width:360px">' +
-      '<h1 style="margin:0 0 6px;font-size:20px">Workshop Studio</h1>' +
+      '<h1 style="margin:0 0 6px;font-size:20px">Garage Research</h1>' +
       '<p style="margin:0 0 14px;color:#4a5664">A preview. Enter the password to continue.</p>' +
       '<input type="password" autocomplete="current-password" aria-label="Password" style="width:100%;font:inherit;padding:9px 10px;border:1px solid #c7ced6;border-radius:8px">' +
       '<p class="gate-err" style="color:#a3261b;margin:8px 0 0;min-height:1.2em"></p>' +

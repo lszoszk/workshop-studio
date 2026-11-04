@@ -17,7 +17,7 @@
 # What the block does and does not do:
 #   - proxy_buffering off + 300 s read timeout: the model's answer streams as SSE for up to minutes.
 #   - NO per-IP limit_req / limit_conn: the whole workshop room reaches us from one NAT address.
-#     The app limits each seat instead (20 requests / 5 minutes).
+#     The app limits each seat instead (60 requests / 5 minutes).
 #   - CORS (https://lszoszk.github.io only) is answered by the app itself, so nginx adds no CORS
 #     headers: two layers would send the header twice and browsers reject that.
 #   - No X-Real-IP / X-Forwarded-For and access_log off: the studio never needs, and never keeps, a

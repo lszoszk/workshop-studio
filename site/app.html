@@ -4,24 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Your app · Workshop Studio</title>
+<title>Your app · Garage Research</title>
 <meta name="robots" content="noindex, nofollow">
 <script src="gate.js"></script>
 <script>try { const t = localStorage.getItem('ws:theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
-<link rel="stylesheet" href="studio.css?v=2026-11-04b">
+<link rel="stylesheet" href="studio.css?v=2026-11-04c">
 <style>
   /* The app in a tab of its own: the same sandbox as the studio's preview. Its requests to a
      model still go through the studio that opened it, so the Trace keeps every one. */
   body { overflow: hidden; }
   .tabbar { height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 14px; background: var(--panel); border-bottom: 1px solid var(--line); font-size: 14px; }
-  .tabbar .logo { width: 22px; height: 22px; }
+  .tabbar .logo { height: 22px; }
   .tabbar .follows { margin-left: auto; color: var(--faint); font-size: 13px; }
   .stage-tab { position: relative; height: calc(100% - 44px); }
   #frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #fff; }
 </style>
 </head>
 <body>
-<div class="tabbar"><span class="logo" aria-hidden="true"><i></i><i></i><i></i></span><b id="title">Waiting for the studio…</b><span class="follows">This tab follows the studio: a new version appears here too.</span></div>
+<div class="tabbar"><svg class="logo" viewBox="0 0 98 40" role="img" aria-label="Garage Research"><rect width="98" height="40" rx="8" fill="#141414"/><text x="12" y="28.5" fill="#fff" font-family="'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="23" letter-spacing="-0.5">GR</text><text x="55" y="28.5" fill="#5bd45b" font-family="ui-monospace, Menlo, Consolas, monospace" font-weight="700" font-size="23">&gt;_</text></svg><b id="title">Waiting for the studio…</b><span class="follows">This tab follows the studio: a new version appears here too.</span></div>
 <div class="stage-tab">
   <iframe id="frame" title="Your app" sandbox="allow-scripts allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox" allow="clipboard-write"></iframe>
   <aside class="drawer wide" id="drawer" hidden>
@@ -29,7 +29,7 @@
     <div class="drawer-body" id="drawerBody"></div>
   </aside>
 </div>
-<script src="pdf-view.js?v=2026-11-04b"></script>
+<script src="pdf-view.js?v=2026-11-04c"></script>
 <script>
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -46,7 +46,7 @@
         got = true;
         frame.srcdoc = m.doc;
         $('title').textContent = m.title;
-        document.title = m.title + ' · Workshop Studio';
+        document.title = m.title + ' · Garage Research';
       } else if (frame.contentWindow) {
         frame.contentWindow.postMessage(m, '*');   // the studio's answers to the app's model requests
       }

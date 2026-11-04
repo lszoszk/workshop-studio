@@ -1,6 +1,6 @@
 {
   "version": "2026-11-01",
-  "title": "Workshop Studio",
+  "title": "Garage Research",
   "event": "AI for Human Rights Professionals · Geneva Human Rights Hub · ITU, 4 December 2026",
   "default_country": "Kenya",
   "default_model": "mistral",
@@ -161,8 +161,8 @@
       "truth": "uhri_count"
     },
     "gc": {
-      "ask": "In the General Comments and General Recommendations of the UN treaty bodies, how many paragraphs contain the word \"climate\"? Answer with one number and one sentence.",
-      "truth": "gc_climate"
+      "ask": "How many numbered paragraphs does the UN Human Rights Committee's General Comment No. 36 (2018) on the right to life have? Answer with one number and one sentence.",
+      "truth": "gc36_count"
     },
     "hrc": {
       "ask": "Since 2021, how many resolutions has the UN Human Rights Council adopted by a recorded vote (not counting votes on amendments)? Answer with one number and one sentence.",
