@@ -1,6 +1,125 @@
 {
  "uhri": [
   {
+   "id": "971ee02f-d39d-4724-88ca-e55a033d483f",
+   "symbol": "CEDAW/C/AFG/CO/4",
+   "doc_url": "https://docs.un.org/en/CEDAW/C/AFG/CO/4",
+   "date": "2025-07-10",
+   "year": 2025,
+   "body": "CEDAW",
+   "mechanism": "Treaty bodies",
+   "type": "Recommendations",
+   "section": "Data collection and analysis",
+   "text": "48. The Committee recommends that the de facto authorities and the international community promote and build capacity for the use of relevant technology in the collection of statistical data, disaggregated by age, ethnicity, race and disability status, for the design and implementation of tailored and gender-responsive legislation, policies, programmes and budgets.",
+   "themes": [
+    "Constitutional & legislative framework",
+    "Data collection & research",
+    "Budget & resources (for human rights implementation)"
+   ],
+   "sdgs": [
+    17
+   ],
+   "sdg_targets": [
+    "17.18: Enhance availability of reliable data"
+   ],
+   "affected_persons": [
+    "Minorities/ racial, ethnic, linguistic, religious or descent-based groups",
+    "Persons with disabilities"
+   ],
+   "countries": [
+    "Afghanistan"
+   ]
+  },
+  {
+   "id": "cc826a0d-05ff-4a62-b39f-562c8fec65b0",
+   "symbol": "A/HRC/57/5",
+   "doc_url": "https://docs.un.org/en/A/HRC/57/5",
+   "date": "2024-05-31",
+   "year": 2024,
+   "body": "UPR",
+   "mechanism": "Universal Periodic Review",
+   "type": "Recommendations",
+   "section": "",
+   "text": "109.243 Strengthen support for internally displaced persons by collaborating with international organizations and developing resettlement strategies (Gambia).",
+   "themes": [
+    "National Human Rights Action Plans (or specific areas) / implementation plans",
+    "Economic & political crisis, natural disasters or other emergencies",
+    "Cooperation with international organizations",
+    "Budget & resources (for human rights implementation)"
+   ],
+   "sdgs": [
+    16,
+    17
+   ],
+   "sdg_targets": [],
+   "affected_persons": [
+    "Internally displaced persons"
+   ],
+   "countries": [
+    "Afghanistan"
+   ]
+  },
+  {
+   "id": "46a4f7e1-0470-4d0e-951d-5a209adc4c91",
+   "symbol": "A/HRC/13/23",
+   "doc_url": "https://docs.un.org/en/A/HRC/13/23",
+   "date": "2010-01-07",
+   "year": 2010,
+   "body": "SR Minorities",
+   "mechanism": "Special Procedures",
+   "type": "Other",
+   "section": "",
+   "text": "21. In September 2009, the independent expert participated in a conference held in Cali, Colombia, as a regional follow-up activity to the first session of the Forum, which had focused on minorities and the right to education. The conference was organized by the Robert F. Kennedy Memorial Center for Justice and Human Rights, in collaboration with the Cornell Law School’s International Human Rights Clinic and the International Human Rights Law Clinic of the University of Virginia. In an effort to continue dialogue, remain accountable to local communities and promote grass-roots advocacy, the conference publicly launched the report entitled “Right to Education of Afro-descendant and Indigenous Communities in the Americas” that it had previously presented at the Forum. The report addresses failures to fulfil obligations with respect to the right to education without discrimination within the Americas, focusing on Colombia, Guatemala and the Dominican Republic.",
+   "themes": [
+    "Equality & non-discrimination",
+    "Reservations",
+    "Right to education"
+   ],
+   "sdgs": [
+    16,
+    10
+   ],
+   "sdg_targets": [
+    "16.7: Responsive, inclusive and representative decision-making",
+    "16.3: Promote the rule of law and access to justice for all",
+    "10.3: Ensure equal opportunities and end discrimination"
+   ],
+   "affected_persons": [
+    "Minorities/ racial, ethnic, linguistic, religious or descent-based groups"
+   ],
+   "countries": [
+    "Colombia",
+    "Guatemala",
+    "Dominican Republic",
+    "Afghanistan"
+   ]
+  },
+  {
+   "id": "d16b76f0-da20-4cdb-a651-fa5adab7dc1c",
+   "symbol": "CEDAW/C/AFG/CO/4",
+   "doc_url": "https://docs.un.org/en/CEDAW/C/AFG/CO/4",
+   "date": "2025-07-10",
+   "year": 2025,
+   "body": "CEDAW",
+   "mechanism": "Treaty bodies",
+   "type": "Concerns/Observations",
+   "section": "Data collection and analysis",
+   "text": "47. The Committee notes with concern the lack of data collection in many areas relevant to the implementation of the Convention.",
+   "themes": [
+    "Data collection & research"
+   ],
+   "sdgs": [
+    17
+   ],
+   "sdg_targets": [
+    "17.18: Enhance availability of reliable data"
+   ],
+   "affected_persons": [],
+   "countries": [
+    "Afghanistan"
+   ]
+  },
+  {
    "id": "d7067252-8774-4c5e-901f-4914fc457a5f",
    "symbol": "CEDAW/C/AFG/CO/4",
    "doc_url": "https://docs.un.org/en/CEDAW/C/AFG/CO/4",
@@ -19,57 +138,6 @@
    "affected_persons": [],
    "countries": [
     "Afghanistan"
-   ]
-  },
-  {
-   "id": "5ab7244a-bc2e-495e-840e-b0a87bd7885a",
-   "symbol": "A/HRC/26/4",
-   "doc_url": "https://docs.un.org/en/A/HRC/26/4",
-   "date": "2014-04-03",
-   "year": 2014,
-   "body": "UPR",
-   "mechanism": "Universal Periodic Review",
-   "type": "Recommendations",
-   "section": "",
-   "text": "137.8 Respond positively to requests to visit made by the Special Rapporteur on torture and other cruel, inhuman or degrading treatment or punishment ( Mexico );",
-   "themes": [
-    "Reservations",
-    "Prohibition of torture & ill-treatment (including cruel, inhuman or degrading treatment)",
-    "Cooperation & Follow up with Special Procedures"
-   ],
-   "sdgs": [],
-   "sdg_targets": [],
-   "affected_persons": [
-    "Persons deprived of their liberty & detainees"
-   ],
-   "countries": [
-    "Afghanistan"
-   ]
-  },
-  {
-   "id": "49f5d449-65b4-42d3-a8a3-95a42346b44f",
-   "symbol": "A/HRC/7/7/Add.4",
-   "doc_url": "https://docs.un.org/en/A/HRC/7/7/Add.4",
-   "date": "2008-02-04",
-   "year": 2008,
-   "body": "WG Mercenaries",
-   "mechanism": "Special Procedures",
-   "type": "Concerns/Observations",
-   "section": "",
-   "text": "> the legal subtlety of the matter resides in the fact that Blackwater and Triple Canopy, the contracting companies, admit to working directly on behalf of the State Department of the Government of the United States of America, which had contracted them with the objective of providing protection services in armed conflict or post-conflict zones, such as Afghanistan and Iraq > once they had obtained a contract from the United States Government, these companies, in turn, subcontracted other companies abroad > José Miguel Pizarro’s companies, Grupo Táctico, Neskowin and Global Guards, which selected and contracted Chileans, were based either in Uruguay or Panama > Neskowin had signed a contract with Blackwater, and Global Guards had signed one with Triple Canopy > of course, information concerning the nature of the organizational relationship or contracts between Neskowin and Blackwater, on the one hand, and between Global Guards and Triple Canopy, on the other, is considered to be private, and the companies are not willing to disclose it",
-   "themes": [
-    "Reservations",
-    "Use of mercenaries/private security",
-    "International criminal & humanitarian law (including crimes against humanity, war crimes, genocide)"
-   ],
-   "sdgs": [],
-   "sdg_targets": [],
-   "affected_persons": [],
-   "countries": [
-    "United States of America",
-    "Chile",
-    "Afghanistan",
-    "Iraq"
    ]
   }
  ],
@@ -323,6 +391,12 @@
   {
    "page": 1,
    "text": "E/C.12/GC/27\n\nUnited Nations\n\nEconomic and Social Council\n\nDistr.: General\n6 November 2025\nOriginal: English\n\nCommittee on Economic, Social and Cultural Rights\n\nGeneral comment No. 27 (2025) on economic, social and\ncultural rights and the environmental dimension of\nsustainable development*\nI.\n\nIntroduction\n1.\nA clean, healthy and sustainable environment is an essential precondition for the\nenjoyment of economic, social and cultural rights. Nature is indispensable to human existence\nand well-being, as it not only supports life but also underpins ecological processes, including\nair and water quality, soil fertility, climate stability, pollination, and the mitigation of natural\nhazards. However, the accelerating and interconnected environmental challenges of our time,\nsuch as climate change, biodiversity loss and pollution, pose a serious threat to the ability of\npresent and future generations to enjoy economic, social and cultural rights, and are already\ncontributing to violations of these rights. Climate change, driven by human activities, is\nincreasing the frequency and intensity of extreme weather events globally, such as heatwaves,\nheavy precipitation and floods, droughts, and tr\n[… rest of the page omitted in this sample]"
+  }
+ ],
+ "pdf_text_2": [
+  {
+   "page": 1,
+   "text": "CCPR\n\nUNITED\nNATIONS\n\nInternational covenant\non civil and\npolitical rights\n\nDistr.\nGENERAL\nCCPR/C/GC/32\n23 August 2007\nOriginal: ENGLISH\n\nHUMAN RIGHTS COMMITTEE\nNinetieth session\nGeneva, 9 to 27 July 2007\nGeneral Comment No. 32\nArticle 14: Right to equality before courts and tribunals and to a fair trial\n\nI. GENERAL REMARKS\n1.\n\nThis general comment replaces general comment No. 13 (twenty-first session).\n\n2.\nThe right to equality before the courts and tribunals and to a fair trial is a key element\nof human rights protection and serves as a procedural means to safeguard the rule of law. Article\n14 of the Covenant aims at ensuring the proper administration of justice, and to this end\nguarantees a series of specific rights.\n3.\nArticle 14 is of a particularly complex nature, combining various guarantees with\ndifferent scopes of application. The first sentence of paragraph 1 sets out a general guarantee of\nequality before courts and tribunals that applies regardless of the nature of proceedings before\nsuch bodies. The second sentence of the same paragraph entitles individuals to a fair and public\nhearing by a competent, independent and impartial tribunal established by law, if they face \n[… rest of the page omitted in this sample]"
   }
  ],
  "library": [

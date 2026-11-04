@@ -110,7 +110,7 @@ def build_system_prompt(data_dir: Path) -> str:
     return "\n\n".join([
         sp,
         schema,
-        "## Three sample records per dataset (the real data is much larger)\n\n```json\n"
+        "## Sample records per dataset: five of the recommendations, a few of the others (the real data is much larger)\n\n```json\n"
         + json.dumps(samples, ensure_ascii=False, indent=1) + "\n```",
     ])
 
@@ -417,7 +417,13 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         except Refusal as e:
             return refuse(e)
         gid = dt.datetime.now().strftime("%H%M%S") + "-" + secrets.token_hex(4)
-        meta = {"id": gid, "seat": seat["code"], "country": seat["country"],
+        # the country the app ran on (a participant may pick another than the seat's) and the files it was
+        # given in the chat, so the wall can run it on the same data
+        country = d.get("country")
+        country = country.strip() if isinstance(country, str) and re.fullmatch(r"[^\W\d_][\w .,'()\-]{0,59}", country.strip()) else seat["country"]
+        files = [f for f in (d.get("files") or []) if isinstance(f, str) and re.fullmatch(r"[a-z0-9_]{1,30}", f)][:10] \
+            if isinstance(d.get("files"), list) else []
+        meta = {"id": gid, "seat": seat["code"], "country": country, "files": files,
                 "title": str(d.get("title") or "Untitled").strip()[:120],
                 "model": d.get("model") if d.get("model") in models.MODELS else None,
                 "prompt_id": str(d.get("prompt_id") or "")[:60] or None,
@@ -429,7 +435,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
 
     @app.get("/studio-api/gallery")
     async def gallery_list():
-        keep = ("id", "seat", "country", "title", "model", "created")
+        keep = ("id", "seat", "country", "title", "model", "prompt_id", "files", "created")
         return [{k: i.get(k) for k in keep} for i in gallery_items()]
 
     @app.get("/studio-api/gallery/{gid}")

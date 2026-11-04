@@ -61,7 +61,7 @@ def system_prompt():
     return "\n\n".join([
         sp,
         (DATA / "schema.md").read_text().strip(),
-        "## Three sample records per dataset (the real data is much larger)\n\n```json\n"
+        "## Sample records per dataset: five of the recommendations, a few of the others (the real data is much larger)\n\n```json\n"
         + json.dumps(samples, ensure_ascii=False, indent=1) + "\n```",
     ])
 

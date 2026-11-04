@@ -26,9 +26,28 @@
       }
     },
     {
+      "id": "s7-3-check-ten",
+      "session": "S7",
+      "minute": 50,
+      "dataset": "uhri",
+      "builds_on": "s7-1-dashboard",
+      "title": "Check ten at random",
+      "blurb": "Draw ten records and judge the UN's labels yourself",
+      "prompt": "Add a button \"Check 10 at random\". It draws 10 random records from the current filter and shows, for each, the full text and the SDGs the UN index assigned to it. For each record I mark the SDGs as right, wrong or arguable. When all 10 are marked, show the agreement rate and the wrong and arguable examples, and let me download the 10 records with my marks as CSV. Add a \"Draw again\" button.",
+      "lesson": "Validation turns a chart into evidence. Guess your error rate before you start; the UN's own labels are a second opinion, not a marking scheme.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "button_matches": "(?i)10 at random|check 10|random",
+        "source_matches": "Math\\.random|crypto\\.getRandomValues",
+        "download": true
+      }
+    },
+    {
       "id": "s7-2-who-recommends",
       "session": "S7",
-      "minute": 40,
+      "minute": 55,
       "dataset": "uhri",
       "builds_on": "s7-1-dashboard",
       "title": "Who recommends what",
@@ -46,33 +65,14 @@
       }
     },
     {
-      "id": "s7-3-check-ten",
-      "session": "S7",
-      "minute": 65,
-      "dataset": "uhri",
-      "builds_on": "s7-1-dashboard",
-      "title": "Check ten at random",
-      "blurb": "Draw ten records and judge the UN's labels yourself",
-      "prompt": "Add a button \"Check 10 at random\". It draws 10 random records from the current filter and shows, for each, the full text and the SDGs the UN index assigned to it. For each record I mark the SDGs as right, wrong or arguable. When all 10 are marked, show the agreement rate and the wrong and arguable examples, and let me download the 10 records with my marks as CSV. Add a \"Draw again\" button.",
-      "lesson": "Validation turns a chart into evidence. Guess your error rate before you start; the UN's own labels are a second opinion, not a marking scheme.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "button_matches": "(?i)10 at random|check 10|random",
-        "source_matches": "Math\\.random|crypto\\.getRandomValues",
-        "download": true
-      }
-    },
-    {
       "id": "s7-4-extract",
-      "session": "S7",
-      "minute": 70,
+      "session": "S8",
+      "minute": 10,
       "dataset": "pdf_text",
       "builds_on": null,
       "title": "Paragraphs out of a PDF",
       "blurb": "Turn a UN document's raw text into numbered paragraphs, and check them",
-      "prompt": "Here is the raw text of a UN document, as a PDF converter extracted it, page by page. Build a tool that splits it into its numbered paragraphs (1, 2, 3 …) and its footnotes, one question per tab. Remove the page headers and footers, keep the footnotes out of the paragraph text, and watch for footnote numbers the converter moved away from their footnote. Tab 01 Result: the paragraphs and footnotes found, next to the numbers the document really has. Tab 02 Paragraphs: a table with each paragraph's number and first line, marking every paragraph whose first words differ from the reference; clicking a row shows the full paragraph. Tab 03 Footnotes: each footnote's number and text. Tab 04 Checks: every check the tool ran on itself. Tab 05 Method & export: download the paragraphs and the footnotes as CSV.",
+      "prompt": "Here is the raw text of a UN document, as a PDF converter extracted it, page by page. Build a tool that splits it into its numbered paragraphs (1, 2, 3 …) and its footnotes. Remove the page headers and footers, keep the footnotes out of the paragraph text, and watch for footnote numbers the converter moved away from their footnote. On the left, a card for the document with the paragraphs and footnotes found next to the numbers the document really has. On the right, one question per tab. Tab 01 Result: the counts and how they are computed. Tab 02 Paragraphs: a table with each paragraph's number and first line, marking every paragraph whose first words differ from the reference; clicking a row shows the full paragraph. Tab 03 Footnotes: each footnote's number and text. Tab 04 Checks & method: every check the tool ran on itself, and a download of the paragraphs and the footnotes as CSV.",
       "planning": "planning/s7-4-extract.json",
       "lesson": "Give the machine the text; keep the document for the record. A converter damages text in four ways (order, breakage, loss, noise), and a script only repairs the damage you tell it about.",
       "checks": {
@@ -88,9 +88,50 @@
       }
     },
     {
+      "id": "s7-5-second-document",
+      "session": "S8",
+      "minute": 30,
+      "dataset": "pdf_text_2",
+      "builds_on": "s7-4-extract",
+      "title": "Add a second document",
+      "blurb": "Run the same pipeline on another General Comment and compare the two",
+      "prompt": "Add a second document: the Human Rights Committee's general comment No. 32, attached. Run exactly the same pipeline on it, with no rule changed, and give it its own card in the left rail so I can switch between the two documents; every tab and every check works on the selected document. Under the cards, add a small table comparing the two documents: paragraphs found, footnotes found and checks passed, each next to its reference.",
+      "lesson": "A pipeline that works on one document is a hypothesis about the next. Run it unchanged on a second one, and let its own checks show where the hypothesis breaks.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "text_contains": [
+          "CCPR/C/GC/32",
+          "E/C.12/GC/27"
+        ]
+      }
+    },
+    {
+      "id": "s7-6-model-on-flagged-pages",
+      "session": "S8",
+      "minute": 40,
+      "dataset": "pdf_text_2",
+      "builds_on": "s7-5-second-document",
+      "title": "A model for the pages that fail",
+      "blurb": "Script first; a model reads only the pages the checks flag, and the code checks the model",
+      "prompt": "Add a button \"Check the flagged pages with the model\". For every page whose checks fail, it sends that page's numbered lines to the model with `studio.ask`, one page per call, and asks only which lines are paragraph text (with the paragraph number), which are footnotes (with their numbers) and which are headers, footers or blank; the model must never retype text. The code cuts the text from those line numbers and runs the same checks again. Accept the model's answer for a page only if every line is used exactly once, the footnote numbers continue from the page before, and every footnote mark in the page's paragraphs has its footnote. Also send one page that passed, as a control, and distrust the model if it disagrees with the script there. Before it runs, say how many pages will leave the browser; show progress and a Stop button. Then show, for each document, what the script found, what the model changed, and the pages that still need a person.",
+      "lesson": "Rules are cheap, fast and the same every time, but they break on a new layout. A model adapts, but it costs, varies and can be wrong in silence. Let the rules run, let their checks pick the pages for the model, and check the model with the same checks.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "calls_studio_ask": true,
+        "ask_steps": [
+          "Check the flagged pages"
+        ],
+        "text_matches": "(?i)leave the browser|left the browser|sent to the model"
+      }
+    },
+    {
       "id": "s8-1-verbatim",
       "session": "S8",
-      "minute": 15,
+      "minute": 55,
       "dataset": "gc",
       "builds_on": null,
       "title": "Verbatim finder for General Comments",
@@ -115,7 +156,7 @@
     {
       "id": "s8-5-wiki",
       "session": "S8",
-      "minute": 40,
+      "minute": 70,
       "dataset": "wiki",
       "builds_on": null,
       "title": "A research wiki on neurotechnology and justice",
@@ -139,7 +180,7 @@
     {
       "id": "s8-6-wiki-map",
       "session": "S8",
-      "minute": 60,
+      "minute": 75,
       "dataset": "wiki",
       "builds_on": "s8-5-wiki",
       "title": "A map of the wiki",
@@ -158,7 +199,7 @@
     {
       "id": "s8-2-ai-inside",
       "session": "S8",
-      "minute": 35,
+      "minute": 75,
       "dataset": "uhri",
       "builds_on": "s7-1-dashboard",
       "title": "A model inside the tool",
@@ -178,7 +219,7 @@
     {
       "id": "s8-3-voting",
       "session": "S8",
-      "minute": 55,
+      "minute": 75,
       "dataset": "hrc",
       "builds_on": null,
       "title": "How two States vote at the Human Rights Council",

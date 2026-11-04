@@ -507,10 +507,24 @@ def test_gallery_accepts_un_links_and_inline_scripts(env):
     gid = r.json()["id"]
     items = env.client.get("/studio-api/gallery").json()
     assert items == [{"id": gid, "seat": "ABCDEF", "country": "Switzerland", "title": "Kenya dashboard",
-                      "model": "mistral", "created": items[0]["created"]}]
+                      "model": "mistral", "prompt_id": "s7-1-dashboard", "files": [], "created": items[0]["created"]}]
     p = env.client.get(f"/studio-api/gallery/{gid}")
     assert p.text == page and p.headers["content-type"].startswith("text/html")
     assert env.client.get("/studio-api/gallery/../../etc").status_code == 404
+
+
+def test_gallery_keeps_the_country_and_files_the_app_ran_on(env):
+    """The wall runs a page on the same data: the country picked in the studio (not always the seat's)
+    and the files given in the chat; anything that is not a plain name is dropped."""
+    page = '<!doctype html><html><body><script>const d = WORKSHOP_DATA.pdf_text</script></body></html>'
+    r = env.client.post("/studio-api/gallery", json={"seat": "ABCDEF", "title": "PDF", "html": page, "country": "Kenya",
+                                                     "files": ["pdf_text", "pdf_text_2", "../etc", 7]})
+    assert r.status_code == 200
+    item = next(i for i in env.client.get("/studio-api/gallery").json() if i["id"] == r.json()["id"])
+    assert item["country"] == "Kenya" and item["files"] == ["pdf_text", "pdf_text_2"]
+    r = env.client.post("/studio-api/gallery", json={"seat": "ABCDEF", "title": "x", "html": page, "country": "<script>"})
+    item = next(i for i in env.client.get("/studio-api/gallery").json() if i["id"] == r.json()["id"])
+    assert item["country"] == "Switzerland"   # the seat's
 
 
 def test_gallery_needs_a_valid_seat(env):

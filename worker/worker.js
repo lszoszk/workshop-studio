@@ -106,7 +106,7 @@ async function buildSystem(env) {
     const cut = sp.indexOf("\n---\n");
     if (cut < 0) throw new Error("system_prompt.md has no --- line");
     cache.build = [sp.slice(cut + 5).trim(), schema.trim(),
-      "## Three sample records per dataset (the real data is much larger)\n\n```json\n" +
+      "## Sample records per dataset: five of the recommendations, a few of the others (the real data is much larger)\n\n```json\n" +
       JSON.stringify(JSON.parse(samples), null, 1) + "\n```"].join("\n\n");
     cache.buildAt = Date.now();
   } catch {

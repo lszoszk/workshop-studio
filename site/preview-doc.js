@@ -4,7 +4,7 @@
    Shared by the studio (studio.js) and the gallery viewer (gallery/view.html). */
 window.PreviewDoc = (function () {
   'use strict';
-  const DATASETS = ['uhri', 'gc', 'hrc', 'pdf_text', 'library', 'wiki'];
+  const DATASETS = ['uhri', 'gc', 'hrc', 'pdf_text', 'pdf_text_2', 'library', 'wiki'];
   const CSP = "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; connect-src 'none'; form-action 'none'\">";
 
   function inject(html, head) {
@@ -18,9 +18,13 @@ window.PreviewDoc = (function () {
     return found.length ? found : ['uhri'];
   }
 
-  // `dataText(k)` resolves to the JSON text of dataset k, already escaped with escapeScript()
-  async function build(html, { chart, runtime, dataText }) {
-    const used = datasetsUsed(html);
+  // `dataText(k)` resolves to the JSON text of dataset k, already escaped with escapeScript();
+  // `files` are the keys attached in the app's conversation: a file in the chat gives the app the
+  // whole file, also to an app that reads WORKSHOP_DATA in a loop and never names it
+  async function build(html, { chart, runtime, dataText, files }) {
+    const attached = /WORKSHOP_DATA/.test(html) ? (files || []).filter((k) => DATASETS.includes(k)) : [];
+    const named = DATASETS.filter((k) => new RegExp('\\b' + k + '\\b').test(html));
+    const used = attached.length ? [...new Set([...named, ...attached])] : datasetsUsed(html);
     const parts = await Promise.all(used.map(async (k) => JSON.stringify(k) + ':' + (await dataText(k))));
     return inject(html, CSP +
       '<script>' + escapeScript(chart) + '</script>' +

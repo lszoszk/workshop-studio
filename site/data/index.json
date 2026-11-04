@@ -1216,6 +1216,10 @@
   "wiki": {
    "file": "wiki.json",
    "count": 40
+  },
+  "pdf_text_2": {
+   "file": "pdf_text_2.json",
+   "count": 18
   }
  }
 }

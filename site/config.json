@@ -135,7 +135,8 @@
     {"key": "uhri", "kind": "csv", "label": "{country}: UN recommendations and observations",
      "blurb": "Every recommendation and observation addressed to {country} in the Universal Human Rights Index, with its themes and SDGs"},
     {"key": "gc", "kind": "csv", "label": "General Comments, paragraph by paragraph",
-     "blurb": "The General Comments and General Recommendations of the UN treaty bodies"},
+     "blurb": "The General Comments and General Recommendations of the UN treaty bodies, already split into numbered paragraphs: the work a PDF converter makes hard",
+     "from": [{"label": "UN Human Rights Database API (JSON)", "url": "https://lszoszk.github.io/generalcomments/corpus.json"}, {"label": "Hugging Face", "url": "https://huggingface.co/datasets/lszoszk/treaty-bodies-general-comments"}]},
     {"key": "hrc", "kind": "csv", "label": "Human Rights Council votes",
      "blurb": "Every recorded vote since 2021, with how each member State voted"},
     {"key": "wiki", "kind": "wiki", "label": "Research wiki: neurotechnology and justice", "also": ["library"],
@@ -143,7 +144,9 @@
     {"key": "library", "kind": "lib", "label": "Library: neurotechnology and justice (10 PDFs)",
      "blurb": "The Secretary-General's 2026 report, a UNODC–INTERPOL paper, a civil-society submission, a national human rights institution's report, two journal articles, three General Comments, and a 2024 Advisory Committee report not yet in the wiki. Attached, your app gets every passage with its page"},
     {"key": "pdf_text", "kind": "pdf", "label": "CESCR General comment No. 27 (PDF)", "pdf": "files/E_C.12_GC_27.pdf",
-     "blurb": "A UN document as a PDF. Attached, your app gets its text page by page, as a PDF converter extracts it"}
+     "blurb": "A UN document as a PDF. Attached, your app gets its text page by page, as a PDF converter extracts it"},
+    {"key": "pdf_text_2", "kind": "pdf", "label": "CCPR General comment No. 32 (PDF)", "pdf": "files/CCPR_C_GC_32.pdf",
+     "blurb": "A second UN document as a PDF: the Human Rights Committee on fair trial, 2007. Attached, your app gets its text page by page, from the same converter"}
   ],
   "trap": {
     "ask": "Quote paragraph 97 of General comment No. 27 (2025) of the UN Committee on Economic, Social and Cultural Rights, and give the document symbol.",

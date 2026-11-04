@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The wall · Workshop Studio</title>
+<meta name="robots" content="noindex, nofollow">
+<script src="gate.js"></script>
+<link rel="stylesheet" href="studio.css?v=2026-11-04b">
+<style>
+  /* The facilitator's projector: every app a participant sent with Send to wall, live, on their own data. */
+  body { overflow: auto; background: var(--bg); }
+  .wall-head { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; padding: 18px 24px 6px; }
+  .wall-head h1 { margin: 0; font-size: 24px; }
+  .wall-head .sub { color: var(--muted); }
+  .wall-head .stamp { margin-left: auto; color: var(--faint); font-size: 13px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; padding: 12px 24px 32px; }
+  .tile { display: block; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; color: inherit; text-decoration: none; }
+  .tile:hover, .tile:focus-visible { border-color: var(--accent); box-shadow: var(--shadow); }
+  .thumb { position: relative; overflow: hidden; background: #fff; border-bottom: 1px solid var(--line); }
+  .thumb iframe { position: absolute; top: 0; left: 0; width: 1280px; height: 800px; border: 0; transform-origin: 0 0; pointer-events: none; }
+  .thumb .wait { position: absolute; inset: 0; display: grid; place-items: center; color: var(--faint); font-size: 13px; }
+  .cap { padding: 10px 12px; font-size: 14px; }
+  .cap b { display: block; font-size: 15px; margin-bottom: 2px; }
+  .cap span { color: var(--muted); }
+  .empty { padding: 60px 24px; text-align: center; color: var(--muted); font-size: 18px; }
+</style>
+</head>
+<body>
+<header class="wall-head">
+  <h1>The wall</h1>
+  <span class="sub" id="sub">Apps sent with <b>Send to wall</b>. Click one to open it full screen.</span>
+  <span class="stamp" id="stamp"></span>
+</header>
+<main class="tiles" id="tiles"></main>
+<p class="empty" id="empty" hidden>Nothing on the wall yet. In the studio, <b>Send to wall</b> puts your app here.</p>
+<script src="preview-doc.js?v=2026-11-04b"></script>
+<script>
+(async function () {
+  const W = 1280, H = 800;   // the size an app is drawn at before it is scaled into its tile
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const text = (u) => fetch(u, { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(u + ': ' + r.status); return r.text(); });
+  const [config, index, chart, runtime] = await Promise.all([
+    text('config.json').then(JSON.parse), text('data/index.json').then(JSON.parse),
+    text('vendor/chart.umd.min.js'), text('runtime.js')]);
+  // on localhost, ?api= points the page at a local test server, as in the studio
+  const api = new URLSearchParams(location.search).get('api');
+  const local = (h) => h === 'localhost' || h === '127.0.0.1';
+  const testApi = api && local(location.hostname) && local(new URL(api).hostname) ? api.replace(/\/$/, '') : null;
+  const bases = testApi ? [testApi] : config.routes.filter((r) => r.type === 'server').map((r) => r.base);
+  const cache = {};   // a data file is fetched once, however many apps use it
+  const dataFor = (country) => (k) => {
+    const f = k === 'uhri' ? (index.countries.find((c) => c.name === country) || index.countries[0]).file : index.datasets[k].file;
+    return cache[f] || (cache[f] = text('data/' + f).then(PreviewDoc.escapeScript));
+  };
+
+  // thumbnails are drawn one at a time, and only once their tile is near the screen
+  const queue = [];
+  let drawing = false;
+  async function drawNext() {
+    if (drawing || !queue.length) return;
+    drawing = true;
+    const { tile, item, base } = queue.shift();
+    try {
+      const html = await text(base + '/gallery/' + item.id);
+      const doc = await PreviewDoc.build(html, { chart, runtime, dataText: dataFor(item.country), files: item.files || [] });
+      const f = document.createElement('iframe');
+      f.setAttribute('sandbox', 'allow-scripts');
+      f.setAttribute('tabindex', '-1');
+      f.setAttribute('aria-hidden', 'true');
+      f.srcdoc = PreviewDoc.forFrame(doc);
+      const box = tile.querySelector('.thumb');
+      box.append(f);
+      fit(box);
+      await new Promise((r) => { f.onload = r; setTimeout(r, 4000); });
+      box.querySelector('.wait').remove();
+    } catch (e) {
+      tile.querySelector('.wait').textContent = 'Could not draw this app';
+    }
+    drawing = false;
+    drawNext();
+  }
+  const seen = new IntersectionObserver((entries) => entries.forEach((e) => {
+    if (!e.isIntersecting) return;
+    seen.unobserve(e.target);
+    queue.push(e.target._job);
+    drawNext();
+  }), { rootMargin: '400px' });
+
+  function fit(box) {
+    const s = box.clientWidth / W;
+    box.style.height = Math.round(H * s) + 'px';
+    const f = box.querySelector('iframe');
+    if (f) f.style.transform = `scale(${s})`;
+  }
+  window.addEventListener('resize', () => document.querySelectorAll('.thumb').forEach(fit));
+
+  const shown = new Set();
+  async function refresh() {
+    let items = null, base = null;
+    for (const b of bases) {
+      try { items = await text(b + '/gallery').then(JSON.parse); base = b; break; } catch (e) { /* the next server */ }
+    }
+    if (!items) { document.getElementById('stamp').textContent = 'The server is not answering; trying again.'; return; }
+    const tiles = document.getElementById('tiles');
+    const now = new Set(items.map((i) => i.id));   // a page removed on the admin page leaves the wall too
+    tiles.querySelectorAll('.tile').forEach((t) => { if (!now.has(t._job.item.id)) { shown.delete(t._job.item.id); t.remove(); } });
+    items.slice().reverse().forEach((item) => {   // oldest first in the data, newest first on the wall
+      if (shown.has(item.id)) return;
+      shown.add(item.id);
+      const m = (config.models[item.model] || {}).label || 'A model';
+      const a = document.createElement('a');
+      a.className = 'tile';
+      a.href = 'gallery/view.html?wall=' + encodeURIComponent(item.id) + (testApi ? '&api=' + encodeURIComponent(testApi) : '');
+      a.innerHTML = `<div class="thumb"><span class="wait">Drawing…</span></div>
+        <div class="cap"><b>${esc(item.title)}</b><span>${esc(item.country)} · ${esc(m)} · ${esc((item.created || '').slice(11, 16))}</span></div>`;
+      a._job = { tile: a, item, base };
+      tiles.prepend(a);
+      fit(a.querySelector('.thumb'));
+      seen.observe(a);
+    });
+    document.getElementById('empty').hidden = shown.size > 0;
+    document.getElementById('sub').innerHTML = `${shown.size} app${shown.size === 1 ? '' : 's'} sent with <b>Send to wall</b>. Click one to open it full screen.`;
+    document.getElementById('stamp').textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+  await refresh();
+  setInterval(refresh, 10000);
+})();
+</script>
+</body>
+</html>

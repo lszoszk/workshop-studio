@@ -6,7 +6,7 @@
 <title>Gallery app</title>
 <meta name="robots" content="noindex, nofollow">
 <script src="../gate.js"></script>
-<link rel="stylesheet" href="../studio.css?v=2026-11-04a">
+<link rel="stylesheet" href="../studio.css?v=2026-11-04b">
 <style>
   body { display: flex; flex-direction: column; }
   .bar { display: flex; gap: 14px; align-items: center; padding: 8px 14px; background: var(--surface); border-bottom: 1px solid var(--line); }
@@ -24,25 +24,51 @@
     <div class="drawer-body" id="drawerBody"></div>
   </aside>
 </div>
-<script src="../pdf-view.js?v=2026-11-04a"></script>
-<script src="../preview-doc.js?v=2026-11-04a"></script>
+<script src="../pdf-view.js?v=2026-11-04b"></script>
+<script src="../preview-doc.js?v=2026-11-04b"></script>
 <script>
 (async function () {
-  const app = new URLSearchParams(location.search).get('app') || '';
-  if (!/^[a-z0-9-]+\/[a-z0-9-]+$/.test(app)) { document.getElementById('what').textContent = 'Unknown app.'; return; }
+  // ?app=model/prompt: a gallery app; ?wall=id: an app a participant sent to the wall, run on their country and files
+  const params = new URLSearchParams(location.search);
+  const app = params.get('app') || '', wall = params.get('wall') || '';
+  const what = document.getElementById('what');
+  if (wall ? !/^\d{6}-[0-9a-f]{8}$/.test(wall) : !/^[a-z0-9-]+\/[a-z0-9-]+$/.test(app)) { what.textContent = 'Unknown app.'; return; }
   const text = (u) => fetch(u, { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(u + ': ' + r.status); return r.text(); });
-  const [g, index, html, chart, runtime] = await Promise.all([
-    text('gallery.json').then(JSON.parse), text('../data/index.json').then(JSON.parse),
-    text('apps/' + app + '.html'), text('../vendor/chart.umd.min.js'), text('../runtime.js'),
-  ]);
-  const [model, prompt] = app.split('/');
-  const m = g.models[model] || { name: model };
-  const p = g.prompts.find((x) => x.id === prompt) || { title: prompt };
-  document.getElementById('what').innerHTML = `<b>${m.name}</b> · ${p.title} · ${g.country}`;
-  document.title = `${p.title} · ${m.name}`;
-  const file = (k) => k === 'uhri' ? index.countries.find((c) => c.name === g.country).file : index.datasets[k].file;
+  const [index, chart, runtime] = await Promise.all([
+    text('../data/index.json').then(JSON.parse), text('../vendor/chart.umd.min.js'), text('../runtime.js')]);
+  let html, country, files = [];
+  if (wall) {
+    document.querySelector('.bar a').href = '../wall.html';
+    document.querySelector('.bar a').textContent = '← Wall';
+    const config = await text('../config.json').then(JSON.parse);
+    const api = params.get('api'), local = (h) => h === 'localhost' || h === '127.0.0.1';   // a local test server, as in the studio
+    const bases = api && local(location.hostname) && local(new URL(api).hostname) ? [api.replace(/\/$/, '')]
+      : config.routes.filter((r) => r.type === 'server').map((r) => r.base);
+    let item = null, base = null;
+    for (const b of bases) {
+      try { item = (await text(b + '/gallery').then(JSON.parse)).find((i) => i.id === wall); base = b; break; } catch (e) { /* the next server */ }
+    }
+    if (!item) { what.textContent = 'This app is no longer on the wall.'; return; }
+    html = await text(base + '/gallery/' + wall);
+    country = item.country;
+    files = item.files || [];
+    const m = (config.models[item.model] || {}).label || 'A model';
+    const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    what.innerHTML = `<b>${esc(m)}</b> · ${esc(item.title)} · ${esc(country)}`;
+    document.title = `${item.title} · the wall`;
+  } else {
+    const g = await text('gallery.json').then(JSON.parse);
+    html = await text('apps/' + app + '.html');
+    country = g.country;
+    const [model, prompt] = app.split('/');
+    const m = g.models[model] || { name: model };
+    const p = g.prompts.find((x) => x.id === prompt) || { title: prompt };
+    what.innerHTML = `<b>${m.name}</b> · ${p.title} · ${country}`;
+    document.title = `${p.title} · ${m.name}`;
+  }
+  const file = (k) => k === 'uhri' ? (index.countries.find((c) => c.name === country) || index.countries[0]).file : index.datasets[k].file;
   const dataText = async (k) => PreviewDoc.escapeScript(await text('../data/' + file(k)));
-  document.getElementById('frame').srcdoc = PreviewDoc.forFrame(await PreviewDoc.build(html, { chart, runtime, dataText }));
+  document.getElementById('frame').srcdoc = PreviewDoc.forFrame(await PreviewDoc.build(html, { chart, runtime, dataText, files }));
 })();
 // the gallery has no studio around the app: it opens a PDF page in its own drawer, and there is no model to ask
 document.getElementById('drawerClose').onclick = () => { document.getElementById('drawer').hidden = true; };

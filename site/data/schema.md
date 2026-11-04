@@ -134,6 +134,11 @@ the text.
 the document has), `footnotes` (how many footnotes), `adopted`, and `first_words`
 (`{"1": "A clean, healthy and sustainable environment", …}`: the first six words of each numbered paragraph).
 
+## `WORKSHOP_DATA.pdf_text_2`: a second UN document as raw text from its PDF
+
+The same shape as `pdf_text`: the 18 pages of CCPR/C/GC/32 as the same converter produced them,
+with its own `reference` (65 paragraphs, 128 footnotes).
+
 ## Rules for every app
 
 - Always show where a number comes from: n of records, the filter applied, and a link

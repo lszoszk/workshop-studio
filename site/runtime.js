@@ -44,49 +44,129 @@
     return ('0000000' + h.toString(16)).slice(-8);
   }
 
+  // Layers: which words on screen the model wrote into its code (amber), which the code computed from
+  // the data (green), which a model produced while the app ran (purple). A text that is a value of the
+  // data is computed; otherwise a run of words is "written" when it stands in the model's source, and a
+  // number only when the source holds it as a piece of text of its own ('01', >01<), not as 31px or a
+  // calculation. Drawn as an overlay above the app, so the app's own page is never changed, and redrawn
+  // when it scrolls or changes.
   var LAYER_CSS =
-    '[data-studio-layer=model]{background:rgba(245,166,35,.28)!important;outline:1px dashed #c47f00!important}' +
-    '[data-studio-layer=script]{background:rgba(46,160,67,.22)!important;outline:1px solid #2ea043!important}' +
-    '[data-studio-layer=ai]{background:rgba(137,87,229,.28)!important;outline:2px solid #8957e5!important}' +
-    'canvas[data-studio-layer],svg[data-studio-layer]{outline-width:3px!important;outline-offset:2px}';
+    '#studio-layers{position:fixed;inset:0;pointer-events:none;z-index:2147483647}' +
+    '#studio-layers div{position:fixed;box-sizing:border-box}' +
+    '#studio-layers .model{background:rgba(245,166,35,.30);outline:1px dashed #c47f00}' +
+    '#studio-layers .script{background:rgba(46,160,67,.24);outline:1px solid #2ea043}' +
+    '#studio-layers .ai{outline:2px solid #8957e5;background:rgba(137,87,229,.12)}' +
+    '#studio-layers .chart{outline:3px solid #2ea043}';
+  var layers = null;   // {source, data, box, style, observer, frame}
 
-  function ownText(el) {
-    var t = '';
-    for (var n = el.firstChild; n; n = n.nextSibling) if (n.nodeType === 3) t += n.nodeValue;
-    return t.replace(/\s+/g, ' ').trim();
+  function dataValues() {   // every text value in WORKSHOP_DATA, spaces collapsed
+    var out = new Set(), stack = [window.WORKSHOP_DATA], n = 0;
+    while (stack.length && n < 400000) {
+      var v = stack.pop(); n++;
+      if (typeof v === 'string') { var t = v.replace(/\s+/g, ' ').trim(); if (t.length > 1) out.add(t); }
+      else if (v && typeof v === 'object') for (var k in v) stack.push(v[k]);
+    }
+    return out;
   }
 
-  function applyLayers(on, staticTexts) {
-    var style = document.getElementById('studio-layer-css');
-    document.querySelectorAll('[data-studio-layer]').forEach(function (el) { el.removeAttribute('data-studio-layer'); });
-    if (!on) { if (style) style.remove(); return {}; }
-    if (!style) {
-      style = document.createElement('style');
-      style.id = 'studio-layer-css';
-      style.textContent = LAYER_CSS;
-      document.head.appendChild(style);
-    }
-    var known = {};
-    (staticTexts || []).forEach(function (t) { known[t] = 1; });
-    var counts = { model: 0, script: 0, ai: 0 };
-    document.body.querySelectorAll('*').forEach(function (el) {
-      var tag = el.tagName;
-      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'OPTION') return;
-      var layer = null;
-      if (el.closest('[data-source=ai]')) {
-        if (el.matches('[data-source=ai]')) layer = 'ai';
-      } else if (tag === 'CANVAS' || tag === 'svg' || tag === 'SVG') {
-        layer = 'script';
-      } else if (tag === 'SELECT') {
-        var opts = [].slice.call(el.options).map(function (o) { return o.text.replace(/\s+/g, ' ').trim(); });
-        layer = opts.some(function (t) { return t && !known[t]; }) ? 'script' : 'model';
-      } else if (!el.closest('svg')) {
-        var t = ownText(el);
-        if (t) layer = known[t] ? 'model' : 'script';
+  function numberInSource(num, source) {
+    var e = num.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('[\'"`>]\\s?' + e + '\\s?[\'"`<]').test(source);
+  }
+
+  function decodeSource(html) {   // the source as text: entities and string escapes undone, spaces collapsed
+    return html.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'")
+      .replace(/\\u([0-9a-fA-F]{4})/g, function (m, h) { return String.fromCharCode(parseInt(h, 16)); })
+      .replace(/\\(['"`])/g, '$1').replace(/\s+/g, ' ');
+  }
+
+  // the words of one text node, grouped into runs that the source holds (model) or does not (script)
+  function segments(text, source) {
+    var toks = [], re = /\S+/g, m;
+    while ((m = re.exec(text))) toks.push({ s: m.index, e: m.index + m[0].length, t: m[0] });
+    var out = [], i = 0;
+    while (i < toks.length) {
+      var best = -1;
+      for (var j = i; j < toks.length; j++) {
+        var run = text.slice(toks[i].s, toks[j].e).replace(/\s+/g, ' ');
+        if (source.indexOf(run) < 0) break;
+        var words = /[^\d\s.,:;%()\-–+/·]/.test(run);
+        if (words ? (run.length >= 3 || j > i) : numberInSource(run, source)) best = j;
       }
-      if (layer) { el.setAttribute('data-studio-layer', layer); counts[layer]++; }
+      var layer = best >= 0 ? 'model' : 'script', end = best >= 0 ? best : i;
+      var last = out[out.length - 1];
+      if (last && last.layer === layer) last.e = toks[end].e; else out.push({ layer: layer, s: toks[i].s, e: toks[end].e });
+      i = end + 1;
+    }
+    return out;
+  }
+
+  function box(cls, r, title) {
+    var d = document.createElement('div');
+    d.className = cls;
+    d.style.left = r.left + 'px'; d.style.top = r.top + 'px'; d.style.width = r.width + 'px'; d.style.height = r.height + 'px';
+    if (title) d.setAttribute('data-t', title);
+    layers.box.appendChild(d);
+  }
+
+  function drawLayers() {
+    layers.frame = 0;
+    var counts = { model: 0, script: 0, ai: 0 }, H = window.innerHeight, W = window.innerWidth;
+    layers.box.textContent = '';
+    var seen = function (r) { return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < H && r.right > 0 && r.left < W; };
+    document.querySelectorAll('[data-source=ai]').forEach(function (el) {
+      if (el.parentElement && el.parentElement.closest('[data-source=ai]')) return;
+      var r = el.getBoundingClientRect(); if (seen(r)) { box('ai', r); counts.ai++; }
     });
+    document.querySelectorAll('canvas, svg').forEach(function (el) {
+      if (el.closest('[data-source=ai]') || (el.parentElement && el.parentElement.closest('svg'))) return;
+      var r = el.getBoundingClientRect(); if (seen(r)) { box('chart', r); counts.script++; }
+    });
+    var walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (n) {
+        var p = n.parentElement;
+        if (!p || !n.nodeValue.trim() || p.closest('script, style, option, textarea, svg, [data-source=ai], #studio-layers')) return NodeFilter.FILTER_REJECT;
+        var r = p.getBoundingClientRect();
+        return seen(r) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      } });
+    var range = document.createRange();
+    for (var n = walk.nextNode(); n; n = walk.nextNode()) {
+      var whole = n.nodeValue.replace(/\s+/g, ' ').trim();
+      var parts = layers.data.has(whole) ? [{ layer: 'script', s: 0, e: n.nodeValue.length }] : segments(n.nodeValue, layers.source);
+      parts.forEach(function (sg) {
+        range.setStart(n, sg.s); range.setEnd(n, sg.e);
+        var rects = range.getClientRects(), t = n.nodeValue.slice(sg.s, sg.e);
+        for (var k = 0; k < rects.length; k++) if (seen(rects[k])) box(sg.layer, rects[k], t);
+        counts[sg.layer]++;
+      });
+    }
     return counts;
+  }
+
+  function redraw() { if (layers && !layers.frame) layers.frame = requestAnimationFrame(drawLayers); }
+
+  function applyLayers(on, source) {
+    if (layers) {
+      layers.observer.disconnect();
+      document.removeEventListener('scroll', redraw, true);
+      window.removeEventListener('resize', redraw);
+      layers.box.remove(); layers.style.remove();
+      layers = null;
+    }
+    if (!on) return {};
+    layers = { source: decodeSource(String(source || '')), data: dataValues(), box: document.createElement('div'), style: document.createElement('style'), frame: 0 };
+    layers.style.textContent = LAYER_CSS;
+    layers.box.id = 'studio-layers';
+    document.head.appendChild(layers.style);
+    document.body.appendChild(layers.box);
+    layers.observer = new MutationObserver(function (list) {
+      if (list.some(function (m) { return !layers.box.contains(m.target) && m.target !== layers.box; })) redraw();
+    });
+    layers.observer.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true });
+    document.addEventListener('scroll', redraw, true);
+    window.addEventListener('resize', redraw);
+    return drawLayers();
   }
 
   window.addEventListener('message', function (e) {
@@ -97,7 +177,7 @@
       delete pending[m.id];
       if (m.error) p.reject(new Error(m.error)); else p.resolve(m.text);
     } else if (m.type === 'studio:layers') {
-      post({ type: 'studio:layers-done', counts: applyLayers(m.on, m.staticTexts) });
+      post({ type: 'studio:layers-done', counts: applyLayers(m.on, m.source) });
     } else if (m.type === 'studio:fingerprint') {
       post({ type: 'studio:fingerprint', token: m.token, fingerprint: fingerprint() });
     }

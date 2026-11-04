@@ -19,6 +19,7 @@ import http.server
 import importlib.util
 import json
 import re
+import urllib.request
 import threading
 from pathlib import Path
 
@@ -57,8 +58,8 @@ PLAN_V2 = ("Here is the revised plan.\n\n```markdown\n## Context\nThe same dashb
 
 @pytest.fixture(scope="module")
 def fake_api():
-    """A stand-in for the studio server (docs/api-contract.md): one seat, canned answers."""
-    calls = []
+    """A stand-in for the studio server (docs/api-contract.md): one seat, canned answers, a wall."""
+    calls, wall = [], []
 
     class H(http.server.BaseHTTPRequestHandler):
         def log_message(self, *a):
@@ -79,6 +80,14 @@ def fake_api():
                 body = {"ok": True, "accepting": True}
             elif self.path.endswith("/seat/TEST22"):
                 body = {"seat": "TEST22", "country": "Colombia", "budget_total": 8, "budget_left": 7.5, "disabled": False}
+            elif self.path.endswith("/gallery"):
+                body = [{k: v for k, v in w.items() if k != "html"} for w in reversed(wall)]
+            elif "/gallery/" in self.path:
+                page = next((w["html"] for w in wall if self.path.endswith("/" + w["id"])), None)
+                if page is None:
+                    return self.head(404, "text/html")
+                self.head(200, "text/html")
+                return self.wfile.write(page.encode())
             else:
                 return self.head(404, "application/json")
             self.head(200, "application/json")
@@ -86,6 +95,13 @@ def fake_api():
 
         def do_POST(self):
             req = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            if self.path.endswith("/gallery"):
+                gid = f"1200{len(wall):02d}-{len(wall):08x}"
+                wall.append({"id": gid, "seat": req.get("seat"), "country": req.get("country") or "Colombia", "title": req.get("title"),
+                             "model": req.get("model"), "prompt_id": req.get("prompt_id"), "files": req.get("files") or [],
+                             "created": "2026-12-04T10:4%d:00" % len(wall), "html": req["html"]})
+                self.head(200, "application/json")
+                return self.wfile.write(json.dumps({"ok": True, "id": gid}).encode())
             calls.append(req)
             last = req["messages"][-1]["content"]
             self.head(200, "text/event-stream")
@@ -247,13 +263,18 @@ def test_participant_path(base_url, browser, tmp_path):
     assert "2264" in frame.locator("body").inner_text().replace(",", "")
     assert page.locator(".lesson").count() == 1
 
-    # Layers: the runtime marks elements, the legend shows
+    # Layers: an overlay marks what the model wrote and what the code computed, the legend shows;
+    # the country and the record count come from the data, the tab names from the model's code
     look(page, "layersBtn")
     page.wait_for_timeout(800)
     assert page.is_visible("#legend")
-    assert frame.locator("[data-studio-layer=script]").count() > 0
-    assert frame.locator("[data-studio-layer=model]").count() > 0
+    marks = lambda cls: [t for t in frame.locator(f"#studio-layers .{cls}").evaluate_all("(b) => b.map((d) => d.dataset.t || '')") if t]
+    computed, written = marks("script"), marks("model")
+    assert "Kenya" in computed and any("2,264" in t for t in computed), computed[:20]
+    assert any(re.search(r"overview", t, re.I) for t in written), written[:20]
+    assert not any("Kenya" in t or "2,264" in t for t in written), written[:20]
     look(page, "layersBtn")
+    assert frame.locator("#studio-layers").count() == 0
 
     # Run x3: three identical checksums
     look(page, "run3Btn")
@@ -332,7 +353,7 @@ def test_what_is_shown_grows_with_progress(base_url, browser):
     page.goto(base_url + "?via=replay&planpace=1&country=Kenya")
     started(page)
     assert not page.is_visible("#toolbar")
-    assert page.is_visible("#composer") and page.locator("#shelf .fcard").count() == 6
+    assert page.is_visible("#composer") and page.locator("#shelf .fcard").count() == len(json.loads((SITE / "config.json").read_text())["files"])
     assert page.locator("#suggest button").count() <= 3
     send(page, DASHBOARD, "uhri", 1)
     assert page.is_visible("#toolbar") and not page.is_visible("#shelf")
@@ -395,7 +416,7 @@ def test_extraction_from_raw_pdf_text(base_url, browser):
     page = ctx.new_page()
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
-    page.goto(base_url + "?via=replay&planpace=1&country=Kenya")
+    page.goto(base_url + "?via=replay&planpace=1&stage=s8&country=Kenya")   # the extraction is in Session 8
     started(page)
     send(page, "Paragraphs out of a PDF", "pdf_text", 1)
     body = app_frame(page).locator("body")
@@ -466,9 +487,9 @@ def test_live_country_switch_and_asking_directly(base_url, browser, fake_api):
     ctx.close()
 
 
-def test_session8_offers_its_two_apps_first(base_url, browser):
-    """Session 8 starts with Verbatim finder and the research wiki; the briefing check is an
-    extra that appears once both are built (Hick's law: the plan's apps first)."""
+def test_session8_offers_its_apps_first(base_url, browser):
+    """Session 8 starts with the PDF extraction, the Verbatim finder and the research wiki; the
+    briefing check is an extra that appears once they are built (Hick's law: the plan's apps first)."""
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
     errors = []
@@ -476,11 +497,12 @@ def test_session8_offers_its_two_apps_first(base_url, browser):
     page.goto(base_url + "?via=replay&planpace=1&stage=s8&country=Kenya")
     started(page)
     titles = page.locator("#suggest button b").all_inner_texts()
-    assert titles[:2] == ["Verbatim finder for General Comments", "A research wiki on neurotechnology and justice"], titles
+    assert titles[:3] == ["Paragraphs out of a PDF", "Verbatim finder for General Comments", "A research wiki on neurotechnology and justice"], titles
     assert "Check an AI briefing" not in titles
-    send(page, "Verbatim finder", "gc", 1)
-    send(page, "A research wiki", "wiki", 2)
-    send(page, "Check an AI briefing", "hrc", 3)
+    send(page, "Paragraphs out of a PDF", "pdf_text", 1)
+    send(page, "Verbatim finder", "gc", 2)
+    send(page, "A research wiki", "wiki", 3)
+    send(page, "Check an AI briefing", "hrc", 4)
     body = app_frame(page).locator("body")
     body.locator("select, h1").first.wait_for(timeout=20000)
     assert "51/27" in body.inner_text() + " ".join(body.locator("option:checked").all_inner_texts())
@@ -623,6 +645,68 @@ def test_the_wiki_links_every_paragraph_to_its_pdf_page(base_url, browser):
         built(page, 2)
         app_frame(page).get_by_role("tab", name=re.compile("map", re.I)).click()
         assert app_frame(page).locator("svg circle, svg rect, svg polygon, svg path").count() >= 40   # 40 pages, any shape
+    ctx.close()
+
+
+def test_the_extraction_grows_to_a_second_document(base_url, browser):
+    """Session 8: the extraction app, then "Add a second document" with CCPR GC 32 dragged in (the app
+    gets both files, though its code never names the second), then the model step, which in recorded
+    mode cannot call a model and says so."""
+    if not (SITE / "replay/claude/s7-6-model-on-flagged-pages.md").exists():
+        pytest.skip("no recording for the extraction's next steps")
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + "?via=replay&planpace=1&stage=s8&country=Kenya")
+    started(page)
+    send(page, "Paragraphs out of a PDF", "pdf_text", 1)
+    pick(page, "Add a second document")
+    assert "CCPR General comment No. 32" in page.inner_text("#needs")
+    add_file(page, "pdf_text_2")
+    page.click("#sendBtn")
+    built(page, 2)
+    body = app_frame(page).locator("body")
+    body.get_by_text("CCPR/C/GC/32").first.wait_for(timeout=20000)
+    assert re.search(r"109\s*of\s*128", body.inner_text()), body.inner_text()[:600]
+    send(page, "A model for the pages that fail", None, 3)
+    app_frame(page).get_by_text("CCPR/C/GC/32").first.click()
+    app_frame(page).get_by_role("tab", name=re.compile("model", re.I)).click()   # the step's own tab
+    assert re.search(r"\d+ pages? will leave the browser", app_frame(page).locator("body").inner_text(), re.I)
+    assert not errors, errors
+    ctx.close()
+
+
+def test_the_wall_shows_what_participants_sent(base_url, browser, fake_api):
+    """Send to wall puts an app on the facilitator's wall with the country and files it ran on; the wall
+    draws each as a live thumbnail, and a click opens it full screen on the same data."""
+    api, _ = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + f"?api={api}&planpace=1#s=TEST22")
+    started(page)
+    send(page, DASHBOARD, "uhri", 1)
+    page.click("#wallBtn")
+    page.wait_for_function("() => /Sent to the wall/.test(document.getElementById('log').innerText)")
+    # a second participant's app, given two files in the chat
+    app = re.search(r"```html\s*(.*?</html>)", (SITE / "replay/claude/s7-5-second-document.md").read_text(), re.S).group(1)
+    req = urllib.request.Request(api + "/gallery", method="POST", headers={"Content-Type": "application/json"},
+                                 data=json.dumps({"seat": "TEST22", "title": "Two General Comments", "model": "claude", "country": "Kenya",
+                                                  "files": ["pdf_text", "pdf_text_2"], "html": app}).encode())
+    urllib.request.urlopen(req).read()
+    page.goto(base_url + f"wall.html?api={api}")
+    page.wait_for_function("() => document.querySelectorAll('.tile').length === 2")
+    caps = page.locator(".tile .cap").all_inner_texts()
+    assert "Colombia" in caps[1] and "Kenya" in caps[0], caps   # newest first; the studio sent the seat's country
+    page.wait_for_function("() => document.querySelectorAll('.thumb iframe').length === 2", timeout=30000)
+    page.locator(".tile").first.click()
+    page.wait_for_url("**/gallery/view.html?wall=*")
+    body = page.frame_locator("#frame").locator("body")
+    body.get_by_text("CCPR/C/GC/32").first.wait_for(timeout=20000)   # the second file reached the app
+    assert "Two General Comments" in page.inner_text(".bar")
+    assert not errors, errors
     ctx.close()
 
 

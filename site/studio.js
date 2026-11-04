@@ -2,7 +2,7 @@
 
    What runs where (the point of the workshop, so it is also the shape of the code):
    - The model only ever receives the participant's words, the studio's instructions,
-     a description of the data and three sample records (see site/data/system_prompt.md),
+     a description of the data and a few sample records (see site/data/system_prompt.md),
      plus the reference-shelf excerpts that match a message (shelfSearch).
    - The full datasets never leave the browser: they are put into the preview next to
      the app's code (buildDoc), and the app computes everything from them.
@@ -234,7 +234,7 @@
   function buildSystem() {
     const sp = S.sysmd.split('\n---\n')[1].trim();
     return [sp, S.schema.trim(),
-      '## Three sample records per dataset (the real data is much larger)\n\n```json\n' + JSON.stringify(S.samples, null, 1) + '\n```'].join('\n\n');
+      '## Sample records per dataset: five of the recommendations, a few of the others (the real data is much larger)\n\n```json\n' + JSON.stringify(S.samples, null, 1) + '\n```'].join('\n\n');
   }
 
   async function chat(o) {
@@ -683,7 +683,7 @@
     return S.dataParsed[f];
   }
 
-  const fullDoc = (html) => PreviewDoc.build(html, { chart: S.chart, runtime: S.runtime, dataText });
+  const fullDoc = (v) => PreviewDoc.build(v.html, { chart: S.chart, runtime: S.runtime, dataText, files: chainOf(v).flatMap((x) => x.files || []) });
 
   const Preview = {
     frames: [],
@@ -722,7 +722,7 @@
     $('appError').hidden = true;
     renderContinuing();
     if (viewing === 'code') renderCode();
-    await Preview.show(await fullDoc(v.html));
+    await Preview.show(await fullDoc(v));
   }
 
   /* ---------- messages from the preview ---------- */
@@ -751,7 +751,7 @@
   async function sendToTab(w) {
     const v = currentVersion();
     if (!v || w.closed) return;
-    w.postMessage({ type: 'studio:app-doc', doc: PreviewDoc.forFrame(await fullDoc(v.html)), title: `v${v.n} · ${titleOf(v.html)}` }, '*');
+    w.postMessage({ type: 'studio:app-doc', doc: PreviewDoc.forFrame(await fullDoc(v)), title: `v${v.n} · ${titleOf(v.html)}` }, '*');
   }
 
   // the PDF of a document at a page, in the drawer; files/ holds them under their id ("/" becomes "_")
@@ -821,22 +821,10 @@
 
   /* ---------- Layers, Run x3, Ask x3, model link ---------- */
 
-  function staticTexts(html) {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    doc.querySelectorAll('script, style').forEach((n) => n.remove());
-    const out = new Set();
-    const walk = doc.createTreeWalker(doc.body || doc.documentElement, NodeFilter.SHOW_TEXT);
-    for (let n = walk.nextNode(); n; n = walk.nextNode()) {
-      const t = n.nodeValue.replace(/\s+/g, ' ').trim();
-      if (t) out.add(t);
-    }
-    return [...out];
-  }
-
   function sendLayers() {
     const v = currentVersion();
     if (!v) return;
-    Preview.win().postMessage({ type: 'studio:layers', on: S.layersOn, staticTexts: S.layersOn ? staticTexts(v.html) : [] }, '*');
+    Preview.win().postMessage({ type: 'studio:layers', on: S.layersOn, source: S.layersOn ? v.html : '' }, '*');
   }
 
   function toggleLayers() {
@@ -872,7 +860,7 @@
     openDrawer('Run the app three times');
     const body = $('drawerBody');
     body.innerHTML = '<p>The studio starts your app three times from scratch, on the same data, and turns everything it shows (text and chart values) into a short checksum. If a single number differed, the checksum would differ too.</p><div class="runs" id="runs"><div>Run 1<code>…</code></div><div>Run 2<code>…</code></div><div>Run 3<code>…</code></div></div><div id="runVerdict"></div>';
-    const doc = await fullDoc(v.html);
+    const doc = await fullDoc(v);
     const fps = [];
     for (let i = 0; i < 3; i++) {
       fps.push(await Run3.once(doc));
@@ -972,7 +960,7 @@
       if (plan) sent.push(`The plan you asked to change (v${plan.version}, about ${fmt(words(planText(plan.plan)))} words)`);
       if (shelf.length) sent.push(`${shelf.length === 1 ? 'An excerpt' : fmt(shelf.length) + ' excerpts'} from the workshop reference shelf, found by a search on your message: ${shelf.map((h) => h.page.title).join('; ')}`);
       if (files.length) sent.push(`The name of each file you added (${files.map(fileLabel).join('; ')}): not its contents`);
-      sent.push(`The studio's instructions, a description of the data and 3 sample records per dataset (about ${fmt(words(sys))} words, added ${S.route.type === 'server' ? 'by the server' : 'by the studio'})`);
+      sent.push(`The studio's instructions, a description of the data and a few sample records per dataset (about ${fmt(words(sys))} words, added ${S.route.type === 'server' ? 'by the server' : 'by the studio'})`);
       if (parent) sent.push(`The code of your current app (v${parent.n}, ${fmt(parent.html.split('\n').length)} lines) and a short summary of earlier steps`);
       kept.push(`All ${fmt(S.countryCount)} records addressed to ${S.country}, the General Comments, the Council votes and the PDFs: they stay in this browser, where your app reads them.`);
     } else if (purpose === 'inapp') {
@@ -1054,7 +1042,7 @@
   async function download() {
     const v = currentVersion();
     if (!v) return;
-    const blob = new Blob([await fullDoc(v.html)], { type: 'text/html' });
+    const blob = new Blob([await fullDoc(v)], { type: 'text/html' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `${titleOf(v.html).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'app'}-v${v.n}.html`;
@@ -1069,7 +1057,8 @@
     try {
       const res = await fetch(S.route.base + '/gallery', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seat: S.seatCode, title: titleOf(v.html), model: v.model, prompt_id: v.promptId, html: v.html }),
+        body: JSON.stringify({ seat: S.seatCode, title: titleOf(v.html), model: v.model, prompt_id: v.promptId, html: v.html,
+          country: S.country, files: [...new Set(chainOf(v).flatMap((x) => x.files || []))] }),
       });
       const j = await res.json().catch(() => ({}));
       note(res.ok ? 'Sent to the wall.' : esc(j.error || 'The wall did not accept it.'));
@@ -1152,7 +1141,7 @@
         $('mindTitle').textContent = label + ' is writing the code';
         $('mindText').textContent = lines.slice(-40).join('\n');
         $('mindTime').textContent = `${fmt(lines.length)} lines · ${secs().toFixed(0)} s`;
-        $('mindNote').textContent = 'The code runs in your browser, on the full dataset. The model wrote it from a description of the data and three sample records.';
+        $('mindNote').textContent = 'The code runs in your browser, on the full dataset. The model wrote it from a description of the data and a few sample records.';
       }
       $('buildingText').textContent = stat.textContent;
       scrollLog();
@@ -1866,11 +1855,11 @@
     const v = currentVersion();
     const used = new Set(chainOf(v).map((x) => x.promptId));
     const built = new Set(S.versions.map((x) => x.promptId));
-    const ds = v ? datasetsUsed(v.html) : [];   // the wiki app also reads the library
     const live = S.route && S.route.type !== 'replay';
     const mine = (p) => p.session === S.session && p.id !== S.pendingPromptId && !(S.planning && S.planning.p.id === p.id);
     // Hick's law: a few suggestions at a time, never the whole list
-    const next = v ? S.prompts.filter((p) => mine(p) && ds.includes(p.dataset) && p.builds_on && !used.has(p.id) && used.has(p.builds_on)).slice(0, 2) : [];
+    // a next step continues this app; it may bring a file of its own (a second document to add)
+    const next = v ? S.prompts.filter((p) => mine(p) && p.builds_on && p.builds_on !== 'any' && !used.has(p.id) && used.has(p.builds_on)).slice(0, 2) : [];
     if (v && live) next.push(...S.prompts.filter((p) => p.builds_on === 'any' && p.id !== S.pendingPromptId));   // "Suggest improvements"
     const starters = S.prompts.filter((p) => mine(p) && !p.builds_on && !built.has(p.id)).slice(0, !v ? 3 : S.session === 'S8' ? 2 : 1);
     const group = (label, list, fresh) => {
@@ -2003,6 +1992,7 @@
         <div class="fcard-top"><i class="ficon ${f.kind}">${f.kind.toUpperCase()}</i><h3>${esc(fileLabel(f.key))}</h3></div>
         <p>${esc(f.blurb.replace(/\{country\}/g, S.country))}</p>
         <div class="meta">${esc(fileMetaLine(f.key))}</div>
+        ${f.from ? `<p class="from">Also published as data: ${f.from.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join(' · ')}</p>` : ''}
         <div class="row"><button type="button" class="ghost" data-act="open">Open</button><button type="button" class="ghost" data-act="add">Add to chat</button></div>
       </div>`).join('');
     box.querySelectorAll('.fcard').forEach((c) => {
@@ -2031,7 +2021,7 @@
     if (S.versions.length) {
       openDrawer('Your files');
       $('drawerBody').innerHTML = '<p>Open a file to see what is inside, or drag it into the chat on the left.</p><div class="shelf" id="drawerShelf"></div>' +
-        '<p class="shelf-note">A file in the chat gives your app the whole file, here in your browser. The model reads only a short description of it and three sample rows.</p>';
+        '<p class="shelf-note">A file in the chat gives your app the whole file, here in your browser. The model reads only a short description of it and a few sample rows.</p>';
       renderShelf($('drawerShelf'));
     }
     renderShelfState(needed);

@@ -1,6 +1,6 @@
 # System prompt sent with every build request
 
-This file is public on purpose: participants can open it and see exactly what the studio adds to their message. Below the line is the text the model receives, followed by `schema.md` and three sample records per dataset (`samples.json`). Nothing else from the data pack is ever sent.
+This file is public on purpose: participants can open it and see exactly what the studio adds to their message. Below the line is the text the model receives, followed by `schema.md` and a few sample records per dataset (`samples.json`: five of the recommendations). Nothing else from the data pack is ever sent.
 
 ---
 
@@ -28,7 +28,7 @@ Participants attach files from the studio's file shelf. Their message then says 
 
 ## The data
 
-All data is already in `window.WORKSHOP_DATA` before your script runs (described below). You have only seen a description and three sample records; the real files are larger and differ. Read field values from the data, never hard-code counts, countries, years or names, and handle empty lists and missing values. Never invent records, statistics, or quotes.
+All data is already in `window.WORKSHOP_DATA` before your script runs (described below). You have only seen a description and a few sample records; the real files are larger and differ. Read field values from the data, never hard-code counts, countries, years or names, and handle empty lists and missing values. Never invent records, statistics, or quotes.
 
 ## Asking a model from inside the app (only when the user asks for it)
 

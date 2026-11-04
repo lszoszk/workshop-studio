@@ -3,7 +3,7 @@
 
 The studio never queries an API on the workshop day: every dataset is built once,
 committed, and served from the same origin as the studio. The model only ever sees
-site/data/schema.md and three sample records; the full files go straight into the
+site/data/schema.md and a few sample records; the full files go straight into the
 participant's preview.
 
     python3 tools/build_data.py                    # default countries
@@ -52,7 +52,12 @@ HRC_FROM_YEAR = 2021
 SCHEMA_COUNTRY = "Kenya"   # its records give the examples in schema.md, so the model's instructions stay the same
 # the document for the extraction exercise; its paragraphs are also in gc.json, which is the reference
 PDF_DOC = {"symbol": "E/C.12/GC/27", "doc_id": "e-c-12-gc-27",
-           "pdf": Path.home() / "Desktop/GC_Database/new_gcs_pdf/CESCR_GC27.pdf"}
+           "pdf": Path.home() / "Desktop/GC_Database/new_gcs_pdf/CESCR_GC27.pdf",
+           "title": "CESCR General comment No. 27 (2025), as a PDF converter extracted it, page by page"}
+# the second document a participant adds to the extraction app: another committee, an older layout
+# (reference checked by hand on 4 Nov 2026: paragraphs 1-65 without a gap, last footnote 128)
+PDF_DOC_2 = {"symbol": "CCPR/C/GC/32", "doc_id": "ccpr-c-gc-32", "pdf": ROOT / "site/files/CCPR_C_GC_32.pdf",
+             "title": "Human Rights Committee general comment No. 32 (2007), as a PDF converter extracted it, page by page"}
 
 
 def ssl_context():
@@ -203,23 +208,23 @@ def gc_corpus():
     }
 
 
-def pdf_text(gc):
+def pdf_text(gc, doc_spec=PDF_DOC, key="pdf_text"):
     """One UN document exactly as a PDF converter gives it, page by page, nothing cleaned: the raw
     material for the extraction exercise. `reference` holds only what an app needs to check its
     own result against the paragraphs of the same document in the UN Human Rights Database."""
-    raw = subprocess.run(["pdftotext", str(PDF_DOC["pdf"]), "-"], capture_output=True, text=True, check=True).stdout
+    raw = subprocess.run(["pdftotext", str(doc_spec["pdf"]), "-"], capture_output=True, text=True, check=True).stdout
     pages = raw.split("\f")
     while pages and not pages[-1].strip():
         pages.pop()
-    paras = sorted((r for r in gc["records"] if r["symbol"] == PDF_DOC["symbol"]), key=lambda r: int(r["paragraph"]))
+    paras = sorted((r for r in gc["records"] if r["symbol"] == doc_spec["symbol"]), key=lambda r: int(r["paragraph"]))
     first = {str(r["paragraph"]): " ".join(re.sub(r"^\d+\.\s*", "", r["text"]).split()[:6]) for r in paras}
-    notes = sum(len(p.get("footnotes") or []) for p in get_json(UNHRDB + "corpus.json") if p.get("docId") == PDF_DOC["doc_id"])
-    doc = next(d for d in get_json(UNHRDB + "documents.json") if d.get("docId") == PDF_DOC["doc_id"])
+    notes = sum(len(p.get("footnotes") or []) for p in get_json(UNHRDB + "corpus.json") if p.get("docId") == doc_spec["doc_id"])
+    doc = next(d for d in get_json(UNHRDB + "documents.json") if d.get("docId") == doc_spec["doc_id"])
     return {
-        "dataset": "pdf_text",
-        "title": "CESCR General comment No. 27 (2025), as a PDF converter extracted it, page by page",
-        "symbol": PDF_DOC["symbol"],
-        "doc_url": "https://docs.un.org/en/" + PDF_DOC["symbol"],
+        "dataset": key,
+        "title": doc_spec["title"],
+        "symbol": doc_spec["symbol"],
+        "doc_url": "https://docs.un.org/en/" + doc_spec["symbol"],
         "source": "The PDF from the UN Official Document System, converted with pdftotext (Poppler); nothing cleaned",
         "built": date.today().isoformat(),
         "count": len(pages),
@@ -707,7 +712,7 @@ def schema(packs):
             "A pin is a quotation inside the sentence: the prose is written around it (\"The central ask [pin] ✓, stated also",
             "in the summary [pin] ✓\"), so show the quote itself, in quotation marks, where the pin stands, followed by the",
             "label as a small citation; a pin shown as its label alone leaves the sentence without its words.",
-            r"One regular expression finds them all: `/\[([^\]]+)\]\(pin:([^#\s)]+)#p(\d+)(?: \"([^\"]*)\")?\) ?(✓|⚠)/g`",
+            r'One regular expression finds them all: `/\[([^\]]+)\]\(pin:([^#\s)]+)#p(\d+)(?: "([^"]*)")?\) ?(✓|⚠)/g`',
             "(groups: label, id, PDF page, quote, mark). Open a pin with `studio.openSource(id, page, quote)`. A pin is verified",
             "when its quote is in a passage of that document in `WORKSHOP_DATA.library` that starts on that PDF page",
             "(compare after normalising whitespace, curly quotes, dashes and hyphenation). A quote may join fragments",
@@ -735,6 +740,15 @@ def schema(packs):
             f"(`{{\"1\": \"{p['reference']['first_words']['1']}\", …}}`: the first six words of each numbered paragraph).",
             "",
         ]
+    if "pdf_text_2" in packs:
+        p = packs["pdf_text_2"]
+        lines += [
+            "## `WORKSHOP_DATA.pdf_text_2`: a second UN document as raw text from its PDF",
+            "",
+            f"The same shape as `pdf_text`: the {p['count']} pages of {p['symbol']} as the same converter produced them,",
+            f"with its own `reference` ({p['reference']['paragraphs']} paragraphs, {p['reference']['footnotes']} footnotes).",
+            "",
+        ]
     lines += [
         "## Rules for every app",
         "",
@@ -747,8 +761,26 @@ def schema(packs):
     print("  schema.md")
 
 
+def uhri_samples(rec):
+    """Five records chosen to show the variety the model's code must handle: each mechanism, both
+    main types, SDGs filled in, several countries, and empty lists. The first match in file order."""
+    wants = [
+        lambda r: r["mechanism"] == "Treaty bodies" and r["type"] == "Recommendations" and r.get("sdgs") and r.get("affected_persons"),
+        lambda r: r["mechanism"] == "Universal Periodic Review" and r.get("sdgs"),
+        lambda r: r["mechanism"] == "Special Procedures" and len(r.get("countries") or []) > 1,
+        lambda r: r["type"] == "Concerns/Observations",
+        lambda r: not r.get("themes") or not r.get("affected_persons") or not r.get("sdgs"),
+    ]
+    pick = []
+    for want in wants:
+        r = next((r for r in rec if want(r) and r not in pick), None)
+        if r:
+            pick.append(r)
+    return pick
+
+
 def samples(packs):
-    """Three records per dataset: the only rows the model is ever shown."""
+    """A few records per dataset (five of the recommendations): the only rows the model is ever shown."""
     out = {}
     for k, p in packs.items():
         if k == "wiki":   # two whole pages
@@ -756,6 +788,8 @@ def samples(packs):
             continue
         rec = p["records"]
         pick = [rec[0], rec[len(rec) // 2], rec[-1]]
+        if k == "uhri":
+            pick = uhri_samples(rec)
         if k == "gc" or k == "hrc":
             pick = [rec[0], rec[len(rec) // 3], rec[2 * len(rec) // 3]]
         if k == "library":   # a numbered UN report and a journal article, two passages each
@@ -763,7 +797,7 @@ def samples(packs):
             for d in (rec[0], next(r for r in rec if r["kind"] == "Journal article")):
                 d = dict(d); d["passages"] = d["passages"][:2]
                 pick.append(d)
-        if k == "pdf_text":   # one page is enough to see the format; the whole document would go with every request
+        if k in ("pdf_text", "pdf_text_2"):   # one page is enough to see the format; the whole document would go with every request
             pick = [{"page": 1, "text": rec[0]["text"][:1200] + "\n[… rest of the page omitted in this sample]"}]
         out[k] = pick
     (OUT / "samples.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -785,6 +819,9 @@ def main():
         packs["pdf_text"] = pdf_text(packs["gc"])
         write("pdf_text.json", packs["pdf_text"])
         index["datasets"]["pdf_text"] = {"file": "pdf_text.json", "count": packs["pdf_text"]["count"]}
+        packs["pdf_text_2"] = pdf_text(packs["gc"], PDF_DOC_2, "pdf_text_2")
+        write("pdf_text_2.json", packs["pdf_text_2"])
+        index["datasets"]["pdf_text_2"] = {"file": "pdf_text_2.json", "count": packs["pdf_text_2"]["count"]}
         print("Library …")
         packs["library"] = library(packs["gc"])
         write("library.json", packs["library"])
@@ -837,6 +874,9 @@ def main():
     packs["pdf_text"] = pdf_text(packs["gc"])
     write("pdf_text.json", packs["pdf_text"])
     index["datasets"]["pdf_text"] = {"file": "pdf_text.json", "count": packs["pdf_text"]["count"]}
+    packs["pdf_text_2"] = pdf_text(packs["gc"], PDF_DOC_2, "pdf_text_2")
+    write("pdf_text_2.json", packs["pdf_text_2"])
+    index["datasets"]["pdf_text_2"] = {"file": "pdf_text_2.json", "count": packs["pdf_text_2"]["count"]}
     print("Library …")
     packs["library"] = library(packs["gc"])
     write("library.json", packs["library"])
