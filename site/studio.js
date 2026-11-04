@@ -454,9 +454,40 @@
     return k >= 0 ? text.slice(k) : '';
   }
 
+  // Edit mode: a change to an existing app comes back as SEARCH/REPLACE pairs (site/data/system_prompt.md).
+  // The same rules as tools/edits.py, which the bake-off uses.
+  const EDIT = /<<<<<<< SEARCH\n([\s\S]*?)\n?=======\n([\s\S]*?)\n?>>>>>>> REPLACE/g;
+  const WHOLE_FILE = 'Your edits did not match the current code exactly. Reply with the complete updated HTML document in one ```html block instead.';
+  function parseEdits(text) {
+    return [...text.matchAll(EDIT)].map((m) => ({ search: m[1], replace: m[2] })).filter((e) => e.search.trim());
+  }
+
+  // Apply every edit or none: an exact match first, then one that ignores indentation and trailing spaces;
+  // a SEARCH that occurs twice is as useless as one that occurs nowhere
+  function applyEdits(code, edits) {
+    let out = code, lines = 0;
+    for (const e of edits) {
+      const at = out.indexOf(e.search);
+      if (at >= 0 && out.indexOf(e.search, at + 1) < 0) {
+        out = out.slice(0, at) + e.replace + out.slice(at + e.search.length);
+      } else {
+        const L = out.split('\n'), want = e.search.split('\n').map((s) => s.trim());
+        const hits = [];
+        for (let i = 0; i + want.length <= L.length; i++) {
+          if (want.every((w, j) => L[i + j].trim() === w)) hits.push(i);
+        }
+        if (hits.length !== 1) return { ok: false, failed: e.search.split('\n')[0].trim().slice(0, 80) };
+        L.splice(hits[0], want.length, ...e.replace.split('\n'));
+        out = L.join('\n');
+      }
+      lines += e.replace.split('\n').length;
+    }
+    return { ok: true, html: out, lines };
+  }
+
   function summaryOf(text) {
     const fence = /<\/html>\s*```/i.test(text) ? /```html[\s\S]*?<\/html>\s*```/i : /```html[\s\S]*?(```|$)/;
-    const s = text.replace(fence, '').replace(/<!doctype html[\s\S]*?(<\/html>|$)/i, '').trim();
+    const s = text.replace(fence, '').replace(/```edit[\s\S]*?(```\s*$|$)/, '').replace(EDIT, '').replace(/<!doctype html[\s\S]*?(<\/html>|$)/i, '').trim();
     return s.length > 700 ? s.slice(0, 700) + '…' : s;
   }
 
@@ -627,7 +658,7 @@
     let lastSkeleton = 0, sketched = false;
     S.ctrl = new AbortController();
     try {
-      const { text, usage } = await chat({
+      let { text, usage } = await chat({
         purpose: 'build', model: S.model, messages, promptId, signal: S.ctrl.signal,
         onThought: (all) => view.think(all),
         onDelta: (all) => {
@@ -640,10 +671,28 @@
           }
         },
       });
-      const html = extractHtml(text);
+      let html = extractHtml(text), edit = null, asked = messages;
+      // edit mode: a change came back as edits to the app on the stage; if one does not fit, ask once for the whole file
+      const edits = !html && parent ? parseEdits(text) : [];
+      if (edits.length) {
+        const r = applyEdits(parent.html, edits);
+        if (r.ok) {
+          html = r.html;
+          edit = { edits: edits.length, lines: r.lines };
+        } else {
+          addTrace({ purpose: 'build', usage, messages, userText: asTyped, parent, files, shelf: hits });
+          view.retry(`The changes did not fit your app's code (at "${r.failed}"). Asking the model for the whole app instead; this takes longer.`);
+          asked = [...messages, { role: 'assistant', content: text }, { role: 'user', content: WHOLE_FILE }];
+          const again = await chat({ purpose: 'build', model: S.model, messages: asked, promptId, signal: S.ctrl.signal,
+            onThought: (all) => view.think(all), onDelta: (all) => view.update(all) });
+          usage = { ...again.usage, cost: (usage.cost || 0) + (again.usage.cost || 0), seconds: (usage.seconds || 0) + (again.usage.seconds || 0) };
+          text = again.text;
+          html = extractHtml(text);
+        }
+      }
       if (usage.model_label) view.who(usage.model_label);
       const seconds = usage.seconds || (performance.now() - t0) / 1000;
-      addTrace({ purpose: 'build', usage, messages, userText: asTyped, parent, files, shelf: hits });
+      addTrace({ purpose: 'build', usage, messages: asked, userText: asTyped, parent, files, shelf: hits });
       if (usage.budget_left != null) setBudget(usage.budget_left);
       const base = { user: userText, sent, files, model: usage.model || S.model, label: usage.model_label || S.config.models[S.model].label,
         seconds, cost: usage.cost, recorded: !!usage.recorded, promptId, created: Date.now(), ...view.thinking(),
@@ -669,9 +718,11 @@
         if (sketched && S.current) await showVersion(currentVersion());   // a half-written app gives way to the real one
         return;
       }
+      // an edited version keeps its whole code in the reply: the next request shows the model the app as it is now
       const v = Object.assign(base, {
-        n: S.versions.length + 1, parent: parent ? parent.n : null, reply: text,
-        summary: summaryOf(text), html, fix: userText.startsWith(FIX),
+        n: S.versions.length + 1, parent: parent ? parent.n : null,
+        reply: edit ? summaryOf(text) + '\n\n```html\n' + html + '\n```' : text,
+        summary: summaryOf(text), html, fix: userText.startsWith(FIX), ...(edit ? { edit } : {}),
       });
       S.versions.push(v);
       S.current = v.n;
@@ -1201,11 +1252,14 @@
       }
       const code = extractHtml(last, true);
       const lines = code ? code.split('\n') : [];
+      const editing = !lines.length && last.includes('<<<<<<< SEARCH');
+      const changes = editing ? last.slice(last.indexOf('<<<<<<< SEARCH')).split('\n') : [];
       if (last && thought && !folded) { folded = true; th.open = false; thLabel.textContent = `Thought for ${thoughtEnd.toFixed(0)} s`; }
-      sum.textContent = lines.length ? summaryOf(last) : last;   // an answer in words streams in full
-      pre.textContent = lines.slice(-60).join('\n');
+      sum.textContent = lines.length || editing ? summaryOf(last) : last;   // an answer in words streams in full
+      pre.textContent = (editing ? changes : lines).slice(-60).join('\n');
       pre.scrollTop = pre.scrollHeight;
-      stat.textContent = lines.length ? `Writing code · ${fmt(lines.length)} lines · ${secs().toFixed(0)} s`
+      stat.textContent = editing ? `Writing changes · ${(last.match(/<<<<<<< SEARCH/g) || []).length} so far · ${secs().toFixed(0)} s`
+        : lines.length ? `Writing code · ${fmt(lines.length)} lines · ${secs().toFixed(0)} s`
         : last ? `Answering · ${secs().toFixed(0)} s`
           : thought ? `Thinking · ${secs().toFixed(0)} s` : `Waiting for the model · ${secs().toFixed(0)} s`;
       if (thought && thoughtEnd === null) thLabel.textContent = `Thinking · ${secs().toFixed(0)} s`;
@@ -1213,7 +1267,7 @@
       // once the page body has begun (models write the styles first, and a sketch of those is blank)
       const thinking = !!thought && thoughtEnd === null;
       const body = code.search(/<body[\s>]/i);
-      const writing = !thinking && lines.length > 0 && (body < 0 || code.length - body < 600);
+      const writing = !thinking && (editing || (lines.length > 0 && (body < 0 || code.length - body < 600)));
       $('viewport').classList.toggle('thinking', thinking || writing);
       $('mind').classList.toggle('code', writing);
       $('mindWhere').textContent = where;
@@ -1222,6 +1276,11 @@
         $('mindText').textContent = thought.length > 2500 ? '…' + thought.slice(-2500) : thought;
         $('mindTime').textContent = `${secs().toFixed(0)} s`;
         $('mindNote').textContent = "The model's working notes, shown as it writes them. Ask again and they will be different. Your app is built from the code it writes next.";
+      } else if (writing && editing) {
+        $('mindTitle').textContent = label + ' is writing the changes';
+        $('mindText').textContent = changes.slice(-40).join('\n');
+        $('mindTime').textContent = `${secs().toFixed(0)} s`;
+        $('mindNote').textContent = 'Only the lines that change are written: SEARCH is what is in your app now, REPLACE what takes its place. The studio puts them into your app.';
       } else if (writing) {
         $('mindTitle').textContent = label + ' is writing the code';
         $('mindText').textContent = lines.slice(-40).join('\n');
@@ -1240,6 +1299,8 @@
       step(el) { d.querySelector('.who').after(el); scrollLog(); },   // e.g. the reference shelf searched before the model answers
       who(label) { d.querySelector('.who').textContent = label; },   // a recorded answer names the model that recorded it
       think(all) { thought = all; schedule(); },
+      // the edits did not fit: say so in the bubble, and stream the whole file that follows
+      retry(msg) { const n = document.createElement('p'); n.className = 'retry-note'; n.textContent = msg; sum.before(n); last = ''; schedule(); },
       // the answer's first words end the thinking: noted here, because a background tab may not redraw
       update(all) { if (thoughtEnd === null) thoughtEnd = secs(); last = all; schedule(); },
       // kept with the version, so the thinking is still there after a reload
@@ -1335,7 +1396,8 @@
   function renderCodeCard(box, v) {
     const lines = v.html.split('\n').length;
     box.className = 'code collapsed';
-    box.innerHTML = `<div class="bar"><span>v${v.n} · ${fmt(lines)} lines · ${v.seconds ? v.seconds.toFixed(0) + ' s' : ''}${v.cost != null ? ' · $' + Number(v.cost).toFixed(3) : ''} · ${esc(v.label)}</span><button type="button">Show code</button></div><pre></pre>`;
+    const changed = v.edit ? ` · changed ${fmt(v.edit.lines)} of ${fmt(lines)} lines in ${v.edit.edits} ${v.edit.edits === 1 ? 'place' : 'places'}` : '';
+    box.innerHTML = `<div class="bar"><span>v${v.n} · ${fmt(lines)} lines${changed} · ${v.seconds ? v.seconds.toFixed(0) + ' s' : ''}${v.cost != null ? ' · $' + Number(v.cost).toFixed(3) : ''} · ${esc(v.label)}</span><button type="button">Show code</button></div><pre></pre>`;
     const pre = box.querySelector('pre');
     box.querySelector('button').onclick = (e) => {
       const open = box.classList.toggle('collapsed');

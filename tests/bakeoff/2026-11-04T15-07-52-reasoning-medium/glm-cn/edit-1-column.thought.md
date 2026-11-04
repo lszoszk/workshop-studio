@@ -1,0 +1,3 @@
+Add a Year column to the table, sortable. Edit the renderTable function: header add Year th (sortable button), row add td, sorting logic include year option. Sorting by year should tie-break with date etc. Simplest: add a sort key option: "date" (default) or "year". Add button on Year header.
+
+Current sortSet sorts by date desc/asc. Add S.sortBy ("date"|"year"). Year header button toggles desc/asc within year sort? Plan: click Year header sorts by year (toggles direction), Date header sorts by date. Keep it simple.

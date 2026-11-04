@@ -560,3 +560,4 @@ dialog h2 { font-family: var(--serif); font-weight: 400; }
 .feedback-ctx { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
 .feedback-ctx ul { margin: 6px 0 0; padding-left: 18px; max-height: 160px; overflow: auto; }
 .feedback-ctx b { color: var(--ink); font-weight: 600; margin-right: 4px; }
+.retry-note { margin: 4px 0 8px; font-size: 14px; color: var(--muted); border-left: 3px solid var(--accent); padding-left: 10px; }

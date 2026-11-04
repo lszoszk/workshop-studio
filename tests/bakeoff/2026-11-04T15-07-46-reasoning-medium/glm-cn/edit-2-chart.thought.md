@@ -1,0 +1,1 @@
+Add FIG.02b? Plan says "Records per year by mechanism" stacked. Now add a chart of type per year (recommendations vs observations per year). Add as new figure on tab 01, stacked by type. Insert HTML figure block and JS. Two edits: HTML after fig2 figure, and JS in drawOverview.

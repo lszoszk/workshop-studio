@@ -272,6 +272,78 @@
       "blurb": "A careful review of your app, as a list to choose from",
       "prompt": "Review my app as a careful colleague would. List five concrete improvements, numbered: to how clearly it explains its numbers, to correctness, to accessibility and to its design. One or two sentences each, saying why it matters. Do not change the code yet: I will tell you which ones to make.",
       "lesson": null
+    },
+    {
+      "id": "edit-1-column",
+      "session": "S7",
+      "minute": null,
+      "dataset": "uhri",
+      "builds_on": "s7-1-dashboard",
+      "title": "Add a column",
+      "blurb": "A change of the kind participants ask for, to measure edit mode",
+      "prompt": "In the records table, add a column with the year of each record, and let me sort the table by that column.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "chart": true,
+        "table_min_rows": 5,
+        "text_contains": [
+          "{country}"
+        ],
+        "controls_min": 4,
+        "links_to": "docs.un.org",
+        "text_matches": "(?i)\\byear\\b"
+      },
+      "hidden": true
+    },
+    {
+      "id": "edit-2-chart",
+      "session": "S7",
+      "minute": null,
+      "dataset": "uhri",
+      "builds_on": "s7-1-dashboard",
+      "title": "Add a chart",
+      "blurb": "A change of the kind participants ask for, to measure edit mode",
+      "prompt": "On the overview, add a bar chart of the number of recommendations and observations per year.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "chart": true,
+        "table_min_rows": 5,
+        "text_contains": [
+          "{country}"
+        ],
+        "controls_min": 4,
+        "links_to": "docs.un.org",
+        "text_matches": "(?i)(per|by) year"
+      },
+      "hidden": true
+    },
+    {
+      "id": "edit-3-filter",
+      "session": "S7",
+      "minute": null,
+      "dataset": "uhri",
+      "builds_on": "s7-1-dashboard",
+      "title": "Add a filter",
+      "blurb": "A change of the kind participants ask for, to measure edit mode",
+      "prompt": "Add a filter by the type of document (for example concluding observations, UPR recommendations) to the filters on the left.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "chart": true,
+        "table_min_rows": 5,
+        "text_contains": [
+          "{country}"
+        ],
+        "controls_min": 4,
+        "links_to": "docs.un.org",
+        "text_matches": "(?i)type"
+      },
+      "hidden": true
     }
   ]
 }

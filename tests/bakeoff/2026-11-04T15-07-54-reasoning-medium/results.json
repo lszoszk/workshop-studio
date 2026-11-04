@@ -1,0 +1,130 @@
+[
+ {
+  "model": "claude-api",
+  "label": "Claude Sonnet 5.5 · USA · Anthropic API",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true
+  },
+  "passed": 8,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 569,
+  "edit": null,
+  "seconds": 211.4,
+  "first_token": 110.8,
+  "first_thought": 8.4,
+  "reasoning_chars": 13121,
+  "prompt_tokens": 27725,
+  "completion_tokens": 33019,
+  "cost": 0.38564,
+  "provider": "anthropic"
+ },
+ {
+  "model": "claude-api",
+  "label": "Claude Sonnet 5.5 · USA · Anthropic API",
+  "prompt": "edit-1-column",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true,
+   "text_matches": true
+  },
+  "passed": 9,
+  "total": 9,
+  "errors": [],
+  "network": [],
+  "lines": 571,
+  "edit": {
+   "edits": 8,
+   "lines": 11
+  },
+  "seconds": 16.9,
+  "first_token": 11.4,
+  "first_thought": 3.7,
+  "reasoning_chars": 876,
+  "prompt_tokens": 48155,
+  "completion_tokens": 2647,
+  "cost": 0.12278,
+  "provider": "anthropic"
+ },
+ {
+  "model": "claude-api",
+  "label": "Claude Sonnet 5.5 · USA · Anthropic API",
+  "prompt": "edit-2-chart",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true,
+   "text_matches": true
+  },
+  "passed": 9,
+  "total": 9,
+  "errors": [],
+  "network": [],
+  "lines": 579,
+  "edit": {
+   "edits": 5,
+   "lines": 15
+  },
+  "seconds": 14.0,
+  "first_token": 9.2,
+  "first_thought": 4.3,
+  "reasoning_chars": 1008,
+  "prompt_tokens": 48154,
+  "completion_tokens": 1961,
+  "cost": 0.11592,
+  "provider": "anthropic"
+ },
+ {
+  "model": "claude-api",
+  "label": "Claude Sonnet 5.5 · USA · Anthropic API",
+  "prompt": "edit-3-filter",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true,
+   "text_matches": true
+  },
+  "passed": 9,
+  "total": 9,
+  "errors": [],
+  "network": [],
+  "lines": 583,
+  "edit": {
+   "edits": 11,
+   "lines": 25
+  },
+  "seconds": 20.6,
+  "first_token": 13.6,
+  "first_thought": 7.1,
+  "reasoning_chars": 997,
+  "prompt_tokens": 48164,
+  "completion_tokens": 2711,
+  "cost": 0.12344,
+  "provider": "anthropic"
+ }
+]

@@ -1,0 +1,138 @@
+[
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "controls_min": true,
+   "links_to": false
+  },
+  "passed": 4,
+  "total": 8,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Identifier 'years' has already been declared"
+  ],
+  "network": [],
+  "lines": 2018,
+  "edit": null,
+  "seconds": 185.5,
+  "first_token": 1.1,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 20066,
+  "completion_tokens": 19586,
+  "cost": 0.0335324,
+  "provider": "Mistral"
+ },
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "edit-1-column",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "controls_min": true,
+   "links_to": false,
+   "text_matches": true
+  },
+  "passed": 5,
+  "total": 9,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Identifier 'years' has already been declared"
+  ],
+  "network": [],
+  "lines": 2055,
+  "edit": {
+   "edits": 6,
+   "lines": 74
+  },
+  "seconds": 14.6,
+  "first_token": 2.9,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 39698,
+  "completion_tokens": 1316,
+  "cost": 0.0240053,
+  "provider": "Mistral"
+ },
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "edit-2-chart",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "controls_min": true,
+   "links_to": false,
+   "text_matches": true
+  },
+  "passed": 5,
+  "total": 9,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Identifier 'years' has already been declared"
+  ],
+  "network": [],
+  "lines": 2102,
+  "edit": {
+   "edits": 2,
+   "lines": 145
+  },
+  "seconds": 16.5,
+  "first_token": 1.9,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 39691,
+  "completion_tokens": 1654,
+  "cost": 0.01473835,
+  "provider": "Mistral"
+ },
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "edit-3-filter",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "controls_min": true,
+   "links_to": false,
+   "text_matches": true
+  },
+  "passed": 5,
+  "total": 9,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Identifier 'years' has already been declared"
+  ],
+  "network": [],
+  "lines": 2071,
+  "edit": {
+   "edits": 7,
+   "lines": 94
+  },
+  "seconds": 15.7,
+  "first_token": 1.5,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 39698,
+  "completion_tokens": 1547,
+  "cost": 0.00487157,
+  "provider": "Mistral"
+ }
+]

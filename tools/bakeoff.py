@@ -22,6 +22,7 @@ from datetime import datetime
 from pathlib import Path
 
 import httpx
+from edits import apply_edits, parse_edits   # tools/edits.py: the studio's edit mode
 from planning import compose   # tools/planning.py
 from playwright.async_api import async_playwright
 
@@ -97,6 +98,8 @@ def extract_html(text):
 
 
 REASONING = None  # set from --reasoning: OpenRouter reasoning effort (low/medium/high)
+# what the studio sends when a model's edits do not fit the app (site/studio.js, WHOLE_FILE)
+WHOLE_FILE = "Your edits did not match the current code exactly. Reply with the complete updated HTML document in one ```html block instead."
 
 # the measurements on the Anthropic API stop at this many dollars, counted in a local ledger (Łukasz, 4.11.2026);
 # the workspace of the key has its own spend limit in the Console as well
@@ -399,13 +402,27 @@ async def run(models, prompt_ids, outdir):
         browser = await launch(pw)
 
         async def one_model(m):
-            convo = {}  # prompt id -> messages after that prompt's answer
+            convo, html_of = {}, {}  # prompt id -> messages after that prompt's answer, and its app
             for p in spec:
                 user = request_text(p) + attached(p["dataset"])
                 base = convo.get(p["builds_on"]) if p.get("builds_on") else None
                 messages = (base or [{"role": "system", "content": sp}]) + [{"role": "user", "content": user}]
                 g = await generate(client, key, m, messages)
-                page_html = extract_html(g.get("text", ""))
+                page_html, edit = extract_html(g.get("text", "")), None
+                # edit mode, as in the studio: edits to the app this request builds on; if one does not fit, one
+                # more request for the whole file, its time and cost added to the first
+                parent_html = html_of.get(p.get("builds_on"))
+                edits = parse_edits(g.get("text", "")) if not page_html and parent_html else []
+                if edits:
+                    new, n = apply_edits(parent_html, edits)
+                    if new is not None:
+                        page_html, edit = new, {"edits": len(edits), "lines": n}
+                    else:
+                        retry = messages + [{"role": "assistant", "content": g["text"]}, {"role": "user", "content": WHOLE_FILE}]
+                        g2 = await generate(client, key, m, retry)
+                        g2.update(seconds=(g.get("seconds") or 0) + (g2.get("seconds") or 0),
+                                  cost=(g.get("cost") or 0) + (g2.get("cost") or 0), first_edit_text=g["text"])
+                        g, page_html, edit = g2, extract_html(g2.get("text", "")), {"edits": len(edits), "fell_back": True, "failed": n}
                 d = outdir / m
                 d.mkdir(parents=True, exist_ok=True)
                 (d / f"{p['id']}.html").write_text(page_html or "<!-- no html -->", encoding="utf-8")
@@ -413,13 +430,17 @@ async def run(models, prompt_ids, outdir):
                 if g.get("thought"):   # the studio replays it before the answer in recorded mode
                     (d / f"{p['id']}.thought.md").write_text(g["thought"], encoding="utf-8")
                 if page_html:
-                    convo[p["id"]] = messages + [{"role": "assistant", "content": g["text"]}]
+                    html_of[p["id"]] = page_html
+                    # an edited app goes on in the conversation as its whole code, as the studio sends it
+                    reply = g["text"] if not (edit and not edit.get("fell_back")) else \
+                        re.sub(r"```edit[\s\S]*$", "", g["text"]).strip() + "\n\n```html\n" + page_html + "\n```"
+                    convo[p["id"]] = messages + [{"role": "assistant", "content": reply}]
                     checks, errs, net = await score(browser, page_html, p["checks"], init, d / f"{p['id']}.png")
                 else:
                     checks, errs, net = {k: False for k in p["checks"]}, [g.get("error", "no html in reply")], []
                 r = {"model": m, "label": MODELS[m][2], "prompt": p["id"], "checks": checks,
                      "passed": sum(checks.values()), "total": len(checks), "errors": errs, "network": net,
-                     "lines": page_html.count("\n") + 1 if page_html else 0,
+                     "lines": page_html.count("\n") + 1 if page_html else 0, "edit": edit,
                      **{k: g.get(k) for k in ("seconds", "first_token", "first_thought", "reasoning_chars", "prompt_tokens", "completion_tokens", "cost", "provider")}}
                 results.append(r)
                 print(f"{m:8} {p['id']:22} {r['passed']}/{r['total']}  thought@{r['first_thought']}s code@{r['first_token']}s  {r['seconds']}s  ${r['cost'] or 0:.3f}  {errs[:1]}")

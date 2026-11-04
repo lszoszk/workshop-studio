@@ -1,0 +1,138 @@
+[
+ {
+  "model": "claude-api",
+  "label": "Claude Sonnet 5.5 · USA · Anthropic API",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "controls_min": true,
+   "links_to": false
+  },
+  "passed": 4,
+  "total": 8,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Unexpected token ')'"
+  ],
+  "network": [],
+  "lines": 595,
+  "edit": null,
+  "seconds": 198.2,
+  "first_token": 93.5,
+  "first_thought": 6.2,
+  "reasoning_chars": 11280,
+  "prompt_tokens": 27725,
+  "completion_tokens": 31305,
+  "cost": 0.3685,
+  "provider": "anthropic"
+ },
+ {
+  "model": "claude-api",
+  "label": "Claude Sonnet 5.5 · USA · Anthropic API",
+  "prompt": "edit-1-column",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "controls_min": true,
+   "links_to": false,
+   "text_matches": true
+  },
+  "passed": 5,
+  "total": 9,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Unexpected token ')'"
+  ],
+  "network": [],
+  "lines": 598,
+  "edit": {
+   "edits": 8,
+   "lines": 12
+  },
+  "seconds": 16.7,
+  "first_token": 11.8,
+  "first_thought": 3.2,
+  "reasoning_chars": 1012,
+  "prompt_tokens": 48341,
+  "completion_tokens": 2495,
+  "cost": 0.12163,
+  "provider": "anthropic"
+ },
+ {
+  "model": "claude-api",
+  "label": "Claude Sonnet 5.5 · USA · Anthropic API",
+  "prompt": "edit-2-chart",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "controls_min": true,
+   "links_to": false,
+   "text_matches": true
+  },
+  "passed": 5,
+  "total": 9,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Unexpected token ')'"
+  ],
+  "network": [],
+  "lines": 609,
+  "edit": {
+   "edits": 6,
+   "lines": 20
+  },
+  "seconds": 21.7,
+  "first_token": 15.8,
+  "first_thought": 9.3,
+  "reasoning_chars": 968,
+  "prompt_tokens": 48340,
+  "completion_tokens": 2485,
+  "cost": 0.12153,
+  "provider": "anthropic"
+ },
+ {
+  "model": "claude-api",
+  "label": "Claude Sonnet 5.5 · USA · Anthropic API",
+  "prompt": "edit-3-filter",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "controls_min": true,
+   "links_to": false,
+   "text_matches": true
+  },
+  "passed": 5,
+  "total": 9,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Unexpected token ')'"
+  ],
+  "network": [],
+  "lines": 609,
+  "edit": {
+   "edits": 14,
+   "lines": 28
+  },
+  "seconds": 27.3,
+  "first_token": 19.2,
+  "first_thought": 6.7,
+  "reasoning_chars": 1975,
+  "prompt_tokens": 48350,
+  "completion_tokens": 3733,
+  "cost": 0.13403,
+  "provider": "anthropic"
+ }
+]

@@ -1,0 +1,130 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true
+  },
+  "passed": 8,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 693,
+  "edit": null,
+  "seconds": 345.3,
+  "first_token": 6.1,
+  "first_thought": 2.2,
+  "reasoning_chars": 490,
+  "prompt_tokens": 18960,
+  "completion_tokens": 13362,
+  "cost": 0.0853368,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "edit-1-column",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true,
+   "text_matches": true
+  },
+  "passed": 9,
+  "total": 9,
+  "errors": [],
+  "network": [],
+  "lines": 693,
+  "edit": {
+   "edits": 1,
+   "lines": 1
+  },
+  "seconds": 10.7,
+  "first_token": 5.0,
+  "first_thought": 2.2,
+  "reasoning_chars": 296,
+  "prompt_tokens": 32250,
+  "completion_tokens": 339,
+  "cost": 0.02504544,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "edit-2-chart",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true,
+   "text_matches": true
+  },
+  "passed": 9,
+  "total": 9,
+  "errors": [],
+  "network": [],
+  "lines": 711,
+  "edit": {
+   "edits": 3,
+   "lines": 27
+  },
+  "seconds": 20.6,
+  "first_token": 5.3,
+  "first_thought": 2.6,
+  "reasoning_chars": 278,
+  "prompt_tokens": 32243,
+  "completion_tokens": 734,
+  "cost": 0.01167092,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "edit-3-filter",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true,
+   "text_matches": true
+  },
+  "passed": 9,
+  "total": 9,
+  "errors": [],
+  "network": [],
+  "lines": 710,
+  "edit": {
+   "edits": 10,
+   "lines": 34
+  },
+  "seconds": 60.5,
+  "first_token": 22.6,
+  "first_thought": 1.4,
+  "reasoning_chars": 2325,
+  "prompt_tokens": 32250,
+  "completion_tokens": 2271,
+  "cost": 0.01844352,
+  "provider": "Z.AI"
+ }
+]

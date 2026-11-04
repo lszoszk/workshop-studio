@@ -1,0 +1,132 @@
+[
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true
+  },
+  "passed": 8,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 2134,
+  "edit": null,
+  "seconds": 206.4,
+  "first_token": 1.9,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 20066,
+  "completion_tokens": 20520,
+  "cost": 0.0448943,
+  "provider": "Mistral"
+ },
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "edit-1-column",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": false,
+   "text_matches": true
+  },
+  "passed": 7,
+  "total": 9,
+  "errors": [
+   "colYear is not defined"
+  ],
+  "network": [],
+  "lines": 2160,
+  "edit": {
+   "edits": 4,
+   "lines": 84
+  },
+  "seconds": 16.2,
+  "first_token": 2.7,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 40632,
+  "completion_tokens": 1518,
+  "cost": 0.0248523,
+  "provider": "Mistral"
+ },
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "edit-2-chart",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true,
+   "text_matches": true
+  },
+  "passed": 9,
+  "total": 9,
+  "errors": [],
+  "network": [],
+  "lines": 2219,
+  "edit": {
+   "edits": 3,
+   "lines": 146
+  },
+  "seconds": 15.8,
+  "first_token": 1.0,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 40625,
+  "completion_tokens": 1601,
+  "cost": 0.00496364,
+  "provider": "Mistral"
+ },
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "edit-3-filter",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true,
+   "text_matches": true
+  },
+  "passed": 9,
+  "total": 9,
+  "errors": [],
+  "network": [],
+  "lines": 2195,
+  "edit": {
+   "edits": 8,
+   "lines": 185
+  },
+  "seconds": 29.7,
+  "first_token": 2.1,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 40632,
+  "completion_tokens": 3126,
+  "cost": 0.0176847,
+  "provider": "Mistral"
+ }
+]

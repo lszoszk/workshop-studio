@@ -1,0 +1,2195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>UN human rights recommendations and observations: Kenya</title>
+<style>
+:root {
+  --paper: #f4f0e8;
+  --ink: #1d1b18;
+  --rule: #d9d2c3;
+  --red: #9b2335;
+  --upr: #c2410c;
+  --treaty: #0f766e;
+  --special: #7c3aed;
+}
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  background-color: var(--paper);
+  accent-color: var(--red);
+}
+.hidden { display: none !important; }
+header, footer {
+  border-top: 3px solid var(--red);
+  border-bottom: 1px solid var(--rule);
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  background-color: var(--paper);
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+header .label {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  color: var(--ink);
+}
+header h1 {
+  margin: 0.25rem 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.75rem;
+  font-weight: normal;
+}
+header .meta {
+  font-size: 0.8rem;
+  color: #666;
+}
+header .meta a {
+  color: inherit;
+  text-decoration: none;
+}
+header .meta a:hover { text-decoration: underline; }
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--rule);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tab {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 0.25rem 0.25rem 0 0;
+  background: none;
+  color: #666;
+}
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] {
+  border-color: var(--rule);
+  background-color: var(--paper);
+  color: var(--red);
+  font-weight: bold;
+}
+.tab:focus { outline: 2px solid var(--red); outline-offset: -2px; }
+main {
+  display: flex;
+  min-height: calc(100vh - 120px);
+}
+.rail {
+  width: 220px;
+  padding: 1rem;
+  border-right: 1px solid var(--rule);
+  background-color: #f9f7f4;
+}
+.rail h2 {
+  margin: 0 0 0.75rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #666;
+}
+.rail .clear {
+  float: right;
+  font-size: 0.7rem;
+  color: var(--red);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.rail .count {
+  margin: 0.5rem 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.5rem;
+  line-height: 1;
+}
+.rail .count small {
+  font-size: 0.9rem;
+  color: #666;
+}
+.rail .bar {
+  height: 4px;
+  background-color: var(--rule);
+  margin: 0.5rem 0;
+}
+.rail .bar-fill {
+  height: 100%;
+  background-color: var(--red);
+  width: 0%;
+}
+.rail .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+}
+.chip {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 1rem;
+  background-color: var(--paper);
+}
+.chip button {
+  margin-left: 0.25rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--red);
+  font-weight: bold;
+}
+.filter-section {
+  margin-bottom: 1.5rem;
+}
+.filter-section h3 {
+  margin: 0 0 0.5rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.filter-section h3::after {
+  content: "▼";
+  font-size: 0.6rem;
+  transition: transform 0.2s;
+}
+.filter-section[aria-expanded="false"] h3::after {
+  transform: rotate(-90deg);
+}
+.filter-section[aria-expanded="false"] .filter-body { display: none; }
+.filter-body {
+  margin-bottom: 1rem;
+}
+.filter-body label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+}
+.filter-body input[type="text"], .filter-body select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  background-color: var(--paper);
+  font-size: 0.9rem;
+}
+.filter-body input[type="text"]:focus, .filter-body select:focus {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+.filter-body .hint {
+  font-size: 0.7rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+.filter-body .radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.filter-body .radio-group label {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+}
+.filter-body .radio-group input { margin-right: 0.5rem; }
+.tile-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.tile {
+  flex: 1;
+  padding: 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  background-color: var(--paper);
+}
+.tile h3 {
+  margin: 0 0 0.5rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 3rem;
+  line-height: 1;
+}
+.tile .subtitle {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+.tile .dot {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+.tile .dot.upr { background-color: var(--upr); }
+.tile .dot.treaty { background-color: var(--treaty); }
+.tile .dot.special { background-color: var(--special); }
+.tile .note {
+  font-size: 0.7rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+.fig {
+  margin-bottom: 2rem;
+}
+.fig h3 {
+  margin: 0 0 0.5rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.fig .chart-container {
+  position: relative;
+  height: 400px;
+  margin-bottom: 1rem;
+}
+.fig .chart-container canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.fig table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+.fig th, .fig td {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+}
+.fig th {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background-color: #f9f7f4;
+}
+.fig td { font-size: 0.9rem; }
+.fig td.num { text-align: right; }
+.fig .source {
+  font-size: 0.7rem;
+  color: #666;
+}
+.search-box {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  font-size: 1rem;
+}
+.search-box:focus { outline: 2px solid var(--red); outline-offset: 2px; }
+table.records {
+  width: 100%;
+  border-collapse: collapse;
+}
+table.records th, table.records td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+}
+table.records th {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  background-color: #f9f7f4;
+}
+table.records th:hover { background-color: #f4f0e8; }
+table.records th[aria-sort="ascending"]::after { content: " ↑"; }
+table.records th[aria-sort="descending"]::after { content: " ↓"; }
+table.records td { font-size: 0.9rem; }
+table.records td.num { text-align: right; }
+table.records td.state { font-size: 0.8rem; }
+table.records tr.expanded td {
+  border-bottom: none;
+  background-color: #fefefe;
+}
+table.records tr.expanded + tr.detail {
+  display: table-row;
+}
+table.records tr.detail td {
+  padding: 1rem;
+  border-top: none;
+  border-bottom: 1px solid var(--rule);
+  background-color: #fefefe;
+}
+table.records tr.detail .para-num {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.5rem;
+  color: var(--red);
+  margin-bottom: 0.5rem;
+}
+table.records tr.detail .text {
+  white-space: pre-wrap;
+  margin-bottom: 1rem;
+}
+table.records tr.detail .labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+table.records tr.detail .label-group h4 {
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+table.records tr.detail .label-group span {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+  background-color: var(--paper);
+}
+table.records tr.detail .actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+table.records tr.detail button {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  background-color: var(--paper);
+  cursor: pointer;
+}
+table.records tr.detail button:hover {
+  background-color: #f4f0e8;
+}
+table.records tr.detail button:focus {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+table.records tr.detail button.copy {
+  background-color: var(--red);
+  color: white;
+  border-color: var(--red);
+}
+table.records tr.detail button.copy:hover {
+  background-color: #8a1f2d;
+}
+table.records tr.detail button.copy.copied {
+  background-color: #2e7d32;
+  border-color: #2e7d32;
+}
+table.records .highlight mark {
+  background-color: #ffeb3b;
+  padding: 0;
+}
+.pagination {
+  margin-top: 1rem;
+  text-align: center;
+}
+.pagination button {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  background-color: var(--paper);
+  cursor: pointer;
+}
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.check-panel {
+  margin-bottom: 2rem;
+}
+.check-panel h3 {
+  margin: 0 0 0.5rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.check-panel ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.check-panel li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.check-panel li.pass::before {
+  content: "✓";
+  color: #2e7d32;
+  margin-right: 0.5rem;
+}
+.check-panel li.fail::before {
+  content: "✗";
+  color: var(--red);
+  margin-right: 0.5rem;
+}
+.check-panel li.warn::before {
+  content: "!";
+  color: #ff9800;
+  margin-right: 0.5rem;
+}
+.sample-check {
+  margin-bottom: 2rem;
+}
+.sample-check h3 {
+  margin: 0 0 0.5rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.sample-check .controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+.sample-check .seed-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.sample-check .seed-box input {
+  width: 60px;
+  padding: 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+}
+.sample-check .cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.sample-check .card {
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  padding: 1rem;
+  background-color: var(--paper);
+}
+.sample-check .card h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+.sample-check .card .symbol {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+}
+.sample-check .card .symbol a {
+  color: inherit;
+  text-decoration: none;
+}
+.sample-check .card .symbol a:hover { text-decoration: underline; }
+.sample-check .card .para {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+.sample-check .card .text {
+  white-space: pre-wrap;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+.sample-check .card .themes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+.sample-check .card .theme {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  font-size: 0.7rem;
+  background-color: #f9f7f4;
+}
+.sample-check .card .verdict {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.sample-check .card .verdict button {
+  padding: 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  background-color: var(--paper);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+.sample-check .card .verdict button:hover {
+  background-color: #f4f0e8;
+}
+.sample-check .card .verdict button:focus {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+.sample-check .card .verdict button.selected {
+  background-color: var(--red);
+  color: white;
+  border-color: var(--red);
+}
+.sample-check .tally {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+.method {
+  margin-bottom: 2rem;
+}
+.method h3 {
+  margin: 0 0 0.5rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.method p {
+  margin: 0 0 1rem;
+  line-height: 1.6;
+}
+.export {
+  margin-bottom: 2rem;
+}
+.export h3 {
+  margin: 0 0 0.5rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.export .buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.export button {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  background-color: var(--paper);
+  cursor: pointer;
+}
+.export button:hover {
+  background-color: #f4f0e8;
+}
+.export button:focus {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  color: #666;
+}
+.footer a {
+  color: inherit;
+  text-decoration: none;
+}
+.footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="label">UHRI · <span id="country-label"></span></div>
+  <h1>UN human rights recommendations and observations: <span id="country-title"></span></h1>
+  <div class="meta">Source: <a id="source-link" target="_blank"></a> · <span id="record-count"></span> records · <span id="doc-count"></span> documents · <span id="year-range"></span> · built <span id="built-date"></span> · dated by document</div>
+</header>
+
+<ul class="tabs" role="tablist" aria-label="Tabs">
+  <li class="tab" role="tab" aria-selected="true" aria-controls="tab-01" id="tab-button-01" tabindex="0">01 OVERVIEW</li>
+  <li class="tab" role="tab" aria-selected="false" aria-controls="tab-02" id="tab-button-02" tabindex="-1">02 RECORDS</li>
+  <li class="tab" role="tab" aria-selected="false" aria-controls="tab-03" id="tab-button-03" tabindex="-1">03 CHECK</li>
+  <li class="tab" role="tab" aria-selected="false" aria-controls="tab-04" id="tab-button-04" tabindex="-1">04 METHOD & EXPORT</li>
+</ul>
+
+<main>
+  <aside class="rail">
+    <h2>FILTERS <span class="clear" id="clear-filters">Clear all</span></h2>
+    <div class="count" id="matching-count" aria-live="polite"><span id="matching-num"></span><small> of <span id="total-num"></span> in the file</small></div>
+    <div class="bar"><div class="bar-fill" id="matching-bar"></div></div>
+    <div class="chips" id="active-filters"></div>
+
+    <div class="filter-section" id="filter-keyword" aria-expanded="true">
+      <h3 id="filter-keyword-heading">01 Keyword</h3>
+      <div class="filter-body">
+        <input type="text" id="keyword-input" placeholder="Search text or symbol…" aria-label="Keyword search"/>
+        <div class="hint">literal match, not synonyms</div>
+      </div>
+    </div>
+
+    <div class="filter-section" id="filter-mechanism" aria-expanded="false">
+      <h3 id="filter-mechanism-heading">02 Mechanism, body, type</h3>
+      <div class="filter-body">
+        <div class="radio-group">
+          <label><input type="radio" name="mechanism" value="all" checked/> All mechanisms</label>
+          <label><input type="radio" name="mechanism" value="Universal Periodic Review"/> Universal Periodic Review</label>
+          <label><input type="radio" name="mechanism" value="Treaty bodies"/> Treaty bodies</label>
+          <label><input type="radio" name="mechanism" value="Special Procedures"/> Special Procedures</label>
+        </div>
+        <div id="body-filter-group">
+          <label for="body-select">Body or mandate</label>
+          <select id="body-select" disabled>
+            <option value="all">All bodies</option>
+          </select>
+        </div>
+        <div id="type-filter-group">
+          <label for="type-select">Type</label>
+          <select id="type-select">
+            <option value="all">All types</option>
+          </select>
+        </div>
+        <div id="doc-type-filter-group">
+          <label for="doc-type-select">Document type</label>
+          <select id="doc-type-select">
+            <option value="all">All document types</option>
+          </select>
+        </div>
+        <div id="state-filter-group" hidden>
+          <label for="state-select">Recommending State</label>
+          <select id="state-select">
+            <option value="all">All States</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-section" id="filter-year-sdg" aria-expanded="false">
+      <h3 id="filter-year-sdg-heading">03 Years and SDG</h3>
+      <div class="filter-body">
+        <div>
+          <label for="year-from">Year from</label>
+          <select id="year-from"></select>
+        </div>
+        <div>
+          <label for="year-to">Year to</label>
+          <select id="year-to"></select>
+        </div>
+        <div>
+          <label for="sdg-select">SDG</label>
+          <select id="sdg-select">
+            <option value="all">All SDGs</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="content" id="tab-01" role="tabpanel" aria-labelledby="tab-button-01">
+    <div class="tile-row">
+      <div class="tile">
+        <h3 id="total-records"></h3>
+        <div class="subtitle" id="type-breakdown"></div>
+        <div class="note">How this is computed: records.length</div>
+      </div>
+      <div class="tile">
+        <h3 id="total-docs"></h3>
+        <div class="subtitle">documents</div>
+        <div class="note">How this is computed: distinct symbol</div>
+      </div>
+      <div class="tile">
+        <h3 id="total-years"></h3>
+        <div class="subtitle">years</div>
+        <div class="note">How this is computed: min–max year</div>
+      </div>
+    </div>
+
+    <div class="tile-row">
+      <div class="tile">
+        <div class="subtitle"><span class="dot upr"></span> Universal Periodic Review</div>
+        <h3 id="upr-records"></h3>
+        <div class="subtitle"><span id="upr-docs"></span> documents · latest <span id="upr-latest"></span> · <span id="upr-share"></span> of filtered</div>
+        <div class="note">How this is computed: mechanism === "Universal Periodic Review"</div>
+        <div><a href="#" id="show-states-link">see the States</a></div>
+        <div id="top-states" hidden></div>
+      </div>
+      <div class="tile">
+        <div class="subtitle"><span class="dot treaty"></span> Treaty bodies</div>
+        <h3 id="treaty-records"></h3>
+        <div class="subtitle"><span id="treaty-docs"></span> documents · latest <span id="treaty-latest"></span> · <span id="treaty-share"></span> of filtered</div>
+        <div class="note">How this is computed: mechanism === "Treaty bodies"</div>
+      </div>
+      <div class="tile">
+        <div class="subtitle"><span class="dot special"></span> Special Procedures</div>
+        <h3 id="special-records"></h3>
+        <div class="subtitle"><span id="special-docs"></span> documents · latest <span id="special-latest"></span> · <span id="special-share"></span> of filtered</div>
+        <div class="note">How this is computed: mechanism === "Special Procedures"</div>
+      </div>
+    </div>
+
+    <div class="fig">
+      <h3>FIG.01 Ten most frequent themes among <span id="theme-n"></span> filtered records</h3>
+      <div class="chart-container">
+        <canvas id="theme-chart"></canvas>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Theme</th>
+            <th scope="col">Records</th>
+            <th scope="col">% of filtered</th>
+            <th scope="col">Years</th>
+          </tr>
+        </thead>
+        <tbody id="theme-table-body"></tbody>
+      </table>
+      <div class="source">Source: themes field in the data. A record can carry several themes, so the bars add up to more than the number of records.</div>
+    </div>
+
+    <div class="fig">
+      <h3>FIG.02 Records per year by mechanism</h3>
+      <div class="chart-container">
+        <canvas id="timeline-chart"></canvas>
+      </div>
+      <div class="source">Source: year and mechanism fields in the data.</div>
+    </div>
+  </div>
+
+  <div class="content" id="tab-02" role="tabpanel" aria-labelledby="tab-button-02" hidden>
+    <input type="text" class="search-box" id="record-search" placeholder="Search records, e.g. torture" aria-label="Search records"/>
+    <div id="record-caption"></div>
+    <table class="records">
+      <thead>
+        <tr>
+          <th scope="col" id="col-date" aria-sort="descending">Date</th>
+          <th scope="col">Body</th>
+          <th scope="col">Symbol</th>
+          <th scope="col">Para.</th>
+          <th scope="col">First line</th>
+          <th scope="col" id="col-state">Recommending State</th>
+        </tr>
+      </thead>
+      <tbody id="record-table-body"></tbody>
+    </table>
+    <div class="pagination">
+      <button id="show-more">Show 50 more</button>
+    </div>
+  </div>
+
+  <div class="content" id="tab-03" role="tabpanel" aria-labelledby="tab-button-03" hidden>
+    <div class="check-panel">
+      <h3>Check this dashboard</h3>
+      <ul id="check-list"></ul>
+    </div>
+
+    <div class="sample-check">
+      <h3>Check 10 at random</h3>
+      <div class="controls">
+        <button id="draw-sample">Draw again</button>
+        <div class="seed-box">
+          <span>Draw with this seed</span>
+          <input type="number" id="sample-seed" min="1" max="9999" value="1"/>
+        </div>
+      </div>
+      <div class="cards" id="sample-cards"></div>
+      <div class="tally" id="sample-tally"></div>
+    </div>
+  </div>
+
+  <div class="content" id="tab-04" role="tabpanel" aria-labelledby="tab-button-04" hidden>
+    <div class="method">
+      <h3>How each number is computed</h3>
+      <p>The headline total is the number of records in the file. The breakdown counts records per <code>type</code>, using the values exactly as spelled in the data. Documents is the number of distinct <code>symbol</code>; years is the minimum and maximum <code>year</code>.</p>
+      <p>Filters: mechanism, body, type: exact match on the field. Year: <code>year</code> inclusive between the two selects. SDG: <code>sdgs.includes(goal)</code> with <code>goal</code> a number. Keyword: trimmed, lower-cased; every word must occur as a substring of <code>text</code> or <code>symbol</code>. The filtered set feeds the tiles, both charts, the table and the export.</p>
+      <p>Theme counts: for each record in the filtered set, each value in <code>themes</code> counts once. Top ten by count, ties alphabetical. Percentage = count / filtered records, one decimal. Year range = min and max <code>year</code> of the filtered records carrying that theme.</p>
+      <p>Timeline: records per <code>year</code> per <code>mechanism</code> in the filtered set, with zero for missing combinations.</p>
+      <p>Paragraph number: the first match of <code>/^(\d{1,3}(?:\.\d{1,3})?)\.?\s/</code> on <code>text</code>; the captured group is the number ("71" or "144.43"); no match means no number.</p>
+      <p>Recommending State: only for <code>mechanism</code> === "Universal Periodic Review". Take the trailing run of parenthesised groups with <code>/((?:\s*\((?:[^()]|\([^()]*\))*\))+)\s*[;.]?\s*$/</code> on <code>text</code>, then split that run into groups with <code>/\((?:[^()]|\([^()]*\))*\)/g</code>, strip the outer parentheses and trim. One group may hold a nested name such as "Venezuela (Bolivarian Republic of)"; several groups mean several States, and the record counts once for each. A group is accepted as a State only if it has no comma and at most 60 characters; otherwise the record gets "State not found".</p>
+    </div>
+
+    <div class="export">
+      <h3>Take this with you</h3>
+      <div class="buttons">
+        <button id="download-csv">Download CSV of the current filter</button>
+        <button id="copy-summary">Copy summary</button>
+      </div>
+    </div>
+
+    <div class="method">
+      <p>The data is <a id="source-link-footer" target="_blank"></a>, published under a <a href="https://creativecommons.org/licenses/by-nc/3.0/" target="_blank">CC BY-NC 3.0</a> licence. This dashboard was built on <span id="built-date-footer"></span>.</p>
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div>Built on OHCHR UHRI data · <span id="footer-records"></span> records · <a id="footer-source" target="_blank"></a></div>
+  <div>Credits: UK Government Analysis Function (charts and tables, Open Government Licence v3.0)</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Data
+  const data = window.WORKSHOP_DATA.uhri;
+  const country = data.country;
+  const sdgNames = data.sdg_names || {};
+  const records = data.records || [];
+  const totalRecords = records.length;
+  const totalDocs = new Set(records.map(r => r.symbol)).size;
+  const years = [...new Set(records.map(r => r.year))].sort((a, b) => a - b);
+  const firstYear = years[0];
+  const lastYear = years[years.length - 1];
+
+  // UI elements
+  const countryLabel = document.getElementById('country-label');
+  const countryTitle = document.getElementById('country-title');
+  const sourceLink = document.getElementById('source-link');
+  const recordCount = document.getElementById('record-count');
+  const docCount = document.getElementById('doc-count');
+  const yearRange = document.getElementById('year-range');
+  const builtDate = document.getElementById('built-date');
+  const matchingCount = document.getElementById('matching-count');
+  const matchingNum = document.getElementById('matching-num');
+  const totalNum = document.getElementById('total-num');
+  const matchingBar = document.getElementById('matching-bar');
+  const activeFilters = document.getElementById('active-filters');
+  const clearFilters = document.getElementById('clear-filters');
+
+  const tabButtons = document.querySelectorAll('.tab');
+  const tabPanels = document.querySelectorAll('.content');
+
+  // Overview tab
+  const totalRecordsEl = document.getElementById('total-records');
+  const typeBreakdownEl = document.getElementById('type-breakdown');
+  const totalDocsEl = document.getElementById('total-docs');
+  const totalYearsEl = document.getElementById('total-years');
+  const uprRecordsEl = document.getElementById('upr-records');
+  const uprDocsEl = document.getElementById('upr-docs');
+  const uprLatestEl = document.getElementById('upr-latest');
+  const uprShareEl = document.getElementById('upr-share');
+  const treatyRecordsEl = document.getElementById('treaty-records');
+  const treatyDocsEl = document.getElementById('treaty-docs');
+  const treatyLatestEl = document.getElementById('treaty-latest');
+  const treatyShareEl = document.getElementById('treaty-share');
+  const specialRecordsEl = document.getElementById('special-records');
+  const specialDocsEl = document.getElementById('special-docs');
+  const specialLatestEl = document.getElementById('special-latest');
+  const specialShareEl = document.getElementById('special-share');
+  const showStatesLink = document.getElementById('show-states-link');
+  const topStatesEl = document.getElementById('top-states');
+  const themeNEl = document.getElementById('theme-n');
+  const themeChartCanvas = document.getElementById('theme-chart');
+  const themeTableBody = document.getElementById('theme-table-body');
+  const timelineChartCanvas = document.getElementById('timeline-chart');
+
+  // Records tab
+  const recordSearch = document.getElementById('record-search');
+  const recordCaption = document.getElementById('record-caption');
+  const recordTableBody = document.getElementById('record-table-body');
+  const showMore = document.getElementById('show-more');
+  const colDate = document.getElementById('col-date');
+  const colState = document.getElementById('col-state');
+
+  // Check tab
+  const checkList = document.getElementById('check-list');
+  const drawSample = document.getElementById('draw-sample');
+  const sampleSeed = document.getElementById('sample-seed');
+  const sampleCards = document.getElementById('sample-cards');
+  const sampleTally = document.getElementById('sample-tally');
+
+  // Export tab
+  const downloadCsv = document.getElementById('download-csv');
+  const copySummary = document.getElementById('copy-summary');
+  const sourceLinkFooter = document.getElementById('source-link-footer');
+  const builtDateFooter = document.getElementById('built-date-footer');
+
+  // Footer
+  const footerRecords = document.getElementById('footer-records');
+  const footerSource = document.getElementById('footer-source');
+
+  // State
+  let filteredRecords = [...records];
+  let visibleRecords = [];
+  let visibleStart = 0;
+  let visibleCount = 50;
+  let sampleVerdicts = {};
+
+  // Filters
+  const filters = {
+    keyword: '',
+    mechanism: 'all',
+    body: 'all',
+    type: 'all',
+    docType: 'all',
+    yearFrom: firstYear,
+    yearTo: lastYear,
+    sdg: 'all',
+    state: 'all'
+  };
+
+  // Initialize
+  function init() {
+    countryLabel.textContent = country;
+    countryTitle.textContent = country;
+    sourceLink.textContent = data.source;
+    sourceLink.href = data.source_url;
+    recordCount.textContent = totalRecords;
+    docCount.textContent = totalDocs;
+    yearRange.textContent = `${firstYear}–${lastYear}`;
+    builtDate.textContent = data.built;
+    totalNum.textContent = totalRecords;
+    footerRecords.textContent = totalRecords;
+    footerSource.textContent = data.source;
+    footerSource.href = data.source_url;
+    sourceLinkFooter.textContent = data.source;
+    sourceLinkFooter.href = data.source_url;
+    builtDateFooter.textContent = data.built;
+
+    // Populate filters
+    populateFilters();
+    updateFilters();
+    updateOverview();
+    updateRecords();
+    updateChecks();
+    updateSample();
+
+    // Events
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const tabId = button.getAttribute('aria-controls');
+        switchTab(tabId);
+      });
+      button.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') {
+          const next = button.nextElementSibling || tabButtons[0];
+          next.focus();
+        } else if (e.key === 'ArrowLeft') {
+          const prev = button.previousElementSibling || tabButtons[tabButtons.length - 1];
+          prev.focus();
+        }
+      });
+    });
+
+    document.querySelectorAll('.filter-section h3').forEach(heading => {
+      heading.addEventListener('click', () => {
+        const section = heading.parentElement;
+        const isExpanded = section.getAttribute('aria-expanded') === 'true';
+        section.setAttribute('aria-expanded', !isExpanded);
+      });
+    });
+
+    clearFilters.addEventListener('click', () => {
+      filters.keyword = '';
+      filters.mechanism = 'all';
+      filters.body = 'all';
+      filters.type = 'all';
+      filters.docType = 'all';
+      filters.yearFrom = firstYear;
+      filters.yearTo = lastYear;
+      filters.sdg = 'all';
+      filters.state = 'all';
+      document.getElementById('keyword-input').value = '';
+      document.querySelector('input[name="mechanism"][value="all"]').checked = true;
+      document.getElementById('body-select').value = 'all';
+      document.getElementById('type-select').value = 'all';
+      document.getElementById('doc-type-select').value = 'all';
+      document.getElementById('year-from').value = firstYear;
+      document.getElementById('year-to').value = lastYear;
+      document.getElementById('sdg-select').value = 'all';
+      document.getElementById('state-select').value = 'all';
+      updateFilters();
+    });
+
+    document.getElementById('keyword-input').addEventListener('input', (e) => {
+      filters.keyword = e.target.value.trim();
+      updateFilters();
+    });
+
+    document.querySelectorAll('input[name="mechanism"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        filters.mechanism = e.target.value;
+        updateBodyFilter();
+        updateStateFilter();
+        updateFilters();
+      });
+    });
+
+    document.getElementById('body-select').addEventListener('change', (e) => {
+      filters.body = e.target.value;
+      updateFilters();
+    });
+
+    document.getElementById('type-select').addEventListener('change', (e) => {
+      filters.type = e.target.value;
+      updateFilters();
+    });
+
+    document.getElementById('doc-type-select').addEventListener('change', (e) => {
+      filters.docType = e.target.value;
+      updateFilters();
+    });
+
+    document.getElementById('year-from').addEventListener('change', (e) => {
+      const from = parseInt(e.target.value);
+      const to = parseInt(document.getElementById('year-to').value);
+      if (from > to) {
+        filters.yearFrom = to;
+        filters.yearTo = from;
+        document.getElementById('year-from').value = to;
+        document.getElementById('year-to').value = from;
+      } else {
+        filters.yearFrom = from;
+      }
+      updateFilters();
+    });
+
+    document.getElementById('year-to').addEventListener('change', (e) => {
+      const to = parseInt(e.target.value);
+      const from = parseInt(document.getElementById('year-from').value);
+      if (to < from) {
+        filters.yearFrom = to;
+        filters.yearTo = from;
+        document.getElementById('year-from').value = to;
+        document.getElementById('year-to').value = from;
+      } else {
+        filters.yearTo = to;
+      }
+      updateFilters();
+    });
+
+    document.getElementById('sdg-select').addEventListener('change', (e) => {
+      filters.sdg = e.target.value;
+      updateFilters();
+    });
+
+    document.getElementById('state-select').addEventListener('change', (e) => {
+      filters.state = e.target.value;
+      updateFilters();
+    });
+
+    showStatesLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      updateTopStates();
+      topStatesEl.hidden = !topStatesEl.hidden;
+    });
+
+    recordSearch.addEventListener('input', (e) => {
+      updateRecords();
+    });
+
+    colDate.addEventListener('click', () => {
+      const current = colDate.getAttribute('aria-sort');
+      const newSort = current === 'ascending' ? 'descending' : 'ascending';
+      colDate.setAttribute('aria-sort', newSort);
+      updateRecords();
+    });
+
+    showMore.addEventListener('click', () => {
+      visibleCount += 50;
+      updateRecords();
+    });
+
+    drawSample.addEventListener('click', () => {
+      updateSample();
+    });
+
+    sampleSeed.addEventListener('change', () => {
+      updateSample();
+    });
+
+    downloadCsv.addEventListener('click', () => {
+      downloadCSV();
+    });
+
+    copySummary.addEventListener('click', () => {
+      copySummaryText();
+    });
+  }
+
+  function switchTab(tabId) {
+    tabButtons.forEach(button => {
+      const isSelected = button.getAttribute('aria-controls') === tabId;
+      button.setAttribute('aria-selected', isSelected);
+      button.setAttribute('tabindex', isSelected ? '0' : '-1');
+    });
+    tabPanels.forEach(panel => {
+      panel.hidden = panel.id !== tabId;
+    });
+    if (tabId === 'tab-03' || tabId === 'tab-04') {
+      document.querySelector('.rail').style.display = 'none';
+    } else {
+      document.querySelector('.rail').style.display = 'block';
+    }
+  }
+
+  function populateFilters() {
+    // Mechanism, body, type, doc type
+    const mechanisms = [...new Set(records.map(r => r.mechanism))];
+    const bodies = {};
+    records.forEach(r => {
+      if (!bodies[r.mechanism]) bodies[r.mechanism] = new Set();
+      bodies[r.mechanism].add(r.body);
+    });
+    const types = [...new Set(records.map(r => r.type))];
+
+    // Body select
+    const bodySelect = document.getElementById('body-select');
+    bodySelect.innerHTML = '<option value="all">All bodies</option>';
+    Array.from(bodies['Universal Periodic Review'] || []).sort().forEach(body => {
+      const option = document.createElement('option');
+      option.value = body;
+      option.textContent = `${body} (${records.filter(r => r.mechanism === 'Universal Periodic Review' && r.body === body).length})`;
+      bodySelect.appendChild(option);
+    });
+    Array.from(bodies['Treaty bodies'] || []).sort().forEach(body => {
+      const option = document.createElement('option');
+      option.value = body;
+      option.textContent = `${body} (${records.filter(r => r.mechanism === 'Treaty bodies' && r.body === body).length})`;
+      bodySelect.appendChild(option);
+    });
+    Array.from(bodies['Special Procedures'] || []).sort().forEach(body => {
+      const option = document.createElement('option');
+      option.value = body;
+      option.textContent = `${body} (${records.filter(r => r.mechanism === 'Special Procedures' && r.body === body).length})`;
+      bodySelect.appendChild(option);
+    });
+
+    // Type select
+    const typeSelect = document.getElementById('type-select');
+    typeSelect.innerHTML = '<option value="all">All types</option>';
+    types.forEach(type => {
+      const option = document.createElement('option');
+      option.value = type;
+      option.textContent = `${type} (${records.filter(r => r.type === type).length})`;
+      typeSelect.appendChild(option);
+    });
+
+    // Document type select
+    const docTypeSelect = document.getElementById('doc-type-select');
+    docTypeSelect.innerHTML = '<option value="all">All document types</option>';
+    types.forEach(type => {
+      const option = document.createElement('option');
+      option.value = type;
+      option.textContent = `${type} (${records.filter(r => r.type === type).length})`;
+      docTypeSelect.appendChild(option);
+    });
+
+    // Year selects
+    const yearFromSelect = document.getElementById('year-from');
+    const yearToSelect = document.getElementById('year-to');
+    yearFromSelect.innerHTML = '';
+    yearToSelect.innerHTML = '';
+    years.forEach(year => {
+      const option1 = document.createElement('option');
+      option1.value = year;
+      option1.textContent = year;
+      yearFromSelect.appendChild(option1);
+      const option2 = document.createElement('option');
+      option2.value = year;
+      option2.textContent = year;
+      yearToSelect.appendChild(option2);
+    });
+    yearFromSelect.value = firstYear;
+    yearToSelect.value = lastYear;
+
+    // SDG select
+    const sdgSelect = document.getElementById('sdg-select');
+    sdgSelect.innerHTML = '<option value="all">All SDGs</option>';
+    const sdgs = [...new Set(records.flatMap(r => r.sdgs || []))].sort((a, b) => a - b);
+    sdgs.forEach(goal => {
+      const option = document.createElement('option');
+      option.value = goal;
+      option.textContent = `${goal} ${sdgNames[goal] || ''} (${records.filter(r => (r.sdgs || []).includes(goal)).length})`;
+      sdgSelect.appendChild(option);
+    });
+
+    // State select
+    updateStateFilter();
+  }
+
+  function updateBodyFilter() {
+    const bodySelect = document.getElementById('body-select');
+    bodySelect.innerHTML = '<option value="all">All bodies</option>';
+    const mechanism = filters.mechanism === 'all' ? null : filters.mechanism;
+    const bodies = new Set();
+    records.forEach(r => {
+      if (!mechanism || r.mechanism === mechanism) {
+        bodies.add(r.body);
+      }
+    });
+    Array.from(bodies).sort().forEach(body => {
+      const option = document.createElement('option');
+      option.value = body;
+      option.textContent = `${body} (${records.filter(r => r.body === body && (!mechanism || r.mechanism === mechanism)).length})`;
+      bodySelect.appendChild(option);
+    });
+    bodySelect.value = 'all';
+    filters.body = 'all';
+
+    // Update document type filter
+    const docTypeSelect = document.getElementById('doc-type-select');
+    docTypeSelect.innerHTML = '<option value="all">All document types</option>';
+    const types = new Set();
+    records.forEach(r => {
+      if (!mechanism || r.mechanism === mechanism) {
+        types.add(r.type);
+      }
+    });
+    Array.from(types).sort().forEach(type => {
+      const option = document.createElement('option');
+      option.value = type;
+      option.textContent = `${type} (${records.filter(r => r.type === type && (!mechanism || r.mechanism === mechanism)).length})`;
+      docTypeSelect.appendChild(option);
+    });
+    docTypeSelect.value = 'all';
+    filters.docType = 'all';
+  }
+
+  function updateStateFilter() {
+    const stateSelect = document.getElementById('state-select');
+    const stateFilterGroup = document.getElementById('state-filter-group');
+    if (filters.mechanism === 'Universal Periodic Review') {
+      stateFilterGroup.hidden = false;
+      stateSelect.innerHTML = '<option value="all">All States</option>';
+      const states = {};
+      records.forEach(r => {
+        if (r.mechanism === 'Universal Periodic Review') {
+          const stateMatch = r.text.match(/((?:\s*\((?:[^()]|\([^()]*\))*\))+)\s*[;.]?\s*$/);
+          if (stateMatch) {
+            const stateGroups = stateMatch[1].match(/\((?:[^()]|\([^()]*\))*\)/g) || [];
+            stateGroups.forEach(group => {
+              const state = group.slice(1, -1).trim();
+              if (state.length <= 60 && !state.includes(',')) {
+                states[state] = (states[state] || 0) + 1;
+              }
+            });
+          }
+        }
+      });
+      Object.entries(states).sort((a, b) => b[1] - a[1]).forEach(([state, count]) => {
+        const option = document.createElement('option');
+        option.value = state;
+        option.textContent = `${state} (${count})`;
+        stateSelect.appendChild(option);
+      });
+    } else {
+      stateFilterGroup.hidden = true;
+    }
+    stateSelect.value = 'all';
+    filters.state = 'all';
+  }
+
+  function updateFilters() {
+    filteredRecords = records.filter(record => {
+      // Keyword
+      if (filters.keyword) {
+        const keywords = filters.keyword.toLowerCase().split(/\s+/);
+        const text = record.text.toLowerCase();
+        const symbol = record.symbol.toLowerCase();
+        if (!keywords.every(kw => text.includes(kw) || symbol.includes(kw))) {
+          return false;
+        }
+      }
+
+      // Mechanism
+      if (filters.mechanism !== 'all' && record.mechanism !== filters.mechanism) {
+        return false;
+      }
+
+      // Body
+      if (filters.body !== 'all' && record.body !== filters.body) {
+        return false;
+      }
+
+      // Type
+      if (filters.type !== 'all' && record.type !== filters.type) {
+        return false;
+      }
+
+      // Document type
+      if (filters.docType !== 'all' && record.type !== filters.docType) {
+        return false;
+      }
+
+      // Year
+      if (record.year < filters.yearFrom || record.year > filters.yearTo) {
+        return false;
+      }
+
+      // SDG
+      if (filters.sdg !== 'all') {
+        const goal = parseInt(filters.sdg);
+        if (!(record.sdgs || []).includes(goal)) {
+          return false;
+        }
+      }
+
+      // State
+      if (filters.state !== 'all' && record.mechanism === 'Universal Periodic Review') {
+        const stateMatch = record.text.match(/((?:\s*\((?:[^()]|\([^()]*\))*\))+)\s*[;.]?\s*$/);
+        if (stateMatch) {
+          const stateGroups = stateMatch[1].match(/\((?:[^()]|\([^()]*\))*\)/g) || [];
+          const states = stateGroups.map(group => group.slice(1, -1).trim()).filter(state => state.length <= 60 && !state.includes(','));
+          if (!states.includes(filters.state)) {
+            return false;
+          }
+        } else {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Update UI
+    matchingNum.textContent = filteredRecords.length;
+    const share = totalRecords > 0 ? filteredRecords.length / totalRecords : 0;
+    matchingBar.style.width = `${share * 100}%`;
+
+    // Active filters
+    activeFilters.innerHTML = '';
+    if (filters.keyword) {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = `Keyword: ${filters.keyword}`;
+      const button = document.createElement('button');
+      button.textContent = '×';
+      button.addEventListener('click', () => {
+        filters.keyword = '';
+        document.getElementById('keyword-input').value = '';
+        updateFilters();
+      });
+      chip.appendChild(button);
+      activeFilters.appendChild(chip);
+    }
+    if (filters.mechanism !== 'all') {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = `Mechanism: ${filters.mechanism}`;
+      const button = document.createElement('button');
+      button.textContent = '×';
+      button.addEventListener('click', () => {
+        filters.mechanism = 'all';
+        document.querySelector('input[name="mechanism"][value="all"]').checked = true;
+        updateBodyFilter();
+        updateStateFilter();
+        updateFilters();
+      });
+      chip.appendChild(button);
+      activeFilters.appendChild(chip);
+    }
+    if (filters.body !== 'all') {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = `Body: ${filters.body}`;
+      const button = document.createElement('button');
+      button.textContent = '×';
+      button.addEventListener('click', () => {
+        filters.body = 'all';
+        document.getElementById('body-select').value = 'all';
+        updateFilters();
+      });
+      chip.appendChild(button);
+      activeFilters.appendChild(chip);
+    }
+    if (filters.type !== 'all') {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = `Type: ${filters.type}`;
+      const button = document.createElement('button');
+      button.textContent = '×';
+      button.addEventListener('click', () => {
+        filters.type = 'all';
+        document.getElementById('type-select').value = 'all';
+        updateFilters();
+      });
+      chip.appendChild(button);
+      activeFilters.appendChild(chip);
+    }
+    if (filters.docType !== 'all') {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = `Document type: ${filters.docType}`;
+      const button = document.createElement('button');
+      button.textContent = '×';
+      button.addEventListener('click', () => {
+        filters.docType = 'all';
+        document.getElementById('doc-type-select').value = 'all';
+        updateFilters();
+      });
+      chip.appendChild(button);
+      activeFilters.appendChild(chip);
+    }
+    if (filters.yearFrom !== firstYear || filters.yearTo !== lastYear) {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = `Years: ${filters.yearFrom}–${filters.yearTo}`;
+      const button = document.createElement('button');
+      button.textContent = '×';
+      button.addEventListener('click', () => {
+        filters.yearFrom = firstYear;
+        filters.yearTo = lastYear;
+        document.getElementById('year-from').value = firstYear;
+        document.getElementById('year-to').value = lastYear;
+        updateFilters();
+      });
+      chip.appendChild(button);
+      activeFilters.appendChild(chip);
+    }
+    if (filters.sdg !== 'all') {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = `SDG: ${filters.sdg} ${sdgNames[filters.sdg] || ''}`;
+      const button = document.createElement('button');
+      button.textContent = '×';
+      button.addEventListener('click', () => {
+        filters.sdg = 'all';
+        document.getElementById('sdg-select').value = 'all';
+        updateFilters();
+      });
+      chip.appendChild(button);
+      activeFilters.appendChild(chip);
+    }
+    if (filters.state !== 'all') {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = `State: ${filters.state}`;
+      const button = document.createElement('button');
+      button.textContent = '×';
+      button.addEventListener('click', () => {
+        filters.state = 'all';
+        document.getElementById('state-select').value = 'all';
+        updateFilters();
+      });
+      chip.appendChild(button);
+      activeFilters.appendChild(chip);
+    }
+
+    // Update tabs
+    if (document.getElementById('tab-01').hidden === false) {
+      updateOverview();
+    }
+    if (document.getElementById('tab-02').hidden === false) {
+      updateRecords();
+    }
+    if (document.getElementById('tab-03').hidden === false) {
+      updateChecks();
+      updateSample();
+    }
+  }
+
+  function updateOverview() {
+    // Headline
+    totalRecordsEl.textContent = filteredRecords.length;
+    const typeCounts = {};
+    filteredRecords.forEach(r => {
+      typeCounts[r.type] = (typeCounts[r.type] || 0) + 1;
+    });
+    const typeBreakdown = Object.entries(typeCounts).map(([type, count]) => `${count} ${type}`).join(', ');
+    typeBreakdownEl.textContent = typeBreakdown;
+
+    totalDocsEl.textContent = new Set(filteredRecords.map(r => r.symbol)).size;
+    totalYearsEl.textContent = `${Math.min(...filteredRecords.map(r => r.year))}–${Math.max(...filteredRecords.map(r => r.year))}`;
+
+    // Tiles
+    const uprRecords = filteredRecords.filter(r => r.mechanism === 'Universal Periodic Review');
+    const treatyRecords = filteredRecords.filter(r => r.mechanism === 'Treaty bodies');
+    const specialRecords = filteredRecords.filter(r => r.mechanism === 'Special Procedures');
+
+    uprRecordsEl.textContent = uprRecords.length;
+    uprDocsEl.textContent = new Set(uprRecords.map(r => r.symbol)).size;
+    uprLatestEl.textContent = uprRecords.length > 0 ? Math.max(...uprRecords.map(r => r.year)) : '–';
+    uprShareEl.textContent = filteredRecords.length > 0 ? `${Math.round(uprRecords.length / filteredRecords.length * 100)}%` : '0%';
+
+    treatyRecordsEl.textContent = treatyRecords.length;
+    treatyDocsEl.textContent = new Set(treatyRecords.map(r => r.symbol)).size;
+    treatyLatestEl.textContent = treatyRecords.length > 0 ? Math.max(...treatyRecords.map(r => r.year)) : '–';
+    treatyShareEl.textContent = filteredRecords.length > 0 ? `${Math.round(treatyRecords.length / filteredRecords.length * 100)}%` : '0%';
+
+    specialRecordsEl.textContent = specialRecords.length;
+    specialDocsEl.textContent = new Set(specialRecords.map(r => r.symbol)).size;
+    specialLatestEl.textContent = specialRecords.length > 0 ? Math.max(...specialRecords.map(r => r.year)) : '–';
+    specialShareEl.textContent = filteredRecords.length > 0 ? `${Math.round(specialRecords.length / filteredRecords.length * 100)}%` : '0%';
+
+    // Themes
+    const themeCounts = {};
+    filteredRecords.forEach(r => {
+      (r.themes || []).forEach(theme => {
+        themeCounts[theme] = (themeCounts[theme] || 0) + 1;
+      });
+    });
+    const topThemes = Object.entries(themeCounts)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 10);
+
+    themeNEl.textContent = filteredRecords.length;
+    themeTableBody.innerHTML = '';
+    topThemes.forEach(([theme, count]) => {
+      const tr = document.createElement('tr');
+      const pct = (count / filteredRecords.length * 100).toFixed(1);
+      const years = filteredRecords.filter(r => (r.themes || []).includes(theme)).map(r => r.year);
+      const yearRange = years.length > 0 ? `${Math.min(...years)}–${Math.max(...years)}` : '–';
+      tr.innerHTML = `
+        <td>${theme}</td>
+        <td class="num">${count.toLocaleString()}</td>
+        <td class="num">${pct}%</td>
+        <td>${yearRange}</td>
+      `;
+      themeTableBody.appendChild(tr);
+    });
+
+    // Theme chart
+    if (window.themeChart) window.themeChart.destroy();
+    const ctx = themeChartCanvas.getContext('2d');
+    const labels = topThemes.map(([theme]) => theme);
+    const values = topThemes.map(([, count]) => count);
+    window.themeChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          backgroundColor: '#9b233580',
+          borderColor: '#9b2335',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (context) => `${context.raw.toLocaleString()} records`
+            }
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value) => value.toLocaleString()
+            }
+          },
+          y: {
+            beginAtZero: true
+          }
+        },
+        onClick: (e, activeEls) => {
+          if (activeEls.length > 0) {
+            const idx = activeEls[0].index;
+            const theme = labels[idx];
+            filters.keyword = theme;
+            document.getElementById('keyword-input').value = theme;
+            updateFilters();
+            switchTab('tab-02');
+          }
+        }
+      }
+    });
+
+    // Timeline
+    if (window.timelineChart) window.timelineChart.destroy();
+    const timelineCtx = timelineChartCanvas.getContext('2d');
+    const timelineData = {};
+    filteredRecords.forEach(r => {
+      if (!timelineData[r.year]) timelineData[r.year] = {};
+      timelineData[r.year][r.mechanism] = (timelineData[r.year][r.mechanism] || 0) + 1;
+    });
+    const timelineLabels = years;
+    const uprData = [];
+    const treatyData = [];
+    const specialData = [];
+    timelineLabels.forEach(year => {
+      uprData.push(timelineData[year]?.['Universal Periodic Review'] || 0);
+      treatyData.push(timelineData[year]?.['Treaty bodies'] || 0);
+      specialData.push(timelineData[year]?.['Special Procedures'] || 0);
+    });
+    window.timelineChart = new Chart(timelineCtx, {
+      type: 'bar',
+      data: {
+        labels: timelineLabels,
+        datasets: [
+          {
+            label: 'Universal Periodic Review',
+            data: uprData,
+            backgroundColor: '#c2410c',
+            borderColor: '#c2410c',
+            borderWidth: 1
+          },
+          {
+            label: 'Treaty bodies',
+            data: treatyData,
+            backgroundColor: '#0f766e',
+            borderColor: '#0f766e',
+            borderWidth: 1
+          },
+          {
+            label: 'Special Procedures',
+            data: specialData,
+            backgroundColor: '#7c3aed',
+            borderColor: '#7c3aed',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            callbacks: {
+              label: (context) => `${context.dataset.label}: ${context.raw.toLocaleString()} records`
+            }
+          }
+        },
+        scales: {
+          x: { stacked: true },
+          y: {
+            stacked: true,
+            beginAtZero: true,
+            ticks: {
+              callback: (value) => value.toLocaleString()
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function updateTopStates() {
+    const uprRecords = filteredRecords.filter(r => r.mechanism === 'Universal Periodic Review');
+    const states = {};
+    uprRecords.forEach(r => {
+      const stateMatch = r.text.match(/((?:\s*\((?:[^()]|\([^()]*\))*\))+)\s*[;.]?\s*$/);
+      if (stateMatch) {
+        const stateGroups = stateMatch[1].match(/\((?:[^()]|\([^()]*\))*\)/g) || [];
+        stateGroups.forEach(group => {
+          const state = group.slice(1, -1).trim();
+          if (state.length <= 60 && !state.includes(',')) {
+            states[state] = (states[state] || 0) + 1;
+          }
+        });
+      }
+    });
+    const topStates = Object.entries(states).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    topStatesEl.innerHTML = '<h4>Ten States that made most recommendations to Kenya</h4><ol></ol>';
+    const ol = topStatesEl.querySelector('ol');
+    topStates.forEach(([state, count]) => {
+      const li = document.createElement('li');
+      li.textContent = `${state} (${count})`;
+      ol.appendChild(li);
+    });
+  }
+
+  function updateRecords() {
+    const searchTerm = recordSearch.value.trim().toLowerCase();
+    visibleRecords = filteredRecords.filter(record => {
+      if (!searchTerm) return true;
+      const text = record.text.toLowerCase();
+      const symbol = record.symbol.toLowerCase();
+      const keywords = searchTerm.split(/\s+/);
+      return keywords.every(kw => text.includes(kw) || symbol.includes(kw));
+    });
+
+    // Sort
+    const sortDirection = colDate.getAttribute('aria-sort');
+    visibleRecords.sort((a, b) => {
+      if (sortDirection === 'descending') {
+        if (a.date > b.date) return -1;
+        if (a.date < b.date) return 1;
+      } else {
+        if (a.date < b.date) return -1;
+        if (a.date > b.date) return 1;
+      }
+      if (a.body < b.body) return -1;
+      if (a.body > b.body) return 1;
+      const aPara = extractParagraphNumber(a.text);
+      const bPara = extractParagraphNumber(b.text);
+      if (aPara && bPara) {
+        return aPara.localeCompare(bPara, undefined, { numeric: true });
+      }
+      if (aPara) return -1;
+      if (bPara) return 1;
+      return 0;
+    });
+
+    // Pagination
+    const paginatedRecords = visibleRecords.slice(visibleStart, visibleStart + visibleCount);
+    recordCaption.textContent = `Showing ${Math.min(visibleStart + 1, visibleRecords.length)}–${Math.min(visibleStart + visibleCount, visibleRecords.length)} of ${visibleRecords.length} records (newest first)`;
+    showMore.disabled = visibleStart + visibleCount >= visibleRecords.length;
+
+    // Table
+    recordTableBody.innerHTML = '';
+    paginatedRecords.forEach(record => {
+      const tr = document.createElement('tr');
+      tr.setAttribute('tabindex', '0');
+      tr.setAttribute('role', 'button');
+      tr.setAttribute('aria-expanded', 'false');
+      tr.setAttribute('aria-controls', `detail-${record.id}`);
+
+      const paraNum = extractParagraphNumber(record.text);
+      const firstLine = record.text.substring(0, 120).replace(/\s+\S*$/, '…');
+
+      let state = '–';
+      if (record.mechanism === 'Universal Periodic Review') {
+        const stateMatch = record.text.match(/((?:\s*\((?:[^()]|\([^()]*\))*\))+)\s*[;.]?\s*$/);
+        if (stateMatch) {
+          const stateGroups = stateMatch[1].match(/\((?:[^()]|\([^()]*\))*\)/g) || [];
+          const states = stateGroups.map(group => group.slice(1, -1).trim()).filter(s => s.length <= 60 && !s.includes(','));
+          state = states.length > 0 ? states.join(', ') : 'State not found';
+        } else {
+          state = 'State not found';
+        }
+      }
+
+      const date = new Date(record.date);
+      const dateStr = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+      let firstLineHtml = firstLine;
+      if (searchTerm) {
+        const keywords = searchTerm.split(/\s+/);
+        keywords.forEach(kw => {
+          if (kw) {
+            firstLineHtml = firstLineHtml.replace(new RegExp(kw, 'gi'), match => `<mark>${match}</mark>`);
+          }
+        });
+      }
+
+      tr.innerHTML = `
+        <td>${dateStr}</td>
+        <td>${record.body}</td>
+        <td><a href="${record.doc_url}" target="_blank">${record.symbol}</a></td>
+        <td>${paraNum || '–'}</td>
+        <td class="highlight">${firstLineHtml}</td>
+        <td class="state">${state}</td>
+      `;
+
+      tr.addEventListener('click', () => {
+        const isExpanded = tr.getAttribute('aria-expanded') === 'true';
+        tr.setAttribute('aria-expanded', !isExpanded);
+        if (!isExpanded) {
+          const detailTr = document.createElement('tr');
+          detailTr.className = 'detail';
+          detailTr.id = `detail-${record.id}`;
+          detailTr.innerHTML = `
+            <td colspan="6">
+              <div class="para-num">${paraNum || '–'}</div>
+              <div class="text">${escapeHtml(record.text)}</div>
+              <div class="labels">
+                ${(record.themes || []).length > 0 ? `<div class="label-group"><h4>Themes</h4>${record.themes.map(t => `<span>${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+                ${(record.sdgs || []).length > 0 ? `<div class="label-group"><h4>SDGs</h4>${record.sdgs.map(g => `<span>${g} ${escapeHtml(sdgNames[g] || '')}</span>`).join('')}</div>` : ''}
+                ${(record.sdg_targets || []).length > 0 ? `<div class="label-group"><h4>SDG targets</h4>${record.sdg_targets.map(t => `<span>${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+                ${(record.affected_persons || []).length > 0 ? `<div class="label-group"><h4>Affected persons</h4>${record.affected_persons.map(p => `<span>${escapeHtml(p)}</span>`).join('')}</div>` : ''}
+                ${record.section ? `<div class="label-group"><h4>Section</h4><span>${escapeHtml(record.section)}</span></div>` : ''}
+              </div>
+              <div class="actions">
+                <button class="copy" data-symbol="${record.symbol}" data-para="${paraNum || ''}">Copy citation</button>
+                <button class="open">Open the UN document</button>
+              </div>
+            </td>
+          `;
+          tr.after(detailTr);
+          detailTr.querySelector('.copy').addEventListener('click', (e) => {
+            const symbol = e.target.getAttribute('data-symbol');
+            const para = e.target.getAttribute('data-para');
+            let citation = symbol;
+            if (para) {
+              citation += `, para. ${para}`;
+            } else {
+              e.target.textContent = '(no paragraph number in this extract)';
+            }
+            navigator.clipboard.writeText(citation).then(() => {
+              e.target.textContent = 'Copied';
+              e.target.classList.add('copied');
+              setTimeout(() => {
+                e.target.textContent = para ? 'Copy citation' : '(no paragraph number in this extract)';
+                e.target.classList.remove('copied');
+              }, 2000);
+            });
+          });
+          detailTr.querySelector('.open').addEventListener('click', () => {
+            window.open(record.doc_url, '_blank');
+          });
+        } else {
+          document.getElementById(`detail-${record.id}`).remove();
+        }
+      });
+
+      tr.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          tr.click();
+        }
+      });
+
+      recordTableBody.appendChild(tr);
+    });
+  }
+
+  function extractParagraphNumber(text) {
+    const match = text.match(/^(\d{1,3}(?:\.\d{1,3})?)\.?\s/);
+    return match ? match[1] : null;
+  }
+
+  function updateChecks() {
+    checkList.innerHTML = '';
+
+    // Record count
+    const recordCountCheck = document.createElement('li');
+    const dataCount = Number(data.count);
+    if (totalRecords === dataCount) {
+      recordCountCheck.className = 'pass';
+      recordCountCheck.textContent = `Record count: ${totalRecords} (matches data.count)`;
+    } else {
+      recordCountCheck.className = 'fail';
+      recordCountCheck.textContent = `Record count: ${totalRecords} (data.count says ${dataCount})`;
+    }
+    checkList.appendChild(recordCountCheck);
+
+    // Partitions
+    const mechanismCounts = {};
+    const bodyCounts = {};
+    const yearCounts = {};
+    records.forEach(r => {
+      mechanismCounts[r.mechanism] = (mechanismCounts[r.mechanism] || 0) + 1;
+      bodyCounts[r.body] = (bodyCounts[r.body] || 0) + 1;
+      yearCounts[r.year] = (yearCounts[r.year] || 0) + 1;
+    });
+    const mechanismSum = Object.values(mechanismCounts).reduce((a, b) => a + b, 0);
+    const bodySum = Object.values(bodyCounts).reduce((a, b) => a + b, 0);
+    const yearSum = Object.values(yearCounts).reduce((a, b) => a + b, 0);
+
+    const mechanismCheck = document.createElement('li');
+    mechanismCheck.className = mechanismSum === totalRecords ? 'pass' : 'fail';
+    mechanismCheck.textContent = `Mechanism partition: ${mechanismSum} (should be ${totalRecords})`;
+    checkList.appendChild(mechanismCheck);
+
+    const bodyCheck = document.createElement('li');
+    bodyCheck.className = bodySum === totalRecords ? 'pass' : 'fail';
+    bodyCheck.textContent = `Body partition: ${bodySum} (should be ${totalRecords})`;
+    checkList.appendChild(bodyCheck);
+
+    const yearCheck = document.createElement('li');
+    yearCheck.className = yearSum === totalRecords ? 'pass' : 'fail';
+    yearCheck.textContent = `Year partition: ${yearSum} (should be ${totalRecords})`;
+    checkList.appendChild(yearCheck);
+
+    // Type partition
+    const typeCounts = {};
+    records.forEach(r => {
+      typeCounts[r.type] = (typeCounts[r.type] || 0) + 1;
+    });
+    const typeSum = Object.values(typeCounts).reduce((a, b) => a + b, 0);
+    const typeCheck = document.createElement('li');
+    typeCheck.className = typeSum === totalRecords ? 'pass' : 'fail';
+    typeCheck.textContent = `Type partition: ${typeSum} (should be ${totalRecords})`;
+    checkList.appendChild(typeCheck);
+
+    // Chart against table
+    const themeCounts = {};
+    filteredRecords.forEach(r => {
+      (r.themes || []).forEach(theme => {
+        themeCounts[theme] = (themeCounts[theme] || 0) + 1;
+      });
+    });
+    const topThemes = Object.entries(themeCounts)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 10);
+    const chartValues = topThemes.map(([, count]) => count);
+    const chartSum = chartValues.reduce((a, b) => a + b, 0);
+    const chartCheck = document.createElement('li');
+    chartCheck.className = chartSum <= filteredRecords.length ? 'pass' : 'fail';
+    chartCheck.textContent = `Chart against table: ${chartSum} (largest bar not larger than ${filteredRecords.length})`;
+    checkList.appendChild(chartCheck);
+
+    // Links
+    const linkErrors = [];
+    records.forEach(r => {
+      const url = new URL(r.doc_url);
+      if (!r.doc_url.startsWith('https://docs.un.org/') || url.pathname.toUpperCase().indexOf(r.symbol.toUpperCase()) === -1) {
+        linkErrors.push(r.symbol);
+      }
+    });
+    const linkCheck = document.createElement('li');
+    if (linkErrors.length === 0) {
+      linkCheck.className = 'pass';
+      linkCheck.textContent = 'Links: all doc_url start with "https://docs.un.org/" and contain the symbol';
+    } else {
+      linkCheck.className = 'fail';
+      linkCheck.textContent = `Links: ${linkErrors.length} records fail (${linkErrors.join(', ')})`;
+    }
+    checkList.appendChild(linkCheck);
+
+    // Paragraph numbers
+    const paraCounts = { upr: 0, treaty: 0, special: 0 };
+    const paraTotal = { upr: 0, treaty: 0, special: 0 };
+    records.forEach(r => {
+      const paraNum = extractParagraphNumber(r.text);
+      if (r.mechanism === 'Universal Periodic Review') {
+        paraTotal.upr++;
+        if (paraNum) paraCounts.upr++;
+      } else if (r.mechanism === 'Treaty bodies') {
+        paraTotal.treaty++;
+        if (paraNum) paraCounts.treaty++;
+      } else if (r.mechanism === 'Special Procedures') {
+        paraTotal.special++;
+        if (paraNum) paraCounts.special++;
+      }
+    });
+    const paraCheck = document.createElement('li');
+    paraCheck.className = paraCounts.upr === paraTotal.upr ? 'pass' : 'warn';
+    paraCheck.textContent = `Paragraph numbers: UPR ${paraCounts.upr}/${paraTotal.upr}, Treaty ${paraCounts.treaty}/${paraTotal.treaty}, Special ${paraCounts.special}/${paraTotal.special}`;
+    checkList.appendChild(paraCheck);
+
+    // States found
+    const uprRecords = records.filter(r => r.mechanism === 'Universal Periodic Review');
+    let stateFound = 0;
+    const stateErrors = [];
+    uprRecords.forEach(r => {
+      const stateMatch = r.text.match(/((?:\s*\((?:[^()]|\([^()]*\))*\))+)\s*[;.]?\s*$/);
+      if (stateMatch) {
+        const stateGroups = stateMatch[1].match(/\((?:[^()]|\([^()]*\))*\)/g) || [];
+        const states = stateGroups.map(group => group.slice(1, -1).trim()).filter(s => s.length <= 60 && !s.includes(','));
+        if (states.length > 0) {
+          stateFound++;
+        } else {
+          stateErrors.push(r.symbol);
+        }
+      } else {
+        stateErrors.push(r.symbol);
+      }
+    });
+    const stateCheck = document.createElement('li');
+    if (stateErrors.length === 0) {
+      stateCheck.className = 'pass';
+      stateCheck.textContent = `States found: ${stateFound}/${uprRecords.length} UPR records`;
+    } else {
+      stateCheck.className = 'warn';
+      stateCheck.textContent = `States found: ${stateFound}/${uprRecords.length} UPR records (${stateErrors.length} without: ${stateErrors.join(', ')})`;
+    }
+    checkList.appendChild(stateCheck);
+
+    // Duplicates and gaps
+    const ids = new Set(records.map(r => r.id));
+    const idCheck = document.createElement('li');
+    idCheck.className = ids.size === totalRecords ? 'pass' : 'fail';
+    idCheck.textContent = `Distinct id: ${ids.size} (should be ${totalRecords})`;
+    checkList.appendChild(idCheck);
+
+    const textCounts = {};
+    records.forEach(r => {
+      textCounts[r.text] = (textCounts[r.text] || 0) + 1;
+    });
+    const duplicates = Object.values(textCounts).filter(c => c > 1).length;
+    const duplicateCheck = document.createElement('li');
+    duplicateCheck.className = duplicates === 0 ? 'pass' : 'warn';
+    duplicateCheck.textContent = `Duplicate text: ${duplicates} records`;
+    checkList.appendChild(duplicateCheck);
+
+    const noThemes = records.filter(r => !r.themes || r.themes.length === 0).length;
+    const noThemesCheck = document.createElement('li');
+    noThemesCheck.className = 'warn';
+    noThemesCheck.textContent = `Not labelled (themes): ${noThemes} records`;
+    checkList.appendChild(noThemesCheck);
+
+    const noSdgs = records.filter(r => !r.sdgs || r.sdgs.length === 0).length;
+    const noSdgsCheck = document.createElement('li');
+    noSdgsCheck.className = 'warn';
+    noSdgsCheck.textContent = `Not labelled (SDGs): ${noSdgs} records`;
+    checkList.appendChild(noSdgsCheck);
+
+    const noAffected = records.filter(r => !r.affected_persons || r.affected_persons.length === 0).length;
+    const noAffectedCheck = document.createElement('li');
+    noAffectedCheck.className = 'warn';
+    noAffectedCheck.textContent = `Not labelled (affected persons): ${noAffected} records`;
+    checkList.appendChild(noAffectedCheck);
+  }
+
+  function updateSample() {
+    const seed = parseInt(sampleSeed.value) || 1;
+    const rng = mulberry32(seed);
+    const sampleRecords = [...filteredRecords].sort(() => rng() - 0.5).slice(0, 10);
+    sampleCards.innerHTML = '';
+    sampleVerdicts = {};
+
+    sampleRecords.forEach(record => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const paraNum = extractParagraphNumber(record.text);
+      card.innerHTML = `
+        <h4>${record.body} <span class="symbol"><a href="${record.doc_url}" target="_blank">${record.symbol}</a></span></h4>
+        <div class="para">${paraNum ? `para. ${paraNum}` : '–'}</div>
+        <div class="text">${escapeHtml(record.text)}</div>
+        <div class="themes">
+          ${(record.themes || []).map(theme => `<span class="theme">${escapeHtml(theme)}</span>`).join('')}
+        </div>
+        <div class="verdict">
+          <button data-id="${record.id}" data-verdict="fit">Fits</button>
+          <button data-id="${record.id}" data-verdict="nofit">Doesn't fit</button>
+          <button data-id="${record.id}" data-verdict="unsure">Unsure</button>
+        </div>
+      `;
+      sampleCards.appendChild(card);
+    });
+
+    // Restore verdicts
+    sampleRecords.forEach(record => {
+      if (sampleVerdicts[record.id]) {
+        const buttons = sampleCards.querySelector(`.card .verdict [data-id="${record.id}"]`);
+        if (buttons) {
+          buttons.parentElement.querySelectorAll('button').forEach(b => {
+            b.classList.remove('selected');
+          });
+          buttons.parentElement.querySelector(`[data-verdict="${sampleVerdicts[record.id]}"]`).classList.add('selected');
+        }
+      }
+    });
+
+    // Add events
+    sampleCards.querySelectorAll('.verdict button').forEach(button => {
+      button.addEventListener('click', (e) => {
+        const id = e.target.getAttribute('data-id');
+        const verdict = e.target.getAttribute('data-verdict');
+        sampleVerdicts[id] = verdict;
+        e.target.parentElement.querySelectorAll('button').forEach(b => {
+          b.classList.remove('selected');
+        });
+        e.target.classList.add('selected');
+        updateSampleTally();
+      });
+    });
+
+    updateSampleTally();
+  }
+
+  function updateSampleTally() {
+    const verdictCounts = { fit: 0, nofit: 0, unsure: 0 };
+    Object.values(sampleVerdicts).forEach(v => {
+      verdictCounts[v]++;
+    });
+    sampleTally.textContent = `Themes: ${verdictCounts.fit} fit, ${verdictCounts.nofit} don't, ${verdictCounts.unsure} unsure of 10 judged (seed ${sampleSeed.value})`;
+  }
+
+  function mulberry32(a) {
+    return function() {
+      a |= 0;
+      a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function downloadCSV() {
+    const headers = [
+      'Date', 'Body', 'Symbol', 'Paragraph', 'First line', 'Recommending State',
+      'Themes', 'SDGs', 'SDG targets', 'Affected persons', 'Section', 'Text'
+    ];
+    const rows = filteredRecords.map(record => {
+      const paraNum = extractParagraphNumber(record.text);
+      const firstLine = record.text.substring(0, 120).replace(/\s+\S*$/, '…');
+      let state = '';
+      if (record.mechanism === 'Universal Periodic Review') {
+        const stateMatch = record.text.match(/((?:\s*\((?:[^()]|\([^()]*\))*\))+)\s*[;.]?\s*$/);
+        if (stateMatch) {
+          const stateGroups = stateMatch[1].match(/\((?:[^()]|\([^()]*\))*\)/g) || [];
+          const states = stateGroups.map(group => group.slice(1, -1).trim()).filter(s => s.length <= 60 && !s.includes(','));
+          state = states.join('; ');
+        }
+      }
+      return [
+        `"${record.date}"`,
+        `"${record.body}"`,
+        `"${record.symbol}"`,
+        `"${paraNum || ''}"`,
+        `"${firstLine.replace(/"/g, '""')}"`,
+        `"${state}"`,
+        `"${(record.themes || []).join('; ')}"`,
+        `"${(record.sdgs || []).map(g => `${g} ${sdgNames[g] || ''}`).join('; ')}"`,
+        `"${(record.sdg_targets || []).join('; ')}"`,
+        `"${(record.affected_persons || []).join('; ')}"`,
+        `"${record.section || ''}"`,
+        `"${record.text.replace(/"/g, '""')}"`
+      ];
+    });
+
+    const csv = [
+      `# UN human rights recommendations and observations: ${country}`,
+      `# Source: ${data.source} (${data.source_url})`,
+      `# Built: ${data.built}`,
+      `# Filters: ${JSON.stringify(filters)}`,
+      `# Records: ${filteredRecords.length}`,
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `uhri-${country.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function copySummaryText() {
+    const typeCounts = {};
+    filteredRecords.forEach(r => {
+      typeCounts[r.type] = (typeCounts[r.type] || 0) + 1;
+    });
+    const typeBreakdown = Object.entries(typeCounts).map(([type, count]) => `${count} ${type}`).join(', ');
+
+    const themeCounts = {};
+    filteredRecords.forEach(r => {
+      (r.themes || []).forEach(theme => {
+        themeCounts[theme] = (themeCounts[theme] || 0) + 1;
+      });
+    });
+    const topThemes = Object.entries(themeCounts)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 10)
+      .map(([theme, count]) => `${theme} (${count})`)
+      .join(', ');
+
+    const text = `UN human rights recommendations and observations: ${country}
+${filteredRecords.length} records (${typeBreakdown}), ${new Set(filteredRecords.map(r => r.symbol)).size} documents, ${Math.min(...filteredRecords.map(r => r.year))}–${Math.max(...filteredRecords.map(r => r.year))}
+Top themes: ${topThemes}`;
+
+    navigator.clipboard.writeText(text).then(() => {
+      copySummary.textContent = 'Copied';
+      copySummary.classList.add('copied');
+      setTimeout(() => {
+        copySummary.textContent = 'Copy summary';
+        copySummary.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
+  init();
+});
+</script>
+</body>
+</html>

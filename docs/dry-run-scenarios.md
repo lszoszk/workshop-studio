@@ -11,11 +11,15 @@ Written on 4 November 2026, before the rehearsal of about 20 November. Nothing h
 | First build, Mistral Large 3 | 2.4–4.8 min; dashboard, six builds: 2 with no error, 1 with a small one, 3 broken; Verbatim finder: the search does not work | bake-off, 4.11 |
 | First build, GLM-5.3 (medium) | 3.4–8.7 min; dashboard, six builds: 5 with no error, 1 cut off mid-code; one PDF attempt in two stopped before the code; the wiki had a syntax error | bake-off, 4.11 |
 | First build, Claude Sonnet 5.5 | not measured through the studio (built in Claude Code); earlier, shorter plans took 1–2 min | session plan |
-| Any change ("add a column") | as long as a first build: the model rewrites the whole app, 500 to 2,000 lines | how the studio works |
+| Any change ("add a column") | in edit mode, since 4 November: 11–60 seconds (only the lines that change); the whole file, 3–5 minutes, when the edits do not fit (one in eighteen) | bake-off, 4.11 |
 | *Fix this error* | the same again, and it may break again | |
 | *Improve it in the studio* (a gallery app as v1) | under a minute; the gallery shows each model's best of six dashboards | since 4.11 |
 
 Two consequences follow. First, the default model (Mistral) gives a broken first dashboard about half the time, and the dashboard is the first thing all 30 people build: if half the room keeps the default, seven or eight people start with a broken app. Second, the 15-minute slot "Modify, in their own words" holds at most two changes per person, and only if nothing breaks.
+
+## Fourth pass, 4 November, evening: edit mode
+
+A change to an app now comes back as the lines to replace, not the whole file, and takes 11–60 seconds instead of 3–5 minutes (18 changes on three models). What this changes in the morning: *Modify, in your own words* (10:02) holds two or three changes per person instead of one; *Fix this error* is fast, so a broken first dashboard costs half a minute rather than three; Tomás's suggested improvement at 11:42 is built before the others have finished reading the list. Two limits stay. A change does not repair an app that was already broken, so a broken dashboard still needs a fix first, or the gallery. And edits from Mistral Large 3 broke the app once in three (a name it never defined), so its first build and its changes both need a look.
 
 ## Third pass, 4 November, late afternoon
 
@@ -108,7 +112,7 @@ At 09:48 the video should play. In this room two of five are not ready: Mr Chen'
 ## What does not work, and how to fix it
 
 1. **The default model breaks the first build.** Measured on 4 November, six dashboards each: Mistral Large 3, the default, gave 2 with no error, 1 with a small one and 3 broken; GLM-5.3 at medium gave 5 with no error. (Mistral also loaded Chart.js from the internet every time; the studio now replaces that line with its own copy.) *Fix:* after a top-up, measure Claude and GLM run in the EU the same way and choose the S7 default on that; until then, the facilitator's first instruction after the build is "if your dashboard is empty, press *Fix this error* now, before the video".
-2. **Every change costs a full build.** "Modify, in their own words" (15 min) fits one change, at most two. *Fix:* say so in the room ("each change takes 3–5 minutes; choose one well"), seed three good one-line changes on a slide, and cut *Send to wall* from this slot or move it to the end of *Check ten at random*.
+2. **Every change costs a full build** (fixed by edit mode on 4 November: see the fourth pass). "Modify, in their own words" (15 min) fits one change, at most two. *Fix:* say so in the room ("each change takes 3–5 minutes; choose one well"), seed three good one-line changes on a slide, and cut *Send to wall* from this slot or move it to the end of *Check ten at random*.
 3. **The video at 09:48 comes too early.** In this simulation three of five are still waiting. *Fix:* play it while they wait (09:45), not after.
 4. **Requests the data cannot answer.** A comparison with neighbouring States, a map, the internet. The studio's instructions already tell the model to build the closest useful thing and say on screen what is missing, and never to invent records. *Fix:* one line on the first slide of "Modify": "your file has one country, no maps, no internet"; at the rehearsal, send the neighbours request to each model and see whether it says so.
 5. **Political sensitivity of the wall.** A diplomat may not want her State's dashboard on the projector. *Fix:* the wall is opt-in already (*Send to wall*); say so aloud, and show your own example country first.
