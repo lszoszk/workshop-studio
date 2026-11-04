@@ -1,0 +1,32 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": false
+  },
+  "passed": 7,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 730,
+  "edit": null,
+  "repair": null,
+  "seconds": 235.0,
+  "first_token": 17.1,
+  "first_thought": 2.1,
+  "reasoning_chars": 2706,
+  "prompt_tokens": 18706,
+  "completion_tokens": 12762,
+  "cost": 0.0823412,
+  "provider": "Z.AI"
+ }
+]

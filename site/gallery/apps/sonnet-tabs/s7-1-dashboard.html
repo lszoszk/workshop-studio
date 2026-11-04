@@ -3,929 +3,735 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>UN human rights recommendations dashboard</title>
+<title>UN recommendations and observations dashboard</title>
 <style>
-:root{--paper:#f4f0e8;--ink:#1d1b18;--rule:#d9d2c3;--red:#9b2335;--mute:#5b564c;--serif:Georgia,"Times New Roman",serif;--mono:ui-monospace,Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+:root{--paper:#f4f0e8;--ink:#1d1b18;--rule:#d9d2c3;--red:#9b2335;--mute:#5a554b;--warn:#8a5a00;
+--serif:Georgia,"Times New Roman",serif;--mono:ui-monospace,Menlo,Consolas,monospace;
+--sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 var(--sans)}
-a{color:var(--ink);text-decoration-color:var(--red);text-underline-offset:2px}
-a:hover{color:var(--red)}
-:focus-visible{outline:3px solid var(--red);outline-offset:2px}
 [hidden]{display:none!important}
-.wrap{max-width:1320px;margin:0 auto;padding:22px 28px 14px}
-.lab{font:600 11.5px/1.4 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:0}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 var(--sans)}
+a{color:var(--red);text-underline-offset:2px}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.skip{position:absolute;left:-999px;top:0;background:var(--ink);color:var(--paper);padding:8px 12px;z-index:9}
+.skip:focus{left:8px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 24px}
+.lab{font:600 11px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.mono{font-family:var(--mono)}
 .mute{color:var(--mute)}
-header h1{font:400 clamp(26px,3.6vw,42px)/1.12 var(--serif);margin:6px 0 8px;max-width:980px}
-.meta{margin:0;color:var(--mute);font-size:15px}
-.tabs{display:flex;flex-wrap:wrap;gap:2px;margin-top:18px;border-bottom:1px solid var(--rule)}
-.tabs button{font:600 12px/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;padding:13px 16px;color:var(--mute);cursor:pointer}
-.tabs button b{font-weight:700}
-.tabs button[aria-selected="true"]{color:var(--red);border-bottom-color:var(--red)}
-.tabs button:hover{color:var(--ink)}
-.layout{display:grid;grid-template-columns:268px minmax(0,1fr);gap:30px;margin-top:22px;align-items:start}
-.rail{border-right:1px solid var(--rule);padding-right:22px}
-.railhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
-.linkbtn{background:none;border:0;padding:0;font:600 11.5px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--red);text-decoration:underline;text-underline-offset:3px;cursor:pointer;text-align:left}
-.big{font:400 56px/1 var(--serif);font-variant-numeric:tabular-nums}
-.matchlab{font-size:15px;margin-top:4px}
-.sharebar{height:4px;background:var(--rule);margin:10px 0 12px}
-.sharebar i{display:block;height:100%;background:var(--red);width:0}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-.chip{font:12px/1.3 var(--mono);color:var(--red);background:none;border:1px solid var(--red);border-radius:999px;padding:3px 10px;cursor:pointer;text-align:left}
-.chip:hover{background:var(--red);color:var(--paper)}
-.acch{margin:0;border-top:1px solid var(--rule)}
-.acch button{width:100%;display:flex;justify-content:space-between;align-items:center;background:none;border:0;padding:12px 0;font:600 12px/1.3 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink);cursor:pointer;text-align:left}
-.acch b{color:var(--red);margin-right:6px}
-.acch .cnt{color:var(--red);margin-left:6px}
-.accp{padding:0 0 14px}
-.accp .lab{display:block;margin:10px 0 4px}
-input,select{font:16px/1.3 var(--sans);width:100%;padding:8px 9px;border:1px solid #8c8577;background:#fffdf8;color:var(--ink);border-radius:2px}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.hint{font:12px/1.4 var(--mono);color:var(--mute);margin:6px 0 0}
-.panel{min-width:0}
-.panel>.lab{margin-bottom:2px}
-h2{font:400 clamp(22px,2.4vw,30px)/1.2 var(--serif);margin:0 0 18px}
-h3{font:400 22px/1.25 var(--serif);margin:0 0 6px}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:22px 30px;margin-bottom:26px}
-.tile{border-top:1px solid var(--ink);padding-top:8px;min-width:0}
-.tile .n{font:400 48px/1.05 var(--serif);margin:4px 0 2px;font-variant-numeric:tabular-nums}
-.tile .sub{margin:0;font-size:15px}
-.how{font:12px/1.5 var(--mono);color:var(--mute);margin:6px 0 0;max-width:80ch}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:-1px}
-.statesbox{margin-top:10px;border-top:1px solid var(--rule);padding-top:8px}
-.statesbox h4{font:400 17px/1.3 var(--serif);margin:0 0 6px}
-.statesbox ol{margin:0 0 6px;padding-left:24px;font-size:15px}
-figure.fig{margin:34px 0 0;border-top:1px solid var(--ink);padding-top:10px}
-.chartbox{position:relative;margin:10px 0 8px}
-.empty{margin:0;padding:24px 0;color:var(--mute)}
-.scroll{overflow-x:auto}
-table.data{border-collapse:collapse;width:100%;margin-top:10px}
-table.data caption{caption-side:top;text-align:left;font:600 11.5px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);padding-bottom:6px}
-table.data th{font:600 11.5px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left;padding:8px 10px;border-bottom:1px solid var(--ink);vertical-align:bottom}
-table.data td{padding:9px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
-table.data .num,table.data th.num{text-align:right;font-variant-numeric:tabular-nums}
-.nw{white-space:nowrap}
-.sorter{background:none;border:0;padding:0;font:inherit;letter-spacing:inherit;text-transform:inherit;color:var(--ink);cursor:pointer;text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:3px}
-.rowx{cursor:pointer}
-.rowx:hover td{background:rgba(29,27,24,.04)}
-.rowbtn{background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%}
-.rowbtn::before{content:"+";color:var(--red);font-family:var(--mono);margin-right:8px}
-.rowbtn[aria-expanded="true"]::before{content:"\2013"}
-mark{background:rgba(155,35,53,.16);color:inherit;padding:0 1px}
-.det td{background:#faf7f0}
-.detail{display:grid;grid-template-columns:minmax(70px,130px) 1fr;gap:18px;padding:10px 4px}
-.pn{font:400 52px/1 var(--serif);color:var(--red)}
-.full{margin:0 0 12px;white-space:pre-wrap;max-width:78ch}
-.dl{display:grid;grid-template-columns:150px 1fr;gap:6px;margin:6px 0}
-.dl dt{padding-top:4px}
-.dl dd{margin:0}
-.tag{display:inline-block;border:1px solid var(--rule);padding:1px 8px;margin:0 6px 6px 0;font-size:14px;background:var(--paper)}
-.btn{font:600 12px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:10px 14px;border:1px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;text-decoration:none;display:inline-block}
+header.wrap{padding-top:22px;padding-bottom:14px}
+h1{font:400 34px/1.15 var(--serif);margin:6px 0 8px;letter-spacing:-.01em}
+.src{margin:0;font-size:14px;color:var(--mute)}
+.src a{color:var(--ink)}
+/* tabs */
+#tabs{display:flex;gap:0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);flex-wrap:wrap}
+#tabs button{font:600 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;background:none;border:0;border-bottom:3px solid transparent;padding:14px 22px 11px 0;margin-right:10px;color:var(--ink);cursor:pointer}
+#tabs button[aria-selected="true"]{color:var(--red);border-bottom-color:var(--red)}
+.layout{display:grid;grid-template-columns:264px minmax(0,1fr);gap:36px;padding-top:22px;padding-bottom:40px;align-items:start}
+#rail{border-right:1px solid var(--rule);padding-right:22px}
+@media(min-width:861px){#rail{position:sticky;top:8px;max-height:calc(100vh - 16px);overflow:auto}}
+@media(max-width:860px){.layout{grid-template-columns:minmax(0,1fr);gap:18px}#rail{border-right:0;border-bottom:1px solid var(--rule);padding:0 0 14px}h1{font-size:28px}}
+.rail-head{display:flex;justify-content:space-between;align-items:baseline}
+.link{background:none;border:0;padding:2px 0;font:600 11px/1.4 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--red);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+#mcount{margin:10px 0 6px}
+#mnum{display:block;font:400 52px/1 var(--serif);font-variant-numeric:tabular-nums}
+.sm{font-size:14px;color:var(--mute)}
+.bar{height:4px;background:var(--rule);margin:8px 0 10px}
+.bar i{display:block;height:100%;background:var(--red);width:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
+.chip{font:13px/1.3 var(--sans);background:none;border:1px solid var(--red);color:var(--ink);padding:3px 8px;cursor:pointer;text-align:left;max-width:100%;overflow-wrap:anywhere}
+.chip b{font:600 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-right:4px}
+#acc h3{margin:0;border-top:1px solid var(--rule)}
+.acc-b{width:100%;text-align:left;background:none;border:0;padding:12px 0;font:600 12px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink);cursor:pointer;display:flex;justify-content:space-between}
+.acc-b[aria-expanded="true"]{color:var(--red)}
+.acc-p{padding:0 0 14px}
+.acc-p label{display:block;margin:10px 0 3px}
+select,input[type=search],input[type=text]{width:100%;font:15px var(--sans);color:var(--ink);background:#fbf9f4;border:1px solid #b9b0a0;border-radius:0;padding:7px 8px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hint{font:11px/1.4 var(--mono);color:var(--mute);margin-top:4px;display:block}
+/* panels */
+.q{font:400 24px/1.25 var(--serif);margin:0 0 16px}
+.tiles3,.tilesM{display:grid;gap:0 28px;margin-bottom:8px}
+.tiles3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tilesM{grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin-top:6px}
+@media(max-width:700px){.tiles3{grid-template-columns:minmax(0,1fr)}}
+.tile{border-top:1px solid var(--rule);padding:10px 0 12px}
+.big{font:400 48px/1.05 var(--serif);font-variant-numeric:tabular-nums;margin:4px 0}
+.tile .mid{font:400 28px/1.1 var(--serif);font-variant-numeric:tabular-nums}
+.how{font:11px/1.45 var(--mono);color:var(--mute);margin:6px 0 0}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:baseline}
+.statelist{margin:8px 0 0;padding-top:8px;border-top:1px dotted var(--rule)}
+.statelist h4{font:600 13px/1.3 var(--sans);margin:0 0 4px}
+.statelist ol{margin:0;padding-left:22px;font-size:14px}
+.statelist li span{float:right;font-variant-numeric:tabular-nums}
+figure{margin:26px 0 0;padding-top:12px;border-top:1px solid var(--rule)}
+figcaption h3{font:400 21px/1.25 var(--serif);margin:2px 0 8px}
+.cwrap{position:relative;width:100%}
+.empty{padding:18px 0;color:var(--mute);font-style:italic}
+table{border-collapse:collapse;width:100%;font-size:15px}
+caption{text-align:left;font:12px/1.4 var(--mono);color:var(--mute);padding:6px 0}
+th{font:600 11px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase;text-align:left;padding:8px 8px 6px 0;border-bottom:2px solid var(--ink);vertical-align:bottom;color:var(--ink)}
+td{padding:8px 8px 8px 0;border-bottom:1px solid var(--rule);vertical-align:top;overflow-wrap:break-word}
+td.nw{white-space:nowrap}
+td:last-child,.full,dl.labels dd{overflow-wrap:anywhere}
+.tw{overflow-x:auto}
+th.n,td.n{text-align:right;font-variant-numeric:tabular-nums;padding-right:14px}
+.thbtn{background:none;border:0;padding:0;font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;cursor:pointer}
+.tb-btn{background:none;border:0;padding:0;font:inherit;color:var(--ink);text-align:left;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.tb-btn:hover{color:var(--red)}
+tr.row{cursor:pointer}
+tr.row:hover td{background:#ebe5d6}
+tr.row[aria-expanded="true"] td{border-bottom-color:transparent;background:#ebe5d6}
+tr.detail td{background:#faf7f0;padding:14px 16px 18px;border-bottom:1px solid var(--ink)}
+.dgrid{display:grid;grid-template-columns:140px minmax(0,1fr);gap:16px}
+@media(max-width:700px){.dgrid{grid-template-columns:1fr}}
+.pnum{font:400 46px/1 var(--serif);color:var(--red);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pnum.none{font:600 11px/1.4 var(--mono);color:var(--mute);letter-spacing:.08em;text-transform:uppercase}
+.full{white-space:pre-wrap;margin:0 0 12px;max-width:80ch}
+dl.labels{margin:0 0 12px;display:grid;grid-template-columns:130px minmax(0,1fr);gap:4px 12px;font-size:14px}
+dl.labels dt{font:600 11px/1.6 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+dl.labels dd{margin:0}
+.btn{font:600 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;background:none;border:1px solid var(--ink);color:var(--ink);padding:9px 12px;cursor:pointer;margin:0 10px 8px 0;text-decoration:none;display:inline-block}
 .btn:hover{border-color:var(--red);color:var(--red)}
-.btn[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
-.btn.primary{background:var(--ink);color:var(--paper)}
-.btn.primary:hover{background:var(--red);border-color:var(--red);color:var(--paper)}
-.ok{font:12px var(--mono);color:var(--red);margin:0 10px 0 8px}
-.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 6px}
-.more{margin:14px 0 4px}
-.searchrow{max-width:640px;margin-bottom:6px}
-.searchrow .lab{display:block;margin-bottom:4px}
-ol.checks{list-style:none;margin:10px 0 30px;padding:0;border-top:1px solid var(--ink)}
-.chk{display:grid;grid-template-columns:118px 1fr;gap:12px;padding:11px 0;border-bottom:1px solid var(--rule)}
-.chk .mark{font:600 12px/1.5 var(--mono);letter-spacing:.06em;text-transform:uppercase}
-.chk.fail{border-left:3px solid var(--red);padding-left:9px}
-.chk.fail .mark{color:var(--red)}
-.chk.warn .mark{font-style:italic}
-.vals{color:var(--ink)}
-details{margin-top:6px;font-size:15px}
-summary{cursor:pointer;font:600 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--red)}
-ul.lst{margin:6px 0 0;padding-left:20px;max-height:260px;overflow:auto;font-size:14px}
-ol.cards{list-style:none;margin:10px 0 0;padding:0;border-top:1px solid var(--ink)}
-.card{border-bottom:1px solid var(--rule)}
-.cardline{display:flex;gap:12px;align-items:baseline;padding:9px 0;flex-wrap:wrap}
-.cn{font:600 12px var(--mono);color:var(--red);min-width:22px}
-.cardbtn{flex:1 1 260px;background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
-.cardbtn::before{content:"+";color:var(--red);font-family:var(--mono);margin-right:8px}
-.cardbtn[aria-expanded="true"]::before{content:"\2013"}
-.vd{font:12px var(--mono);color:var(--mute)}
-.carddet{padding:4px 0 16px 34px}
-.sample-ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0 8px}
-.sample-ctl .seed{width:110px}
-.tally{font:600 13px/1.5 var(--mono);margin:8px 0 0}
-.method li{margin-bottom:8px;max-width:80ch}
-dl.src{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;margin:8px 0 0}
-dl.src dt{padding-top:3px}
-dl.src dd{margin:0}
-footer{margin-top:40px;border-top:1px solid var(--rule);padding:12px 0 6px;font:12px/1.5 var(--mono);color:var(--mute)}
-@media(max-width:860px){.layout{grid-template-columns:1fr}.rail{border-right:0;padding-right:0;border-bottom:1px solid var(--rule);padding-bottom:12px}.wrap{padding:16px}.chk{grid-template-columns:1fr}.dl,dl.src{grid-template-columns:1fr}.detail{grid-template-columns:1fr}}
+.copied{font:600 12px var(--mono);color:var(--red)}
+mark{background:#f0d58f;color:var(--ink);padding:0 1px}
+.sample td{background:#faf7f0;font-size:14px}
+.sample ul{margin:0;padding:0;list-style:none}
+.sample li{padding:3px 0}
+.deep{margin-top:30px;border-top:1px solid var(--rule)}
+.deep h3{margin:0}
+.checks{list-style:none;margin:0;padding:0}
+.checks li{padding:8px 0;border-bottom:1px solid var(--rule);font-size:14px}
+.checks ul{margin:4px 0 0;padding-left:22px;font-size:13px}
+.st{font:700 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-right:8px}
+.st.pass{color:var(--ink)}.st.fail{color:var(--red);text-decoration:underline}.st.warn{color:var(--warn)}.st.info{color:var(--mute)}
+.bad{color:var(--red)}
+.method p{max-width:75ch;margin:0 0 10px}
+footer{border-top:1px solid var(--rule);padding-top:14px;padding-bottom:30px;font:11px/1.6 var(--mono);letter-spacing:.06em;color:var(--mute)}
+footer a{color:var(--mute)}
 </style>
 </head>
 <body>
-<div class="wrap">
-<header>
-  <div class="lab" id="hLab">UHRI</div>
-  <h1 id="hTitle">UN human rights recommendations and observations</h1>
-  <p class="meta" id="hMeta"></p>
+<a class="skip" href="#main">Skip to the content</a>
+<header class="wrap">
+  <div class="lab" id="hlab">UHRI</div>
+  <h1 id="htitle">UN human rights recommendations and observations</h1>
+  <p class="src" id="hsrc"></p>
 </header>
-<div class="tabs" role="tablist" aria-label="Dashboard sections" id="tabs"></div>
-
-<div class="layout">
-<aside class="rail" aria-label="Filters">
-  <div class="railhead"><span class="lab">Filters</span><button type="button" class="linkbtn" data-act="clear">Clear all</button></div>
-  <div id="matchLive" aria-live="polite" aria-atomic="true">
-    <div class="big" id="matchN">0</div>
-    <div class="matchlab">matching records <span class="mute" id="matchOf"></span></div>
+<div class="wrap">
+  <div role="tablist" aria-label="Dashboard sections" id="tabs">
+    <button role="tab" id="t1" aria-controls="p1" aria-selected="true" tabindex="0">01 Overview</button>
+    <button role="tab" id="t2" aria-controls="p2" aria-selected="false" tabindex="-1">02 Records</button>
+    <button role="tab" id="t3" aria-controls="p3" aria-selected="false" tabindex="-1">03 Method &amp; export</button>
   </div>
-  <div class="sharebar" aria-hidden="true"><i id="shareFill"></i></div>
-  <div class="chips" id="chips"></div>
-  <div id="accs">
-    <h3 class="acch"><button type="button" id="ah-kw" aria-expanded="false" aria-controls="ac-kw" data-act="acc" data-k="kw"><span><b>01</b>Keyword<span class="cnt" id="an-kw"></span></span><span aria-hidden="true">+</span></button></h3>
-    <div class="accp" id="ac-kw" role="region" aria-labelledby="ah-kw" hidden>
-      <label class="lab" for="kwRail">Words (all must match)</label>
-      <input id="kwRail" type="search" autocomplete="off" placeholder="e.g. torture">
-      <p class="hint">literal match, not synonyms</p>
-    </div>
-    <h3 class="acch"><button type="button" id="ah-mbt" aria-expanded="false" aria-controls="ac-mbt" data-act="acc" data-k="mbt"><span><b>02</b>Mechanism, body, type<span class="cnt" id="an-mbt"></span></span><span aria-hidden="true">+</span></button></h3>
-    <div class="accp" id="ac-mbt" role="region" aria-labelledby="ah-mbt" hidden>
-      <label class="lab" for="mechSel">Mechanism</label><select id="mechSel"></select>
-      <label class="lab" for="bodySel">Body or mandate</label><select id="bodySel"></select>
-      <label class="lab" for="typeSel">Type</label><select id="typeSel"></select>
-      <div id="stateWrap"><label class="lab" for="stateSel">Recommending State (UPR only)</label><select id="stateSel"></select></div>
-    </div>
-    <h3 class="acch"><button type="button" id="ah-ys" aria-expanded="false" aria-controls="ac-ys" data-act="acc" data-k="ys"><span><b>03</b>Years and SDG<span class="cnt" id="an-ys"></span></span><span aria-hidden="true">+</span></button></h3>
-    <div class="accp" id="ac-ys" role="region" aria-labelledby="ah-ys" hidden>
-      <div class="two">
-        <div><label class="lab" for="fromSel">Year from</label><select id="fromSel"></select></div>
-        <div><label class="lab" for="toSel">Year to</label><select id="toSel"></select></div>
+</div>
+<div class="wrap layout">
+  <aside id="rail" aria-label="Filters">
+    <div class="rail-head"><span class="lab">Filters</span><button class="link" id="clear" type="button">Clear all</button></div>
+    <div id="mcount" aria-live="polite" aria-atomic="true"><span id="mnum">0</span><span class="sm"><span id="mtxt">matching records</span> <span id="mof"></span></span></div>
+    <div class="bar" aria-hidden="true"><i id="mbar"></i></div>
+    <div class="chips" id="chips"></div>
+    <div id="acc">
+      <h3><button class="acc-b" type="button" id="h1" aria-expanded="false" aria-controls="a1"><span>01 Keyword</span><span aria-hidden="true">+</span></button></h3>
+      <div class="acc-p" id="a1" hidden>
+        <label class="lab" for="q1">Words to find</label>
+        <input id="q1" type="search" autocomplete="off">
+        <span class="hint">literal match, not synonyms</span>
       </div>
-      <label class="lab" for="sdgSel">SDG</label><select id="sdgSel"></select>
+      <h3><button class="acc-b" type="button" id="h2" aria-expanded="false" aria-controls="a2"><span>02 Mechanism, body, type</span><span aria-hidden="true">+</span></button></h3>
+      <div class="acc-p" id="a2" hidden>
+        <label class="lab" for="fm">Mechanism</label><select id="fm"></select>
+        <label class="lab" for="fb">Body or mandate</label><select id="fb"></select>
+        <label class="lab" for="ft">Type</label><select id="ft"></select>
+        <div id="fsw"><label class="lab" for="fs">Recommending State (UPR)</label><select id="fs"></select></div>
+      </div>
+      <h3><button class="acc-b" type="button" id="h3" aria-expanded="false" aria-controls="a3"><span>03 Years and SDG</span><span aria-hidden="true">+</span></button></h3>
+      <div class="acc-p" id="a3" hidden>
+        <div class="pair"><div><label class="lab" for="yf">Year from</label><select id="yf"></select></div><div><label class="lab" for="yt">to</label><select id="yt"></select></div></div>
+        <label class="lab" for="fg">SDG</label><select id="fg"></select>
+        <span class="hint">dated by document</span>
+      </div>
     </div>
-  </div>
-</aside>
+  </aside>
 
-<main>
-<section class="panel" id="p-ov" role="tabpanel" aria-labelledby="t-ov">
-  <p class="lab">01 · Overview</p>
-  <h2>What has the UN said, how much, and when?</h2>
-  <div class="tiles" id="tiles1"></div>
-  <div class="tiles" id="tiles2"></div>
-  <figure class="fig">
-    <p class="lab">FIG.01</p>
-    <h3 id="fig1t"></h3>
-    <div class="chartbox" id="box1"><canvas id="c1" role="img" aria-label="Ranked horizontal bars of the ten most frequent themes"></canvas><p class="empty" id="c1e" hidden></p></div>
-    <div class="scroll">
-    <table class="data" id="themeTable">
-      <caption>The same ten themes as a table</caption>
-      <thead><tr><th scope="col">Theme <span style="text-transform:none;letter-spacing:0">(click = filter)</span></th><th scope="col" class="num">Records</th><th scope="col" class="num">% of filtered</th><th scope="col" class="num">Years (first–last)</th></tr></thead>
-      <tbody id="themeRows"></tbody>
-    </table>
-    </div>
-    <p class="how" id="fig1n"></p>
-    <p class="how">A theme confined to early years may be a legacy label that no longer describes its text. <button type="button" class="linkbtn" data-act="goto" data-t="chk">Judge a sample of the labels on 03 Check</button></p>
-    <p class="how" id="fig1s"></p>
-  </figure>
-  <figure class="fig">
-    <p class="lab">FIG.02</p>
-    <h3 id="fig2t"></h3>
-    <div class="chartbox" style="height:310px"><canvas id="c2" role="img" aria-label="Stacked bars of records per year by mechanism"></canvas><p class="empty" id="c2e" hidden></p></div>
-    <p class="how" id="fig2n"></p>
-    <p class="how" id="fig2s"></p>
-  </figure>
-</section>
+  <main id="main">
+    <section id="p1" role="tabpanel" aria-labelledby="t1">
+      <h2 class="q">What has the UN said, how much, and when?</h2>
+      <div class="tiles3" id="tiles"></div>
+      <div class="tilesM" id="mtiles"></div>
+      <figure id="fig1">
+        <figcaption><span class="lab">FIG.01</span><h3 id="f1t">Ten most frequent themes</h3></figcaption>
+        <div class="cwrap" id="c1wrap"><canvas id="c1" role="img" aria-label="Bar chart of the most frequent themes; the same numbers are in the table below"></canvas></div>
+        <div class="empty" id="f1e" hidden></div>
+        <p class="how">How this is computed: each theme label counts once per record in the filtered set, so a record with three themes is in three bars and the bars add up to more than the number of records. Percent = records with the label / filtered records. Click a bar or a theme name = filter.</p>
+        <div id="f1tab"></div>
+        <p class="how" id="f1src"></p>
+      </figure>
+      <figure id="fig2">
+        <figcaption><span class="lab">FIG.02</span><h3 id="f2t">Records per year by mechanism</h3></figcaption>
+        <div class="cwrap" id="c2wrap" style="height:300px"><canvas id="c2" role="img" aria-label="Stacked bar chart of records per year by mechanism"></canvas></div>
+        <div class="empty" id="f2e" hidden></div>
+        <p class="how">How this is computed: records per <code>year</code> and <code>mechanism</code> in the filtered set; every year from the first to the last is shown, so a missing bar is a year with no records. Years are those of the document.</p>
+        <p class="how" id="f2src"></p>
+      </figure>
+      <div class="deep">
+        <h3><button class="acc-b" type="button" id="chk" aria-expanded="false" aria-controls="checks"><span id="chkt">Every check</span><span aria-hidden="true">+</span></button></h3>
+        <div id="checks" hidden></div>
+      </div>
+    </section>
 
-<section class="panel" id="p-rec" role="tabpanel" aria-labelledby="t-rec" hidden>
-  <p class="lab">02 · Records</p>
-  <h2>Which paragraph says it, and in which UN document?</h2>
-  <div class="searchrow"><label class="lab" for="kwMain">Search</label><input id="kwMain" type="search" autocomplete="off" placeholder="Search records, e.g. torture"><p class="hint">literal match, not synonyms · same box as 01 Keyword</p></div>
-  <div class="scroll">
-  <table class="data" id="recTable">
-    <caption id="recCap"></caption>
-    <thead><tr>
-      <th scope="col"><button type="button" class="sorter" data-act="sortdate" id="dateSort" aria-label="Date: click to reverse the order">Date ▼</button></th>
-      <th scope="col">Body</th><th scope="col">Symbol</th><th scope="col" class="num">Para.</th><th scope="col">First line <span style="text-transform:none;letter-spacing:0">(click a row to open it)</span></th><th scope="col">Recommending State</th>
-    </tr></thead>
-    <tbody id="recBody"></tbody>
-  </table>
-  </div>
-  <div class="more"><button type="button" class="btn" id="moreBtn" data-act="more">Show 50 more</button></div>
-  <p class="how" id="recSrc"></p>
-</section>
+    <section id="p2" role="tabpanel" aria-labelledby="t2" hidden>
+      <h2 class="q">Which paragraph says it, and in which UN document?</h2>
+      <label class="lab" for="q2">Keyword</label>
+      <input id="q2" type="search" autocomplete="off">
+      <span class="hint">literal match, not synonyms</span>
+      <div class="tw"><table id="tbl">
+        <caption id="cap"></caption>
+        <thead><tr>
+          <th scope="col" id="thd" aria-sort="descending"><button class="thbtn" type="button" id="sortd"></button></th>
+          <th scope="col">Body</th><th scope="col">Symbol</th><th scope="col" class="n">Para.</th><th scope="col">Recommending State</th><th scope="col">First line</th>
+        </tr></thead>
+        <tbody id="tb"></tbody>
+      </table></div>
+      <p><button class="btn" type="button" id="more">Show 50 more</button></p>
+      <p class="how">How this is computed: rows are the filtered records, sorted by date, then body, then paragraph number (numeric), then file order. Click a row to read the full paragraph. State = names in the last parentheses of a UPR text; "State not found" when they do not look like States.</p>
+      <p class="how" id="p2src"></p>
+    </section>
 
-<section class="panel" id="p-chk" role="tabpanel" aria-labelledby="t-chk" hidden>
-  <p class="lab">03 · Check</p>
-  <h2>Can I trust these numbers?</h2>
-  <p class="lab">How the app checks itself</p>
-  <h3>Check this dashboard</h3>
-  <p class="how" id="checkSum"></p>
-  <ol class="checks" id="checks"></ol>
-  <p class="lab">Random-sample label check</p>
-  <h3>Do the UN's theme labels fit the paragraphs?</h3>
-  <p>This is your judgement of the UN's labels; nothing is sent anywhere.</p>
-  <div class="sample-ctl">
-    <div class="seed"><label class="lab" for="seed">Seed</label><input id="seed" type="number" min="0" step="1" value="1"></div>
-    <button type="button" class="btn primary" id="drawBtn" data-act="draw">Check 10 at random</button>
-    <button type="button" class="btn" data-act="seeddraw">Draw with this seed</button>
-  </div>
-  <p class="hint" id="sampleHint"></p>
-  <p class="tally" id="tally" aria-live="polite"></p>
-  <ol class="cards" id="cards"></ol>
-</section>
-
-<section class="panel" id="p-met" role="tabpanel" aria-labelledby="t-met" hidden>
-  <p class="lab">04 · Method &amp; export</p>
-  <h2>How was this made, and how do I take it with me?</h2>
-  <h3>How each number is computed</h3>
-  <ol class="method">
-    <li>Every number is a loop over the records of the file you attached; nothing is estimated, no model is called, and nothing leaves the page except the text you choose to copy.</li>
-    <li>A record is one paragraph of a UN document. Documents are counted as distinct symbols, and years come from the date of the document, not from the moment a recommendation was made.</li>
-    <li>Filters combine with AND. Mechanism, body and type match exactly, the year range is inclusive, an SDG matches when the goal is among the record's SDGs, and a keyword matches when every word occurs in the text or the symbol (literal, not synonyms).</li>
-    <li>Themes, SDGs and affected persons are the UN's own labels. A record can carry several themes, so theme counts add up to more than the number of records; the app never removes or renames a label.</li>
-    <li>The paragraph number is the number at the start of the text. The recommending State is read only from UPR records, from the parentheses that end the text; where nothing fits, the row says State not found.</li>
-    <li>A citation is the symbol plus ", para." and the number; where no number was found it is the symbol alone.</li>
-  </ol>
-  <h3 style="margin-top:26px">Take it with you</h3>
-  <p class="hint" id="expInfo"></p>
-  <div class="actions">
-    <button type="button" class="btn primary" data-act="csv">Download CSV of the current filter</button>
-    <button type="button" class="btn" data-act="copysum">Copy summary</button><span class="ok" id="expStatus" role="status"></span>
-  </div>
-  <h3 style="margin-top:26px">The data</h3>
-  <dl class="src" id="srcList"></dl>
-</section>
-</main>
+    <section id="p3" role="tabpanel" aria-labelledby="t3" hidden>
+      <h2 class="q">How was this made, and how do I take it with me?</h2>
+      <div class="method">
+        <p>Every number on this page is a count made by a loop over the records of the attached file, in your browser. Nothing is estimated, no model is called and nothing leaves the page except what you copy.</p>
+        <p>Filters combine with AND. Mechanism, body, type and State match exactly; the year range is inclusive; SDG matches the goal number; every word of the keyword must occur literally in the text or in the document symbol; each theme chosen from the chart must be carried by the record.</p>
+        <p>Themes: each label counts once per record, so theme counts add up to more than the number of records, and percentages are shares of records. A label that only appears in old years may be a legacy label: read its year range and its sample in FIG.01 before you rely on it.</p>
+        <p>The paragraph number is the number at the start of the text (for example 71 or 144.43); texts that do not start with one have none. The recommending State is read only for Universal Periodic Review records from the last parentheses of the text; if they contain a comma or are longer than 60 characters, the record shows "State not found".</p>
+        <p>Dates are the dates of the documents, not of the recommendations. This dashboard does not say whether a UPR recommendation was accepted, because the file does not contain it.</p>
+        <p>The closed heading "Every check" on the Overview tab compares the app's own numbers with each other and lists what does not match.</p>
+      </div>
+      <div style="margin:16px 0 6px">
+        <button class="btn" type="button" id="dl">Download CSV of the current filter</button>
+        <button class="btn" type="button" id="cpcsv">Copy CSV text</button>
+        <button class="btn" type="button" id="cpsum">Copy summary</button>
+        <span class="copied" id="exst" role="status"></span>
+      </div>
+      <p class="how" id="exinfo"></p>
+      <p class="how" id="p3src"></p>
+    </section>
+  </main>
 </div>
-
-<footer id="foot"></footer>
-</div>
+<footer class="wrap" id="foot"></footer>
 
 <script>
 (function(){
 'use strict';
-var D=(window.WORKSHOP_DATA&&window.WORKSHOP_DATA.uhri)||{};
-var RAW=Array.isArray(D.records)?D.records:[];
-var COUNTRY=D.country?String(D.country):'this country';
-var SDG_NAMES=D.sdg_names||{};
-var UPR='Universal Periodic Review';
-var COLORS={};COLORS[UPR]='#c2410c';COLORS['Treaty bodies']='#0f766e';COLORS['Special Procedures']='#7c3aed';
-var OTHERC='#6b6558';
-var PAGE=50;
-var PARA_RE=/^(\d{1,3}(?:\.\d{1,3})?)\.?\s/;
-var TAIL_RE=/((?:\s*\((?:[^()]|\([^()]*\))*\))+)\s*[;.]?\s*$/;
-var GROUP_RE=/\((?:[^()]|\([^()]*\))*\)/g;
+var W=window.WORKSHOP_DATA||{},D=W.uhri;
+function $(id){return document.getElementById(id)}
+if(!D||!Array.isArray(D.records)){
+  $('main').innerHTML='<p class="empty">No UHRI file is attached to this app. Drag the recommendations file from "Your files" into the chat and ask again.</p>';
+  $('rail').hidden=true;$('tabs').hidden=true;return;
+}
+var UPR='Universal Periodic Review',NONE='\u0001none';
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function escRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
+var NF=new Intl.NumberFormat('en-GB');
+function fmt(n){return NF.format(n)}
+function pc(a,b){return b?(a/b*100).toFixed(1)+'%':'–'}
+function arr(x){return Array.isArray(x)?x.filter(function(v){return v!=null&&v!==''}):[]}
+function url(u){return /^https?:\/\//i.test(u||'')}
+function plural(n,w){return fmt(n)+' '+w+(n===1?'':'s')}
 
-function $(id){return document.getElementById(id);}
-function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function fmt(n){return Number(n).toLocaleString('en-US');}
-function pct(a,b){return (b?100*a/b:0).toFixed(1)+'%';}
-function arr(v){return Array.isArray(v)?v:[];}
-function str(v){return v==null?'':String(v);}
-function cnt(){return Object.create(null);}
-function uniq(a){return a.filter(function(x,i){return a.indexOf(x)===i;});}
-function safeUrl(u){return /^https?:\/\//i.test(u)?u:'';}
-function colorOf(m){return COLORS[m]||OTHERC;}
-function mlabel(m){return m||'(mechanism not stated)';}
-function rx(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
-function ci(a,b){a=a.toLowerCase();b=b.toLowerCase();return a<b?-1:a>b?1:0;}
-function short(s,n){return s.length>n?s.slice(0,n-1)+'…':s;}
-function yr(a,b){return a===null?'–':(a===b?String(a):a+'–'+b);}
-
-function extractStates(text){
-  var m=TAIL_RE.exec(text);
-  if(!m)return [];
-  var groups=m[1].match(GROUP_RE)||[];
+/* ---------- prepare the records ---------- */
+var RUN=/((?:\s*\((?:[^()]|\([^()]*\))*\))+)\s*[;.]?\s*$/,GRP=/\((?:[^()]|\([^()]*\))*\)/g;
+function findStates(t){
+  var m=RUN.exec(t);if(!m)return [];
+  var g=m[1].match(GRP);if(!g)return [];
   var out=[];
-  groups.forEach(function(g){
-    var s=g.slice(1,-1).trim();
-    if(s&&s.indexOf(',')<0&&s.length<=60&&out.indexOf(s)<0)out.push(s);
-  });
+  for(var i=0;i<g.length;i++){
+    var s=g[i].slice(1,-1).replace(/\s+/g,' ').trim();
+    if(!s||s.indexOf(',')>-1||s.length>60)return [];
+    if(out.indexOf(s)<0)out.push(s);
+  }
   return out;
 }
-
-/* ---------- prepare records ---------- */
-var recs=RAW.map(function(r,i){
+var recs=D.records.map(function(r,i){
   r=r||{};
-  var text=str(r.text),m=PARA_RE.exec(text),para=m?m[1]:'';
-  var y=(r.year===null||r.year===undefined||r.year==='')?NaN:Number(r.year);
-  var mech=str(r.mechanism),parts=para?para.split('.').map(Number):[];
-  return {i:i,id:str(r.id),symbol:str(r.symbol),url:str(r.doc_url),date:str(r.date),year:isFinite(y)?y:null,
-    body:str(r.body),mech:mech,type:str(r.type),section:str(r.section),text:text,
-    themes:uniq(arr(r.themes).map(str).filter(Boolean)),
-    sdgs:uniq(arr(r.sdgs).map(Number).filter(function(x){return isFinite(x);})),
-    targets:arr(r.sdg_targets).map(str),persons:arr(r.affected_persons).map(str),
-    para:para,p1:parts.length?parts[0]:Infinity,p2:parts.length>1?parts[1]:-1,
-    states:mech===UPR?extractStates(text):[],
-    lc:(text+' '+str(r.symbol)).toLowerCase()};
+  var text=typeof r.text==='string'?r.text:'';
+  var y=parseInt(r.year,10);if(!isFinite(y))y=parseInt(String(r.date||'').slice(0,4),10);if(!isFinite(y))y=null;
+  var m=/^(\d{1,3}(?:\.\d{1,3})?)\.?\s/.exec(text);
+  var o={r:r,i:i,id:r.id,symbol:r.symbol||'',doc_url:r.doc_url||'',date:r.date||'',year:y,body:r.body||'',mech:r.mechanism||'',type:r.type||'',
+    text:text,section:r.section||'',themes:arr(r.themes),sdgs:arr(r.sdgs).map(Number).filter(isFinite),targets:arr(r.sdg_targets),persons:arr(r.affected_persons),
+    para:m?m[1]:''};
+  o.pk=m?m[1].split('.').map(Number):null;
+  o.states=o.mech===UPR?findStates(text):[];
+  o.lt=text.toLowerCase();o.ls=o.symbol.toLowerCase();
+  return o;
 });
-var N=recs.length;
+var N=recs.length,country=D.country||'this country',sdgNames=D.sdg_names||{};
+var years=[],mechs=[],types=[],sdgGoals=[],bodyMech={},hasStates=false;
+(function(){
+  var ys={},mc={},tc={},sg={};
+  recs.forEach(function(o){
+    if(o.year!=null)ys[o.year]=1;
+    mc[o.mech]=(mc[o.mech]||0)+1;tc[o.type]=(tc[o.type]||0)+1;
+    o.sdgs.forEach(function(g){sg[g]=1});
+    (bodyMech[o.mech]=bodyMech[o.mech]||{})[o.body]=1;
+    if(o.states.length)hasStates=true;
+  });
+  years=Object.keys(ys).map(Number).sort(function(a,b){return a-b});
+  function byCount(c){return Object.keys(c).sort(function(a,b){return c[b]-c[a]||a.localeCompare(b)}).filter(function(k){return k!==''})}
+  mechs=byCount(mc);types=byCount(tc);
+  sdgGoals=Object.keys(sg).map(Number).sort(function(a,b){return a-b});
+})();
+var MCOL={'Universal Periodic Review':'#c2410c','Treaty bodies':'#0f766e','Special Procedures':'#7c3aed'},FALL=['#6b7280','#a16207','#1d4ed8','#be185d'];
+function colorOf(m){if(MCOL[m])return MCOL[m];var i=mechs.indexOf(m);return FALL[(i<0?0:i)%FALL.length]}
+function dedupe(a){var s={};return a.filter(function(x){return s[x]?false:(s[x]=1)})}
 
-var mc=cnt();recs.forEach(function(o){mc[o.mech]=(mc[o.mech]||0)+1;});
-var KNOWN=[UPR,'Treaty bodies','Special Procedures'];
-var MECHS=KNOWN.filter(function(k){return k in mc;}).concat(Object.keys(mc).filter(function(k){return KNOWN.indexOf(k)<0;}).sort());
-var ym=cnt();recs.forEach(function(o){if(o.year!==null)ym[o.year]=1;});
-var YEARS=Object.keys(ym).map(Number).sort(function(a,b){return a-b;});
-var tcAll=cnt();recs.forEach(function(o){if(o.type)tcAll[o.type]=(tcAll[o.type]||0)+1;});
-var TYPES=Object.keys(tcAll).sort(function(a,b){return tcAll[b]-tcAll[a]||ci(a,b);});
-var stAll=cnt();recs.forEach(function(o){o.states.forEach(function(s){stAll[s]=(stAll[s]||0)+1;});});
-var STATE_LIST=Object.keys(stAll).sort(ci);
-var sdAll=cnt();recs.forEach(function(o){o.sdgs.forEach(function(g){sdAll[g]=1;});});
-var SDG_LIST=Object.keys(sdAll).map(Number).sort(function(a,b){return a-b;});
-var DOCS=new Set(recs.map(function(o){return o.symbol;})).size;
-
-function minmax(L){
-  var a=null,b=null;
-  for(var k=0;k<L.length;k++){var y=L[k].year;if(y===null)continue;if(a===null||y<a)a=y;if(b===null||y>b)b=y;}
-  return {a:a,b:b};
-}
-var FILEYEARS=minmax(recs);
-
-/* ---------- state ---------- */
-var S={kw:'',mech:'',body:'',type:'',state:'',from:'',to:'',sdg:'',themes:[]};
-var WORDS=[],HLRE=null,FILTERED=[],SORTED=[],dateAsc=false,shown=PAGE,OPEN={},THEME_TOP=[],LAST_BARS=[],CHIPFN=[];
-var active='ov',openAcc='',statesOpen=false,charts={t:null,m:null},FILECHK=null;
-var SAMPLE=[],VERD={},SEED=1,kwT=null;
-var TABS=[
-  {id:'ov',num:'01',name:'Overview'},
-  {id:'rec',num:'02',name:'Records'},
-  {id:'chk',num:'03',name:'Check'},
-  {id:'met',num:'04',name:'Method &amp; export'}
-];
-
-function setWords(){
-  WORDS=S.kw.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  HLRE=WORDS.length?new RegExp('('+WORDS.map(rx).join('|')+')','gi'):null;
-}
-function hl(s){
-  s=str(s);
-  if(!HLRE)return esc(s);
-  return s.split(HLRE).map(function(p,i){return i%2?'<mark>'+esc(p)+'</mark>':esc(p);}).join('');
-}
-function matches(o,skip){
-  var k;
-  if(skip!=='kw'){for(k=0;k<WORDS.length;k++){if(o.lc.indexOf(WORDS[k])<0)return false;}}
+/* ---------- filters ---------- */
+var S={q:'',mech:'',body:'',type:'',state:'',yf:null,yt:null,sdg:'',themes:[]};
+var words=[],hlRe=null,F=[],tab=1,shown=50,newestFirst=true,openRows={},sorted=null,statesOpen=false,sampleOpen='',charts={f1:null,f2:null},fig1Rows=[],fig2Info=null,timer=null;
+function match(o,skip){
+  var i;
+  if(skip!=='q'){for(i=0;i<words.length;i++){if(o.lt.indexOf(words[i])<0&&o.ls.indexOf(words[i])<0)return false}}
   if(skip!=='mech'&&S.mech&&o.mech!==S.mech)return false;
   if(skip!=='body'&&S.body&&o.body!==S.body)return false;
   if(skip!=='type'&&S.type&&o.type!==S.type)return false;
-  if(skip!=='state'&&S.state&&o.states.indexOf(S.state)<0)return false;
-  if(skip!=='years'){
-    if(S.from!==''&&(o.year===null||o.year<Number(S.from)))return false;
-    if(S.to!==''&&(o.year===null||o.year>Number(S.to)))return false;
-  }
+  if(skip!=='state'&&S.state){if(S.state===NONE){if(o.mech!==UPR||o.states.length)return false}else if(o.states.indexOf(S.state)<0)return false}
+  if(skip!=='years'&&(S.yf!=null||S.yt!=null)){if(o.year==null)return false;if(S.yf!=null&&o.year<S.yf)return false;if(S.yt!=null&&o.year>S.yt)return false}
   if(skip!=='sdg'&&S.sdg!==''&&o.sdgs.indexOf(Number(S.sdg))<0)return false;
-  if(skip!=='themes'){for(k=0;k<S.themes.length;k++){if(o.themes.indexOf(S.themes[k])<0)return false;}}
+  if(skip!=='themes'){for(i=0;i<S.themes.length;i++)if(o.themes.indexOf(S.themes[i])<0)return false}
   return true;
 }
-function facet(getter,skip){
-  var m=cnt();
-  recs.forEach(function(o){
-    if(!matches(o,skip))return;
-    var v=getter(o);
-    (Array.isArray(v)?v:[v]).forEach(function(x){if(x===''||x===null||x===undefined)return;m[x]=(m[x]||0)+1;});
-  });
-  return m;
+function facet(skip,keys){var m=new Map();recs.forEach(function(o){if(!match(o,skip))return;keys(o).forEach(function(k){m.set(k,(m.get(k)||0)+1)})});return m}
+function countBy(list,fn){var m=new Map();list.forEach(function(o){var k=fn(o);m.set(k,(m.get(k)||0)+1)});return Array.from(m.entries()).sort(function(a,b){return b[1]-a[1]||String(a[0]).localeCompare(String(b[0]))})}
+function sdgLabel(g){return 'SDG '+g+(sdgNames[String(g)]?' · '+sdgNames[String(g)]:'')}
+function activeFilters(){
+  var a=[];
+  if(S.q.trim())a.push({k:'Keyword',v:S.q.trim(),rm:function(){S.q=''}});
+  if(S.mech)a.push({k:'Mechanism',v:S.mech,rm:function(){S.mech='';S.body=''}});
+  if(S.body)a.push({k:'Body',v:S.body,rm:function(){S.body=''}});
+  if(S.type)a.push({k:'Type',v:S.type,rm:function(){S.type=''}});
+  if(S.state)a.push({k:'State',v:S.state===NONE?'State not found':S.state,rm:function(){S.state=''}});
+  if(S.yf!=null||S.yt!=null)a.push({k:'Years',v:(S.yf!=null?S.yf:years[0])+'–'+(S.yt!=null?S.yt:years[years.length-1]),rm:function(){S.yf=null;S.yt=null}});
+  if(S.sdg!=='')a.push({k:'SDG',v:sdgLabel(S.sdg),rm:function(){S.sdg=''}});
+  S.themes.forEach(function(t){a.push({k:'Theme',v:t,rm:function(){S.themes=S.themes.filter(function(x){return x!==t})}})});
+  return a;
 }
-function sortRecs(list){
-  return list.slice().sort(function(a,b){
-    if(a.date!==b.date){var s=a.date<b.date?-1:1;return dateAsc?s:-s;}
-    if(a.body!==b.body)return a.body<b.body?-1:1;
-    if(a.p1!==b.p1)return a.p1<b.p1?-1:1;
-    if(a.p2!==b.p2)return a.p2<b.p2?-1:1;
-    return a.i-b.i;
-  });
-}
-function citation(o){return o.symbol+(o.para?', para. '+o.para:'');}
-function firstLine(t){
-  t=t.replace(/\s+/g,' ').trim();
-  if(t.length<=120)return t;
-  var cut=t.slice(0,120),sp=cut.lastIndexOf(' ');
-  if(sp>0)cut=cut.slice(0,sp);
-  return cut+'…';
-}
-function filterText(){
-  var p=[];
-  if(WORDS.length)p.push('keyword "'+S.kw.trim()+'"');
-  if(S.mech)p.push('mechanism = '+S.mech);
-  if(S.body)p.push('body = '+S.body);
-  if(S.type)p.push('type = '+S.type);
-  if(S.state)p.push('recommending State = '+S.state);
-  if(S.from!==''||S.to!=='')p.push('years '+(S.from!==''?S.from:'first')+' to '+(S.to!==''?S.to:'last'));
-  if(S.sdg!=='')p.push('SDG '+S.sdg);
-  S.themes.forEach(function(t){p.push('theme = '+t);});
-  return p.length?p.join('; '):'none';
-}
+function filterText(){var a=activeFilters();return a.length?a.map(function(f){return f.k+': '+f.v}).join('; '):'none'}
 
-/* ---------- header, footer, static fills ---------- */
-function initStatic(){
-  var src=D.source?(safeUrl(str(D.source_url))?'<a href="'+esc(D.source_url)+'" target="_blank" rel="noopener">'+esc(D.source)+'</a>':esc(D.source)):'source not stated';
-  document.title='UN human rights recommendations: '+COUNTRY;
-  $('hLab').textContent='UHRI · '+COUNTRY;
-  $('hTitle').textContent='UN human rights recommendations and observations: '+COUNTRY;
-  $('hMeta').innerHTML=src+' · '+fmt(N)+' records · '+fmt(DOCS)+' documents · '+yr(FILEYEARS.a,FILEYEARS.b)+' · built '+esc(D.built||'date not stated')+' · dated by document';
-  $('foot').innerHTML='Built on OHCHR UHRI data · '+fmt(N)+' records · '+(safeUrl(str(D.source_url))?'<a href="'+esc(D.source_url)+'" target="_blank" rel="noopener">source</a>':'source link not given');
-  $('srcList').innerHTML='<dt class="lab">Source</dt><dd>'+src+'</dd><dt class="lab">Records</dt><dd>'+fmt(N)+' records, '+fmt(DOCS)+' documents</dd><dt class="lab">Built</dt><dd>'+esc(D.built||'date not stated')+'</dd><dt class="lab">Licence</dt><dd>Not stated in the file you attached; check the OHCHR terms of use before republishing text. Every row links to the UN document it comes from.</dd>';
-  $('fromSel').innerHTML=$('toSel').innerHTML='';
-  var yo=YEARS.map(function(y){return '<option value="'+y+'">'+y+'</option>';}).join('');
-  $('fromSel').innerHTML='<option value="">First</option>'+yo;
-  $('toSel').innerHTML='<option value="">Last</option>'+yo;
-  $('kwMain').placeholder='Search '+fmt(N)+' records, e.g. torture';
-  $('stateWrap').hidden=!STATE_LIST.length;
-}
-
-/* ---------- tabs ---------- */
-function buildTabs(){
-  $('tabs').innerHTML=TABS.map(function(t,i){
-    return '<button type="button" role="tab" id="t-'+t.id+'" aria-selected="'+(i===0)+'" aria-controls="p-'+t.id+'" tabindex="'+(i===0?0:-1)+'" data-tab="'+t.id+'"><b>'+t.num+'</b> '+t.name+'</button>';
-  }).join('');
-}
-function selectTab(id,focus){
-  active=id;
-  TABS.forEach(function(t){
-    var on=t.id===id,b=$('t-'+t.id);
-    b.setAttribute('aria-selected',on?'true':'false');
-    b.tabIndex=on?0:-1;
-    $('p-'+t.id).hidden=!on;
+/* ---------- helpers on the filtered set ---------- */
+function themeRows(list){
+  var m=new Map();
+  list.forEach(function(o){
+    var seen={};
+    o.themes.forEach(function(t){
+      if(seen[t])return;seen[t]=1;
+      var e=m.get(t);if(!e){e={t:t,n:0,y0:null,y1:null};m.set(t,e)}
+      e.n++;
+      if(o.year!=null){if(e.y0==null||o.year<e.y0)e.y0=o.year;if(e.y1==null||o.year>e.y1)e.y1=o.year}
+    });
   });
-  $('accs').hidden=!(id==='ov'||id==='rec');
-  if(focus)$('t-'+id).focus();
-  if(id==='ov')drawCharts();
+  return Array.from(m.values()).sort(function(a,b){return b.n-a.n||a.t.localeCompare(b.t)}).slice(0,10);
 }
-$('tabs').addEventListener('click',function(e){
-  var b=e.target.closest('[data-tab]');
-  if(b)selectTab(b.getAttribute('data-tab'),false);
-});
-$('tabs').addEventListener('keydown',function(e){
-  var keys=['ArrowRight','ArrowLeft','Home','End'];
-  if(keys.indexOf(e.key)<0)return;
-  var ids=TABS.map(function(t){return t.id;}),i=ids.indexOf(active);
-  if(e.key==='ArrowRight')i=(i+1)%ids.length;
-  else if(e.key==='ArrowLeft')i=(i-1+ids.length)%ids.length;
-  else if(e.key==='Home')i=0;
-  else i=ids.length-1;
-  e.preventDefault();
-  selectTab(ids[i],true);
-});
+function yearRange(list){var a=list.filter(function(o){return o.year!=null}).map(function(o){return o.year});if(!a.length)return null;return [Math.min.apply(null,a),Math.max.apply(null,a)]}
+function docsOf(list){var s={};list.forEach(function(o){s[o.symbol]=1});return Object.keys(s).length}
+function cmp(a,b){
+  if(a.date!==b.date)return (a.date<b.date?1:-1)*(newestFirst?1:-1);
+  var c=a.body.localeCompare(b.body);if(c)return c;
+  if(a.pk&&b.pk){if(a.pk[0]!==b.pk[0])return a.pk[0]-b.pk[0];var x=a.pk[1]||0,y=b.pk[1]||0;if(x!==y)return x-y}
+  else if(a.pk)return -1;else if(b.pk)return 1;
+  return a.i-b.i;
+}
+function getSorted(){if(!sorted)sorted=F.slice().sort(cmp);return sorted}
+function firstLine(t){if(t.length<=120)return t;var c=t.slice(0,120),k=c.lastIndexOf(' ');if(k>0)c=c.slice(0,k);return c+'…'}
+function hl(s){
+  if(!hlRe)return esc(s);
+  return s.split(hlRe).map(function(p,i){return i%2?'<mark>'+esc(p)+'</mark>':esc(p)}).join('');
+}
+function stateCell(o){return o.mech!==UPR?'–':(o.states.length?esc(o.states.join('; ')):'<span class="mute">State not found</span>')}
+function docLink(o){return url(o.doc_url)?'<a href="'+esc(o.doc_url)+'" target="_blank" rel="noopener">'+esc(o.symbol||o.doc_url)+'</a>':esc(o.symbol)}
+function citation(o){return o.para?o.symbol+', para. '+o.para:o.symbol}
+function srcLine(){return 'Source: '+(D.source?esc(D.source):'OHCHR UHRI')+(url(D.source_url)?' (<a href="'+esc(D.source_url)+'" target="_blank" rel="noopener">link</a>)':'')+'. Built '+esc(D.built||'(date not given)')+'. Counts are made in your browser on the '+fmt(N)+' records of the attached file.'}
 
-/* ---------- accordion ---------- */
-function syncAcc(){
-  ['kw','mbt','ys'].forEach(function(k){
-    var open=openAcc===k,b=$('ah-'+k);
-    b.setAttribute('aria-expanded',open?'true':'false');
-    b.lastElementChild.textContent=open?'–':'+';
-    $('ac-'+k).hidden=!open;
-  });
-}
+/* ---------- header, footer ---------- */
+(function(){
+  var yr=yearRange(recs);
+  document.title='UN recommendations and observations: '+country;
+  $('hlab').textContent='UHRI · '+country;
+  $('htitle').textContent='UN human rights recommendations and observations: '+country;
+  $('hsrc').innerHTML='Source: '+(url(D.source_url)?'<a href="'+esc(D.source_url)+'" target="_blank" rel="noopener">'+esc(D.source||D.source_url)+'</a>':esc(D.source||'OHCHR UHRI'))+
+    ' · '+plural(N,'record')+' · '+plural(docsOf(recs),'document')+' · '+(yr?yr[0]+'–'+yr[1]:'no years')+' · built '+esc(D.built||'(date not given)')+' · dated by document';
+  $('foot').innerHTML='Built on OHCHR UHRI data · '+fmt(N)+' records · '+(url(D.source_url)?'<a href="'+esc(D.source_url)+'" target="_blank" rel="noopener">source</a>':'source: '+esc(D.source||'OHCHR UHRI'));
+  $('q2').placeholder='Search '+fmt(N)+' records, e.g. torture';
+  $('f1src').innerHTML=srcLine();$('f2src').innerHTML=srcLine();$('p2src').innerHTML=srcLine();
+  $('p3src').innerHTML=srcLine()+' Licence: the file states none; check the terms of use on the source page before you republish. UN documents open on docs.un.org.';
+  $('fsw').hidden=!hasStates;
+})();
 
 /* ---------- rail ---------- */
-function chipList(){
-  var c=[];
-  if(WORDS.length)c.push({l:'Keyword: '+S.kw.trim(),f:function(){S.kw='';syncKw();}});
-  if(S.mech)c.push({l:'Mechanism: '+S.mech,f:function(){S.mech='';}});
-  if(S.body)c.push({l:'Body: '+S.body,f:function(){S.body='';}});
-  if(S.type)c.push({l:'Type: '+S.type,f:function(){S.type='';}});
-  if(S.state)c.push({l:'State: '+S.state,f:function(){S.state='';}});
-  if(S.from!==''||S.to!=='')c.push({l:'Years: '+(S.from!==''?S.from:'first')+'–'+(S.to!==''?S.to:'last'),f:function(){S.from='';S.to='';}});
-  if(S.sdg!=='')c.push({l:'SDG '+S.sdg,f:function(){S.sdg='';}});
-  S.themes.forEach(function(t){c.push({l:'Theme: '+t,f:function(){S.themes=S.themes.filter(function(x){return x!==t;});}});});
-  return c;
+function fillSelect(sel,opts,value){
+  sel.innerHTML=opts.map(function(o){return '<option value="'+esc(o.v)+'">'+esc(o.l)+'</option>'}).join('');
+  sel.value=value;
 }
-function fillSelect(sel,allLabel,items,cur){
-  sel.innerHTML='<option value="">'+esc(allLabel)+'</option>'+items.map(function(i){return '<option value="'+esc(i.v)+'">'+esc(i.l)+'</option>';}).join('');
-  sel.value=cur;
+function optsFrom(m,keys,all,zeros){
+  var list=keys.slice().sort(function(a,b){return (m.get(b)||0)-(m.get(a)||0)||a.localeCompare(b)});
+  var o=[{v:'',l:all}];
+  list.forEach(function(k){var n=m.get(k)||0;if(n||zeros)o.push({v:k,l:k+' ('+fmt(n)+')'})});
+  return o;
 }
-function renderRail(){
-  var n=FILTERED.length;
-  $('matchN').textContent=fmt(n);
-  $('matchOf').textContent='of '+fmt(N)+' in the file';
-  $('shareFill').style.width=(N?100*n/N:0)+'%';
-  CHIPFN=chipList();
-  $('chips').innerHTML=CHIPFN.map(function(c,k){
-    return '<button type="button" class="chip" data-act="chip" data-k="'+k+'" title="'+esc(c.l)+'" aria-label="Remove filter: '+esc(c.l)+'">'+esc(short(c.l,46))+' <span aria-hidden="true">×</span></button>';
-  }).join('');
-  var fm=facet(function(o){return o.mech;},'mech');
-  fillSelect($('mechSel'),'All mechanisms',MECHS.filter(Boolean).map(function(m){return {v:m,l:m+' ('+fmt(fm[m]||0)+')'};}),S.mech);
-  var fb=facet(function(o){return o.body;},'body'),bl=cnt();
-  recs.forEach(function(o){if(o.body&&(!S.mech||o.mech===S.mech))bl[o.body]=1;});
-  fillSelect($('bodySel'),'All bodies and mandates',Object.keys(bl).sort(ci).map(function(b){return {v:b,l:b+' ('+fmt(fb[b]||0)+')'};}),S.body);
-  var ft=facet(function(o){return o.type;},'type');
-  fillSelect($('typeSel'),'All types',TYPES.map(function(t){return {v:t,l:t+' ('+fmt(ft[t]||0)+')'};}),S.type);
-  var fs=facet(function(o){return o.states;},'state');
-  fillSelect($('stateSel'),'All States',STATE_LIST.map(function(s){return {v:s,l:s+' ('+fmt(fs[s]||0)+')'};}),S.state);
-  var fg=facet(function(o){return o.sdgs;},'sdg');
-  fillSelect($('sdgSel'),'All SDGs',SDG_LIST.map(function(g){return {v:String(g),l:'SDG '+g+(SDG_NAMES[String(g)]?' · '+SDG_NAMES[String(g)]:'')+' ('+fmt(fg[g]||0)+')'};}),S.sdg);
-  $('fromSel').value=S.from;$('toSel').value=S.to;
-  var a1=WORDS.length?1:0,a2=(S.mech?1:0)+(S.body?1:0)+(S.type?1:0)+(S.state?1:0),a3=((S.from!==''||S.to!=='')?1:0)+(S.sdg!==''?1:0);
-  $('an-kw').textContent=a1?'· '+a1:'';$('an-mbt').textContent=a2?'· '+a2:'';$('an-ys').textContent=a3?'· '+a3:'';
-}
-function syncKw(){$('kwRail').value=S.kw;$('kwMain').value=S.kw;}
-function onKw(e){
-  var v=e.target.value,other=e.target===$('kwRail')?$('kwMain'):$('kwRail');
-  other.value=v;
-  clearTimeout(kwT);
-  kwT=setTimeout(function(){S.kw=v;update();},300);
-}
-$('kwRail').addEventListener('input',onKw);
-$('kwMain').addEventListener('input',onKw);
-$('accs').addEventListener('change',function(e){
-  var id=e.target.id,v=e.target.value;
-  if(id==='mechSel'){
-    S.mech=v;
-    if(S.mech&&S.body&&!recs.some(function(o){return o.mech===S.mech&&o.body===S.body;}))S.body='';
+function syncRail(){
+  var n=F.length;
+  $('mnum').textContent=fmt(n);
+  $('mtxt').textContent=n===1?'matching record':'matching records';
+  $('mof').textContent='of '+fmt(N)+' in the file';
+  $('mbar').style.width=(N?n/N*100:0)+'%';
+  var ch=activeFilters();
+  $('chips').innerHTML=ch.map(function(f,i){return '<button type="button" class="chip" data-ix="'+i+'" aria-label="Remove filter '+esc(f.k+': '+f.v)+'"><b>'+esc(f.k)+'</b>'+esc(f.v)+' <span aria-hidden="true">×</span></button>'}).join('');
+  var ae=document.activeElement;
+  if(ae!==$('q1'))$('q1').value=S.q;
+  if(ae!==$('q2'))$('q2').value=S.q;
+  var fm=facet('mech',function(o){return [o.mech]});
+  fillSelect($('fm'),optsFrom(fm,mechs,'All mechanisms',true),S.mech);
+  var bodies=Object.keys(bodyMech).filter(function(m){return !S.mech||m===S.mech}).reduce(function(a,m){return a.concat(Object.keys(bodyMech[m]))},[]);
+  bodies=dedupe(bodies).filter(function(b){return b!==''});
+  fillSelect($('fb'),optsFrom(facet('body',function(o){return [o.body]}),bodies,'All bodies and mandates',true),S.body);
+  fillSelect($('ft'),optsFrom(facet('type',function(o){return [o.type]}),types,'All types',true),S.type);
+  if(hasStates){
+    var fs=facet('state',function(o){return o.mech!==UPR?[]:(o.states.length?o.states:[NONE])});
+    var nn=fs.get(NONE)||0;fs.delete(NONE);
+    var keys=Array.from(fs.keys());if(S.state&&S.state!==NONE&&keys.indexOf(S.state)<0)keys.push(S.state);
+    var so=optsFrom(fs,keys,'All States',false);
+    if(nn||S.state===NONE)so.splice(1,0,{v:NONE,l:'State not found ('+fmt(nn)+')'});
+    fillSelect($('fs'),so,S.state);
   }
-  else if(id==='bodySel')S.body=v;
-  else if(id==='typeSel')S.type=v;
-  else if(id==='stateSel')S.state=v;
-  else if(id==='fromSel')S.from=v;
-  else if(id==='toSel')S.to=v;
-  else if(id==='sdgSel')S.sdg=v;
-  else return;
-  if(S.from!==''&&S.to!==''&&Number(S.from)>Number(S.to)){var t=S.from;S.from=S.to;S.to=t;}
-  update();
+  var yo=years.map(function(y){return {v:String(y),l:String(y)}});
+  fillSelect($('yf'),yo,String(S.yf!=null?S.yf:years[0]));
+  fillSelect($('yt'),yo,String(S.yt!=null?S.yt:years[years.length-1]));
+  fillSelect($('fg'),[{v:'',l:'Any goal'}].concat(sdgGoals.map(function(g){return {v:String(g),l:g+' · '+(sdgNames[String(g)]||'')}})),String(S.sdg));
+}
+$('chips').addEventListener('click',function(e){var b=e.target.closest('.chip');if(!b)return;activeFilters()[+b.getAttribute('data-ix')].rm();update()});
+$('clear').addEventListener('click',function(){S={q:'',mech:'',body:'',type:'',state:'',yf:null,yt:null,sdg:'',themes:[]};update()});
+['h1','h2','h3'].forEach(function(id,k){
+  $(id).addEventListener('click',function(){
+    var open=this.getAttribute('aria-expanded')==='true';
+    ['h1','h2','h3'].forEach(function(h,j){
+      var o=(j===k)&&!open;
+      $(h).setAttribute('aria-expanded',o);$('a'+(j+1)).hidden=!o;
+      $(h).lastChild.textContent=o?'−':'+';
+    });
+  });
+});
+function onQ(e){var v=e.target.value;clearTimeout(timer);timer=setTimeout(function(){S.q=v;update()},300)}
+$('q1').addEventListener('input',onQ);$('q2').addEventListener('input',onQ);
+$('fm').addEventListener('change',function(){S.mech=this.value;if(S.body&&S.mech&&!(bodyMech[S.mech]||{})[S.body])S.body='';update()});
+$('fb').addEventListener('change',function(){S.body=this.value;update()});
+$('ft').addEventListener('change',function(){S.type=this.value;update()});
+$('fs').addEventListener('change',function(){S.state=this.value;update()});
+$('fg').addEventListener('change',function(){S.sdg=this.value;update()});
+function yearChange(){
+  var a=Number($('yf').value),b=Number($('yt').value);
+  if(a>b){var t=a;a=b;b=t}
+  S.yf=a>years[0]?a:null;S.yt=b<years[years.length-1]?b:null;update();
+}
+$('yf').addEventListener('change',yearChange);$('yt').addEventListener('change',yearChange);
+function addTheme(t){if(S.themes.indexOf(t)<0){S.themes.push(t);update()}}
+
+/* ---------- tabs ---------- */
+function setTab(n,focus){
+  tab=n;
+  [1,2,3].forEach(function(k){
+    var t=$('t'+k);t.setAttribute('aria-selected',k===n);t.tabIndex=k===n?0:-1;$('p'+k).hidden=k!==n;
+  });
+  $('acc').hidden=n===3;
+  if(focus)$('t'+n).focus();
+  renderPanel();
+}
+[1,2,3].forEach(function(k){$('t'+k).addEventListener('click',function(){setTab(k)})});
+$('tabs').addEventListener('keydown',function(e){
+  var k={ArrowRight:tab%3+1,ArrowLeft:(tab+1)%3+1,Home:1,End:3}[e.key];
+  if(k){e.preventDefault();setTab(k,true)}
 });
 
 /* ---------- overview ---------- */
-function themeStats(list){
-  var m=cnt();
-  list.forEach(function(o){
-    o.themes.forEach(function(t){
-      var e=m[t]||(m[t]={name:t,count:0,y0:null,y1:null});
-      e.count++;
-      if(o.year!==null){if(e.y0===null||o.year<e.y0)e.y0=o.year;if(e.y1===null||o.year>e.y1)e.y1=o.year;}
+var valueLabels={id:'valueLabels',afterDatasetsDraw:function(chart){
+  var ctx=chart.ctx;
+  chart.data.datasets.forEach(function(ds,di){
+    chart.getDatasetMeta(di).data.forEach(function(bar,i){
+      ctx.save();ctx.fillStyle='#1d1b18';ctx.font='600 13px ui-monospace,Menlo,Consolas,monospace';ctx.textBaseline='middle';
+      ctx.fillText(fmt(ds.data[i]),bar.x+6,bar.y);ctx.restore();
     });
   });
-  return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.count-a.count||ci(a.name,b.name);});
-}
-function stateTop(L){
-  var m=cnt(),upr=0,found=0;
-  L.forEach(function(o){
-    if(o.mech!==UPR)return;
-    upr++;if(o.states.length)found++;
-    o.states.forEach(function(s){m[s]=(m[s]||0)+1;});
-  });
-  var a=Object.keys(m).map(function(k){return {name:k,count:m[k]};}).sort(function(x,y){return y.count-x.count||ci(x.name,y.name);});
-  return {top:a.slice(0,10),upr:upr,found:found};
-}
-function tile(label,big,sub,how,extra,color){
-  return '<div class="tile"><p class="lab">'+(color?'<span class="dot" style="background:'+color+'"></span>':'')+label+'</p><p class="n">'+big+'</p><p class="sub">'+sub+'</p><p class="how">How this is computed: '+how+'</p>'+(extra||'')+'</div>';
-}
-function renderOverview(){
-  var L=FILTERED,n=L.length,mm=minmax(L);
-  var docs=new Set(L.map(function(o){return o.symbol;})).size;
-  var tc=cnt();
-  L.forEach(function(o){var k=o.type||'(type not stated)';tc[k]=(tc[k]||0)+1;});
-  var tl=Object.keys(tc).sort(function(a,b){return tc[b]-tc[a]||ci(a,b);}).map(function(k){return fmt(tc[k])+' '+esc(k);}).join(' · ');
-  $('tiles1').innerHTML=
-    tile('Records',fmt(n),(n!==N?'of '+fmt(N)+' in the file<br>':'')+(tl||'No records match'),'every record in the filtered set; types are counted as spelled in the data.')+
-    tile('Documents',fmt(docs),'distinct UN symbols','distinct symbol values in the filtered set.')+
-    tile('Years',mm.a===null?'–':yr(mm.a,mm.b),'first–last year, dated by document','smallest and largest year in the filtered set.');
-  $('tiles2').innerHTML=MECHS.map(function(m){
-    var Lm=L.filter(function(o){return o.mech===m;}),mx=minmax(Lm);
-    var d=new Set(Lm.map(function(o){return o.symbol;})).size;
-    var extra='';
-    if(m===UPR){
-      extra='<p class="how"><button type="button" class="linkbtn" data-act="states" aria-expanded="'+statesOpen+'">see the States</button></p>';
-      if(statesOpen){
-        var st=stateTop(L);
-        extra+='<div class="statesbox"><h4>Ten States that made most recommendations to '+esc(COUNTRY)+'</h4>'+
-          (st.top.length?'<ol>'+st.top.map(function(s){return '<li>'+esc(s.name)+' · '+fmt(s.count)+'</li>';}).join('')+'</ol>':'<p>No State found in the current selection.</p>')+
-          '<p class="how">How this is computed: States named in the parentheses that end each UPR text; a line made by several States counts once for each. '+fmt(st.found)+' of '+fmt(st.upr)+' UPR records name a State.</p></div>';
-      }
-    }
-    return tile(esc(mlabel(m)),fmt(Lm.length),fmt(d)+' documents · latest '+(mx.b===null?'–':mx.b)+' · '+pct(Lm.length,n)+' of filtered','records with this mechanism in the filtered set; share = records / filtered records.',extra,colorOf(m));
-  }).join('');
-
-  var TS=themeStats(L);
-  THEME_TOP=TS.slice(0,10);
-  LAST_BARS=THEME_TOP.map(function(t){return t.count;});
-  $('fig1t').textContent=(TS.length<10?'Most frequent themes (only '+TS.length+' present)':'Ten most frequent themes')+' among '+fmt(n)+' filtered records';
-  $('themeRows').innerHTML=THEME_TOP.length?THEME_TOP.map(function(t,k){
-    return '<tr data-count="'+t.count+'" data-name="'+esc(t.name)+'"><td><button type="button" class="sorter" data-act="theme" data-k="'+k+'">'+esc(t.name)+'</button></td><td class="num">'+fmt(t.count)+'</td><td class="num">'+pct(t.count,n)+'</td><td class="num">'+yr(t.y0,t.y1)+'</td></tr>';
-  }).join(''):'<tr><td colspan="4">'+(n?'No themes are labelled in this selection.':'No records match the current filters.')+'</td></tr>';
-  $('fig1n').textContent='How this is computed: each record counts once for every theme it carries, so bars add up to more than the '+fmt(n)+' records; percentages are of records, not of labels. Click a bar = add the theme as a filter.';
-  var srcTxt='Source: '+(D.source||'UHRI file')+(D.built?', built '+D.built:'')+'; '+fmt(n)+' of '+fmt(N)+' records.';
-  $('fig1s').textContent=srcTxt;
-  $('fig2s').textContent=srcTxt;
-  var undated=L.filter(function(o){return o.year===null;}).length;
-  $('fig2t').textContent='Records per year by mechanism, '+fmt(n)+' filtered records';
-  $('fig2n').textContent='How this is computed: records per year and mechanism in the filtered set, zero for missing combinations; empty years show as gaps.'+(undated?' '+fmt(undated)+' records without a year are not drawn.':'');
-}
-
-var endLabels={id:'endLabels',afterDatasetsDraw:function(chart){
-  var ctx=chart.ctx,meta=chart.getDatasetMeta(0),data=chart.data.datasets[0].data;
-  ctx.save();ctx.font='600 13px ui-monospace, Menlo, Consolas, monospace';ctx.fillStyle='#1d1b18';ctx.textBaseline='middle';
-  meta.data.forEach(function(bar,i){ctx.fillText(fmt(data[i]),bar.x+6,bar.y);});
-  ctx.restore();
 }};
-function wrap(s,w,maxLines){
-  var words=s.split(' '),lines=[],cur='';
-  words.forEach(function(x){
-    if(cur&&(cur+' '+x).length>w){lines.push(cur);cur=x;}else cur=cur?cur+' '+x:x;
-  });
-  if(cur)lines.push(cur);
-  if(lines.length>maxLines){lines=lines.slice(0,maxLines);lines[maxLines-1]+='…';}
-  return lines;
+function wrapLabel(s){
+  if(s.length<=44)return s;
+  var out=[],cur='';
+  s.split(' ').forEach(function(w){if(cur&&(cur+' '+w).length>44){out.push(cur);cur=w}else cur=cur?cur+' '+w:w});
+  if(cur)out.push(cur);return out;
 }
-function addTheme(name){
-  if(S.themes.indexOf(name)<0)S.themes.push(name);
-  update();
+function destroy(k){if(charts[k]){charts[k].destroy();charts[k]=null}}
+function renderOverview(){
+  var n=F.length,tc=countBy(F,function(o){return o.type||'(no type)'}),yr=yearRange(F);
+  $('tiles').innerHTML=
+    '<div class="tile"><div class="lab">Records, all types</div><div class="big">'+fmt(n)+'</div>'+
+      '<div class="sm">'+(n?tc.map(function(e){return fmt(e[1])+' '+esc(e[0])}).join(' · '):'No records match.')+'</div>'+
+      '<p class="how">How this is computed: number of records in the filtered set; the line counts them per <code>type</code>, spelled as in the data.</p></div>'+
+    '<div class="tile"><div class="lab">Documents</div><div class="big">'+fmt(docsOf(F))+'</div><div class="sm">distinct document symbols</div>'+
+      '<p class="how">How this is computed: distinct <code>symbol</code> among the filtered records.</p></div>'+
+    '<div class="tile"><div class="lab">Years</div><div class="big">'+(yr?yr[0]+'–'+yr[1]:'–')+'</div><div class="sm">first and last year, dated by document</div>'+
+      '<p class="how">How this is computed: smallest and largest <code>year</code> in the filtered set.</p></div>';
+  $('mtiles').innerHTML=mechs.map(function(m){
+    var sub=F.filter(function(o){return o.mech===m}),y=yearRange(sub);
+    var h='<div class="tile"><div class="lab"><span class="dot" style="background:'+colorOf(m)+'"></span>'+esc(m)+'</div><div class="mid">'+fmt(sub.length)+' <span class="sm">records</span></div>'+
+      '<div class="sm">'+plural(docsOf(sub),'document')+' · latest year '+(y?y[1]:'–')+' · '+pc(sub.length,n)+' of the filtered set</div>';
+    if(m===UPR&&hasStates)h+='<button type="button" class="link" data-act="states" aria-expanded="'+statesOpen+'">see the States</button>'+(statesOpen?statesHtml():'');
+    return h+'<p class="how">How this is computed: records, distinct symbols and last year of this mechanism in the filtered set; share = records / filtered records.</p></div>';
+  }).join('');
+  renderFig1();renderFig2();renderChecks();
 }
-function drawCharts(){
-  ['t','m'].forEach(function(k){if(charts[k]){charts[k].destroy();charts[k]=null;}});
-  var n=FILTERED.length,hasChart=!!window.Chart;
-  var msg=!hasChart?'Chart.js did not load; the table has the same numbers.':'No records match the current filters.';
-  var show1=hasChart&&THEME_TOP.length>0;
-  $('c1').hidden=!show1;$('c1e').hidden=show1;
-  $('c1e').textContent=hasChart&&n?'No themes are labelled in this selection.':msg;
-  var mm=minmax(FILTERED),show2=hasChart&&mm.a!==null;
-  $('c2').hidden=!show2;$('c2e').hidden=show2;
-  $('c2e').textContent=hasChart&&n?'No record in this selection has a year.':msg;
-  if(!hasChart)return;
-  try{
-    Chart.defaults.font.family='system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
-    Chart.defaults.color='#1d1b18';
-    if(show1){
-      var top=THEME_TOP;
-      $('box1').style.height=Math.max(160,top.length*46+20)+'px';
-      charts.t=new Chart($('c1'),{type:'bar',
-        data:{labels:top.map(function(t){return wrap(t.name,34,3);}),datasets:[{data:LAST_BARS,backgroundColor:'rgba(155,35,53,0.8)',hoverBackgroundColor:'#9b2335',barPercentage:0.75,categoryPercentage:0.9}]},
-        options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,layout:{padding:{right:64}},
-          interaction:{mode:'nearest',axis:'y',intersect:false},
-          plugins:{legend:{display:false},tooltip:{callbacks:{
-            title:function(items){return top[items[0].dataIndex].name;},
-            label:function(c){return fmt(c.parsed.x)+' records ('+pct(c.parsed.x,n)+' of filtered)';}}}},
-          scales:{x:{display:false,beginAtZero:true},y:{grid:{display:false},border:{display:false},ticks:{autoSkip:false,font:{size:13}}}},
-          onClick:function(evt,els){if(els&&els.length)addTheme(top[els[0].index].name);},
-          onHover:function(evt,els){if(evt.native&&evt.native.target)evt.native.target.style.cursor=els&&els.length?'pointer':'default';}},
-        plugins:[endLabels]});
-      $('c1').setAttribute('aria-label','Ranked horizontal bars. Largest: '+top[0].name+', '+fmt(top[0].count)+' records. The table below lists all ten.');
+function statesHtml(){
+  var c={};F.forEach(function(o){o.states.forEach(function(s){c[s]=(c[s]||0)+1})});
+  var top=Object.keys(c).sort(function(a,b){return c[b]-c[a]||a.localeCompare(b)}).slice(0,10);
+  return '<div class="statelist"><h4>Ten States that made most recommendations to '+esc(country)+'</h4>'+
+    (top.length?'<ol>'+top.map(function(s){return '<li>'+esc(s)+' <span>'+fmt(c[s])+'</span></li>'}).join('')+'</ol>':'<div class="empty">No States found in the filtered records.</div>')+
+    '<p class="how">A count of recommendation lines, not of influence; a line backed by several States counts once for each.</p></div>';
+}
+$('p1').addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]');if(!b)return;
+  var a=b.getAttribute('data-act');
+  if(a==='states'){statesOpen=!statesOpen;renderOverview()}
+  else if(a==='theme')addTheme(b.getAttribute('data-t'));
+  else if(a==='sample'){var t=b.getAttribute('data-t');sampleOpen=sampleOpen===t?'':t;renderFig1Table()}
+});
+function renderFig1(){
+  var n=F.length;
+  fig1Rows=themeRows(F);
+  $('f1t').textContent=(fig1Rows.length===10?'Ten most frequent themes':'Most frequent themes ('+fig1Rows.length+')')+' among '+fmt(n)+' filtered records';
+  destroy('f1');
+  var empty=!fig1Rows.length;
+  $('c1wrap').hidden=empty;$('f1e').hidden=!empty;
+  $('f1e').textContent=n?'No theme labels on these records.':'No records match.';
+  if(!empty){
+    if(typeof Chart==='undefined'){$('c1wrap').hidden=true;$('f1e').hidden=false;$('f1e').textContent='The chart library did not load; the table below has the same numbers.'}
+    else{
+      $('c1wrap').style.height=(fig1Rows.length*40+20)+'px';
+      var names=fig1Rows.map(function(r){return r.t});
+      charts.f1=new Chart($('c1'),{type:'bar',data:{labels:names.map(wrapLabel),datasets:[{data:fig1Rows.map(function(r){return r.n}),backgroundColor:'rgba(155,35,53,.8)',borderWidth:0,barThickness:18}]},
+        options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,layout:{padding:{right:60}},
+          plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return fmt(c.parsed.x)+' records · click = filter'}}}},
+          scales:{x:{display:false,beginAtZero:true,grid:{display:false}},y:{grid:{display:false},border:{display:false},ticks:{color:'#1d1b18',font:{size:12}}}},
+          onClick:function(ev,els){if(els&&els.length)addTheme(names[els[0].index])},
+          onHover:function(ev,els){ev.native&&ev.native.target&&(ev.native.target.style.cursor=els&&els.length?'pointer':'default')}},
+        plugins:[valueLabels]});
     }
-    if(show2){
-      var years=[];for(var y=mm.a;y<=mm.b;y++)years.push(y);
-      var per={};MECHS.forEach(function(m){per[m]=years.map(function(){return 0;});});
-      var tot=years.map(function(){return 0;});
-      FILTERED.forEach(function(o){if(o.year===null)return;var k=o.year-mm.a;per[o.mech][k]++;tot[k]++;});
-      var peak=0;tot.forEach(function(v,k){if(v>tot[peak])peak=k;});
-      charts.m=new Chart($('c2'),{type:'bar',
-        data:{labels:years,datasets:MECHS.map(function(m){return {label:mlabel(m),data:per[m],backgroundColor:colorOf(m),stack:'s'};})},
-        options:{responsive:true,maintainAspectRatio:false,animation:false,
-          plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:13}}},tooltip:{mode:'index',intersect:false}},
-          scales:{x:{stacked:true,grid:{display:false},ticks:{autoSkip:true,maxRotation:0}},y:{stacked:true,beginAtZero:true,ticks:{precision:0},grid:{color:'#e7e1d3'}}}}});
-      $('c2').setAttribute('aria-label','Stacked bars of records per year by mechanism, '+mm.a+' to '+mm.b+'. Busiest year: '+years[peak]+' with '+fmt(tot[peak])+' records.');
-    }
-  }catch(err){
-    $('c1e').hidden=false;$('c1e').textContent='The charts could not be drawn ('+err.message+'); the table has the same numbers.';
   }
+  renderFig1Table();
 }
+function renderFig1Table(){
+  var n=F.length;
+  if(!fig1Rows.length){$('f1tab').innerHTML='';return}
+  var h='<table id="t1tab"><caption>Same ten rows as the chart. A record can carry several themes.</caption><thead><tr><th scope="col">Theme <span class="mute">(click = filter)</span></th><th scope="col" class="n">Records</th><th scope="col" class="n">% of filtered</th><th scope="col">Years (first–last)</th><th scope="col">Check</th></tr></thead><tbody>';
+  fig1Rows.forEach(function(r){
+    h+='<tr><td><button type="button" class="tb-btn" data-act="theme" data-t="'+esc(r.t)+'">'+esc(r.t)+'</button></td><td class="n cnt">'+fmt(r.n)+'</td><td class="n">'+pc(r.n,n)+'</td><td>'+(r.y0==null?'–':(r.y0===r.y1?r.y0:r.y0+'–'+r.y1))+'</td>'+
+      '<td><button type="button" class="tb-btn" data-act="sample" data-t="'+esc(r.t)+'" aria-expanded="'+(sampleOpen===r.t)+'">sample</button></td></tr>';
+    if(sampleOpen===r.t)h+='<tr class="sample"><td colspan="5">'+sampleHtml(r.t)+'</td></tr>';
+  });
+  $('f1tab').innerHTML=h+'</tbody></table>';
+}
+function sampleHtml(t){
+  var l=F.filter(function(o){return o.themes.indexOf(t)>-1}).sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:a.i-b.i});
+  var pick=dedupe([0,Math.floor((l.length-1)/2),l.length-1].map(String)).map(Number),names=['oldest','middle','newest'];
+  var idx=[0,Math.floor((l.length-1)/2),l.length-1];
+  return '<span class="lab">Sample check: up to three records under this label (oldest, middle, newest by date)</span><ul>'+pick.map(function(k){
+    var o=l[k],nm=names[idx.indexOf(k)];
+    return '<li><span class="mono">'+esc(nm)+' · '+esc(o.date)+'</span> · '+docLink(o)+(o.para?', para. '+esc(o.para):'')+' — '+esc(firstLine(o.text))+'</li>';
+  }).join('')+'</ul>';
+}
+function renderFig2(){
+  var yr=yearRange(F);
+  destroy('f2');fig2Info=null;
+  var empty=!yr;
+  $('c2wrap').hidden=empty;$('f2e').hidden=!empty;
+  $('f2e').textContent='No records match.';
+  $('f2t').textContent='Records per year by mechanism among '+fmt(F.length)+' filtered records';
+  if(empty)return;
+  var labels=[];for(var y=yr[0];y<=yr[1];y++)labels.push(y);
+  var present=mechs.filter(function(m){return F.some(function(o){return o.mech===m})});
+  var cnt={};present.forEach(function(m){cnt[m]={}});
+  var noYear=0;
+  F.forEach(function(o){if(o.year==null){noYear++;return}if(cnt[o.mech])cnt[o.mech][o.year]=(cnt[o.mech][o.year]||0)+1});
+  var sets=present.map(function(m){return {label:m,data:labels.map(function(y){return cnt[m][y]||0}),backgroundColor:colorOf(m),borderWidth:0}});
+  fig2Info={sum:sets.reduce(function(a,s){return a+s.data.reduce(function(x,v){return x+v},0)},0),noYear:noYear};
+  if(typeof Chart==='undefined'){$('c2wrap').hidden=true;$('f2e').hidden=false;$('f2e').textContent='The chart library did not load.';return}
+  charts.f2=new Chart($('c2'),{type:'bar',data:{labels:labels,datasets:sets},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{position:'top',align:'start',labels:{color:'#1d1b18',boxWidth:12,font:{size:12}}},tooltip:{mode:'index',intersect:false}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#1d1b18',maxRotation:0,autoSkip:true}},y:{stacked:true,beginAtZero:true,grid:{color:'#e3dccd'},border:{display:false},ticks:{color:'#1d1b18',precision:0}}}}});
+  $('c2').setAttribute('aria-label','Stacked bar chart of '+fmt(F.length)+' records per year, '+yr[0]+' to '+yr[1]+', by mechanism');
+}
+
+/* ---------- the app checks itself ---------- */
+function computeChecks(){
+  var C=[],n=F.length;
+  function add(name,st,text,list){C.push({name:name,st:st,text:text,list:list||null})}
+  var cnt=Number(D.count);
+  add('Record count',recs.length===cnt?'pass':'fail','records.length = '+fmt(recs.length)+' · count in the file = '+(isFinite(cnt)?fmt(cnt):esc(D.count)));
+  function part(label,fn){
+    var m={};recs.forEach(function(o){var k=fn(o);m[k]=(m[k]||0)+1});
+    var s=Object.keys(m).reduce(function(a,k){return a+m[k]},0);
+    add('Partition per '+label,s===recs.length?'pass':'fail',Object.keys(m).length+' groups add up to '+fmt(s)+' · records = '+fmt(recs.length));
+  }
+  part('mechanism',function(o){return o.mech});part('body',function(o){return o.body});part('year',function(o){return o.year==null?'(no year)':o.year});
+  var ts=countBy(F,function(o){return o.type}).reduce(function(a,e){return a+e[1]},0);
+  add('Type partition',ts===n?'pass':'fail','counts per type add up to '+fmt(ts)+' · headline total = '+fmt(n)+' (filtered set)');
+  // chart against table
+  var rc=fig1Rows.map(function(r){return F.filter(function(o){return o.themes.indexOf(r.t)>-1}).length});
+  var tabv=[].slice.call(document.querySelectorAll('#t1tab td.cnt')).map(function(td){return Number(td.textContent.replace(/[^\d]/g,''))});
+  var barv=charts.f1?charts.f1.data.datasets[0].data:null;
+  var badBar=barv?fig1Rows.filter(function(r,i){return barv[i]!==rc[i]}).map(function(r){return r.t}):[];
+  add('Chart against recount',!fig1Rows.length?'info':(!barv?'warn':(badBar.length?'fail':'pass')),!fig1Rows.length?'no theme bars in this filter':(!barv?'chart not drawn, so not compared':'each of '+rc.length+' bars equals a second count over the filtered records'+(badBar.length?' · differs: '+badBar.map(esc).join('; '):'')));
+  var badTab=fig1Rows.filter(function(r,i){return tabv[i]!==rc[i]}).length+(tabv.length===fig1Rows.length?0:1);
+  add('Table under the chart',!fig1Rows.length?'info':(badTab?'fail':'pass'),!fig1Rows.length?'no rows in this filter':'the '+tabv.length+' table rows show the same values as the recount'+(badTab?' · '+badTab+' differ':''));
+  var mx=Math.max.apply(null,[0].concat(rc));
+  add('Largest bar',mx<=n?'pass':'fail','largest bar = '+fmt(mx)+' · filtered records = '+fmt(n));
+  if(fig2Info)add('Timeline total',fig2Info.sum+fig2Info.noYear===n?'pass':'fail','FIG.02 adds up to '+fmt(fig2Info.sum)+(fig2Info.noYear?' + '+fmt(fig2Info.noYear)+' without a year':'')+' · filtered records = '+fmt(n));
+  // links
+  var badL=recs.filter(function(o){
+    if(o.doc_url.indexOf('https://docs.un.org/')!==0||!o.symbol)return true;
+    var u=o.doc_url;try{u=decodeURIComponent(u)}catch(e){}
+    return u.toLowerCase().slice(-o.symbol.length)!==o.symbol.toLowerCase();
+  });
+  add('Links',badL.length?'fail':'pass',badL.length?fmt(badL.length)+' of '+fmt(N)+' records have a doc_url that does not start with https://docs.un.org/ or does not end with the symbol':'all '+fmt(N)+' doc_url values start with https://docs.un.org/ and end with the symbol',
+    badL.slice(0,15).map(function(o){return esc(o.symbol||'(no symbol)')+' → '+esc(o.doc_url||'(no link)')}).concat(badL.length>15?['and '+fmt(badL.length-15)+' more']:[]));
+  // paragraph numbers
+  mechs.forEach(function(m){
+    var s=recs.filter(function(o){return o.mech===m}),f=s.filter(function(o){return o.para}).length;
+    add('Paragraph numbers · '+m,m===UPR&&f<s.length?'warn':'info',fmt(f)+' of '+fmt(s.length)+' records have a number found ('+pc(f,s.length)+')'+(m===UPR?' · expected 100%':''));
+  });
+  // states
+  var up=recs.filter(function(o){return o.mech===UPR}),found=up.filter(function(o){return o.states.length}),lost=up.filter(function(o){return !o.states.length});
+  add('States found',lost.length?'warn':'pass',fmt(found.length)+' of '+fmt(up.length)+' UPR records have at least one State found'+(lost.length?' · without a State, with what the last parentheses hold instead:':''),
+    lost.slice(0,15).map(function(o){var t=o.text.slice(-70);return esc(o.symbol)+' — …'+esc(t)}).concat(lost.length>15?['and '+fmt(lost.length-15)+' more']:[]));
+  // duplicates and gaps
+  var ids={};recs.forEach(function(o){ids[o.id]=1});var di=Object.keys(ids).length;
+  add('Distinct ids',di===N?'pass':'fail',fmt(di)+' distinct id values · records = '+fmt(N));
+  var tx={};recs.forEach(function(o){tx[o.text]=(tx[o.text]||0)+1});
+  var dups=Object.keys(tx).filter(function(k){return tx[k]>1});
+  add('Duplicate texts',dups.length?'warn':'pass',fmt(dups.length)+' text values occur more than once (kept as they are)',dups.slice(0,10).map(function(k){return esc(k.slice(0,90))+(k.length>90?'…':'')+' ×'+tx[k]}));
+  [['themes','themes'],['sdgs','sdgs'],['affected_persons','persons']].forEach(function(p){
+    var k=recs.filter(function(o){return !o[p[1]].length}).length;
+    add('Not labelled · '+p[0],'info',fmt(k)+' of '+fmt(N)+' records have no '+p[0]+' ('+pc(k,N)+')');
+  });
+  return C;
+}
+function renderChecks(){
+  var C=computeChecks(),bad=C.filter(function(c){return c.st==='fail'}).length;
+  $('chkt').innerHTML='Every check ('+C.length+')'+(bad?' <span class="bad">· '+bad+' failed</span>':'');
+  var lab={pass:'✓ pass',fail:'✗ check failed',warn:'! warning',info:'· note'};
+  $('checks').innerHTML='<p class="lab" style="margin:12px 0 4px">How the app checks itself</p><ol class="checks">'+C.map(function(c){
+    return '<li><span class="st '+c.st+'">'+lab[c.st]+'</span><b>'+esc(c.name)+'</b>: '+c.text+(c.list&&c.list.length?'<ul>'+c.list.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul>':'')+'</li>';
+  }).join('')+'</ol>';
+}
+$('chk').addEventListener('click',function(){
+  var o=this.getAttribute('aria-expanded')!=='true';
+  this.setAttribute('aria-expanded',o);$('checks').hidden=!o;this.lastChild.textContent=o?'−':'+';
+});
 
 /* ---------- records ---------- */
 function detailHtml(o){
-  function tags(items,f){return items.length?items.map(function(x){return '<span class="tag">'+esc(f?f(x):x)+'</span>';}).join(''):'<span class="mute">not labelled</span>';}
-  var cite=!o.para;
-  return '<tr class="det"><td colspan="6"><div class="detail"><div class="pn" aria-label="Paragraph number">'+esc(o.para||'–')+'</div><div>'+
+  var lab=function(k,v){return '<dt>'+k+'</dt><dd>'+(v||'<span class="mute">not labelled</span>')+'</dd>'};
+  var li=function(a,f){return a.length?a.map(function(x){return esc(f?f(x):x)}).join('; '):''};
+  return '<tr class="detail" data-d="'+o.i+'"><td colspan="6"><div class="dgrid"><div>'+(o.para?'<div class="pnum" aria-label="Paragraph '+esc(o.para)+'">'+esc(o.para)+'</div>':'<div class="pnum none">no paragraph number</div>')+'</div><div>'+
     '<p class="full">'+hl(o.text)+'</p>'+
-    '<dl style="margin:0"><div class="dl"><dt class="lab">Themes</dt><dd>'+tags(o.themes)+'</dd></div>'+
-    '<div class="dl"><dt class="lab">SDGs</dt><dd>'+tags(o.sdgs,function(g){return 'SDG '+g+(SDG_NAMES[String(g)]?' · '+SDG_NAMES[String(g)]:'');})+'</dd></div>'+
-    (o.targets.length?'<div class="dl"><dt class="lab">SDG targets</dt><dd>'+tags(o.targets)+'</dd></div>':'')+
-    '<div class="dl"><dt class="lab">Affected persons</dt><dd>'+tags(o.persons)+'</dd></div>'+
-    (o.section?'<div class="dl"><dt class="lab">Section</dt><dd>'+esc(o.section)+'</dd></div>':'')+'</dl>'+
-    '<div class="actions"><button type="button" class="btn" data-act="copycite" data-i="'+o.i+'">Copy citation'+(cite?' (no paragraph number in this extract)':'')+'</button><span class="ok" role="status"></span>'+
-    (safeUrl(o.url)?'<a class="btn" href="'+esc(o.url)+'" target="_blank" rel="noopener">Open the UN document</a>':'<span class="mute">no link in the file</span>')+'</div>'+
-    '</div></div></td></tr>';
+    '<dl class="labels"><dt>Document</dt><dd>'+docLink(o)+' · '+esc(o.body)+' · '+esc(o.mech)+' · '+esc(o.type)+' · '+esc(o.date)+'</dd>'+
+      (o.section?'<dt>Section</dt><dd>'+esc(o.section)+'</dd>':'')+
+      lab('Themes',li(o.themes))+lab('SDGs',li(o.sdgs,sdgLabel))+lab('SDG targets',li(o.targets))+lab('Affected persons',li(o.persons))+'</dl>'+
+    '<button type="button" class="btn" data-act="copy" data-i="'+o.i+'">Copy citation'+(o.para?'':' (no paragraph number in this extract)')+'</button>'+
+    (url(o.doc_url)?'<a class="btn" href="'+esc(o.doc_url)+'" target="_blank" rel="noopener">Open the UN document</a>':'')+
+    '<span class="copied" role="status"></span></div></div></td></tr>';
 }
 function rowHtml(o){
-  var open=!!OPEN[o.i];
-  var st=o.mech===UPR?(o.states.length?o.states.map(esc).join('; '):'<span class="mute">State not found</span>'):'<span class="mute">–</span>';
-  var h='<tr class="rowx" data-i="'+o.i+'"><td class="nw">'+esc(o.date)+'</td><td>'+hl(o.body)+'</td><td>'+
-    (safeUrl(o.url)?'<a href="'+esc(o.url)+'" target="_blank" rel="noopener">'+hl(o.symbol)+'</a>':hl(o.symbol))+'</td><td class="num">'+esc(o.para||'–')+
-    '</td><td><button type="button" class="rowbtn" aria-expanded="'+open+'">'+hl(firstLine(o.text))+'</button></td><td>'+st+'</td></tr>';
-  return open?h+detailHtml(o):h;
+  return '<tr class="row" tabindex="0" aria-expanded="'+(!!openRows[o.i])+'" data-i="'+o.i+'"><td class="nw">'+esc(o.date)+'</td><td>'+esc(o.body)+'</td><td class="nw">'+docLink(o)+'</td><td class="n nw">'+(o.para?esc(o.para):'–')+'</td><td>'+stateCell(o)+'</td><td>'+hl(firstLine(o.text))+'</td></tr>'+(openRows[o.i]?detailHtml(o):'');
 }
+var byI={};recs.forEach(function(o){byI[o.i]=o});
 function renderRecords(){
-  var total=SORTED.length;
-  $('recCap').textContent=total?'Showing '+fmt(Math.min(shown,total))+' of '+fmt(total)+' matching records, '+(dateAsc?'oldest':'newest')+' first':'No records match the current filters';
-  $('recBody').innerHTML=total?SORTED.slice(0,shown).map(rowHtml).join(''):'<tr><td colspan="6">No records match the current filters. Remove a chip or use Clear all.</td></tr>';
-  $('moreBtn').hidden=shown>=total;
-  $('dateSort').textContent='Date '+(dateAsc?'▲':'▼');
-  $('recSrc').textContent='Source: '+(D.source||'UHRI file')+(D.built?', built '+D.built:'')+'. Dates are the date of the document. Para. is the number at the start of the text; Special Procedures items without one show a dash.';
+  var l=getSorted(),n=l.length,k=Math.min(shown,n);
+  $('sortd').textContent='Date '+(newestFirst?'▾':'▴');
+  $('thd').setAttribute('aria-sort',newestFirst?'descending':'ascending');
+  $('sortd').setAttribute('aria-label','Date, sorted '+(newestFirst?'newest first':'oldest first')+'. Activate to reverse.');
+  $('cap').textContent=n?'Showing '+fmt(k)+' of '+fmt(n)+' matching records, '+(newestFirst?'newest first':'oldest first')+'. Click a row to read the paragraph.':'0 of '+fmt(N)+' records match these filters.';
+  var h='';for(var i=0;i<k;i++)h+=rowHtml(l[i]);
+  $('tb').innerHTML=h||'<tr><td colspan="6" class="empty">No records match.</td></tr>';
+  $('more').hidden=k>=n;
+  $('more').textContent='Show '+Math.min(50,n-k)+' more';
 }
+$('more').addEventListener('click',function(){shown+=50;renderRecords()});
+$('sortd').addEventListener('click',function(){newestFirst=!newestFirst;sorted=null;shown=50;renderRecords()});
 function toggleRow(tr){
-  var i=Number(tr.getAttribute('data-i')),open=!OPEN[i];
-  OPEN[i]=open;
-  tr.querySelector('.rowbtn').setAttribute('aria-expanded',open?'true':'false');
-  var nx=tr.nextElementSibling;
-  if(open){tr.insertAdjacentHTML('afterend',detailHtml(recs[i]));}
-  else if(nx&&nx.classList.contains('det')){nx.remove();}
+  var i=+tr.getAttribute('data-i'),o=byI[i],open=!openRows[i];
+  if(open){openRows[i]=1;tr.insertAdjacentHTML('afterend',detailHtml(o))}
+  else{delete openRows[i];var d=tr.nextElementSibling;if(d&&d.getAttribute('data-d')==String(i))d.remove()}
+  tr.setAttribute('aria-expanded',open);
 }
-
-/* ---------- checks ---------- */
-function listBox(label,items){
-  if(!items.length)return '';
-  var cap=300;
-  return '<details><summary>'+esc(label)+' ('+fmt(items.length)+')</summary><ul class="lst">'+items.slice(0,cap).map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul>'+(items.length>cap?'<p class="hint">'+fmt(items.length-cap)+' more are not listed here.</p>':'')+'</details>';
-}
-function sumPresent(getter){
-  var m=cnt(),s=0,g=0;
-  recs.forEach(function(o){var v=getter(o);if(v!==''&&v!==null)m[v]=(m[v]||0)+1;});
-  for(var k in m){s+=m[k];g++;}
-  return {sum:s,groups:g};
-}
-function snippet(o,tail){var t=o.text.replace(/\s+/g,' ');return esc(tail?'…'+t.slice(-90):t.slice(0,90)+(t.length>90?'…':''));}
-function recLink(o){return (safeUrl(o.url)?'<a href="'+esc(o.url)+'" target="_blank" rel="noopener">'+esc(o.symbol||'(no symbol)')+'</a>':esc(o.symbol||'(no symbol)'))+(o.para?', para. '+esc(o.para):'');}
-function buildFileChecks(){
-  var f={},declared=Number(D.count);
-  f.count={s:isFinite(declared)&&declared===N?'pass':'fail',name:'Record count',d:'records.length = '+fmt(N)+' · Number(count) = '+(D.count!==undefined&&isFinite(declared)?fmt(declared):'missing')};
-  var pm=sumPresent(function(o){return o.mech;}),pb=sumPresent(function(o){return o.body;}),py=sumPresent(function(o){return o.year;});
-  f.parts={s:(pm.sum===N&&pb.sum===N&&py.sum===N)?'pass':'fail',name:'Partitions',d:'mechanism: '+pm.groups+' groups sum to '+fmt(pm.sum)+' · body: '+pb.groups+' groups sum to '+fmt(pb.sum)+' · year: '+py.groups+' groups sum to '+fmt(py.sum)+' · each should equal '+fmt(N)};
-  var pt=sumPresent(function(o){return o.type;});
-  f.types={s:pt.sum===N?'pass':'fail',name:'Type partition',d:'counts per type ('+pt.groups+' values) sum to '+fmt(pt.sum)+' · headline total '+fmt(N)};
-  var badLinks=recs.filter(function(o){
-    var u=o.url;try{u=decodeURIComponent(u);}catch(e){}
-    u=u.toLowerCase();var s=o.symbol.toLowerCase();
-    return !(s&&u.indexOf('https://docs.un.org/')===0&&u.length>=s.length&&u.lastIndexOf(s)===u.length-s.length);
-  });
-  f.links={s:badLinks.length?'fail':'pass',name:'Links',d:fmt(N-badLinks.length)+' of '+fmt(N)+' doc_url values start with https://docs.un.org/ and end with their symbol · '+fmt(badLinks.length)+' fail',
-    x:listBox('Records whose link fails',badLinks.map(function(o){return esc(o.symbol||'(no symbol)')+' → '+esc(o.url||'(no doc_url)');}))};
-  var pp=MECHS.map(function(m){
-    var Lm=recs.filter(function(o){return o.mech===m;}),k=Lm.filter(function(o){return o.para;}).length;
-    return {m:m,k:k,n:Lm.length};
-  });
-  var uprRow=pp.filter(function(p){return p.m===UPR;})[0];
-  var uprMiss=recs.filter(function(o){return o.mech===UPR&&!o.para;});
-  f.para={s:uprMiss.length?'warn':'pass',name:'Paragraph numbers',d:pp.map(function(p){return esc(mlabel(p.m))+': '+pct(p.k,p.n)+' ('+fmt(p.k)+' of '+fmt(p.n)+')';}).join(' · ')+(uprRow?' · UPR is expected at 100%'+(uprMiss.length?', so this is a warning, not an error':''):''),
-    x:listBox('UPR records without a number',uprMiss.map(function(o){return recLink(o)+' · '+snippet(o,false);}))};
-  var upr=recs.filter(function(o){return o.mech===UPR;}),noState=upr.filter(function(o){return !o.states.length;});
-  var odd=STATE_LIST.filter(function(s){return /\d/.test(s);});
-  f.states={s:noState.length?'warn':'pass',name:'States found',d:fmt(upr.length-noState.length)+' of '+fmt(upr.length)+' UPR records have at least one State found'+(odd.length?' · '+odd.length+' extracted names contain a digit and may not be States':''),
-    x:listBox('UPR records without a State (the end of the text shows what the parentheses held)',noState.map(function(o){return recLink(o)+' · '+snippet(o,true);}))+listBox('Extracted names containing a digit',odd.map(esc))};
-  var ids=new Set(recs.map(function(o){return o.id;})).size,tm=cnt(),dg=0,dx=0;
-  recs.forEach(function(o){tm[o.text]=(tm[o.text]||0)+1;});
-  for(var k in tm){if(tm[k]>1){dg++;dx+=tm[k]-1;}}
-  var nt=recs.filter(function(o){return !o.themes.length;}).length,ns=recs.filter(function(o){return !o.sdgs.length;}).length,np=recs.filter(function(o){return !o.persons.length;}).length;
-  f.dups={s:ids!==N?'fail':(dg?'warn':'pass'),name:'Duplicates and gaps',d:'distinct id = '+fmt(ids)+' of '+fmt(N)+' · '+fmt(dg)+' texts occur more than once ('+fmt(dx)+' extra records) · not labelled: '+fmt(nt)+' without themes, '+fmt(ns)+' without SDGs, '+fmt(np)+' without affected persons',
-    x:listBox('Records whose text occurs more than once',recs.filter(function(o){return tm[o.text]>1;}).map(function(o){return recLink(o)+' · '+snippet(o,false);}))};
-  return f;
-}
-function chartCheck(){
-  var n=FILTERED.length,bad=[],rows=document.querySelectorAll('#themeRows tr[data-count]');
-  THEME_TOP.forEach(function(t,k){
-    var c=0;
-    for(var j=0;j<FILTERED.length;j++){if(FILTERED[j].themes.indexOf(t.name)>=0)c++;}
-    var cell=rows[k]?Number(rows[k].getAttribute('data-count')):NaN;
-    if(c!==LAST_BARS[k]||c!==cell)bad.push(t.name+': bar '+LAST_BARS[k]+', table '+cell+', recount '+c);
-  });
-  if(rows.length!==THEME_TOP.length)bad.push('table has '+rows.length+' rows, chart has '+THEME_TOP.length+' bars');
-  var mx=THEME_TOP.length?THEME_TOP[0].count:0,okMax=mx<=n;
-  return {s:bad.length||!okMax?'fail':'pass',name:'Chart against table',
-    d:fmt(THEME_TOP.length)+' bars recounted by a second loop over '+fmt(n)+' filtered records · '+(bad.length?'disagreements below':'bars, table rows and recount agree')+' · largest bar '+fmt(mx)+(okMax?' ≤ ':' > ')+fmt(n)+' filtered records',
-    x:bad.length?listBox('Disagreements',bad.map(esc)):''};
-}
-function renderChecks(){
-  if(!FILECHK)FILECHK=buildFileChecks();
-  var f=FILECHK,list=[f.count,f.parts,f.types,chartCheck(),f.links,f.para,f.states,f.dups];
-  var p=list.filter(function(c){return c.s==='pass';}).length,w=list.filter(function(c){return c.s==='warn';}).length,x=list.filter(function(c){return c.s==='fail';}).length;
-  $('checkSum').textContent=p+' of '+list.length+' checks pass'+(w?' · '+w+' warning'+(w>1?'s':''):'')+(x?' · '+x+' failed':'')+'. File checks cover all '+fmt(N)+' records; the chart check follows the current filter.';
-  $('checks').innerHTML=list.map(function(c){
-    var mark=c.s==='pass'?'✓ pass':c.s==='warn'?'warning':'check failed';
-    return '<li class="chk '+c.s+'"><span class="mark">'+mark+'</span><div><strong>'+esc(c.name)+'</strong> · <span class="vals">'+c.d+'</span>'+(c.x||'')+'</div></li>';
-  }).join('');
-}
-
-/* ---------- random sample ---------- */
-function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
-function resetSample(){
-  SAMPLE=[];VERD={};
-  $('cards').innerHTML='';$('tally').textContent='';
-  $('drawBtn').textContent='Check 10 at random';
-  $('sampleHint').textContent='Ten paragraphs are drawn from the '+fmt(FILTERED.length)+' records matching the current filter, with a seeded generator (mulberry32): the same seed and filter give the same ten.';
-}
-function draw(seed){
-  var pool=FILTERED.slice(),rnd=mulberry32(seed>>>0),k=Math.min(10,pool.length);
-  for(var i=0;i<k;i++){var j=i+Math.floor(rnd()*(pool.length-i)),t=pool[i];pool[i]=pool[j];pool[j]=t;}
-  SAMPLE=pool.slice(0,k);VERD={};SEED=seed;
-  $('seed').value=seed;
-  $('drawBtn').textContent='Draw again';
-  $('cards').innerHTML=SAMPLE.map(function(o,c){
-    return '<li class="card"><div class="cardline"><span class="cn">'+(c<9?'0':'')+(c+1)+'</span><span>'+recLink(o)+'</span>'+
-      '<button type="button" class="cardbtn" data-act="card" data-k="'+c+'" aria-expanded="false">'+esc(short(firstLine(o.text),90))+'</button><span class="vd" id="vd'+c+'">not judged</span></div>'+
-      '<div class="carddet" hidden><p class="full">'+esc(o.text)+'</p><p class="lab" style="margin-bottom:4px">Themes the UN gave this paragraph</p><div>'+
-      (o.themes.length?o.themes.map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join(''):'<span class="mute">not labelled</span>')+'</div>'+
-      '<div class="actions" role="group" aria-label="Do the themes fit as a set?">'+
-      '<button type="button" class="btn" aria-pressed="false" data-act="verdict" data-k="'+c+'" data-v="fit">Fits</button>'+
-      '<button type="button" class="btn" aria-pressed="false" data-act="verdict" data-k="'+c+'" data-v="no">Doesn\'t fit</button>'+
-      '<button type="button" class="btn" aria-pressed="false" data-act="verdict" data-k="'+c+'" data-v="unsure">Unsure</button></div></div></li>';
-  }).join('');
-  if(!SAMPLE.length)$('cards').innerHTML='<li class="card"><p class="empty">No records match the current filters, so nothing can be drawn.</p></li>';
-  tally();
-}
-function tally(){
-  var f=0,d=0,u=0;
-  Object.keys(VERD).forEach(function(k){if(VERD[k]==='fit')f++;else if(VERD[k]==='no')d++;else u++;});
-  $('tally').textContent=SAMPLE.length?'Themes: '+f+' fit, '+d+' don\'t, '+u+' unsure · '+(f+d+u)+' of '+SAMPLE.length+' judged · seed '+SEED+'. This is your judgement; the UN labels are never changed.':'';
-}
-function openCard(k){
-  var btns=document.querySelectorAll('#cards .cardbtn');
-  Array.prototype.forEach.call(btns,function(b,i){
-    var on=i===k&&b.getAttribute('aria-expanded')!=='true';
-    b.setAttribute('aria-expanded',on?'true':'false');
-    b.parentNode.nextElementSibling.hidden=!on;
-  });
-}
-function setVerdict(k,v,btn){
-  VERD[k]=v;
-  Array.prototype.forEach.call(btn.parentNode.children,function(b){b.setAttribute('aria-pressed',b===btn?'true':'false');});
-  $('vd'+k).textContent={fit:'themes fit',no:'themes don\'t fit',unsure:'unsure'}[v];
-  tally();
-}
-
-/* ---------- method & export ---------- */
-function typeCounts(L){
-  var tc=cnt();
-  L.forEach(function(o){var k=o.type||'(type not stated)';tc[k]=(tc[k]||0)+1;});
-  return Object.keys(tc).sort(function(a,b){return tc[b]-tc[a]||ci(a,b);}).map(function(k){return fmt(tc[k])+' '+k;});
-}
-function summaryText(){
-  var L=FILTERED,n=L.length,mm=minmax(L),docs=new Set(L.map(function(o){return o.symbol;})).size;
-  var mech=MECHS.map(function(m){return mlabel(m)+' '+fmt(L.filter(function(o){return o.mech===m;}).length);}).join(', ');
-  var themes=THEME_TOP.map(function(t,k){return (k+1)+'. '+t.name+' ('+fmt(t.count)+(t.y0!==null?', '+yr(t.y0,t.y1):'')+')';}).join('; ');
-  return ['UN human rights recommendations and observations: '+COUNTRY+'.',
-    'Source: '+(D.source||'UHRI file')+(D.built?', built '+D.built:'')+'; dates are the date of the document.',
-    'Filters: '+filterText()+'.',
-    fmt(n)+' of '+fmt(N)+' records from '+fmt(docs)+' documents, years '+yr(mm.a,mm.b)+' ('+typeCounts(L).join(', ')+').',
-    'By mechanism: '+(mech||'none')+'.',
-    'Ten most frequent themes among these records (a record can carry several): '+(themes||'none')+'.',
-    'Counted in the browser from the file; the UN labels are used as given.'].join(' ');
-}
-function csvCell(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"';}
-function downloadCsv(){
-  var head=['date','body','mechanism','type','symbol','paragraph','recommending_states','doc_url','text','themes','sdgs','sdg_targets','affected_persons','section'];
-  var lines=['# Country: '+COUNTRY,'# Source: '+(D.source||'')+(D.source_url?' '+D.source_url:''),'# Built: '+(D.built||''),'# Filters: '+filterText(),'# Rows: '+SORTED.length,head.join(',')];
-  SORTED.forEach(function(o){
-    lines.push([o.date,o.body,o.mech,o.type,o.symbol,o.para,o.states.join(' | '),o.url,o.text,o.themes.join(' | '),o.sdgs.join(' | '),o.targets.join(' | '),o.persons.join(' | '),o.section].map(csvCell).join(','));
-  });
-  var blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
-  var url=URL.createObjectURL(blob),a=document.createElement('a');
-  a.href=url;a.download='uhri-'+COUNTRY.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-filtered.csv';
-  document.body.appendChild(a);a.click();a.remove();
-  setTimeout(function(){URL.revokeObjectURL(url);},4000);
-  $('expStatus').textContent='CSV created: '+fmt(SORTED.length)+' rows.';
-}
-function copyText(text,statusEl){
-  function done(ok){
-    statusEl.textContent=ok?'Copied':'Copy failed: select the text by hand';
-    setTimeout(function(){statusEl.textContent='';},2000);
-  }
+$('tb').addEventListener('click',function(e){
+  var cp=e.target.closest('[data-act="copy"]');
+  if(cp){var o=byI[+cp.getAttribute('data-i')];copyText(citation(o),cp.parentNode.querySelector('.copied'));return}
+  if(e.target.closest('a,button,.detail'))return;
+  var tr=e.target.closest('tr.row');if(tr)toggleRow(tr);
+});
+$('tb').addEventListener('keydown',function(e){
+  if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('row')){e.preventDefault();toggleRow(e.target)}
+});
+function copyText(t,note){
+  function ok(){if(note){note.textContent='Copied';setTimeout(function(){note.textContent=''},2000)}}
   function fallback(){
-    var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
-    document.body.appendChild(ta);ta.select();
-    var ok=false;try{ok=document.execCommand('copy');}catch(e){}
-    ta.remove();done(ok);
+    var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
+    var done=false;try{done=document.execCommand('copy')}catch(e){}
+    document.body.removeChild(ta);
+    if(done)ok();else if(note){note.textContent='Could not copy: select the text and copy it by hand'}
   }
-  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){done(true);},fallback);}
-  else fallback();
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,fallback);else fallback();
 }
+
+/* ---------- method and export ---------- */
 function renderMethod(){
-  $('expInfo').textContent='The export holds '+fmt(FILTERED.length)+' rows. Filters applied: '+filterText()+'.';
+  $('exinfo').textContent='The CSV has '+fmt(F.length)+' rows ('+filterText()+'), in the order of the table on 02 Records. It starts with comment lines (#) with the country, source, build date, filters and row count.';
 }
-
-/* ---------- update everything ---------- */
-function update(){
-  setWords();
-  FILTERED=recs.filter(function(o){return matches(o);});
-  SORTED=sortRecs(FILTERED);
-  shown=PAGE;
-  renderRail();renderOverview();renderRecords();renderChecks();renderMethod();resetSample();
-  if(active==='ov')drawCharts();
+function csvText(){
+  var l=getSorted(),q=function(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'};
+  var out=['# '+country+': UN recommendations and observations (OHCHR UHRI)','# Source: '+(D.source||'')+' '+(D.source_url||''),'# Built: '+(D.built||'not given'),'# Filters applied: '+filterText(),'# Rows: '+l.length+' of '+N+' records in the file'];
+  out.push(['date','mechanism','body','type','symbol','doc_url','paragraph','recommending_states','section','first_line','text','themes','sdgs','sdg_targets','affected_persons'].join(','));
+  l.forEach(function(o){
+    out.push([o.date,o.mech,o.body,o.type,o.symbol,o.doc_url,o.para,o.mech===UPR?(o.states.length?o.states.join('; '):'State not found'):'',o.section,firstLine(o.text),o.text,o.themes.join(' | '),o.sdgs.join(' | '),o.targets.join(' | '),o.persons.join(' | ')].map(q).join(','));
+  });
+  return out.join('\r\n')+'\r\n';
 }
-
-/* ---------- clicks ---------- */
-document.addEventListener('click',function(e){
-  var t=e.target;
-  var tr=t.closest('tr.rowx');
-  if(tr&&!t.closest('a')){toggleRow(tr);return;}
-  var a=t.closest('[data-act]');
-  if(!a)return;
-  var act=a.getAttribute('data-act'),k=Number(a.getAttribute('data-k'));
-  if(act==='acc'){openAcc=openAcc===a.getAttribute('data-k')?'':a.getAttribute('data-k');syncAcc();}
-  else if(act==='clear'){S={kw:'',mech:'',body:'',type:'',state:'',from:'',to:'',sdg:'',themes:[]};syncKw();update();}
-  else if(act==='chip'){if(CHIPFN[k]){CHIPFN[k].f();update();}}
-  else if(act==='states'){statesOpen=!statesOpen;renderOverview();}
-  else if(act==='theme'){if(THEME_TOP[k])addTheme(THEME_TOP[k].name);}
-  else if(act==='goto'){selectTab(a.getAttribute('data-t'),true);}
-  else if(act==='sortdate'){dateAsc=!dateAsc;SORTED=sortRecs(FILTERED);renderRecords();}
-  else if(act==='more'){shown+=PAGE;renderRecords();}
-  else if(act==='copycite'){var o=recs[Number(a.getAttribute('data-i'))];copyText(citation(o),a.nextElementSibling);}
-  else if(act==='copysum'){copyText(summaryText(),$('expStatus'));}
-  else if(act==='csv'){downloadCsv();}
-  else if(act==='draw'){draw(Math.floor(Math.random()*999999)+1);}
-  else if(act==='seeddraw'){var s=parseInt($('seed').value,10);draw(isFinite(s)&&s>=0?s:1);}
-  else if(act==='card'){openCard(k);}
-  else if(act==='verdict'){setVerdict(k,a.getAttribute('data-v'),a);}
+$('dl').addEventListener('click',function(){
+  var blob=new Blob(['﻿'+csvText()],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=u;a.download='uhri-'+String(country).toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(u)},1000);
+  $('exst').textContent='Prepared '+fmt(F.length)+' rows';setTimeout(function(){$('exst').textContent=''},3000);
+});
+$('cpcsv').addEventListener('click',function(){copyText(csvText(),$('exst'))});
+$('cpsum').addEventListener('click',function(){
+  var n=F.length,yr=yearRange(F),tc=countBy(F,function(o){return o.type||'(no type)'}),mc=countBy(F,function(o){return o.mech});
+  var t=country+': UN recommendations and observations (OHCHR UHRI, built '+(D.built||'date not given')+'). Filters: '+filterText()+'. '+fmt(n)+' of '+fmt(N)+' records match, from '+plural(docsOf(F),'document')+(yr?', '+yr[0]+'–'+yr[1]+' (dated by document)':'')+'. '+
+    'By type: '+(tc.map(function(e){return fmt(e[1])+' '+e[0]}).join(', ')||'none')+'. By mechanism: '+(mc.map(function(e){return fmt(e[1])+' '+e[0]}).join(', ')||'none')+'. '+
+    'Ten most frequent themes (a record can carry several): '+(themeRows(F).map(function(r){return r.t+' '+fmt(r.n)+' ('+pc(r.n,n)+')'}).join('; ')||'none')+'. Counted in the browser from the attached file.';
+  copyText(t,$('exst'));
 });
 
-/* ---------- start ---------- */
-initStatic();
-buildTabs();
-syncAcc();
-if(window.Chart){try{Chart.defaults.animation=false;}catch(e){}}
+/* ---------- go ---------- */
+function renderPanel(){
+  if(tab===1)renderOverview();else if(tab===2)renderRecords();else renderMethod();
+}
+function update(){
+  words=S.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  hlRe=words.length?new RegExp('('+words.slice().sort(function(a,b){return b.length-a.length}).map(escRe).join('|')+')','gi'):null;
+  F=recs.filter(function(o){return match(o)});
+  shown=50;sorted=null;
+  syncRail();renderPanel();
+}
 update();
 })();
 </script>

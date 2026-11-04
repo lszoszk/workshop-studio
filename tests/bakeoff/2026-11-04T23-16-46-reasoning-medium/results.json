@@ -1,0 +1,34 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true
+  },
+  "passed": 7,
+  "total": 8,
+  "errors": [
+   "txt.values is not iterable"
+  ],
+  "network": [],
+  "lines": 632,
+  "edit": null,
+  "repair": null,
+  "seconds": 91.3,
+  "first_token": 2.6,
+  "first_thought": 1.5,
+  "reasoning_chars": 389,
+  "prompt_tokens": 18706,
+  "completion_tokens": 11067,
+  "cost": 0.0748832,
+  "provider": "Z.AI"
+ }
+]

@@ -25,12 +25,18 @@
   "model": "claude",
   "label": "Claude Sonnet 5.5 · built in Claude Code (no API)",
   "prompt": "s7-3-quote-check",
-  "passed": 0,
-  "total": 0,
-  "checks": {},
+  "passed": 5,
+  "total": 5,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "text_matches": true,
+   "button_matches": true
+  },
   "errors": [],
   "network": [],
-  "lines": 0,
+  "lines": 1020,
   "seconds": null,
   "cost": 0
  }

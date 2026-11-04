@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UN human rights recommendations: <span id="t-country"></span></title>
+<style>
+:root{--paper:#f4f0e8;--ink:#1d1b18;--rule:#d9d2c3;--accent:#9b2335;--upr:#c2410c;--tb:#0f766e;--sp:#7c3aed}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11-12px}
+.serif{font-family:Georgia,"Times New Roman",serif}
+header.site{padding:24px 28px 0;border-bottom:1px solid var(--rule)}
+.label{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#6b6459}
+h1{font-family:Georgia,"Times New Roman",serif;font-size:34px;font-weight:400;margin:6px 0 8px}
+.meta{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#6b6459;margin:0 0 14px}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--rule)}
+.tab{appearance:none;border:0;background:none;padding:10px 18px 9px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.08em;color:var(--ink);cursor:pointer;border-bottom:3px solid transparent}
+.tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+.tab:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{display:grid;grid-template-columns:280px 1fr;gap:0;align-items:start}
+aside{border-right:1px solid var(--rule);padding:20px 22px;position:sticky;top:0}
+aside .railhead{display:flex;justify-content:space-between;align-items:baseline}
+aside .clear{background:none;border:0;color:var(--accent);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;cursor:pointer;padding:0}
+.bignum{font-family:Georgia,"Times New Roman",serif;font-size:44px;line-height:1.05;margin:10px 0 2px}
+.sharebar{height:4px;background:var(--rule);margin:8px 0 4px}
+.sharebar>div{height:100%;background:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--rule);background:#fffdf8;padding:2px 8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px}
+.chip button{border:0;background:none;color:var(--accent);cursor:pointer;font-size:13px;line-height:1;padding:0}
+.fgroup{border-top:1px solid var(--rule);padding:12px 0 6px}
+.fhead{display:flex;justify-content:space-between;width:100%;background:none;border:0;padding:6px 0;cursor:pointer;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink)}
+.fhead .tri{color:#6b6459}
+.fbody{padding:4px 0 10px;display:flex;flex-direction:column;gap:8px}
+.fbody input[type=text],.fbody select{width:100%;padding:6px 8px;border:1px solid var(--rule);background:#fffdf8;font-size:14px}
+.hint{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#6b6459}
+section.tabpanel{padding:24px 30px 40px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:0;border-top:1px solid var(--rule);border-left:1px solid var(--rule)}
+.tile{border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:16px 18px}
+.tile .n{font-family:Georgia,"Times New Roman",serif;font-size:48px;line-height:1.05}
+.tile .sub{font-size:14px;margin:6px 0 4px}
+.tile .note{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#6b6459;margin:0}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+figure{margin:34px 0 0}
+figure .figno{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.14em;color:var(--accent)}
+figcaption{font-family:Georgia,"Times New Roman",serif;font-size:20px;margin:4px 0 2px}
+figure .src{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#6b6459;margin:2px 0 12px}
+.chartbox{position:relative;height:340px}
+.chartbox.smaller{height:300px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+caption{text-align:left;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#6b6459;padding:6px 0}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+tr.recrow{cursor:pointer}
+tr.recrow:hover{background:#efe9dc}
+tr.details>td{background:#fffdf8;padding:18px 22px}
+.paranum{font-family:Georgia,"Times New Roman",serif;font-size:40px;color:var(--accent);line-height:1;margin:0 0 10px}
+.fulltext{font-size:16px;max-width:60em;white-space:pre-wrap}
+.lbls{margin:14px 0 0;font-size:14px}
+.lbls dt{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#6b6459;margin-top:8px}
+.lbls dd{margin:2px 0 0}
+mark{background:#f3d9a4}
+.actions{margin-top:14px}
+.btn{border:1px solid var(--rule);background:#fffdf8;padding:7px 14px;cursor:pointer;font-size:14px}
+.btn.primary{border-color:var(--accent);color:var(--accent)}
+.tsort{background:none;border:0;padding:0;cursor:pointer;font:inherit;color:inherit}
+.copied{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:var(--accent);margin-left:10px}
+.checkline{padding:5px 0;border-bottom:1px solid var(--rule);font-size:14px}
+.ok{color:#2f6b3a;font-weight:700}
+.fail{color:var(--accent);font-weight:700}
+.warn{color:#8a6d1a;font-weight:700}
+.method p{max-width:44em}
+footer.site{border-top:1px solid var(--rule);padding:12px 28px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#6b6459}
+.statelink{background:none;border:0;color:var(--accent);cursor:pointer;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;padding:0;text-decoration:underline}
+.searchbox{width:100%;max-width:480px;padding:8px 10px;border:1px solid var(--rule);background:#fffdf8;font-size:15px}
+h2.block{font-family:Georgia,"Times New Roman",serif;font-size:22px;font-weight:400;margin:34px 0 6px}
+@media(max-width:840px){main{grid-template-columns:1fr}aside{position:static;border-right:0;border-bottom:1px solid var(--rule)}}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="label" id="h-label">UHRI</div>
+  <h1 id="h-title">UN human rights recommendations and observations</h1>
+  <p class="meta" id="h-meta"></p>
+  <div class="tabs" role="tablist" aria-label="Tabs">
+    <button class="tab" role="tab" id="tab-0" aria-controls="panel-0" aria-selected="true">01 OVERVIEW</button>
+    <button class="tab" role="tab" id="tab-1" aria-controls="panel-1" aria-selected="false" tabindex="-1">02 RECORDS</button>
+    <button class="tab" role="tab" id="tab-2" aria-controls="panel-2" aria-selected="false" tabindex="-1">03 METHOD &amp; EXPORT</button>
+  </div>
+</header>
+<main>
+<aside id="rail">
+  <div class="railhead"><span class="label">FILTERS</span><button class="clear" id="clearall" hidden>Clear all</button></div>
+  <div class="bignum" id="matchnum">0</div>
+  <div class="hint" aria-live="polite" id="matchsub"></div>
+  <div class="sharebar"><div id="sharefill"></div></div>
+  <div class="chips" id="chips"></div>
+  <div id="filtergroups">
+    <div class="fgroup">
+      <button class="fhead" aria-expanded="false" data-g="0"><span>01 KEYWORD</span><span class="tri">▸</span></button>
+      <div class="fbody" hidden>
+        <input type="text" id="kw" placeholder="e.g. torture" aria-label="Keyword">
+        <div class="hint">literal match, not synonyms</div>
+      </div>
+    </div>
+    <div class="fgroup">
+      <button class="fhead" aria-expanded="false" data-g="1"><span>02 MECHANISM · BODY · TYPE · STATE</span><span class="tri">▸</span></button>
+      <div class="fbody" hidden>
+        <select id="f-mech" aria-label="Mechanism"></select>
+        <select id="f-body" aria-label="Body or mandate"></select>
+        <select id="f-type" aria-label="Type"></select>
+        <select id="f-state" aria-label="Recommending State"></select>
+      </div>
+    </div>
+    <div class="fgroup">
+      <button class="fhead" aria-expanded="false" data-g="2"><span>03 YEARS &amp; SDG</span><span class="tri">▸</span></button>
+      <div class="fbody" hidden>
+        <div style="display:flex;gap:8px">
+          <select id="f-y1" aria-label="Year from"></select>
+          <select id="f-y2" aria-label="Year to"></select>
+        </div>
+        <select id="f-sdg" aria-label="SDG goal"></select>
+        <div class="hint">SDG = Sustainable Development Goal link in the data</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<section class="tabpanel" role="tabpanel" id="panel-0" aria-labelledby="tab-0">
+  <div class="tiles" id="tiles"></div>
+  <figure>
+    <div class="figno">FIG.01</div>
+    <figcaption id="fig1-title"></figcaption>
+    <div class="src" id="fig1-src"></div>
+    <div class="chartbox"><canvas id="chart1" role="img"></canvas></div>
+    <p class="hint" style="margin:8px 0 14px">A record can carry several themes, so the bars add up to more than the number of records. Percentages are of records. Click a bar to filter by that theme.</p>
+    <div id="fig1-tablewrap"></div>
+  </figure>
+  <figure>
+    <div class="figno">FIG.02</div>
+    <figcaption id="fig2-title"></figcaption>
+    <div class="src" id="fig2-src"></div>
+    <div class="chartbox smaller"><canvas id="chart2" role="img"></canvas></div>
+    <p class="hint">Every year from the first to the last in the filter is shown, so years with no records appear as gaps. Source: same records as the tiles above.</p>
+  </figure>
+  <h2 class="block"><button class="fhead" style="font-size:12px" aria-expanded="false" id="checksbtn"><span>EVERY CHECK (<span id="checks-n">0</span>)</span><span class="tri">▸</span></button></h2>
+  <div id="checkspanel" hidden></div>
+</section>
+
+<section class="tabpanel" role="tabpanel" id="panel-1" aria-labelledby="tab-1" hidden>
+  <input type="text" class="searchbox" id="kw2" placeholder="Search records…" aria-label="Search records">
+  <div class="hint" style="margin:4px 0 14px">Same keyword as the left rail. Literal match on every word, in text or symbol.</div>
+  <div id="tablewrap"></div>
+  <p><button class="btn" id="morebtn" hidden>Show 50 more</button></p>
+</section>
+
+<section class="tabpanel method" role="tabpanel" id="panel-2" aria-labelledby="tab-2" hidden>
+  <h2 class="block">How each number is computed</h2>
+  <div id="methodtext"></div>
+  <h2 class="block">Take it with you</h2>
+  <p><button class="btn primary" id="csvbtn">Download CSV of the current filter</button>
+     <button class="btn" id="sumbtn">Copy summary</button><span class="copied" id="sumcopied" hidden>Copied</span></p>
+  <div class="hint">The CSV is generated in your browser; nothing is sent anywhere. It includes the visible columns plus the full text and all labels, with comment lines naming the country, source, build date, filters applied and row count.</div>
+  <h2 class="block">Data</h2>
+  <div id="datasrc"></div>
+</section>
+</main>
+<footer class="site" id="footline"></footer>
+
+<script>
+(function(){
+"use strict";
+var U = window.WORKSHOP_DATA.uhri;
+var recs = U.records || [];
+var country = U.country;
+var fmt = function(n){return (n===null||n===undefined)?"–":Number(n).toLocaleString("en-GB")};
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+
+// ---------- derived helpers ----------
+function paraOf(t){var m=/^(\d{1,3}(?:\.\d{1,3})?)\.?\s/.exec(t||"");return m?m[1]:null}
+var PARA_RE_CACHE=null;
+function statesOf(r){
+  if(r.mechanism!=="Universal Periodic Review")return null;
+  var t=r.text||"";
+  var run=/((?:\s*\((?:[^()]|\([^()]*\))*\))+)\s*[;.]?\s*$/.exec(t);
+  if(!run)return {states:[],raw:null};
+  var groups=t.slice(run[1].length? t.indexOf(run[1],t.length-run[1].length-2):0);
+  var seg=run[1].match(/\((?:[^()]|\([^()]*\))*\)/g)||[];
+  var out=[];
+  for(var i=0;i<seg.length;i++){
+    var inner=seg[i].slice(1,-1).trim();
+    if(inner && inner.indexOf(",")<0 && inner.length<=60) out.push(inner);
+  }
+  return {states:out, raw:run[1].trim(), ok:out.length>0};
+}
+recs.forEach(function(r,i){
+  r._i=i; r._para=paraOf(r.text); r._st=statesOf(r);
+  r._states=(r._st&&r._st.states)||[];
+});
+
+var years=recs.map(function(r){return r.year}).filter(function(y){return y!=null});
+var yMin=years.length?Math.min.apply(null,years):null, yMax=years.length?Math.max.apply(null,years):null;
+var distinctSymbols={}; recs.forEach(function(r){distinctSymbols[r.symbol]=1});
+var nDocs=Object.keys(distinctSymbols).length;
+
+// ---------- header ----------
+document.getElementById("h-label").textContent="UHRI · "+country;
+document.title="UN human rights recommendations: "+country;
+document.getElementById("h-title").textContent="UN human rights recommendations and observations: "+country;
+var srcLink=U.source?('<a href="'+esc(U.source_url||"")+'" target="_blank" rel="noopener">'+esc(U.source)+'</a>'):"";
+document.getElementById("h-meta").innerHTML=
+  srcLink+" · "+fmt(recs.length)+" records · "+fmt(nDocs)+" documents · "+
+  (yMin===yMax?String(yMin):(yMin+"–"+yMax))+" · built "+esc(U.built||"?")+" · dated by document";
+document.getElementById("footline").innerHTML="Built on OHCHR UHRI data · "+fmt(recs.length)+" records · "+srcLink;
+
+// ---------- tabs ----------
+var tabs=[].slice.call(document.querySelectorAll(".tab"));
+var panels=[document.getElementById("panel-0"),document.getElementById("panel-1"),document.getElementById("panel-2")];
+var curTab=0;
+function showTab(i){
+  curTab=i;
+  tabs.forEach(function(t,j){t.setAttribute("aria-selected",j===i?"true":"false");t.tabIndex=j===i?0:-1});
+  panels.forEach(function(p,j){p.hidden=j!==i});
+  document.getElementById("filtergroups").hidden=(i===2);
+}
+tabs.forEach(function(t,i){
+  t.addEventListener("click",function(){showTab(i)});
+  t.addEventListener("keydown",function(e){
+    var d=e.key==="ArrowRight"?1:e.key==="ArrowLeft"?-1:0;
+    if(!d)return; e.preventDefault();
+    var n=(i+d+tabs.length)%tabs.length; showTab(n); tabs[n].focus();
+  });
+});
+
+// ---------- filter state ----------
+var F={kw:"",mech:"",body:"",type:"",state:"",y1:"",y2:"",sdg:"",theme:""};
+var themeOf=function(r){return (r.themes||[]).indexOf(F.theme)>=0};
+
+function matches(r){
+  if(F.mech && r.mechanism!==F.mech)return false;
+  if(F.body && r.body!==F.body)return false;
+  if(F.type && r.type!==F.type)return false;
+  if(F.state){ if(r._states.indexOf(F.state)<0)return false; }
+  if(F.theme && !themeOf(r))return false;
+  if(F.sdg){ if(!(r.sdgs||[]).some(function(g){return g===Number(F.sdg)}))return false; }
+  if(F.y1!==""&&r.year<Number(F.y1))return false;
+  if(F.y2!==""&&r.year>Number(F.y2))return false;
+  if(F.kw){
+    var words=F.kw.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    var hay=((r.text||"")+" "+(r.symbol||"")).toLowerCase();
+    for(var w=0;w<words.length;w++)if(hay.indexOf(words[w])<0)return false;
+  }
+  return true;
+}
+var filtered=[];
+function refilter(){filtered=recs.filter(matches);render()}
+
+// ---------- rail ----------
+var chipDefs={
+  kw:{label:"Keyword",val:function(){return '"'+F.kw+'"'},clear:function(){F.kw="";$("kw").value="";$("kw2").value=""}},
+  mech:{label:"Mechanism",val:function(){return F.mech},clear:function(){F.mech="";syncSelect("f-mech",F.mech)}},
+  body:{label:"Body",val:function(){return F.body},clear:function(){F.body="";syncSelect("f-body",F.body)}},
+  type:{label:"Type",val:function(){return F.type},clear:function(){F.type="";syncSelect("f-type",F.type)}},
+  state:{label:"State",val:function(){return F.state},clear:function(){F.state="";syncSelect("f-state",F.state)}},
+  theme:{label:"Theme",val:function(){return F.theme},clear:function(){F.theme=""}},
+  sdg:{label:"SDG",val:function(){return "SDG "+F.sdg},clear:function(){F.sdg="";syncSelect("f-sdg",F.sdg)}},
+  yr:{label:"Years",val:function(){return (F.y1||yMin||"")+"–"+(F.y2||yMax||"")},clear:function(){F.y1="";F.y2="";syncSelect("f-y1","");syncSelect("f-y2","")}}
+};
+function $(id){return document.getElementById(id)}
+function syncSelect(id,v){$(id).value=v}
+function activeChipKeys(){
+  var ks=[];
+  if(F.kw)ks.push("kw");
+  if(F.mech)ks.push("mech"); if(F.body)ks.push("body"); if(F.type)ks.push("type");
+  if(F.state)ks.push("state"); if(F.theme)ks.push("theme"); if(F.sdg)ks.push("sdg");
+  if(F.y1!==""||F.y2!=="")ks.push("yr");
+  return ks;
+}
+function renderChips(){
+  var box=$("chips");box.innerHTML="";
+  var ks=activeChipKeys();
+  $("clearall").hidden=!ks.length;
+  ks.forEach(function(k){
+    var c=document.createElement("span");c.className="chip";
+    c.innerHTML=esc(chipDefs[k].label)+": "+esc(chipDefs[k].val())+" <button aria-label='Remove "+esc(chipDefs[k].label)+" filter'>×</button>";
+    c.querySelector("button").addEventListener("click",function(){chipDefs[k].clear();refilter();rebuildDynamicSelects()});
+    box.appendChild(c);
+  });
+}
+$("clearall").addEventListener("click",function(){
+  F={kw:"",mech:"",body:"",type:"",state:"",y1:"",y2:"",sdg:"",theme:""};
+  $("kw").value="";$("kw2").value="";syncSelect("f-mech","");syncSelect("f-body","");syncSelect("f-type","");syncSelect("f-state","");syncSelect("f-sdg","");syncSelect("f-y1","");syncSelect("f-y2","");
+  refilter();rebuildDynamicSelects();
+});
+
+// filter headings: one open at a time
+var fheads=[].slice.call(document.querySelectorAll(".fhead[data-g]"));
+function setGroup(g){
+  fheads.forEach(function(h,i){
+    var open=i===g;
+    h.setAttribute("aria-expanded",open?"true":"false");
+    h.nextElementSibling.hidden=!open;
+    h.querySelector(".tri").textContent=open?"▾":"▸";
+  });
+}
+fheads.forEach(function(h){h.addEventListener("click",function(){
+  var g=+h.getAttribute("data-g");
+  var open=h.getAttribute("aria-expanded")==="true";
+  setGroup(open?-1:g);
+})});
+
+// keyword with debounce
+var kwTimer=null;
+function onKw(v){clearTimeout(kwTimer);kwTimer=setTimeout(function(){F.kw=v;refilter()},300)}
+$("kw").addEventListener("input",function(){onKw(this.value);$("kw2").value=this.value});
+$("kw2").addEventListener("input",function(){onKw(this.value);$("kw").value=this.value});
+
+// ---------- selects ----------
+function fillSelect(sel,arr,blank){
+  sel.innerHTML=(blank!==false?'<option value="">'+blank+'</option>':"");
+  arr.forEach(function(o){
+    var op=document.createElement("option");op.value=o.v;op.textContent=o.t;sel.appendChild(op);
+  });
+}
+function countBy(list,fn){
+  var m={};list.forEach(function(r){var k=fn(r);if(k!=null&&k!=="")m[k]=(m[k]||0)+1});
+  return m;
+}
+function rebuildDynamicSelects(){
+  // mechanism from full file
+  var mechs=Object.keys(countBy(recs,function(r){return r.mechanism})).sort();
+  fillSelect($("f-mech"),mechs.map(function(m){return {v:m,t:m}}),"all mechanisms");
+  syncSelect("f-mech",F.mech);
+  // bodies present within chosen mechanism (unfiltered otherwise)
+  var pool=recs.filter(function(r){return !F.mech||r.mechanism===F.mech});
+  var bm=countBy(pool,function(r){return r.body});
+  fillSelect($("f-body"),Object.keys(bm).sort().map(function(b){return {v:b,t:b+" ("+bm[b]+")"}}),"all bodies / mandates");
+  syncSelect("f-body",F.body);
+  // types present in pool
+  var tm=countBy(pool,function(r){return r.type});
+  fillSelect($("f-type"),Object.keys(tm).sort().map(function(t){return {v:t,t:t+" ("+tm[t]+")"}}),"all types");
+  syncSelect("f-type",F.type);
+  // states
+  var sm=countBy(pool.filter(function(r){return r.mechanism==="Universal Periodic Review"}),function(r){return r._states.length?r._states[0]:null});
+  pool.forEach(function(r){for(var i=1;i<r._states.length;i++){var s=r._states[i];sm[s]=(sm[s]||0)+1}});
+  fillSelect($("f-state"),Object.keys(sm).sort().map(function(s){return {v:s,t:s+" ("+sm[s]+")"}}),"all recommending States");
+  syncSelect("f-state",F.state);
+  // years
+  var ys=[];for(var y=yMin;y<=yMax;y++){if(countBy(recs,function(r){return r.year===y?y:null})[y])ys.push(y)}
+  fillSelect($("f-y1"),ys.map(function(y){return {v:y,t:y}}),"from");
+  fillSelect($("f-y2"),ys.map(function(y){return {v:y,t:y}}),"to");
+  syncSelect("f-y1",F.y1);syncSelect("f-y2",F.y2);
+  // sdg
+  var sg={};recs.forEach(function(r){(r.sdgs||[]).forEach(function(g){sg[g]=1})});
+  var names=U.sdg_names||{};
+  fillSelect($("f-sdg"),Object.keys(sg).map(Number).sort(function(a,b){return a-b}).map(function(g){return {v:g,t:g+" · "+(names[String(g)]||"")}}),"all SDGs");
+  syncSelect("f-sdg",F.sdg);
+}
+$("f-mech").addEventListener("change",function(){F.mech=this.value;F.body="";F.type="";refilter();rebuildDynamicSelects()});
+$("f-body").addEventListener("change",function(){F.body=this.value;refilter()});
+$("f-type").addEventListener("change",function(){F.type=this.value;refilter()});
+$("f-state").addEventListener("change",function(){F.state=this.value;refilter()});
+$("f-sdg").addEventListener("change",function(){F.sdg=this.value;refilter()});
+function yearChange(){
+  var a=$("f-y1").value,b=$("f-y2").value;
+  if(a!==""&&b!==""&&Number(a)>Number(b)){var t=a;a=b;b=t;syncSelect("f-y1",a);syncSelect("f-y2",b)}
+  F.y1=a;F.y2=b;refilter();
+}
+$("f-y1").addEventListener("change",yearChange);
+$("f-y2").addEventListener("change",yearChange);
+
+// ---------- charts ----------
+var chart1=null,chart2=null;
+var MECHCOL={"Universal Periodic Review":"#c2410c","Treaty bodies":"#0f766e","Special Procedures":"#7c3aed"};
+function mechColor(m){return MECHCOL[m]||"#9b2335"}
+
+function themeStats(list){
+  var m={},yr={};
+  list.forEach(function(r){
+    (r.themes||[]).forEach(function(t){
+      m[t]=(m[t]||0)+1;
+      if(!yr[t]||r.year<yr[t][0]||r.year>yr[t][1]||!yr[t][0]){yr[t]=yr[t]&&yr[t][0]?[Math.min(yr[t][0],r.year),Math.max(yr[t][1],r.year)]:[r.year,r.year]}
+    });
+  });
+  var arr=Object.keys(m).map(function(t){return {t:t,n:m[t],y1:yr[t][0],y2:yr[t][1]}});
+  arr.sort(function(a,b){return b.n-a.n||a.t.localeCompare(b.t)});
+  return arr;
+}
+
+function drawFig1(list){
+  var top=themeStats(list).slice(0,10);
+  var title="Ten most frequent themes among "+fmt(list.length)+" filtered record"+(list.length===1?"":"s");
+  $("fig1-title").textContent=title;
+  $("fig1-src").textContent="Source: "+fmt(list.length)+" records currently matching the filters. A record can carry several themes.";
+  var cv=$("chart1");
+  if(chart1)chart1.destroy();
+  if(!list.length){cv.parentElement.innerHTML='<div class="chartbox" style="display:flex;align-items:center;justify-content:center">No records match</div>';$("chart1")&&0;buildFig1Table(top,list);return}
+  if(!document.getElementById("chart1")){
+    document.querySelector("#panel-0 figure .chartbox").innerHTML='<canvas id="chart1" role="img"></canvas>';
+    cv=$("chart1");
+  }
+  chart1=new Chart(cv,{
+    type:"bar",
+    data:{labels:top.map(function(d){return d.t.length>42?d.t.slice(0,40)+"…":d.t}),
+      datasets:[{data:top.map(function(d){return d.n}),backgroundColor:"#9b2335",maxBarThickness:26}]},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,
+      layout:{padding:{right:44}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:function(i){return top[i[0].dataIndex].t}}}},
+      scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{ticks:{font:{size:12}}}},
+      onClick:function(e,els){
+        if(els.length){F.theme=top[els[0].index].t;refilter()}
+      }}
+  });
+  buildFig1Table(top,list);
+}
+function buildFig1Table(top,list){
+  var w=$("fig1-tablewrap");
+  if(!list.length){w.innerHTML="";return}
+  var rows=top.map(function(d){
+    var pct=list.length?(100*d.n/list.length).toFixed(1):"0.0";
+    return "<tr><td>"+esc(d.t)+"</td><td class='num'>"+fmt(d.n)+"</td><td class='num'>"+pct+"%</td><td class='num'>"+esc(d.y1)+"–"+esc(d.y2)+"</td></tr>";
+  }).join("");
+  w.innerHTML="<table><caption>Same ten themes as the chart, so the values can be read exactly. Source: "+fmt(list.length)+" filtered records.</caption>"+
+    "<thead><tr><th scope='col'>Theme</th><th scope='col' class='num'>Records</th><th scope='col' class='num'>% of filtered</th><th scope='col' class='num'>Years</th></tr></thead><tbody>"+rows+"</tbody></table>";
+}
+
+function drawFig2(list){
+  $("fig2-title").textContent="Records per year by mechanism";
+  $("fig2-src").textContent="Source: "+fmt(list.length)+" records currently matching the filters.";
+  var mechs=Object.keys(countBy(recs,function(r){return r.mechanism})).filter(function(m){return MECHCOL[m]}).sort();
+  var labels=[],y0=yMin,y1=yMax;
+  if(y0!=null)for(var y=y0;y<=y1;y++)labels.push(String(y));
+  var data={};
+  mechs.forEach(function(m){data[m]={}});
+  list.forEach(function(r){if(data[r.mechanism])data[r.mechanism][r.year]=(data[r.mechanism][r.year]||0)+1});
+  if(chart2)chart2.destroy();
+  var cv=$("chart2");
+  if(!list.length){cv.parentElement.innerHTML='<div class="chartbox smaller" style="display:flex;align-items:center;justify-content:center">No records match</div>';return}
+  if(!document.getElementById("chart2")){
+    document.querySelectorAll("#panel-0 figure")[1].querySelector(".chartbox.smaller").innerHTML='<canvas id="chart2" role="img"></canvas>';
+    cv=$("chart2");
+  }
+  chart2=new Chart(cv,{
+    type:"bar",
+    data:{labels:labels,datasets:mechs.map(function(m){
+      return {label:m,data:labels.map(function(y){return data[m][Number(y)]||0}),backgroundColor:mechColor(m),maxBarThickness:34}})},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:12}}}},
+      scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true,ticks:{precision:0}}}}
+  });
+}
+
+// ---------- tiles ----------
+function buildTiles(list){
+  var tileHtml="";
+  function tile(big,sub,note){
+    return "<div class='tile'><div class='n'>"+big+"</div><div class='sub'>"+sub+"</div><p class='note'>"+note+"</p></div>";
+  }
+  // headline: all records in FILE
+  var tm=countBy(recs,function(r){return r.type});
+  var breakdown=Object.keys(tm).sort().map(function(t){return fmt(tm[t])+" "+esc(t)}).join(" · ");
+  tileHtml+=tile(fmt(recs.length),"All records in the file: "+breakdown,"How: every record in the file, counted once; breakdown by type as spelled in the data.");
+  tileHtml+=tile(fmt(nDocs),(yMin===yMax?String(yMin):(yMin+"–"+yMax))+" years","How: distinct document symbols; minimum and maximum year. Dated by document.");
+  // one tile per mechanism, in filtered set
+  var mechs=Object.keys(countBy(recs,function(r){return r.mechanism})).sort();
+  mechs.forEach(function(m){
+    var sub=recs.filter(function(r){return r.mechanism===m});
+    var inF=list.filter(function(r){return r.mechanism===m});
+    var docs={};inF.forEach(function(r){docs[r.symbol]=1});
+    var ys=inF.map(function(r){return r.year});
+    var latest=ys.length?Math.max.apply(null,ys):null;
+    var share=list.length?Math.round(100*inF.length/list.length)+"% of filtered":"–";
+    var extra="";
+    if(m==="Universal Periodic Review"){
+      extra=" <button class='statelink' id='seestates'>see the States</button>";
+    }
+    tileHtml+=tile(fmt(inF.length),
+      "<span class='dot' style='background:"+mechColor(m)+"'></span>"+esc(m)+extra,
+      "<span style='color:#6b6459'>"+fmt(Object.keys(docs).length)+" documents · latest "+(latest||"–")+" · "+share+"</span>. How: records with mechanism = “"+esc(m)+"” among the filtered set.");
+  });
+  $("tiles").innerHTML=tileHtml;
+  var ss=$("seestates");
+  if(ss)ss.addEventListener("click",function(){
+    var box=$("statesbox");
+    if(box){box.hidden=!box.hidden;return}
+    box=document.createElement("div");box.id="statesbox";box.style.margin="10px 0";
+    var sm=countBy(list.filter(function(r){return r.mechanism==="Universal Periodic Review"}),function(r){return r._states.length?r._states[0]:null});
+    list.forEach(function(r){for(var i=1;i<r._states.length;i++){var s=r._states[i];sm[s]=(sm[s]||0)+1}});
+    var arr=Object.keys(sm).sort(function(a,b){return sm[b]-sm[a]}).slice(0,10);
+    box.innerHTML="<div class='label'>Ten States that made most recommendations to "+esc(country)+"</div>"+
+      "<table><caption>Counts of recommendations naming each State, in the current filter. A record with several States counts once for each.</caption><tbody>"+
+      arr.map(function(s){return "<tr><td>"+esc(s)+"</td><td class='num'>"+fmt(sm[s])+"</td></tr>"}).join("")+"</tbody></table>";
+    ss.parentElement.appendChild(box);
+  });
+}
+
+// ---------- records table ----------
+var sortDesc=true, shown=50, openId=null;
+function sortList(list){
+  var arr=list.slice();
+  arr.sort(function(a,b){
+    var d=(b.date||"").localeCompare(a.date||"");
+    if(!sortDesc)d=-d;
+    if(d)return d;
+    d=(a.body||"").localeCompare(b.body||"");
+    if(d)return d;
+    var pa=a._para?parseFloat(a._para):Infinity, pb=b._para?parseFloat(b._para):Infinity;
+    if(pa!==pb)return pa-pb;
+    return a._i-b._i;
+  });
+  return arr;
+}
+function firstLine(t){
+  t=t||"";
+  if(t.length<=120)return t;
+  var cut=t.slice(0,120),sp=cut.lastIndexOf(" ");
+  return (sp>60?cut.slice(0,sp):cut)+"…";
+}
+function hl(s){
+  var out=esc(s);
+  if(F.kw){
+    F.kw.trim().toLowerCase().split(/\s+/).filter(Boolean).forEach(function(w){
+      try{out=out.replace(new RegExp("("+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi"),"<mark>$1</mark>")}catch(e){}
+    });
+  }
+  return out;
+}
+function renderTable(){
+  var list=sortList(filtered);
+  var wrap=$("tablewrap");
+  var total=list.length;
+  var page=list.slice(0,shown);
+  if(!filtered.length){
+    wrap.innerHTML="<p>No records match the current filters.</p>";
+    $("morebtn").hidden=true;return;
+  }
+  var head="<table><caption>"+fmt(Math.min(shown,total))+" of "+fmt(total)+" matching records shown · newest first · click a row to read the full paragraph</caption>"+
+    "<thead><tr><th scope='col'><button class='tsort' id='datehead'>Date "+(sortDesc?"↓":"↑")+"</button></th><th scope='col'>Body</th><th scope='col'>Symbol</th><th scope='col' class='num'>Para.</th><th scope='col'>First line</th><th scope='col'>Recommending State</th></tr></thead><tbody>";
+  var body=page.map(function(r){
+    var states=r._states.length?esc(r._states.join("; ")):(r.mechanism==="Universal Periodic Review"?"State not found":"–");
+    var row="<tr class='recrow' tabindex='0' data-id='"+esc(r.id)+"'><td>"+esc(r.date||"")+"</td><td>"+esc(r.body||"")+"</td>"+
+      "<td><a href='"+esc(r.doc_url)+"' target='_blank' rel='noopener'>"+esc(r.symbol)+"</a></td>"+
+      "<td class='num'>"+(r._para?esc(r._para):"–")+"</td><td>"+hl(firstLine(r.text))+"</td><td>"+states+"</td></tr>";
+    if(openId===r.id)row+=detailRow(r);
+    return row;
+  }).join("");
+  wrap.innerHTML=head+body+"</tbody></table>";
+  $("datehead").addEventListener("click",function(){sortDesc=!sortDesc;renderTable()});
+  wrap.querySelectorAll("tr.recrow").forEach(function(tr){
+    function open(){openId=(openId===tr.getAttribute("data-id"))?null:tr.getAttribute("data-id");renderTable()}
+    tr.addEventListener("click",function(e){if(e.target.tagName==="A"||e.target.closest("a"))return;open()});
+    tr.addEventListener("keydown",function(e){if(e.key==="Enter")open()});
+  });
+  bindDetailButtons();
+  $("morebtn").hidden=shown>=total;
+  $("morebtn").textContent="Show 50 more ("+fmt(total-shown)+" left)";
+}
+$("morebtn").addEventListener("click",function(){shown+=50;renderTable()});
+function detailRow(r){
+  function dl(k,vals){
+    if(!vals||!vals.length)return "";
+    return "<dt>"+k+"</dt><dd>"+esc(vals.join("; "))+"</dd>";
+  }
+  var names=U.sdg_names||{};
+  var sdgLabels=(r.sdgs||[]).map(function(g){return g+" · "+(names[String(g)]||"")});
+  var cite=r._para?(r.symbol+", para. "+r._para):r.symbol;
+  var noPara=r._para?"":" (no paragraph number in this extract)";
+  return "<tr class='details'><td colspan='6'>"+
+    (r._para?"<p class='paranum'>para. "+esc(r._para)+"</p>":"")+
+    "<p class='fulltext'>"+esc(r.text)+"</p>"+
+    "<dl class='lbls'>"+
+      (r.section?"<dt>Section</dt><dd>"+esc(r.section)+"</dd>":"")+
+      dl("Themes",r.themes)+dl("SDGs",sdgLabels)+dl("SDG targets",r.sdg_targets)+dl("Affected persons",r.affected_persons)+
+      (r._states.length?"<dt>Recommending State"+(r._states.length>1?"s":"")+"</dt><dd>"+esc(r._states.join("; "))+"</dd>":"")+
+    "</dl>"+
+    "<div class='actions'>"+
+      "<button class='btn' data-copy='"+esc(cite)+"'>Copy citation"+esc(noPara)+"</button>"+
+      "<a class='btn' style='text-decoration:none' href='"+esc(r.doc_url)+"' target='_blank' rel='noopener'>Open the UN document</a>"+
+      "<span class='copied' hidden>Copied</span>"+
+    "</div></td></tr>";
+}
+function bindDetailButtons(){
+  document.querySelectorAll("[data-copy]").forEach(function(b){
+    b.addEventListener("click",function(){
+      copyText(b.getAttribute("data-copy"),b.parentElement.querySelector(".copied"));
+    });
+  });
+}
+function copyText(txt,confirmEl){
+  function done(){if(confirmEl){confirmEl.hidden=false;setTimeout(function(){confirmEl.hidden=true},2000)}}
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done,function(){fallback()});
+  }else fallback();
+  function fallback(){
+    var ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();
+    try{document.execCommand("copy")}catch(e){}
+    document.body.removeChild(ta);done();
+  }
+}
+
+// ---------- checks ----------
+function buildChecks(){
+  var lines=[];
+  function line(ok,what,a,b,cls){
+    lines.push("<div class='checkline'>"+(ok?"<span class='ok'>✓</span> ":"<span class='"+(cls||"fail")+"'>"+(cls==="warn"?"⚠":"✗ check failed")+"</span> ")+
+      esc(what)+" — "+a+(b!==undefined?" / "+b:"")+"</div>");
+  }
+  var total=recs.length;
+  line(total===Number(U.count),"Record count equals the file's count field",fmt(total),fmt(U.count));
+  [["mechanism",function(r){return r.mechanism}],["body",function(r){return r.body}],["year",function(r){return r.year}]].forEach(function(p){
+    var m=countBy(recs,p[1]),s=0;Object.keys(m).forEach(function(k){s+=m[k]});
+    line(s===total,"Partition by "+p[0]+" sums to record count",fmt(s),fmt(total));
+  });
+  var tm=countBy(recs,function(r){return r.type}),ts=0;Object.keys(tm).forEach(function(k){ts+=tm[k]});
+  line(ts===total,"Type partition sums to headline total",fmt(ts),fmt(total));
+  // chart vs table: recompute
+  var top=themeStats(filtered).slice(0,10);
+  var allOk=top.every(function(d){var n=filtered.filter(function(r){return (r.themes||[]).indexOf(d.t)>=0}).length;return n===d.n});
+  line(allOk,"FIG.01 values equal a second independent count",top.length?fmt(top.length)+" themes checked":"no themes in filter");
+  if(top.length)line(top[0].n<=filtered.length,"Largest theme bar not larger than filtered record count",fmt(top[0].n),fmt(filtered.length));
+  // links
+  var badLinks=recs.filter(function(r){
+    var u=r.doc_url||"";
+    if(u.indexOf("https://docs.un.org/")!==0)return true;
+    var tail;try{tail=decodeURIComponent(u).replace(/\/+$/,"").split("/").pop()}catch(e){return true}
+    return tail.toLowerCase()!==(r.symbol||"").toLowerCase();
+  });
+  line(badLinks.length===0,"Every doc_url starts with docs.un.org and ends with its symbol",fmt(recs.length)+" checked",badLinks.length?fmt(badLinks.length)+" fail: "+badLinks.slice(0,3).map(function(r){return esc(r.symbol)}).join(", "):"all pass");
+  // paragraph shares
+  Object.keys(countBy(recs,function(r){return r.mechanism})).sort().forEach(function(m){
+    var ms=recs.filter(function(r){return r.mechanism===m});
+    var withP=ms.filter(function(r){return r._para}).length;
+    var pct=ms.length?Math.round(100*withP/ms.length):0;
+    if(m==="Universal Periodic Review")line(pct===100,"UPR records with a paragraph number (expected 100%)",pct+"%",pct<100?"warning, not an error":undefined,pct<100?"warn":null);
+    else line(true,"Paragraph number found, "+m,withP+" of "+fmt(ms.length)+" ("+pct+"%)");
+  });
+  // states
+  var upr=recs.filter(function(r){return r.mechanism==="Universal Periodic Review"});
+  var withS=upr.filter(function(r){return r._states.length});
+  var noS=upr.filter(function(r){return !r._states.length});
+  line(true,"UPR records with at least one recommending State found",fmt(withS.length)+" of "+fmt(upr.length)+(noS.length?"; without one: "+noS.slice(0,3).map(function(r){return esc(r.symbol)+" …"+esc((r._st&&r._st.raw)||"(no parenthesis)").slice(-50)}).join(" | "):""));
+  // duplicates & gaps
+  var ids={},dupIds=0;recs.forEach(function(r){if(ids[r.id])dupIds++;ids[r.id]=1});
+  line(dupIds===0,"Distinct ids equal record count",fmt(total-dupIds),fmt(total));
+  var texts={};var dupT=0;recs.forEach(function(r){var k=(r.text||"").trim();if(texts[k])dupT++;texts[k]=1});
+  line(true,"Duplicate text values found",fmt(dupT));
+  ["themes","sdgs","affected_persons"].forEach(function(f){
+    var miss=recs.filter(function(r){return !(r[f]||[]).length}).length;
+    line(true,"Records with no "+f+" (shown as not labelled)",fmt(miss));
+  });
+  $("checks-n").textContent=lines.length;
+  $("checkspanel").innerHTML='<div class="hint" style="margin-bottom:8px">Each line compares two independent computations. Nothing is hidden: a failed check shows its values.</div>'+lines.join("");
+}
+$("checksbtn").addEventListener("click",function(){
+  var open=this.getAttribute("aria-expanded")==="true";
+  this.setAttribute("aria-expanded",open?"false":"true");
+  $("checkspanel").hidden=open;
+  this.querySelector(".tri").textContent=open?"▸":"▾";
+});
+
+// ---------- method & export ----------
+$("methodtext").innerHTML=
+ "<p>Every number is a loop over the records in JavaScript; nothing is estimated and no model is called. "+
+ "The headline total counts every record in the file once; the breakdown uses the type values exactly as spelled in the data. "+
+ "Documents are distinct symbols; years are the minimum and maximum year of a record. Filters combine with AND: exact match on mechanism, body and type, inclusive year range, SDG membership, and recommending State. "+
+ "The keyword search is literal: every word must appear as a substring of the text or the symbol. Theme counts count each label on each record once, so bars add up to more than the record count; the year range is that of the records carrying the theme. "+
+ "The paragraph number is the number at the start of the text; the recommending State comes from the parentheses at the end of UPR texts only. The citation copies the symbol and the paragraph number, following the Dag Hammarskjöld Library's advice.</p>";
+$("datasrc").innerHTML="<p>Source: "+srcLink+" · built "+esc(U.built||"?")+" · "+fmt(recs.length)+" records, "+fmt(nDocs)+" documents, "+(yMin===yMax?yMin:(yMin+"–"+yMax))+". "+
+ "Dates are document dates, not the dates recommendations were made or accepted. Nothing leaves your browser except the clipboard write on “Copy”.</p>";
+
+function csvCell(v){v=String(v==null?"":v);return /[",\n;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+$("csvbtn").addEventListener("click",function(){
+  var list=sortList(filtered);
+  var head=["Country","Source","Built","Filters applied","Rows"];
+  var filtersDesc=activeChipKeys().map(function(k){return chipDefs[k].label+": "+chipDefs[k].val()}).join("; ")||"none";
+  var meta=[country,U.source||"",U.built||"",filtersDesc,String(list.length)];
+  var cols=["Date","Body","Mechanism","Type","Symbol","Document URL","Paragraph","Recommending States","Text","Themes","SDGs","SDG targets","Affected persons","Section"];
+  var lines=[];
+  meta.forEach(function(v,i){lines.push("# "+head[i]+": "+v)});
+  lines.push(cols.map(csvCell).join(","));
+  list.forEach(function(r){
+    lines.push([r.date,r.body,r.mechanism,r.type,r.symbol,r.doc_url,r._para||"",r._states.join("; "),r.text,
+      (r.themes||[]).join("; "),(r.sdgs||[]).join("; "),(r.sdg_targets||[]).join("; "),(r.affected_persons||[]).join("; "),r.section||""].map(csvCell).join(","));
+  });
+  var blob=new Blob([lines.join("\r\n")],{type:"text/csv"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="uhri-"+String(country).toLowerCase().replace(/\s+/g,"-")+"-filter.csv";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(a.href)},5000);
+});
+$("sumbtn").addEventListener("click",function(){
+  var tm=countBy(filtered,function(r){return r.type});
+  var types=Object.keys(tm).map(function(t){return tm[t]+" "+t}).join(", ");
+  var top=themeStats(filtered).slice(0,10);
+  var s=country+": "+fmt(filtered.length)+" UN human rights records ("+types+"), "+
+    (yMin===yMax?yMin:Math.min.apply(null,filtered.map(function(r){return r.year}).length?filtered.map(function(r){return r.year}):[yMin])+"–"+Math.max.apply(null,filtered.map(function(r){return r.year}).length?filtered.map(function(r){return r.year}):[yMax]))+
+    (activeChipKeys().length?"; filters: "+activeChipKeys().map(function(k){return chipDefs[k].label+" "+chipDefs[k].val()}).join("; "):"")+
+    ". Most frequent themes: "+(top.map(function(d){return d.t+" ("+d.n+")"}).join(", ")||"none")+". Source: OHCHR UHRI.";
+  copyText(s,$("sumcopied"));
+});
+
+// ---------- render ----------
+function render(){
+  // rail
+  $("matchnum").textContent=fmt(filtered.length);
+  $("matchsub").setAttribute("aria-live","polite");
+  $("matchsub").textContent="matching records of "+fmt(recs.length)+" in the file";
+  var share=recs.length?100*filtered.length/recs.length:0;
+  $("sharefill").style.width=Math.min(100,share)+"%";
+  renderChips();
+  // tab content
+  if(curTab===0){
+    buildTiles(filtered);
+    drawFig1(filtered);
+    drawFig2(filtered);
+    buildChecks();
+  }
+  if(curTab===1){renderTable()}
+}
+
+rebuildDynamicSelects();
+refilter();
+showTab(0);
+})();
+</script>
+</body>
+</html>

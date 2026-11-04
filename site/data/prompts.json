@@ -41,8 +41,7 @@
         "button_matches": "(?i)check",
         "text_matches": "(?i)not in the data|not found"
       },
-      "lesson": "A checker that compares words is deterministic: the same text, the same verdict, every time. It can say that a quotation is not in the data; it cannot say whether the sentence around it is a fair reading of the recommendation. That stays with you.",
-      "hidden": true
+      "lesson": "A checker that compares words is deterministic: the same text, the same verdict, every time. It can say that a quotation is not in the data; it cannot say whether the sentence around it is a fair reading of the recommendation. That stays with you."
     },
     {
       "id": "s7-3-check-ten",
