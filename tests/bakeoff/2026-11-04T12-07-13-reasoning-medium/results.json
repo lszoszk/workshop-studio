@@ -1,0 +1,32 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "controls_min": true,
+   "links_to": false
+  },
+  "passed": 4,
+  "total": 8,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Unexpected end of input"
+  ],
+  "network": [],
+  "lines": 446,
+  "seconds": 250.9,
+  "first_token": 33.6,
+  "first_thought": 1.8,
+  "reasoning_chars": 8427,
+  "prompt_tokens": 18088,
+  "completion_tokens": 25886,
+  "cost": 0.1392216,
+  "provider": "Z.AI"
+ }
+]

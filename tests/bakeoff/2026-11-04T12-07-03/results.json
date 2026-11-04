@@ -1,0 +1,32 @@
+[
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": false,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": false
+  },
+  "passed": 5,
+  "total": 8,
+  "errors": [
+   "Cannot set properties of null (setting 'textContent')"
+  ],
+  "network": [],
+  "lines": 2204,
+  "seconds": 200.4,
+  "first_token": 1.0,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 19162,
+  "completion_tokens": 20457,
+  "cost": 0.03491587,
+  "provider": "Mistral"
+ }
+]

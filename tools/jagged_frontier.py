@@ -109,7 +109,7 @@ def main():
 
 # read against the printed values before each run of this script: they are written by hand
 FINDINGS = [
-    "<b>No model is best at everything.</b> Mistral Large 3 passed every check on the PDF and the wiki, but its dashboard and its search each had an error.",
+    "<b>No model is best at everything.</b> Mistral Large 3 passed every check on the PDF and the wiki, but only 2 of its 6 dashboards had no error (GLM-5.3: 5 of 6).",
     "<b>GLM-5.3</b> found all 141 footnotes on the harder PDF plan, yet its build of the simpler one stopped on an error.",
     "<b>Claude Sonnet 5.5</b> passed everything, but the plans were written and tuned with it.",
     "Try a model on your own task before you rely on it.",

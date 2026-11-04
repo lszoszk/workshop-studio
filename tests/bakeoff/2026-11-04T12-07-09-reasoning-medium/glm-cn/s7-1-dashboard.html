@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UN human rights recommendations and observations</title>
+<style>
+[hidden]{display:none!important}
+:root{--paper:#f4f0e8;--ink:#1d1b18;--rule:#d9d2c3;--red:#9b2335;
+--upr:#c2410c;--tb:#0f766e;--sp:#7c3aed}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+a{color:var(--red)}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px 40px}
+header{padding:20px 0 12px;border-bottom:1px solid var(--rule)}
+.monolabel{font:11px/1.4 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;
+text-transform:uppercase;color:#6b6355}
+h1{font-family:Georgia,"Times New Roman",serif;font-weight:400;
+font-size:30px;margin:6px 0 6px;line-height:1.2}
+.meta{font-size:13px;color:#4a453c}
+.layout{display:flex;gap:24px;align-items:flex-start;margin-top:18px}
+/* rail */
+nav.rail{width:250px;flex:none;position:sticky;top:12px}
+.rail h2{font:11px/1.4 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;
+margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline}
+.rail h2 button{font:inherit;letter-spacing:.05em;background:none;border:none;
+color:var(--red);cursor:pointer;text-transform:none;padding:0}
+.bignum{font-family:Georgia,"Times New Roman",serif;font-size:46px;line-height:1;margin:4px 0 2px}
+.bignum small{font-size:18px;color:#6b6355}
+.sharebar{height:5px;background:var(--rule);margin:10px 0 4px}
+.sharebar>div{height:100%;background:var(--red)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;
+border:1px solid var(--rule);border-radius:12px;padding:2px 8px;background:#faf7f0}
+.chip button{background:none;border:none;color:var(--red);cursor:pointer;
+font-weight:bold;padding:0;line-height:1}
+.fhead{width:100%;text-align:left;background:none;border:none;border-top:1px solid var(--rule);
+padding:10px 0 8px;cursor:pointer;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;
+letter-spacing:.12em;color:var(--ink);display:flex;justify-content:space-between}
+.fhead:focus-visible,button:focus-visible,tr:focus-visible,a:focus-visible,.tab:focus-visible{
+outline:2px solid var(--red);outline-offset:2px}
+.fbody{padding:4px 0 10px;font-size:13px}
+.fbody label{display:block;margin:6px 0 3px;font-size:12px;color:#4a453c}
+.fbody input[type=text],.fbody select{width:100%;padding:6px 8px;font:inherit;font-size:13px;
+border:1px solid var(--rule);background:#fff;color:var(--ink)}
+.fbody .opt{display:block;margin:2px 0}
+.fbody .opt label{display:inline;margin-left:6px}
+/* tabs */
+.tablist{display:flex;gap:2px;list-style:none;margin:0;padding:0;border-bottom:1px solid var(--rule)}
+.tab{font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.1em;
+background:none;border:none;border-bottom:3px solid transparent;padding:10px 14px 8px;
+cursor:pointer;color:#4a453c}
+.tab[aria-selected=true]{color:var(--red);border-bottom-color:var(--red);font-weight:bold}
+main{flex:1;min-width:0}
+.panel{padding-top:18px}
+/* tiles */
+.tiles{display:flex;flex-wrap:wrap;gap:28px;margin-bottom:8px}
+.tile{min-width:170px}
+.tile .n{font-family:Georgia,"Times New Roman",serif;font-size:48px;line-height:1.05}
+.tile .sub{font-size:13px;color:#4a453c;max-width:230px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+.note{font-size:12.5px;color:#4a453c;margin:2px 0 8px;max-width:640px}
+.figno{font:11px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;color:#6b6355}
+.figtitle{font-family:Georgia,"Times New Roman",serif;font-size:19px;margin:2px 0 4px}
+figure{margin:26px 0}
+/* tables */
+table{border-collapse:collapse;width:100%;font-size:14px}
+caption{text-align:left;font-size:12.5px;color:#4a453c;padding-bottom:6px}
+th,td{text-align:left;padding:6px 10px 6px 0;border-bottom:1px solid var(--rule);
+vertical-align:top}
+th{font:11px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.1em;color:#4a453c;
+font-weight:normal;border-bottom:1px solid var(--ink)}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+.src{font-size:12px;color:#6b6355;margin-top:5px}
+/* records table */
+tbody tr.rec{cursor:pointer}
+tbody tr.rec:hover{background:#efe9dc}
+td.para{color:var(--red);white-space:nowrap}
+mark{background:#f2d778}
+tr.expanded>td{border-bottom:none}
+.detail{background:#faf7f0;border:1px solid var(--rule);padding:14px 16px;margin:0 0 4px}
+.detail .pn{font-family:Georgia,"Times New Roman",serif;font-size:34px;color:var(--red);margin:0}
+.detail .full{margin:8px 0 10px;white-space:pre-wrap}
+.labels{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.lchip{font-size:12px;border:1px solid var(--rule);border-radius:12px;padding:2px 9px;background:#fff}
+.btn{background:none;border:1px solid var(--ink);color:var(--ink);padding:5px 12px;
+font:inherit;font-size:13px;cursor:pointer;margin:4px 8px 4px 0}
+.btn:hover{background:var(--ink);color:var(--paper)}
+/* checks */
+.check{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--rule);font-size:14px}
+.check .mark{flex:none;width:20px;text-align:center;font-weight:bold}
+.check .mark.ok{color:#2d6a4f}
+.check .mark.bad{color:var(--red);font-weight:bold}
+.check .detail2{font-size:12.5px;color:#4a453c}
+/* sample cards */
+.card{border:1px solid var(--rule);background:#faf7f0;margin:8px 0;padding:10px 14px}
+.card .head{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+button.mini{background:none;border:1px solid var(--rule);color:var(--ink);font-size:12px;
+padding:3px 10px;cursor:pointer}
+button.mini[aria-pressed=true]{border-color:var(--red);color:var(--red)}
+footer{border-top:1px solid var(--rule);margin-top:30px;padding:12px 0;
+font:11px/1.6 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.06em;color:#6b6355}
+h2.sec{font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:22px;margin:18px 0 6px}
+.chartbox{position:relative;height:340px}
+.chartbox2{position:relative;height:300px}
+.statesbox{margin:10px 0}
+ul.plain{list-style:none;padding:0;margin:6px 0}
+ul.plain li{padding:3px 0;border-bottom:1px solid var(--rule);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="monolabel" id="hdrLabel">UHRI</div>
+  <h1 id="hdrTitle">UN human rights recommendations and observations</h1>
+  <div class="meta" id="hdrMeta"></div>
+</header>
+
+<div class="layout">
+<nav class="rail" aria-label="Filters">
+  <h2><span>FILTERS</span><button type="button" id="clearAll">Clear all</button></h2>
+  <div class="bignum" id="matchN">0<small id="matchOf"></small></div>
+  <div class="monolabel">matching records</div>
+  <div class="sharebar"><div id="shareFill" style="width:0%"></div></div>
+  <div class="chips" id="chips"></div>
+  <div id="railFilters">
+    <button class="fhead" id="fh1" aria-expanded="false" aria-controls="fb1">
+      <span>01 KEYWORD</span><span aria-hidden="true">+</span></button>
+    <div class="fbody" id="fb1" hidden>
+      <input type="text" id="kwBox" placeholder="e.g. torture" aria-label="Keyword">
+      <div class="note">literal match, not synonyms</div>
+    </div>
+    <button class="fhead" id="fh2" aria-expanded="false" aria-controls="fb2">
+      <span>02 MECHANISM, BODY, TYPE</span><span aria-hidden="true">+</span></button>
+    <div class="fbody" id="fb2" hidden>
+      <label for="selMech">Mechanism</label><select id="selMech"></select>
+      <label for="selBody">Body or mandate</label><select id="selBody"></select>
+      <label for="selType">Type</label><select id="selType"></select>
+      <div id="stateWrap" hidden>
+        <label for="selState">Recommending State</label><select id="selState"></select>
+      </div>
+    </div>
+    <button class="fhead" id="fh3" aria-expanded="false" aria-controls="fb3">
+      <span>03 YEARS AND SDG</span><span aria-hidden="true">+</span></button>
+    <div class="fbody" id="fb3" hidden>
+      <label for="selYFrom">Year from</label><select id="selYFrom"></select>
+      <label for="selYTo">Year to</label><select id="selYTo"></select>
+      <label for="selSdg">SDG goal</label><select id="selSdg"></select>
+    </div>
+  </div>
+</nav>
+
+<main>
+<div class="tablist" role="tablist" aria-label="Sections">
+  <button class="tab" role="tab" id="tab1" aria-selected="true" aria-controls="p1">01 OVERVIEW</button>
+  <button class="tab" role="tab" id="tab2" aria-selected="false" aria-controls="p2" tabindex="-1">02 RECORDS</button>
+  <button class="tab" role="tab" id="tab3" aria-selected="false" aria-controls="p3" tabindex="-1">03 CHECK</button>
+  <button class="tab" role="tab" id="tab4" aria-selected="false" aria-controls="p4" tabindex="-1">04 METHOD &amp; EXPORT</button>
+</div>
+
+<section class="panel" role="tabpanel" id="p1" aria-labelledby="tab1">
+  <div class="tiles" id="tiles"></div>
+  <div class="monolabel" id="mechTiles"></div>
+  <figure>
+    <div class="figno">FIG.01</div>
+    <div class="figtitle" id="fig1Title"></div>
+    <div class="note">A record can carry several themes, so the bars add up to more than the number of records. Click a bar to filter by that theme. Percentages are of records, not of labels.</div>
+    <div class="chartbox"><canvas id="chart1" role="img"></canvas></div>
+    <table id="themeTable">
+      <caption id="themeCap"></caption>
+      <thead><tr><th scope="col">Theme</th><th scope="col" class="num">Records</th>
+      <th scope="col" class="num">% of filtered</th><th scope="col">Years</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="src" id="fig1Src"></div>
+  </figure>
+  <figure>
+    <div class="figno">FIG.02</div>
+    <div class="figtitle" id="fig2Title"></div>
+    <div class="note">Records per year, stacked by mechanism, for the current filter. Years with no records appear as gaps.</div>
+    <div class="chartbox2"><canvas id="chart2" role="img"></canvas></div>
+    <div class="src" id="fig2Src"></div>
+  </figure>
+</section>
+
+<section class="panel" role="tabpanel" id="p2" aria-labelledby="tab2" hidden>
+  <label class="monolabel" for="recSearch">SEARCH</label>
+  <input type="text" id="recSearch" placeholder="" style="width:100%;max-width:420px;
+    padding:8px;font:inherit;font-size:14px;border:1px solid var(--rule);background:#fff;margin:4px 0 2px">
+  <div class="note">literal match, not synonyms</div>
+  <table id="recTable">
+    <caption id="recCap"></caption>
+    <thead><tr>
+      <th scope="col"><button class="mini" id="dateSortBtn" aria-pressed="true">Date ↓</button></th>
+      <th scope="col">Body</th><th scope="col">Symbol</th><th scope="col">Para.</th>
+      <th scope="col">First line</th><th scope="col">Recommending State</th>
+    </tr></thead>
+    <tbody id="recBody"></tbody>
+  </table>
+  <div id="moreWrap" style="margin-top:10px"><button class="btn" id="moreBtn">Show 50 more</button></div>
+</section>
+
+<section class="panel" role="tabpanel" id="p3" aria-labelledby="tab3" hidden>
+  <h2 class="sec">How the app checks itself</h2>
+  <div class="note">Each line compares two values computed independently in this page. Nothing is hidden: a failed check is shown, not dropped.</div>
+  <div id="checks"></div>
+  <h2 class="sec">Check the UN's own labels on a sample</h2>
+  <div class="note">This is your judgement of the UN's labels; nothing is sent anywhere. Ten records drawn from the current filter with a seeded generator, so a colleague with the same seed sees the same ten.</div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0">
+    <button class="btn" id="drawBtn">Check 10 at random</button>
+    <button class="btn" id="redrawBtn" hidden>Draw again</button>
+    <span id="seedWrap" hidden>
+      <label class="monolabel" for="seedBox" style="margin-right:6px">SEED</label>
+      <input type="text" id="seedBox" value="1" style="width:70px;padding:4px;font:inherit;font-size:13px;border:1px solid var(--rule)">
+      <button class="btn" id="seedBtn">Draw with this seed</button>
+    </span>
+    <span id="tally" class="note" style="margin:0" aria-live="polite"></span>
+  </div>
+  <div id="cards"></div>
+</section>
+
+<section class="panel" role="tabpanel" id="p4" aria-labelledby="tab4" hidden>
+  <h2 class="sec">How each number is computed</h2>
+  <div id="methodText"></div>
+  <h2 class="sec">Take it with you</h2>
+  <p>
+    <button class="btn" id="csvBtn">Download CSV of the current filter</button>
+    <button class="btn" id="sumBtn">Copy summary</button>
+    <span id="copiedSum" class="note"></span>
+  </p>
+  <div class="note">The CSV carries the visible columns plus the full text and all labels, preceded by comment lines with the country, source, build date, filters applied and row count. It is generated in your browser; nothing is uploaded. "Copy summary" writes to your clipboard — the only thing that ever leaves the page.</div>
+  <h2 class="sec">Source</h2>
+  <div id="srcBlock"></div>
+</section>
+</main>
+</div>
+
+<footer id="footer"></footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const D = window.WORKSHOP_DATA.uhri;
+const R = D.records || [];
+const country = D.country || "";
+const fmt = n => n.toLocaleString("en-US");
+const mechColor = {"Universal Periodic Review":"#c2410c","Treaty bodies":"#0f766e","Special Procedures":"#7c3aed"};
+
+/* ---------- derived per record ---------- */
+const paraRe = /^(\d{1,3}(?:\.\d{1,3})?)\.?\s/;
+function paraNum(t){ const m = paraRe.exec(t||""); return m ? m[1] : null; }
+const stateRunRe = /((?:\s*\((?:[^()]|\([^()]*\))*\))+)\s*[;.]?\s*$/;
+const stateGrpRe = /\((?:[^()]|\([^()]*\))*\)/g;
+function states(t){
+  const m = stateRunRe.exec(t||"");
+  if(!m) return null;
+  const groups = m[1].match(stateGrpRe)||[];
+  const out = [];
+  for(const g of groups){
+    let s = g.replace(/^\(/,"").replace(/\)$/,"").trim();
+    if(s.length===0||s.length>60||s.includes(",")) return "State not found";
+    out.push(s);
+  }
+  return out.length ? out : null;
+}
+for(const r of R){
+  r._para = paraNum(r.text);
+  r._states = (r.mechanism==="Universal Periodic Review") ? states(r.text) : null;
+}
+
+/* ---------- state ---------- */
+const F = {kw:"",mech:"",body:"",type:"",state:"",yFrom:"",yTo:"",sdg:"",themes:[],dateDesc:true};
+let shown = 50;
+
+/* ---------- header ---------- */
+{
+  const years = R.map(r=>r.year);
+  const docs = new Set(R.map(r=>r.symbol));
+  document.getElementById("hdrLabel").textContent = "UHRI · " + country;
+  document.getElementById("hdrTitle").textContent = "UN human rights recommendations and observations: " + country;
+  const link = D.source_url ? '<a href="'+D.source_url+'" target="_blank" rel="noopener">'+D.source+'</a>' : (D.source||"");
+  document.getElementById("hdrMeta").innerHTML =
+    "Source: "+link+" · "+fmt(R.length)+" records · "+fmt(docs.size)+" documents · "+
+    (years.length? Math.min(...years)+"–"+Math.max(...years) : "no years")+
+    " · built "+(D.built||"?")+" · dated by document (the date is the document's, not the recommendation's).";
+}
+
+/* ---------- filtering ---------- */
+function kwMatch(r, words){
+  if(!words.length) return true;
+  const hay = ((r.text||"")+" "+(r.symbol||"")).toLowerCase();
+  return words.every(w=>hay.includes(w));
+}
+function applyFilters(){
+  const words = F.kw.trim().toLowerCase()? F.kw.trim().toLowerCase().split(/\s+/).filter(Boolean) : [];
+  return R.filter(r =>
+    (!F.mech || r.mechanism===F.mech) &&
+    (!F.body || r.body===F.body) &&
+    (!F.type || r.type===F.type) &&
+    (!F.state || (r._states && r._states!=="State not found" && r._states.includes(F.state))) &&
+    (!F.yFrom || r.year>=Number(F.yFrom)) &&
+    (!F.yTo   || r.year<=Number(F.yTo)) &&
+    (!F.sdg   || (r.sdgs||[]).includes(Number(F.sdg))) &&
+    (!F.themes.length || F.themes.every(t=>(r.themes||[]).includes(t))) &&
+    kwMatch(r,words));
+}
+let current = applyFilters();
+
+/* ---------- rail ---------- */
+const elMatchN = document.getElementById("matchN");
+function updateRail(){
+  current = applyFilters();
+  elMatchN.innerHTML = fmt(current.length)+'<small> of '+fmt(R.length)+' in the file</small>';
+  document.getElementById("shareFill").style.width = R.length ? (100*current.length/R.length).toFixed(1)+"%" : "0%";
+  const chips = document.getElementById("chips");
+  chips.innerHTML = "";
+  const defs = [];
+  if(F.kw) defs.push(["kw","Keyword: "+F.kw]);
+  if(F.mech) defs.push(["mech","Mechanism: "+F.mech]);
+  if(F.body) defs.push(["body","Body: "+F.body]);
+  if(F.type) defs.push(["type","Type: "+F.type]);
+  if(F.state) defs.push(["state","State: "+F.state]);
+  if(F.yFrom||F.yTo) defs.push(["years","Years: "+(F.yFrom||"…")+"–"+(F.yTo||"…")]);
+  if(F.sdg) defs.push(["sdg","SDG "+F.sdg+": "+((D.sdg_names||{})[F.sdg]||"")]);
+  F.themes.forEach(t=>defs.push(["theme:"+t,"Theme: "+t]));
+  for(const [k,label] of defs){
+    const c = document.createElement("span");
+    c.className="chip";
+    const b = document.createElement("button");
+    b.textContent="×"; b.setAttribute("aria-label","Remove filter "+label);
+    b.onclick = ()=>{ removeFilter(k); };
+    c.appendChild(document.createTextNode(label)); c.appendChild(b);
+    chips.appendChild(c);
+  }
+}
+function removeFilter(k){
+  if(k==="kw"){F.kw="";kwBox.value="";recSearch.value="";}
+  else if(k==="mech"){F.mech="";selMech.value="";}
+  else if(k==="body"){F.body="";selBody.value="";}
+  else if(k==="type"){F.type="";selType.value="";}
+  else if(k==="state"){F.state="";selState.value="";}
+  else if(k==="years"){F.yFrom="";F.yTo="";selYFrom.value="";selYTo.value="";}
+  else if(k==="sdg"){F.sdg="";selSdg.value="";}
+  else if(k.startsWith("theme:")){F.themes=F.themes.filter(t=>t!==k.slice(6));}
+  refresh();
+}
+document.getElementById("clearAll").onclick = ()=>{
+  F.kw="";F.mech="";F.body="";F.type="";F.state="";F.yFrom="";F.yTo="";F.sdg="";F.themes=[];
+  kwBox.value="";recSearch.value="";selMech.value="";selBody.value="";selType.value="";
+  selState.value="";selYFrom.value="";selYTo.value="";selSdg.value="";
+  refresh();
+};
+
+/* collapsible headings, one open at a time */
+let openHead = null;
+[["fh1","fb1"],["fh2","fb2"],["fh3","fb3"]].forEach(([h,b],i)=>{
+  document.getElementById(h).onclick = ()=>{
+    const bb=document.getElementById(b), hh=document.getElementById(h);
+    if(openHead===i){bb.hidden=true;hh.setAttribute("aria-expanded","false");openHead=null;return;}
+    [["fh1","fb1"],["fh2","fb2"],["fh3","fb3"]].forEach(([h2,b2])=>{
+      document.getElementById(b2).hidden=true;
+      document.getElementById(h2).setAttribute("aria-expanded","false");});
+    bb.hidden=false;hh.setAttribute("aria-expanded","true");openHead=i;
+  };
+});
+
+/* ---------- filter controls ---------- */
+const kwBox=document.getElementById("kwBox"), recSearch=document.getElementById("recSearch");
+let kwTimer=null;
+function onKw(v){ clearTimeout(kwTimer); kwTimer=setTimeout(()=>{F.kw=v;refresh();},300); }
+kwBox.addEventListener("input",e=>onKw(e.target.value));
+recSearch.addEventListener("input",e=>{kwBox.value=e.target.value;onKw(e.target.value);});
+
+function distinct(arr){ return [...new Set(arr.filter(x=>x!==null&&x!==undefined&&x!==""))].sort((a,b)=>a<b?-1:1); }
+const selMech=document.getElementById("selMech"), selBody=document.getElementById("selBody"),
+      selType=document.getElementById("selType"), selState=document.getElementById("selState"),
+      selYFrom=document.getElementById("selYFrom"), selYTo=document.getElementById("selYTo"),
+      selSdg=document.getElementById("selSdg");
+
+function fillSelect(sel, options, anyLabel){
+  sel.innerHTML="";
+  const any=document.createElement("option"); any.value=""; any.textContent=anyLabel; sel.appendChild(any);
+  for(const [v,label] of options){
+    const o=document.createElement("option"); o.value=v; o.textContent=label; sel.appendChild(o);
+  }
+}
+function buildMech(){
+  const mechs = distinct(R.map(r=>r.mechanism));
+  fillSelect(selMech, mechs.map(m=>[m,m+" ("+R.filter(r=>r.mechanism===m).length+")"]), "all");
+}
+function buildBody(){
+  const pool = R.filter(r=>!F.mech||r.mechanism===F.mech);
+  const bodies = distinct(pool.map(r=>r.body));
+  const any = F.mech? pool.some(r=>r.body===F.body) : true;
+  fillSelect(selBody, bodies.map(b=>[b,b+" ("+pool.filter(r=>r.body===b).length+")"]), "all");
+  selBody.value = any? F.body : ""; F.body = any? F.body : "";
+}
+function buildType(){
+  const pool = applyMechEtc();
+  const types = distinct(pool.map(r=>r.type));
+  fillSelect(selType, types.map(t=>[t,t+" ("+pool.filter(r=>r.type===t).length+")"]), "all");
+}
+function applyMechEtc(){
+  return R.filter(r=>(!F.mech||r.mechanism===F.mech)&&(!F.body||r.body===F.body));
+}
+function buildStates(){
+  const pool = applyMechEtc().filter(r=>!F.type||r.type===F.type);
+  const counts = new Map();
+  for(const r of pool){
+    if(r.mechanism==="Universal Periodic Review" && r._states && r._states!=="State not found")
+      for(const s of r._states) counts.set(s,(counts.get(s)||0)+1);
+  }
+  const list=[...counts.entries()].sort((a,b)=>b[1]-a[1]|| (a[0]<b[0]?-1:1));
+  fillSelect(selState, list.map(([s,c])=>[s,s+" ("+c+")"]), "all");
+  selState.value = list.some(([s])=>s===F.state)? F.state : ""; F.state=selState.value;
+  document.getElementById("stateWrap").hidden = !list.length;
+}
+function buildYears(){
+  const yrs = distinct(R.map(r=>r.year)).map(Number).sort((a,b)=>a-b);
+  fillSelect(selYFrom, yrs.map(String), "from");
+  fillSelect(selYTo, yrs.map(String), "to");
+  selYFrom.value=F.yFrom; selYTo.value=F.yTo;
+}
+function buildSdg(){
+  const present = new Set();
+  R.forEach(r=>(r.sdgs||[]).forEach(g=>present.add(Number(g))));
+  const goals=[...present].sort((a,b)=>a-b);
+  const names=D.sdg_names||{};
+  fillSelect(selSdg, goals.map(g=>[String(g), g+" · "+(names[String(g)]||names[g]||"")]), "all");
+  selSdg.value=F.sdg||"";
+}
+selMech.onchange=e=>{F.mech=e.target.value;F.body="";F.state="";buildBody();buildType();buildStates();refresh();};
+selBody.onchange=e=>{F.body=e.target.value;buildType();buildStates();refresh();};
+selType.onchange=e=>{F.type=e.target.value;buildStates();refresh();};
+selState.onchange=e=>{F.state=e.target.value;refresh();};
+selYFrom.onchange=e=>{F.yFrom=e.target.value; fixYears(); refresh();};
+selYTo.onchange=e=>{F.yTo=e.target.value; fixYears(); refresh();};
+function fixYears(){
+  if(F.yFrom&&F.yTo&&Number(F.yFrom)>Number(F.yTo)){
+    const t=F.yFrom;F.yFrom=F.yTo;F.yTo=t;
+    selYFrom.value=F.yFrom;selYTo.value=F.yTo;
+  }
+}
+selSdg.onchange=e=>{F.sdg=e.target.value;refresh();};
+
+buildMech();buildBody();buildType();buildStates();buildYears();buildSdg();
+
+/* ---------- tabs ---------- */
+const tabs=[...document.querySelectorAll(".tab")];
+let tabIdx=0;
+function showTab(i){
+  tabIdx=i;
+  tabs.forEach((t,j)=>{t.setAttribute("aria-selected",j===i?"true":"false");t.tabIndex=j===i?0:-1;});
+  for(let j=1;j<=4;j++) document.getElementById("p"+j).hidden = (j!==i+1);
+  document.getElementById("railFilters").hidden = (i>=2);
+  if(i===0){drawOverview();}
+  if(i===1){shown=50;drawRecords();}
+}
+tabs.forEach((t,i)=>{
+  t.onclick=()=>showTab(i);
+  t.onkeydown=e=>{
+    if(e.key==="ArrowRight"||e.key==="ArrowLeft"){
+      e.preventDefault();
+      const n=(i+(e.key==="ArrowRight"?1:tabs.length-1))%tabs.length;
+      showTab(n);tabs[n].focus();
+    }
+  };
+});
+
+/* ---------- tab 01: overview ---------- */
+let chart1=null, chart2=null;
+function counts(list, keyFn){
+  const m=new Map();
+  for(const r of list){ const k=keyFn(r); for(const v of (Array.isArray(k)?k:[k])) if(v!==""&&v!=null) m.set(v,(m.get(v)||0)+1); }
+  return m;
+}
+function topThemes(list){
+  const m=counts(list,r=>r.themes||[]);
+  return [...m.entries()].sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?-1:1)).slice(0,10);
+}
+function drawOverview(){
+  const set=current;
+  const byType=counts(set,r=>r.type);
+  const docs=new Set(set.map(r=>r.symbol));
+  const yrs=set.map(r=>r.year);
+  const typeLine=[...byType.entries()].sort((a,b)=>b[1]-a[1])
+    .map(([t,c])=>fmt(c)+" "+t).join(" · ") || "no records";
+  const mechs=distinct(R.map(r=>r.mechanism));
+  let html='<div class="tile"><div class="n">'+fmt(set.length)+'</div>'+
+    '<div class="sub"><strong>All records in the file</strong>, any type: '+typeLine+'.</div>'+
+    '<div class="note">How this is computed: count of every record currently matching the filters.</div></div>';
+  html+='<div class="tile"><div class="n">'+fmt(docs.size)+'</div><div class="sub"><strong>Documents</strong> (distinct symbols).</div>'+
+    '<div class="note">How this is computed: distinct <code>symbol</code> values in the filtered set.</div></div>';
+  html+='<div class="tile"><div class="n">'+(yrs.length?Math.min(...yrs)+"–"+Math.max(...yrs):"–")+'</div><div class="sub"><strong>Years</strong>, first to last.</div>'+
+    '<div class="note">How this is computed: minimum and maximum <code>year</code> in the filtered set.</div></div>';
+  const mt=document.getElementById("mechTiles");
+  mt.innerHTML="";
+  for(const m of mechs){
+    const ms=set.filter(r=>r.mechanism===m);
+    const md=new Set(ms.map(r=>r.symbol));
+    const my=ms.map(r=>r.year);
+    const tile=document.createElement("div");
+    tile.className="tile";
+    tile.innerHTML='<div class="n" style="font-size:36px">'+fmt(ms.length)+'</div>'+
+      '<div class="sub"><span class="dot" style="background:'+(mechColor[m]||"#888")+'"></span><strong>'+m+'</strong> · '+
+      fmt(md.size)+' documents · latest '+(my.length?Math.max(...my):"–")+
+      ' · '+(set.length?(100*ms.length/set.length).toFixed(0):0)+'% of filtered set'+
+      (m==="Universal Periodic Review"?' · <a href="#" id="seeStates">see the States</a>':'')+'</div>'+
+      '<div class="note">How this is computed: records whose <code>mechanism</code> equals this value.</div>';
+    mt.appendChild(tile);
+  }
+  const tilesEl=document.getElementById("tiles");
+  tilesEl.innerHTML=html;
+  const ss=document.getElementById("seeStates");
+  if(ss) ss.onclick=e=>{e.preventDefault();toggleStatesBox(tilesEl);};
+
+  /* FIG.01 */
+  const top=topThemes(set);
+  document.getElementById("fig1Title").textContent =
+    "Ten most frequent themes among "+fmt(set.length)+" filtered records"+(filtersSummary()? " · "+filtersSummary():"");
+  document.getElementById("fig1Src").textContent =
+    "Source: "+(D.source||"")+" — themes as labelled by the UN; a record can carry several.";
+  const labels=top.map(t=>t[0].length>52? t[0].slice(0,50)+"…" : t[0]);
+  const data=top.map(t=>t[1]);
+  if(chart1) chart1.destroy();
+  if(!set.length||!top.length){
+    const ctx=document.getElementById("chart1");
+    if(chart1){chart1.destroy();chart1=null;}
+    document.getElementById("themeTable").hidden=true;
+    document.getElementById("themeCap").textContent="No records match.";
+  }else{
+    document.getElementById("themeTable").hidden=false;
+    chart1=new Chart(document.getElementById("chart1"),{
+      type:"bar",
+      data:{labels,datasets:[{data,backgroundColor:"#9b2335cc",borderColor:"#9b2335",borderWidth:1}]},
+      options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,
+        onClick:(e,els)=>{if(els.length){const t=top[els[0].index][0];
+          if(!F.themes.includes(t))F.themes.push(t);refresh();}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{
+          label:c=>" "+fmt(c.raw)+" records ("+(100*c.raw/set.length).toFixed(1)+"% of filtered)"}}},
+        scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{ticks:{font:{size:12}}}}}
+    });
+    const tb=document.querySelector("#themeTable tbody");
+    tb.innerHTML=top.map(([th,c])=>{
+      const rs=set.filter(r=>(r.themes||[]).includes(th));
+      const yy=rs.map(r=>r.year);
+      return "<tr><td>"+esc(th)+"</td><td class='num'>"+fmt(c)+"</td><td class='num'>"+
+        (100*c/set.length).toFixed(1)+"%</td><td>"+(yy.length?Math.min(...yy)+"–"+Math.max(...yy):"–")+
+        "</td></tr>";}).join("");
+    document.getElementById("themeCap").textContent=
+      "Top ten themes among "+fmt(set.length)+" filtered records. Ties alphabetical; percentages of records, not labels. A legacy label may cover unrelated texts: check the year range and sample tab 03.";
+  }
+
+  /* FIG.02 */
+  if(chart2) chart2.destroy();
+  const mechsF=distinct(set.map(r=>r.mechanism));
+  const allYrs=[]; if(set.length){for(let y=Math.min(...set.map(r=>r.year));y<=Math.max(...set.map(r=>r.year));y++)allYrs.push(y);}
+  document.getElementById("fig2Title").textContent=
+    "Records per year by mechanism, "+fmt(set.length)+" filtered records";
+  document.getElementById("fig2Src").textContent=
+    "Source: "+(D.source||"")+" — one bar per record, coloured by mechanism.";
+  chart2=new Chart(document.getElementById("chart2"),{
+    type:"bar",
+    data:{labels:allYrs.map(String),datasets:mechsF.map(m=>({
+      label:m,data:allYrs.map(y=>set.filter(r=>r.year===y&&r.mechanism===m).length),
+      backgroundColor:mechColor[m]||"#888"}))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:"bottom",labels:{boxWidth:10}}},
+      scales:{x:{stacked:true,ticks:{autoSkip:false}},y:{stacked:true,beginAtZero:true,ticks:{precision:0}}}}
+  });
+}
+function toggleStatesBox(tilesEl){
+  let box=document.getElementById("statesbox");
+  if(box){box.remove();return;}
+  const pool=current.filter(r=>r.mechanism==="Universal Periodic Review");
+  const m=counts(pool,r=>(r._states&&r._states!=="State not found")?r._states:[]);
+  const top=[...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10);
+  box=document.createElement("div");
+  box.id="statesbox"; box.className="statesbox";
+  box.innerHTML="<div class='monolabel'>TEN STATES THAT MADE MOST RECOMMENDATIONS TO "+esc(country).toUpperCase()+
+    " <button type='button' class='mini' id='closeStates' style='float:right'>close</button></div>"+
+    "<ul class='plain'>"+top.map(([s,c])=>"<li>"+esc(s)+" <span class='num' style='float:right'>"+fmt(c)+"</span></li>").join("")+"</ul>"+
+    "<div class='note'>How this is computed: States named in parentheses at the end of UPR texts in the current filter; a record with several States counts once for each. A count of recommendations, not of influence.</div>";
+  tilesEl.after(box);
+  box.querySelector("#closeStates").onclick=()=>box.remove();
+}
+function filtersSummary(){
+  const parts=[];
+  if(F.kw)parts.push("keyword “"+F.kw+"”");
+  if(F.mech)parts.push(F.mech);
+  if(F.body)parts.push(F.body);
+  if(F.type)parts.push(F.type);
+  if(F.state)parts.push("State "+F.state);
+  if(F.yFrom||F.yTo)parts.push("years "+(F.yFrom||"…")+"–"+(F.yTo||"…"));
+  if(F.sdg)parts.push("SDG "+F.sdg);
+  if(F.themes.length)parts.push("themes: "+F.themes.join("; "));
+  return parts.join(" · ");
+}
+
+/* ---------- tab 02: records ---------- */
+const recBodyEl=document.getElementById("recBody");
+function firstLine(t){
+  t=(t||"").trim();
+  if(t.length<=120) return t;
+  const cut=t.slice(0,120); const sp=cut.lastIndexOf(" ");
+  return (sp>60?cut.slice(0,sp):cut)+"…";
+}
+function markHit(t){
+  const words=F.kw.trim()? F.kw.trim().toLowerCase().split(/\s+/).filter(Boolean):[];
+  let out=esc(t);
+  for(const w of words){
+    const re=new RegExp("("+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");
+    out=out.replace(re,"<mark>$1</mark>");
+  }
+  return out;
+}
+function cmpRec(a,b){
+  if(F.dateDesc){
+    if(a.date!==b.date) return a.date<b.date?1:-1;
+  }else{
+    if(a.date!==b.date) return a.date>b.date?1:-1;
+  }
+  if(a.body!==b.body) return a.body<b.body?-1:1;
+  const pa=a._para?parseFloat(a._para):Infinity, pb=b._para?parseFloat(b._para):Infinity;
+  if(pa!==pb) return pa<pb?-1:1;
+  return 0;
+}
+function drawRecords(){
+  const set=[...current].sort(cmpRec);
+  recSearch.placeholder="Search "+fmt(set.length)+" records, e.g. torture";
+  recSearch.value=F.kw;
+  const shownSet=set.slice(0,shown);
+  document.getElementById("recCap").textContent =
+    "Showing "+fmt(shownSet.length)+" of "+fmt(set.length)+" matching records (of "+fmt(R.length)+" in the file), "+
+    (F.dateDesc?"newest first":"oldest first")+". Click a row to see the full paragraph.";
+  recBodyEl.innerHTML="";
+  if(!set.length){
+    recBodyEl.innerHTML="<tr><td colspan='6'>No records match.</td></tr>";
+    document.getElementById("moreWrap").hidden=true; return;
+  }
+  for(const r of shownSet){
+    const tr=document.createElement("tr");
+    tr.className="rec"; tr.tabIndex=0;
+    tr.setAttribute("aria-expanded","false");
+    const stateTxt = r.mechanism==="Universal Periodic Review"
+      ? (r._states===null||r._states==="State not found" ? "—" : esc(r._states.join(", "))) : "—";
+    tr.innerHTML="<td>"+esc(r.date)+"</td><td>"+esc(r.body)+"</td>"+
+      "<td><a href='"+escAttr(r.doc_url)+"' target='_blank' rel='noopener' onclick='event.stopPropagation()'>"+esc(r.symbol)+"</a></td>"+
+      "<td class='para'>"+(r._para?esc(r._para):"—")+"</td>"+
+      "<td>"+markHit(firstLine(r.text))+"</td><td>"+stateTxt+"</td>";
+    const open=()=>{
+      const next=tr.nextElementSibling;
+      if(next&&next.classList.contains("detailrow")){next.remove();tr.setAttribute("aria-expanded","false");return;}
+      document.querySelectorAll("tr.detailrow").forEach(e=>{e.previousElementSibling.setAttribute("aria-expanded","false");e.remove();});
+      const dtr=document.createElement("tr");
+      dtr.className="detailrow";
+      const td=document.createElement("td"); td.colSpan=6;
+      const labels=[];
+      (r.themes||[]).forEach(t=>labels.push("Theme: "+t));
+      (r.sdgs||[]).forEach(g=>labels.push("SDG "+g+": "+((D.sdg_names||{})[String(g)]||"")));
+      (r.sdg_targets||[]).forEach(t=>labels.push("Target "+t));
+      (r.affected_persons||[]).forEach(p=>labels.push("Affected: "+p));
+      if(r.section) labels.push("Section: "+r.section);
+      const cite=r._para? r.symbol+", para. "+r._para : r.symbol;
+      td.innerHTML="<div class='detail'>"+
+        (r._para?"<p class='pn'>"+esc(r._para)+"</p>":"")+
+        "<p class='full'>"+markHit(r.text)+"</p>"+
+        (labels.length?"<div class='labels'>"+labels.map(l=>"<span class='lchip'>"+esc(l)+"</span>").join("")+"</div>":"<div class='note'>Not labelled: no themes, SDGs or affected persons on this record.</div>")+
+        "<button type='button' class='btn' data-cite='"+escAttr(cite)+"'>Copy citation"+(r._para?"":" (no paragraph number in this extract)")+"</button>"+
+        "<a class='btn' href='"+escAttr(r.doc_url)+"' target='_blank' rel='noopener'>Open the UN document</a></div>";
+      td.querySelector("button").onclick=e=>{e.stopPropagation();
+        navigator.clipboard.writeText(e.target.dataset.cite).then(()=>{
+          const old=e.target.textContent;
+          e.target.textContent="Copied"; setTimeout(()=>e.target.textContent=old,2000);
+        }).catch(()=>{});
+      };
+      dtr.appendChild(td);
+      tr.after(dtr); tr.setAttribute("aria-expanded","true");
+    };
+    tr.onclick=open;
+    tr.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();open();}};
+    recBodyEl.appendChild(tr);
+  }
+  document.getElementById("moreWrap").hidden = shown>=set.length;
+}
+document.getElementById("moreBtn").onclick=()=>{shown+=50;drawRecords();};
+document.getElementById("dateSortBtn").onclick=()=>{
+  F.dateDesc=!F.dateDesc;
+  const b=document.getElementById("dateSortBtn");
+  b.textContent=F.dateDesc?"Date ↓":"Date ↑";
+  b.setAttribute("aria-pressed",F.dateDesc?"true":"false");
+  drawRecords();
+};
+
+/* ---------- tab 03: checks ---------- */
+function checkLine(ok,text,detail){
+  return "<div class='check'><span class='mark "+(ok?"ok":"bad")+"'>"+(ok?"✓":"✗")+
+    "</span><div>"+esc(text)+(detail?"<div class='detail2'>"+detail+"</div>":"")+"</div></div>";
+}
+function drawChecks(){
+  let html="";
+  /* record count */
+  const declared=Number(D.count);
+  html+=checkLine(R.length===declared,
+    "Record count: page counted "+fmt(R.length)+"; file header says "+fmt(declared)+".");
+  /* partitions */
+  const pm=counts(R,r=>r.mechanism), pb=counts(R,r=>r.body), py=counts(R,r=>String(r.year)), pt=counts(R,r=>r.type);
+  const sum=m=>[...m.values()].reduce((a,b)=>a+b,0);
+  html+=checkLine(sum(pm)===R.length,"Counts per mechanism sum to "+fmt(sum(pm))+", expected "+fmt(R.length)+".");
+  html+=checkLine(sum(pb)===R.length,"Counts per body sum to "+fmt(sum(pb))+", expected "+fmt(R.length)+".");
+  html+=checkLine(sum(py)===R.length,"Counts per year sum to "+fmt(sum(py))+", expected "+fmt(R.length)+".");
+  html+=checkLine(sum(pt)===R.length,"Counts per type sum to "+fmt(sum(pt))+", expected "+fmt(R.length)+".");
+  /* chart against table */
+  const top=topThemes(current);
+  const recomputed=top.map(([th,c])=>[th,current.filter(r=>(r.themes||[]).includes(th)).length]);
+  const chartOk = recomputed.every(([th,c],i)=>c===top[i][1]) &&
+    (!top.length || Math.max(...top.map(t=>t[1]))<=current.length);
+  html+=checkLine(chartOk,"FIG.01 bars equal a second, independent count of the same themes; the largest bar ("+
+    (top.length?fmt(Math.max(...top.map(t=>t[1]))):"–")+") does not exceed the filtered count ("+fmt(current.length)+").");
+  /* links */
+  let badLinks=[];
+  for(const r of R){
+    let u=r.doc_url||"";
+    let ok=u.startsWith("https://docs.un.org/");
+    try{ if(ok && decodeURIComponent(u).toLowerCase().endsWith((r.symbol||"").toLowerCase())===false) ok=false; }catch(e){}
+    if(!ok) badLinks.push(r.symbol);
+  }
+  html+=checkLine(badLinks.length===0,"Every doc_url starts with https://docs.un.org/ and ends with its symbol.",
+    badLinks.length? "Failed: "+badLinks.slice(0,8).join(", ")+(badLinks.length>8?" …":""):"");
+  /* paragraph numbers */
+  const mechList=distinct(R.map(r=>r.mechanism));
+  const det=[];
+  let allOk=true;
+  for(const m of mechList){
+    const ms=R.filter(r=>r.mechanism===m);
+    const withP=ms.filter(r=>r._para).length;
+    const share=ms.length?100*withP/ms.length:0;
+    const isUpr=m==="Universal Periodic Review";
+    if(isUpr&&share<100){allOk=false;det.push(esc(m)+" "+share.toFixed(1)+"% (warning, expected 100%)");}
+    else det.push(esc(m)+" "+share.toFixed(1)+"%");
+  }
+  html+=checkLine(allOk,"Paragraph number found in the text, by mechanism: "+det.join(" · ")+". A UPR figure below 100% is a warning, not an error.");
+  /* states */
+  const upr=R.filter(r=>r.mechanism==="Universal Periodic Review");
+  const withS=upr.filter(r=>r._states&&r._states!=="State not found");
+  const noS=upr.filter(r=>!(r._states&&r._states!=="State not found"));
+  html+=checkLine(withS.length>0||upr.length===0,"States found in "+fmt(withS.length)+" of "+fmt(upr.length)+" UPR records.",
+    noS.length?"Without a State ("+fmt(noS.length)+"): "+noS.slice(0,8).map(r=>esc(r.symbol)+" para "+(r._para||"?")).join("; ")+(noS.length>8?" …":""):"");
+  /* duplicates and gaps */
+  const ids=new Set(R.map(r=>r.id));
+  const txts=new Map(); let dupTxt=0;
+  for(const r of R){const k=(r.text||"").trim(); if(txts.has(k))dupTxt++; else txts.set(k,1);}
+  const noTheme=R.filter(r=>!(r.themes||[]).length).length;
+  const noSdg=R.filter(r=>!(r.sdgs||[]).length).length;
+  const noAff=R.filter(r=>!(r.affected_persons||[]).length).length;
+  html+=checkLine(ids.size===R.length,"Distinct record ids: "+fmt(ids.size)+" of "+fmt(R.length)+".");
+  html+=checkLine(true,"Duplicate texts (same wording in two records): "+fmt(dupTxt)+".");
+  html+=checkLine(true,"Not labelled: "+fmt(noTheme)+" with no themes, "+fmt(noSdg)+" with no SDGs, "+fmt(noAff)+" with no affected persons — shown as missing, not hidden.");
+  document.getElementById("checks").innerHTML=html;
+}
+/* random sample */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+let sample=null, verdicts={};
+const seedBox=document.getElementById("seedBox");
+function drawSeed(seed){
+  const rng=mulberry32(seed);
+  const pool=[...current];
+  const picks=[];
+  const n=Math.min(10,pool.length);
+  const idx=pool.map((_,i)=>i);
+  for(let k=0;k<n;k++) picks.push(pool.splice(Math.floor(rng()*pool.length),1)[0]);
+  sample=picks; verdicts={};
+  document.getElementById("drawBtn").hidden=true;
+  document.getElementById("redrawBtn").hidden=false;
+  document.getElementById("seedWrap").hidden=false;
+  seedBox.value=String(seed);
+  renderCards();
+}
+document.getElementById("drawBtn").onclick=()=>drawSeed(1);
+document.getElementById("redrawBtn").onclick=()=>drawSeed(Math.floor(Math.random()*1e6));
+document.getElementById("seedBtn").onclick=()=>{const s=parseInt(seedBox.value,10);drawSeed(isNaN(s)?1:s);};
+function renderCards(){
+  const c=document.getElementById("cards");
+  c.innerHTML="";
+  if(!sample) return;
+  if(!sample.length){
+    c.innerHTML="<div class='note'>No records in the current filter to draw from.</div>";
+    document.getElementById("tally").textContent=""; return;
+  }
+  sample.forEach((r,i)=>{
+    const card=document.createElement("div"); card.className="card";
+    const themes=(r.themes||[]);
+    card.innerHTML="<div class='head'><span><a href='"+escAttr(r.doc_url)+"' target='_blank' rel='noopener'>"+esc(r.symbol)+"</a>"+
+      (r._para?" · para. "+esc(r._para):" · no paragraph number")+"</span>"+
+      "<span>"+esc(r.date)+" · "+esc(r.body)+"</span></div>"+
+      "<p style='margin:8px 0'>"+esc(r.text)+"</p>"+
+      "<div class='labels'>"+(themes.length?themes.map(t=>"<span class='lchip'>"+esc(t)+"</span>").join(""):"<span class='note'>No themes on this record.</span>")+"</div>"+
+      "<div data-i='"+i+"'>"+
+      "<button type='button' class='mini' data-v='fit'>Fits</button>"+
+      "<button type='button' class='mini' data-v='no'>Doesn't fit</button>"+
+      "<button type='button' class='mini' data-v='unsure'>Unsure</button></div>";
+    card.querySelectorAll("button[data-v]").forEach(b=>{
+      b.onclick=()=>{
+        const gi=b.parentElement.dataset.i;
+        card.querySelectorAll("button[data-v]").forEach(x=>x.setAttribute("aria-pressed","false"));
+        b.setAttribute("aria-pressed","true");
+        verdicts[gi]=b.dataset.v; tally();
+      };
+    });
+    c.appendChild(card);
+  });
+  tally();
+}
+function tally(){
+  const v=Object.values(verdicts);
+  const f=v.filter(x=>x==="fit").length, n=v.filter(x=>x==="no").length, u=v.filter(x=>x==="unsure").length;
+  document.getElementById("tally").textContent =
+    "Your judgement — themes: "+f+" fit, "+n+" don't, "+u+" unsure of "+(sample?sample.length:0)+
+    " judged · seed "+seedBox.value;
+}
+
+/* ---------- tab 04 ---------- */
+document.getElementById("methodText").innerHTML =
+  "<p style='max-width:720px'>Every number on this page is a loop over the records in JavaScript, in your browser; nothing is estimated and no model is called.</p>"+
+  "<ol style='max-width:720px;font-size:15px'>"+
+  "<li>The headline total counts every record in the file, and the breakdown counts each <code>type</code> exactly as spelled in the data.</li>"+
+  "<li>Documents are distinct <code>symbol</code> values; years are the minimum and maximum <code>year</code>.</li>"+
+  "<li>Filters combine with AND: exact match on mechanism, body and type; year inclusive between the two selects; SDG if the goal is in <code>sdgs</code>; keyword means every word occurs literally in <code>text</code> or <code>symbol</code> (lower-cased).</li>"+
+  "<li>Theme counts count each label once per record carrying it, so they sum to more than the record count; percentages are of records.</li>"+
+  "<li>The paragraph number is the number at the start of the text; the recommending State is read from the parenthesised group at the end of UPR texts only, one record counting once per State named.</li>"+
+  "<li>The citation is the document symbol plus “para. N” when a number was found — the Dag Hammarskjöld Library's key-plus-pinpoint form.</li></ol>";
+document.getElementById("srcBlock").innerHTML =
+  "<p style='max-width:720px;font-size:15px'>"+(D.source_url?"<a href='"+escAttr(D.source_url)+"' target='_blank' rel='noopener'>"+esc(D.source)+"</a>":esc(D.source||""))+
+  " · built "+esc(D.built||"?")+" · "+fmt(R.length)+" records for "+esc(country)+". Data © OHCHR Universal Human Rights Index; used here for non-commercial human rights work.</p>";
+document.getElementById("csvBtn").onclick=()=>{
+  const set=[...current].sort(cmpRec);
+  const esc2=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const lines=[];
+  lines.push("# "+esc(country)+" — UN recommendations and observations (export)");
+  lines.push("# Source: "+(D.source||"")+" "+(D.source_url||""));
+  lines.push("# Built: "+(D.built||"?"));
+  lines.push("# Filters applied: "+(filtersSummary()||"none"));
+  lines.push("# Rows: "+set.length+" of "+R.length);
+  lines.push(["date","body","mechanism","type","symbol","doc_url","paragraph","recommending_states","text","themes","sdgs","sdg_targets","affected_persons","section"].map(esc2).join(","));
+  for(const r of set){
+    lines.push([r.date,r.body,r.mechanism,r.type,r.symbol,r.doc_url,r._para||"",
+      (r._states&&r._states!=="State not found")?r._states.join("; "):(r.mechanism==="Universal Periodic Review"?"State not found":""),
+      r.text,(r.themes||[]).join("; "),(r.sdgs||[]).join("; "),(r.sdg_targets||[]).join("; "),
+      (r.affected_persons||[]).join("; "),r.section||""].map(esc2).join(","));
+  }
+  const blob=new Blob(["\ufeff"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=country.replace(/\s+/g,"-").toLowerCase()+"-uhri-export.csv";
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+};
+document.getElementById("sumBtn").onclick=()=>{
+  const docs=new Set(current.map(r=>r.symbol));
+  const yrs=current.map(r=>r.year);
+  const byType=counts(current,r=>r.type);
+  const top=topThemes(current);
+  const txt=country+": UN human rights recommendations and observations. "+fmt(current.length)+
+    " records from "+fmt(docs.size)+" documents ("+(yrs.length?Math.min(...yrs)+"–"+Math.max(...yrs):"–")+
+    "), of "+fmt(R.length)+" in the file"+(filtersSummary()?" — filters: "+filtersSummary():"")+". By type: "+
+    [...byType.entries()].map(([t,c])=>c+" "+t).join(", ")+
+    ". Most frequent themes: "+top.map(([t,c])=>t+" ("+c+")").join("; ")+
+    ". Source: "+(D.source||"")+" ("+(D.source_url||"")+"), built "+(D.built||"?")+". A record can carry several themes.";
+  navigator.clipboard.writeText(txt).then(()=>{
+    const s=document.getElementById("copiedSum");
+    s.textContent="Copied to clipboard."; setTimeout(()=>s.textContent="",2000);
+  }).catch(()=>{});
+};
+
+/* ---------- footer ---------- */
+document.getElementById("footer").innerHTML =
+  "Built on OHCHR UHRI data · "+fmt(R.length)+" records · "+
+  (D.source_url?"<a href='"+escAttr(D.source_url)+"' target='_blank' rel='noopener'>"+esc(D.source)+"</a>":esc(D.source||""))+
+  "<br>Credits: chart and table conventions follow the UK Government Analysis Function guidance on data visualisation (Open Government Licence).";
+
+/* ---------- helpers ---------- */
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function escAttr(s){return esc(s);}
+
+/* ---------- master refresh ---------- */
+function refresh(){
+  updateRail();
+  shown=50;
+  const active=document.querySelector(".tab[aria-selected=true]").id;
+  if(active==="tab1") drawOverview();
+  if(active==="tab2") drawRecords();
+  if(active==="tab3"){drawChecks(); if(sample) renderCards();}
+}
+updateRail(); drawOverview(); drawChecks();
+})();
+</script>
+</body>
+</html>

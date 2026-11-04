@@ -7,6 +7,8 @@ window.PreviewDoc = (function () {
   const DATASETS = ['uhri', 'gc', 'hrc', 'pdf_text', 'pdf_text_2', 'library', 'wiki'];
   const CSP = "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; connect-src 'none'; form-action 'none'\">";
 
+  const CHART_CDN = /<script\b[^>]*\bsrc=["']https?:\/\/[^"']*\bchart(?:\.js|\.umd|\.min)[^"']*["'][^>]*>\s*<\/script>/gi;
+
   function inject(html, head) {
     const m = html.match(/<head[^>]*>/i) || html.match(/<html[^>]*>/i);
     return m ? html.slice(0, m.index + m[0].length) + head + html.slice(m.index + m[0].length) : head + html;
@@ -22,6 +24,9 @@ window.PreviewDoc = (function () {
   // `files` are the keys attached in the app's conversation: a file in the chat gives the app the
   // whole file, also to an app that reads WORKSHOP_DATA in a loop and never names it
   async function build(html, { chart, runtime, dataText, files }) {
+    // Chart.js comes with the studio; a model that also loads it from a CDN (Mistral Large 3 did in five
+    // builds of five, 4.11.2026) would only get a blocked request and an error in the console
+    html = html.replace(CHART_CDN, '<!-- Chart.js: the studio\'s own copy, not the internet -->');
     const attached = /WORKSHOP_DATA/.test(html) ? (files || []).filter((k) => DATASETS.includes(k)) : [];
     const named = DATASETS.filter((k) => new RegExp('\\b' + k + '\\b').test(html));
     const used = attached.length ? [...new Set([...named, ...attached])] : datasetsUsed(html);

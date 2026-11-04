@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UN human rights recommendations and observations</title>
+<style>
+  :root{
+    --paper:#f4f0e8; --ink:#1d1b18; --rule:#d9d2c3; --red:#9b2335;
+    --upr:#c2410c; --tb:#0f766e; --sp:#7c3aed;
+    --mono:ui-monospace,Menlo,Consolas,monospace;
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  [hidden]{display:none!important}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5}
+  a{color:var(--red)}
+  a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+  .mono{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 24px 40px}
+
+  /* header */
+  header.app{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:0}
+  .datalabel{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#6b6255}
+  h1{font-family:var(--serif);font-weight:400;font-size:34px;line-height:1.15;margin:6px 0 8px}
+  .srcline{font-size:13.5px;color:#4a443b}
+  .srcline .mono{margin-left:12px}
+
+  /* tabs */
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--rule);margin-bottom:18px;flex-wrap:wrap}
+  .tab{appearance:none;background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#5a5248;
+    padding:12px 18px 10px;margin-right:4px}
+  .tab[aria-selected="true"]{color:var(--red);border-bottom-color:var(--red)}
+  .tab:hover{color:var(--ink)}
+  .tabpanel{margin-top:4px}
+
+  /* layout */
+  .cols{display:flex;gap:28px;align-items:flex-start}
+  aside.rail{width:250px;flex:0 0 250px;border-right:1px solid var(--rule);padding-right:20px}
+  main{flex:1;min-width:0}
+  @media(max-width:840px){.cols{flex-direction:column}aside.rail{width:100%;flex:none;border-right:none;border-bottom:1px solid var(--rule);padding:0 0 14px}}
+
+  /* rail */
+  .railhead{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--rule);padding-bottom:6px}
+  .bignum{font-family:var(--serif);font-size:46px;line-height:1.05;margin:14px 0 2px}
+  .bignum small{font-size:16px;color:#5a5248;font-family:var(--sans)}
+  .matchlabel{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#6b6255}
+  .sharetrack{height:5px;background:#e7e0d2;margin:10px 0 4px}
+  .sharebar{height:5px;background:var(--red)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+  .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--rule);background:#faf7f0;
+    font-size:12.5px;padding:3px 6px 3px 9px;border-radius:999px}
+  .chip button{appearance:none;border:none;background:none;cursor:pointer;font-size:14px;line-height:1;color:var(--red);padding:0 2px}
+  .fgroup{border-bottom:1px solid var(--rule)}
+  .fhead{width:100%;display:flex;justify-content:space-between;align-items:center;appearance:none;background:none;border:none;cursor:pointer;
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);padding:12px 0 10px}
+  .fhead .n{color:var(--red);margin-right:8px}
+  .fhead .arrow{color:#8a8072;font-size:10px}
+  .fbody{padding:2px 0 16px}
+  .fbody label{display:block;font-size:12px;color:#5a5248;margin:8px 0 3px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase}
+  .fbody input[type=text],.fbody select{width:100%;padding:7px 8px;border:1px solid var(--rule);background:#faf7f0;font-family:var(--sans);font-size:14px;color:var(--ink)}
+  .hint{font-size:12px;color:#7a7263;margin-top:5px;font-family:var(--mono);letter-spacing:.02em}
+  .radios{display:flex;flex-direction:column;gap:2px}
+  .radios label,.checks label{display:flex;gap:8px;align-items:baseline;font-size:13.5px;color:var(--ink);font-family:var(--sans);text-transform:none;letter-spacing:0;margin:2px 0;cursor:pointer}
+  .radios .cnt,.checks .cnt{margin-left:auto;color:#8a8072;font-size:12px}
+  .yearrow{display:flex;gap:8px}
+
+  /* tiles */
+  .tiles{display:flex;flex-wrap:wrap;gap:0;border-top:1px solid var(--rule);border-left:1px solid var(--rule);margin-bottom:26px}
+  .tile{flex:1 1 200px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:16px 18px 12px;min-width:190px}
+  .tile .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6b6255}
+  .tile .num{font-family:var(--serif);font-size:44px;line-height:1.1;margin:4px 0 2px}
+  .tile .sub{font-size:12.5px;color:#5a5248;line-height:1.45}
+  .tile .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:baseline}
+  .tile .how{font-size:11px;color:#8a8072;font-family:var(--mono);letter-spacing:.02em;margin-top:6px}
+
+  /* figures */
+  figure{margin:0 0 34px}
+  figure .figno{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--red)}
+  figure h2{font-family:var(--serif);font-weight:400;font-size:20px;margin:4px 0 2px}
+  figure .figsub{font-size:13px;color:#5a5248;margin-bottom:10px}
+  figure .figsrc{font-size:11.5px;color:#8a8072;margin-top:6px}
+  .chartbox{position:relative;height:340px}
+  .chartbox.tall{height:380px}
+  .nomatch{font-family:var(--serif);font-size:20px;color:#8a8072;padding:40px 0;text-align:center}
+
+  /* tables */
+  table{border-collapse:collapse;width:100%;font-size:14.5px}
+  caption{text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6b6255;padding-bottom:8px}
+  th,td{text-align:left;vertical-align:top;padding:7px 10px 7px 0;border-bottom:1px solid var(--rule)}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#5a5248;font-weight:400;border-bottom:1.5px solid #b8ae99}
+  th .arrow{color:var(--red)}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr.rec{cursor:pointer}
+  tr.rec:hover{background:#efe9dc}
+  tr.rec td{border-bottom:1px solid #e4dcc9}
+  mark{background:#f3d9a4;color:var(--ink);padding:0 1px}
+  tr.expand td{background:#faf7f0;padding:18px 16px 20px;border-bottom:2px solid var(--red)}
+  .para-big{font-family:var(--serif);font-size:38px;color:var(--red);line-height:1;margin-right:18px;float:left}
+  .fulltext{font-size:15.5px;line-height:1.6;white-space:pre-wrap}
+  .labelrow{margin-top:14px}
+  .labelrow .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#6b6255;margin-bottom:3px}
+  .taglist{display:flex;flex-wrap:wrap;gap:5px}
+  .tag{border:1px solid var(--rule);background:#f4f0e8;font-size:12.5px;padding:2px 8px}
+  .actions{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{appearance:none;cursor:pointer;font-family:var(--sans);font-size:13.5px;color:var(--ink);background:#faf7f0;border:1px solid #b8ae99;padding:6px 14px}
+  .btn:hover{border-color:var(--ink)}
+  .btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
+  .copied{color:var(--red);font-size:12.5px;font-family:var(--mono)}
+  .dash{color:#a99f8b}
+  .statelist{margin-top:10px;border-top:1px solid var(--rule);padding-top:10px}
+  .statelist ol{margin:6px 0 0;padding-left:22px;font-size:13.5px}
+  .statelist li{margin:2px 0}
+
+  /* checks */
+  .checkline{display:flex;gap:14px;padding:9px 0;border-bottom:1px solid var(--rule);font-size:14px;align-items:baseline}
+  .checkline .mark{font-family:var(--mono);font-size:11px;letter-spacing:.08em;white-space:nowrap}
+  .pass{color:#0f766e}.fail{color:var(--red)}.warn{color:#a16207}
+  .checkline .what{flex:1}
+  .checkline .vals{font-family:var(--mono);font-size:12px;color:#5a5248}
+  h2.sec{font-family:var(--serif);font-weight:400;font-size:22px;border-bottom:1px solid var(--rule);padding-bottom:6px;margin:26px 0 8px}
+  .samplectl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}
+  .samplectl input{width:90px;padding:6px 8px;border:1px solid var(--rule);background:#faf7f0;font-family:var(--mono);font-size:13px}
+  .card{border:1px solid var(--rule);border-left:3px solid var(--rule);margin-bottom:8px}
+  .card.verdict-fit{border-left-color:#0f766e}
+  .card.verdict-no{border-left-color:var(--red)}
+  .card.verdict-unsure{border-left-color:#a16207}
+  .cardhead{width:100%;display:flex;gap:14px;align-items:baseline;appearance:none;background:none;border:none;cursor:pointer;padding:10px 14px;text-align:left;font-size:14px}
+  .cardhead .csym{font-family:var(--mono);font-size:12px;white-space:nowrap}
+  .cardhead .cpara{font-family:var(--serif);color:var(--red);font-size:17px;min-width:60px}
+  .cardhead .csnip{color:#5a5248;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cardbody{padding:0 16px 16px;border-top:1px solid var(--rule)}
+  .cardbody .fulltext{margin-top:12px}
+  .vbtns{display:flex;gap:8px;margin-top:12px}
+  .vbtn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .tally{font-size:14px;margin:10px 0}
+  .tally .mono{color:var(--red)}
+
+  /* method */
+  .method p{max-width:72ch;font-size:15px}
+  .fineprint{font-size:13px;color:#5a5248;max-width:72ch}
+
+  footer.app{border-top:2px solid var(--ink);margin-top:30px;padding-top:10px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:#6b6255;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="app">
+  <div class="datalabel" id="hd-label">UHRI</div>
+  <h1 id="hd-title">UN human rights recommendations and observations</h1>
+  <div class="srcline" id="hd-src"></div>
+</header>
+
+<div class="tabs" role="tablist" aria-label="Dashboard sections">
+  <button class="tab" role="tab" id="tab-1" aria-controls="panel-1" aria-selected="true" tabindex="0">01 Overview</button>
+  <button class="tab" role="tab" id="tab-2" aria-controls="panel-2" aria-selected="false" tabindex="-1">02 Records</button>
+  <button class="tab" role="tab" id="tab-3" aria-controls="panel-3" aria-selected="false" tabindex="-1">03 Check</button>
+  <button class="tab" role="tab" id="tab-4" aria-controls="panel-4" aria-selected="false" tabindex="-1">04 Method &amp; export</button>
+</div>
+
+<div class="cols">
+<aside class="rail" aria-label="Filters">
+  <div class="railhead">
+    <span class="mono" style="color:var(--ink)">Filters</span>
+    <button class="mono" id="clear-all" style="appearance:none;background:none;border:none;cursor:pointer;color:var(--red);letter-spacing:.08em">Clear all</button>
+  </div>
+  <div class="bignum" id="rail-count">0</div>
+  <div class="matchlabel" id="rail-of">of N in the file</div>
+  <div class="sharetrack"><div class="sharebar" id="rail-bar" style="width:0%"></div></div>
+  <div class="matchlabel" id="rail-share"></div>
+  <div class="chips" id="rail-chips"></div>
+  <div id="rail-groups">
+    <div class="fgroup">
+      <button class="fhead" id="fh-1" aria-expanded="false"><span><span class="n">01</span>Keyword</span><span class="arrow">▼</span></button>
+      <div class="fbody" id="fb-1" hidden>
+        <input type="text" id="kw-input" placeholder="e.g. torture" aria-label="Keyword">
+        <div class="hint">literal match, not synonyms</div>
+      </div>
+    </div>
+    <div class="fgroup">
+      <button class="fhead" id="fh-2" aria-expanded="false"><span><span class="n">02</span>Mechanism, body, type</span><span class="arrow">▼</span></button>
+      <div class="fbody" id="fb-2" hidden>
+        <label for="sel-mech">Mechanism</label>
+        <select id="sel-mech"></select>
+        <label for="sel-body">Body or mandate</label>
+        <select id="sel-body"></select>
+        <label for="sel-type">Type</label>
+        <select id="sel-type"></select>
+        <div id="state-filter-wrap" hidden>
+          <label for="sel-state">Recommending State (UPR)</label>
+          <select id="sel-state"></select>
+        </div>
+      </div>
+    </div>
+    <div class="fgroup">
+      <button class="fhead" id="fh-3" aria-expanded="false"><span><span class="n">03</span>Years and SDG</span><span class="arrow">▼</span></button>
+      <div class="fbody" id="fb-3" hidden>
+        <div class="yearrow">
+          <div style="flex:1"><label for="sel-yfrom">Year from</label><select id="sel-yfrom"></select></div>
+          <div style="flex:1"><label for="sel-yto">to</label><select id="sel-yto"></select></div>
+        </div>
+        <label for="sel-sdg">SDG goal</label>
+        <select id="sel-sdg"></select>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<main>
+  <section class="tabpanel" role="tabpanel" id="panel-1" aria-labelledby="tab-1">
+    <div class="tiles" id="ov-tiles"></div>
+    <figure>
+      <div class="figno">FIG.01</div>
+      <h2 id="fig1-title">Ten most frequent themes</h2>
+      <div class="figsub" id="fig1-sub"></div>
+      <div class="chartbox" id="fig1-box"><canvas id="fig1" aria-label="Ten most frequent themes, horizontal bar chart"></canvas></div>
+      <div class="figsrc" id="fig1-src"></div>
+      <div id="fig1-tablewrap"></div>
+    </figure>
+    <figure>
+      <div class="figno">FIG.02</div>
+      <h2>Records per year by mechanism</h2>
+      <div class="figsub" id="fig2-sub"></div>
+      <div class="chartbox tall" id="fig2-box"><canvas id="fig2" aria-label="Records per year by mechanism, stacked bar chart"></canvas></div>
+      <div class="figsrc" id="fig2-src"></div>
+    </figure>
+  </section>
+
+  <section class="tabpanel" role="tabpanel" id="panel-2" aria-labelledby="tab-2" hidden>
+    <div style="margin-bottom:6px">
+      <input type="text" id="kw-input-2" placeholder="" aria-label="Search records" style="width:100%;max-width:520px;padding:9px 10px;border:1px solid var(--rule);background:#faf7f0;font-size:15px">
+      <div class="hint">Searches text and document symbol · literal match, not synonyms</div>
+    </div>
+    <div id="rec-tablewrap"></div>
+    <div style="margin-top:14px"><button class="btn" id="more-btn">Show 50 more</button></div>
+  </section>
+
+  <section class="tabpanel" role="tabpanel" id="panel-3" aria-labelledby="tab-3" hidden>
+    <h2 class="sec" style="margin-top:0">How the app checks itself</h2>
+    <p class="fineprint">Each line compares two values computed independently. A failure is shown, never hidden. Checks marked on the whole file use all records, not the current filter.</p>
+    <div id="checks"></div>
+    <h2 class="sec">Check the UN's own labels on a random sample</h2>
+    <p class="fineprint">This is your judgement of the UN's labels; nothing is sent anywhere. One verdict per card is about the themes as a set: do these labels fit this paragraph?</p>
+    <div class="samplectl">
+      <button class="btn primary" id="draw-btn">Check 10 at random</button>
+      <span id="draw-again-wrap" hidden>
+        <button class="btn" id="draw-again">Draw again</button>
+        <label class="mono" for="seed-input" style="color:#6b6255">Seed</label>
+        <input type="text" id="seed-input" value="1" aria-label="Seed">
+        <button class="btn" id="draw-seed">Draw with this seed</button>
+      </span>
+    </div>
+    <div class="tally" id="sample-tally" aria-live="polite"></div>
+    <div id="sample-cards"></div>
+  </section>
+
+  <section class="tabpanel" role="tabpanel" id="panel-4" aria-labelledby="tab-4" hidden>
+    <h2 class="sec" style="margin-top:0">How each number is computed</h2>
+    <div class="method" id="method-text"></div>
+    <h2 class="sec">Take it with you</h2>
+    <div class="actions" style="margin:0 0 6px">
+      <button class="btn primary" id="csv-btn">Download CSV of the current filter</button>
+      <button class="btn" id="summary-btn">Copy summary</button>
+      <span class="copied" id="export-msg"></span>
+    </div>
+    <p class="fineprint">The CSV carries the visible columns plus the full text and all labels, preceded by comment lines naming the country, source, build date, filters applied and row count. The summary is plain text for pasting into notes. Both are generated in your browser; nothing is sent anywhere.</p>
+    <h2 class="sec">Source</h2>
+    <p class="fineprint" id="src-note"></p>
+  </section>
+</main>
+</div>
+
+<footer class="app">
+  <span id="ft-left">Built on OHCHR UHRI data</span>
+  <span id="ft-right"></span>
+</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const U = window.WORKSHOP_DATA && window.WORKSHOP_DATA.uhri;
+if(!U || !U.records){document.body.innerHTML="<p>No UHRI data found.</p>";return;}
+const recs = U.records;
+const N = recs.length;
+const fmt = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g,",");
+
+/* ---------- precomputation ---------- */
+const PARA_RE = /^(\d{1,3}(?:\.\d{1,3})?)\.?\s/;
+const STATE_RUN_RE = /((?:\s*\((?:[^()]|\([^()]*\))*\))+)\s*[;.]?\s*$/;
+const STATE_GROUP_RE = /\((?:[^()]|\([^()]*\))*\)/g;
+function statesOf(r){
+  if(r.mechanism !== "Universal Periodic Review") return null;
+  const m = (r.text||"").match(STATE_RUN_RE);
+  if(!m) return {states:["State not found"]};
+  const groups = m[1].match(STATE_GROUP_RE) || [];
+  const out = [];
+  for(let g of groups){
+    let s = g.replace(/^\(/,"").replace(/\)$/,"").trim();
+    if(s && !s.includes(",") && s.length <= 60) out.push(s);
+    else return {states:["State not found"]};
+  }
+  if(!out.length) return {states:["State not found"]};
+  return {states:out};
+}
+recs.forEach(r=>{
+  const pm = (r.text||"").match(PARA_RE);
+  r._para = pm ? pm[1] : null;
+  const st = statesOf(r);
+  r._states = st ? st.states : null;
+});
+
+/* ---------- filter state ---------- */
+const f = {keywordWords:[], mechanism:"", body:"", type:"", state:"", yearFrom:"", yearTo:"", sdg:"", themes:new Set()};
+let filtered = recs.slice();
+let expandedIds = new Set();
+let shown = 50;
+
+function matches(r){
+  if(f.keywordWords.length){
+    const t=(r.text||"").toLowerCase(), s=(r.symbol||"").toLowerCase();
+    for(const w of f.keywordWords) if(!t.includes(w) && !s.includes(w)) return false;
+  }
+  if(f.mechanism && r.mechanism !== f.mechanism) return false;
+  if(f.body && r.body !== f.body) return false;
+  if(f.type && r.type !== f.type) return false;
+  if(f.state){
+    if(!r._states || !r._states.some(x=>x===f.state)) return false;
+  }
+  if(f.yearFrom!=="" && r.year < +f.yearFrom) return false;
+  if(f.yearTo!=="" && r.year > +f.yearTo) return false;
+  if(f.sdg!=="" && !((r.sdgs||[]).includes(+f.sdg))) return false;
+  if(f.themes.size && !(r.themes||[]).some(t=>f.themes.has(t))) return false;
+  return true;
+}
+
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+
+/* ---------- header & footer ---------- */
+(function(){
+  document.getElementById("hd-label").textContent = "UHRI · " + U.country;
+  document.getElementById("hd-title").textContent = "UN human rights recommendations and observations: " + U.country;
+  const years = recs.map(r=>r.year);
+  const y0 = Math.min(...years), y1 = Math.max(...years);
+  const docs = new Set(recs.map(r=>r.symbol)).size;
+  document.getElementById("hd-src").innerHTML =
+    'Source: <a href="'+esc(U.source_url)+'" target="_blank" rel="noopener">'+esc(U.source)+'</a>'
+    + ' · <span class="mono">'+fmt(N)+' records · '+fmt(docs)+' documents · '+y0+'–'+y1+'</span>'
+    + ' · <span class="mono">built '+esc(U.built)+'</span>'
+    + ' · <span class="mono">dated by document</span>';
+  document.getElementById("ft-left").innerHTML =
+    'Built on OHCHR UHRI data · '+fmt(N)+' records · <a href="'+esc(U.source_url)+'" target="_blank" rel="noopener">source</a>';
+  document.getElementById("ft-right").textContent = 'Country: ' + U.country + ' · no model calls · no network requests';
+})();
+
+/* ---------- tabs ---------- */
+const tabs=[...document.querySelectorAll(".tab")];
+const panels=tabs.map(t=>document.getElementById(t.getAttribute("aria-controls")));
+let curTab=0;
+function selectTab(i){
+  curTab=i;
+  tabs.forEach((t,j)=>{t.setAttribute("aria-selected",j===i?"true":"false");t.tabIndex=j===i?0:-1;});
+  panels.forEach((p,j)=>p.hidden=j!==i);
+  document.getElementById("rail-groups").hidden = (i>=2);
+  if(i===0) renderOverview();
+  if(i===1) renderTable();
+}
+tabs.forEach((t,i)=>{
+  t.addEventListener("click",()=>selectTab(i));
+  t.addEventListener("keydown",e=>{
+    let j=null;
+    if(e.key==="ArrowRight")j=(i+1)%tabs.length;
+    if(e.key==="ArrowLeft")j=(i-1+tabs.length)%tabs.length;
+    if(j!==null){e.preventDefault();selectTab(j);tabs[j].focus();}
+  });
+});
+
+/* ---------- collapsible filter headings ---------- */
+["1","2","3"].forEach(n=>{
+  const h=document.getElementById("fh-"+n), b=document.getElementById("fb-"+n);
+  h.addEventListener("click",()=>{
+    const open=h.getAttribute("aria-expanded")==="true";
+    ["1","2","3"].forEach(m=>{
+      document.getElementById("fh-"+m).setAttribute("aria-expanded","false");
+      document.getElementById("fb-"+m).hidden=true;
+    });
+    if(!open){h.setAttribute("aria-expanded","true");b.hidden=false;}
+  });
+});
+
+/* ---------- selects ---------- */
+function distinctSorted(arr){return [...new Set(arr.filter(x=>x!=null&&x!==""))].sort((a,b)=>a<b?-1:a>b?1:0);}
+function fillSel(el,items,allLabel){
+  el.innerHTML="";
+  const o=document.createElement("option");o.value="";o.textContent=allLabel;el.appendChild(o);
+  items.forEach(it=>{
+    const o=document.createElement("option");o.value=it.v;o.textContent=it.label;el.appendChild(o);
+  });
+}
+const allYears = distinctSorted(recs.map(r=>r.year));
+const sdgCounts={};
+recs.forEach(r=>(r.sdgs||[]).forEach(g=>sdgCounts[g]=(sdgCounts[g]||0)+1));
+const sdgNames=U.sdg_names||{};
+const sdgGoals=Object.keys(sdgCounts).map(Number).sort((a,b)=>a-b);
+const mechanisms = distinctSorted(recs.map(r=>r.mechanism));
+const allTypes = distinctSorted(recs.map(r=>r.type));
+
+function bodyOptions(){
+  const src = f.mechanism ? recs.filter(r=>r.mechanism===f.mechanism) : recs;
+  const cnt={};
+  src.forEach(r=>cnt[r.body]=(cnt[r.body]||0)+1);
+  return Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||(a<b?-1:1)).map(b=>({v:b,label:b+" ("+cnt[b]+")"}));
+}
+function stateOptions(){
+  const cnt={};
+  filtered.forEach(r=>{ if(r._states) r._states.forEach(s=>{ if(s!=="State not found") cnt[s]=(cnt[s]||0)+1; }); });
+  return Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||(a<b?-1:1)).map(s=>({v:s,label:s+" ("+cnt[s]+")"}));
+}
+
+function rebuildMechDependent(){
+  fillSel(document.getElementById("sel-body"),bodyOptions(),"all bodies");
+  const prevBody=f.body;
+  if(prevBody && !bodyOptions().some(o=>o.v===prevBody)) f.body="";
+  document.getElementById("sel-body").value=f.body;
+  const typeSrc = (f.mechanism?recs.filter(r=>r.mechanism===f.mechanism):recs);
+  const tc={};typeSrc.forEach(r=>tc[r.type]=(tc[r.type]||0)+1);
+  fillSel(document.getElementById("sel-type"),Object.keys(tc).map(t=>({v:t,label:t+" ("+tc[t]+")"})),"all types");
+  if(f.type && !(f.type in tc)){f.type="";}
+  document.getElementById("sel-type").value=f.type;
+}
+(function initSelects(){
+  fillSel(document.getElementById("sel-mech"),mechanisms.map(m=>({v:m,label:m})),"all mechanisms");
+  fillSel(document.getElementById("sel-yfrom"),allYears.map(y=>({v:y,label:y})),"—");
+  fillSel(document.getElementById("sel-yto"),allYears.map(y=>({v:y,label:y})),"—");
+  fillSel(document.getElementById("sel-sdg"),sdgGoals.map(g=>({v:g,label:"SDG "+g+(sdgNames[String(g)]?" · "+sdgNames[String(g)]:"")+" ("+sdgCounts[g]+")"})),"all goals");
+  rebuildMechDepinite:0;
+})();
+</script>
+<script>
+/* second script block not needed; continue below */
+</script>
+</body>
+</html>

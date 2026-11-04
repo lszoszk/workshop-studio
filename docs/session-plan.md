@@ -34,7 +34,7 @@ Measured in the bake-off on 4 November 2026 with the current plans (Kenya; one b
 
 | Request | Mistral Large 3 (no thinking) | GLM-5.3 (medium) |
 |---|---|---|
-| Dashboard | 3.2 min; 4 of 8 checks (an error stops the chart) | 3.6 min; 8 of 8 |
+| Dashboard (six builds each) | 3.0–3.6 min; 2 of 6 with no error, 1 with a small one, 3 broken | 3.4–8.7 min; 5 of 6 with no error, 1 cut off mid-code |
 | Paragraphs out of a PDF | 2.4 min; 7 of 7 | 8.2 min; 4 of 7 (an error stops the table); a first attempt stopped before the code |
 | Verbatim finder | 3.0 min; 4 of 8 (an error stops the search) | 5.9 min; 7 of 8 |
 | A research wiki | 4.8 min; 7 of 7 | 6.7 min; 4 of 7 (a syntax error) |
@@ -43,7 +43,7 @@ Claude Sonnet 5.5 was built in Claude Code during the iteration, so its time thr
 
 Two models left the studio on 4 November. Mistral Large 4 thought for 8 to 10 minutes on these plans whatever the reasoning setting, and on the PDF its thinking used up the whole answer budget (64,000 tokens, thinking included) three times out of three, so no app came back. GLM-5.3 at high reasoning did the same on two of four plans (12 to 17 minutes, then nothing); at medium it thinks briefly. The studio now offers Mistral Large 3 (open weights, no thinking) and GLM-5.3 at medium.
 
-Use the waiting time: the stage shows the model's thinking, then its code. That is the moment to say what is happening. Mistral Large 3 is the fastest, but its first build needs *Fix this error* more often (two of four). GLM now and then writes a description of the app with no code; the studio says so and the request goes back in the box: send it again. When a build falls apart, *Improve it in the studio* in the gallery brings in a working app to continue from.
+Use the waiting time: the stage shows the model's thinking, then its code. That is the moment to say what is happening. Mistral Large 3 is the fastest, but its first build needs *Fix this error* more often (half of its dashboards). It also loads Chart.js from the internet in every build, against the studio's instructions; the studio now swaps that line for its own copy, so it costs nothing. GLM now and then writes a description of the app with no code; the studio says so and the request goes back in the box: send it again. When a build falls apart, *Improve it in the studio* in the gallery brings in a working app to continue from.
 
 ---
 

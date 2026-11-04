@@ -1,0 +1,892 @@
+I built the full four-tab dashboard exactly as planned: filters in a left rail, overview with the theme chart and timeline, the records table with in-place expansion and citations, a self-check panel with the seeded sample check, and a method/export tab. All numbers are computed in the browser from `WORKSHOP_DATA.uhri`, nothing is estimated.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UN human rights recommendations and observations</title>
+<style>
+  :root{
+    --paper:#f4f0e8; --ink:#1d1b18; --rule:#d9d2c3; --accent:#9b2335;
+    --upr:#c2410c; --tb:#0f766e; --sp:#7c3aed;
+  }
+  [hidden]{display:none!important}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  a{color:var(--accent)}
+  a:focus,button:focus,input:focus,select:focus,[tabindex]:focus{outline:2px solid var(--accent);outline-offset:2px}
+  .mono{font:11px/1.4 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;text-transform:uppercase}
+  .serif{font-family:Georgia,"Times New Roman",serif}
+  .rule{border:0;border-top:1px solid var(--rule);margin:0}
+
+  header.site{padding:18px 24px 12px;border-bottom:2px solid var(--ink)}
+  header.site .mono{color:#6b6257}
+  h1.serif{font-size:34px;margin:6px 0 4px;font-weight:700;letter-spacing:-.01em}
+  .metainfo{font-size:13.5px;color:#4a443c}
+  .metainfo .mono{font-size:11px}
+
+  .layout{display:flex;min-height:70vh}
+  /* Rail */
+  aside.rail{width:262px;flex:0 0 262px;border-right:1px solid var(--rule);padding:18px 18px 30px}
+  .rail-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .clearbtn{background:none;border:0;color:var(--accent);cursor:pointer;font:11px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;padding:0}
+  .bignum{font-family:Georgia,"Times New Roman",serif;font-size:44px;line-height:1.05;margin:2px 0 0}
+  .bignum small{font-size:16px;color:#6b6257;font-style:italic}
+  .sharebar{height:5px;background:#e7e0d2;margin:10px 0 4px;position:relative}
+  .sharebar i{position:absolute;left:0;top:0;bottom:0;background:var(--accent)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 14px}
+  .chip{font:11px ui-monospace,Menlo,Consolas,monospace;background:none;border:1px solid var(--rule);border-radius:12px;padding:2px 8px;cursor:pointer;color:var(--ink)}
+  .chip:hover{border-color:var(--accent)}
+  .chip b{color:var(--accent);margin-left:5px;font-weight:700}
+  .fgroup{border-top:1px solid var(--rule)}
+  .fhead{width:100%;display:flex;justify-content:space-between;background:none;border:0;cursor:pointer;
+    padding:10px 2px;font:11px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
+  .fhead .n{color:var(--accent);margin-right:8px}
+  .fhead:hover{color:var(--accent)}
+  .fbody{padding:2px 2px 14px}
+  .fbody input[type=text]{width:100%;padding:7px 9px;border:1px solid var(--rule);background:#fbf9f4;font:14px inherit-family,serif;color:var(--ink)}
+  .hint{font:11px ui-monospace,Menlo,Consolas,monospace;color:#6b6257;margin-top:5px;letter-spacing:.03em}
+  .fbody select{width:100%;margin-bottom:10px;padding:6px 6px;border:1px solid var(--rule);background:#fbf9f4;font:14px sans-serif;color:var(--ink)}
+  .fbody label{display:block;font:11px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;color:#6b6257;margin-bottom:3px}
+
+  /* Tabs */
+  nav.tabs{display:flex;gap:0;border-bottom:1px solid var(--rule);padding:0 24px;flex:1}
+  nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;cursor:pointer;
+    padding:12px 16px 9px;font:11.5px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.13em;text-transform:uppercase;color:#4a443c}
+  nav.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+  nav.tabs button:hover{color:var(--accent)}
+
+  main{flex:1;min-width:0;padding:22px 28px 60px}
+  .figno{font:11px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;color:#6b6257;text-transform:uppercase}
+  figtitle{display:block}
+  .figtitle{font-family:Georgia,serif;font-size:20px;font-weight:700;margin:2px 0 12px}
+  .how{font-size:13px;color:#4a443c;margin:6px 0 14px;max-width:70ch}
+  .how .mono{font-size:10.5px}
+  .srcline{font:11px ui-monospace,Menlo,Consolas,monospace;color:#6b6257;letter-spacing:.04em;margin-top:8px}
+  .chartwrap{position:relative;max-width:860px;margin:8px 0 18px}
+  .emptymsg{font-family:Georgia,serif;font-size:20px;color:#6b6257;padding:30px 0}
+
+  /* Tiles */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;border-top:1px solid var(--rule);border-left:1px solid var(--rule);margin:6px 0 26px;max-width:1000px}
+  .tile{border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:14px 16px 12px;min-height:118px}
+  .tile .lbl{font:11px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.13em;text-transform:uppercase;color:#6b6257;margin-bottom:4px;display:flex;align-items:center;gap:7px}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:0 0 9px}
+  .tile .val{font-family:Georgia,serif;font-size:42px;line-height:1.05}
+  .tile .sub{font-size:13px;color:#4a443c;margin-top:4px}
+  .tile .howt{font:11px ui-monospace,Menlo,Consolas,monospace;color:#8a8172;letter-spacing:.02em;margin-top:6px;text-transform:none}
+
+  /* Tables */
+  table{border-collapse:collapse;width:100%}
+  caption{text-align:left;font-family:Georgia,serif;font-size:17px;padding:4px 0 8px;font-weight:700}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--rule);vertical-align:top;font-size:14.5px}
+  th{font:11px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;color:#4a443c;border-bottom:1px solid #b9b0a0}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  thead th.sortable{cursor:pointer;background:none;border:0;font:inherit;padding:0}
+  .symbols{font:13px ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
+  mark{background:#f0d7a8;color:inherit;padding:0 1px}
+  tr.recrow{cursor:pointer}
+  tr.recrow:hover{background:#efe9dd}
+  tr.detail>td{background:#fbf9f4;padding:18px 20px 20px}
+  .para-big{font-family:Georgia,serif;font-size:40px;color:var(--accent);line-height:1;margin:0 0 10px}
+  .fulltext{font-family:Georgia,serif;font-size:17px;line-height:1.6;max-width:78ch;white-space:pre-wrap}
+  .labels{margin:14px 0 0;max-width:78ch}
+  .labels .row{margin-bottom:6px;font-size:13.5px}
+  .labels .k{font:11px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;color:#6b6257;display:block}
+  .labels .v{display:inline-block;border:1px solid var(--rule);border-radius:10px;padding:1px 9px;margin:3px 4px 0 0;font-size:13px;background:#fff9}
+  .btnrow{margin-top:16px;display:flex;gap:12px;flex-wrap:wrap}
+  .btn{background:none;border:1px solid var(--ink);padding:7px 14px;cursor:pointer;font:12px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn.ghost{border-color:var(--rule);color:#4a443c}
+  .btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .copied{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--accent);letter-spacing:.08em;margin-left:4px}
+
+  /* Checks */
+  .checkline{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule);font-size:14.5px;align-items:baseline}
+  .pass{color:#2e6b3a;font:12px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.1em;white-space:nowrap}
+  .fail{color:var(--accent);font:12px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.1em;white-space:nowrap}
+  .warn{color:#a06a00;font:12px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.1em;white-space:nowrap}
+  .checkline .what{min-width:190px;font-weight:600}
+  .checkline .detail{color:#4a443c;font-size:13px}
+  .card{border:1px solid var(--rule);margin:10px 0;background:#fbf9f4}
+  .card .cardhead{width:100%;display:flex;justify-content:space-between;gap:14px;background:none;border:0;cursor:pointer;padding:10px 14px;text-align:left;font-size:14px;color:var(--ink)}
+  .card .cardhead:hover{color:var(--accent)}
+  .cardbody{padding:0 16px 16px}
+  .seedbox{width:90px;padding:6px 8px;border:1px solid var(--rule);background:#fbf9f4;font:14px monospace}
+  .stateline{font-size:13px;margin:6px 0 10px}
+  footer.site{border-top:1px solid var(--rule);padding:12px 24px;font:11px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.1em;color:#6b6257;text-transform:uppercase}
+  .legend{display:flex;gap:18px;margin:4px 0 8px;font:12px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em;color:#4a443c;flex-wrap:wrap}
+  .legend .dot{margin-right:5px}
+  .statelist td{font-size:14px}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="mono" id="hdr-datalabel"></div>
+  <h1 class="serif" id="hdr-title"></h1>
+  <div class="metainfo" id="hdr-meta"></div>
+</header>
+
+<div class="layout">
+  <aside class="rail">
+    <div class="rail-head">
+      <span class="mono">Filters</span>
+      <button class="clearbtn" id="clearAll" hidden>Clear all</button>
+    </div>
+    <div class="bignum" id="matchNum" aria-live="polite">0</div>
+    <div class="hint" id="matchOf"></div>
+    <div class="sharebar"><i id="shareFill" style="width:100%"></i></div>
+    <div class="chips" id="chips"></div>
+    <div id="filterGroups"></div>
+  </aside>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+    <nav class="tabs" role="tablist" aria-label="Sections" id="tablist">
+      <button role="tab" id="tab0" aria-controls="panel0" aria-selected="true" tabindex="0"><span style="color:var(--accent)">01</span>&nbsp;Overview</button>
+      <button role="tab" id="tab1" aria-controls="panel1" aria-selected="false" tabindex="-1"><span style="color:var(--accent)">02</span>&nbsp;Records</button>
+      <button role="tab" id="tab2" aria-controls="panel2" aria-selected="false" tabindex="-1"><span style="color:var(--accent)">03</span>&nbsp;Check</button>
+      <button role="tab" id="tab3" aria-controls="panel3" aria-selected="false" tabindex="-1"><span style="color:var(--accent)">04</span>&nbsp;Method &amp; export</button>
+    </nav>
+    <main>
+      <section role="tabpanel" id="panel0" aria-labelledby="tab0" tabindex="0"></section>
+      <section role="tabpanel" id="panel1" aria-labelledby="tab1" tabindex="0" hidden></section>
+      <section role="tabpanel" id="panel2" aria-labelledby="tab2" tabindex="0" hidden></section>
+      <section role="tabpanel" id="panel3" aria-labelledby="tab3" tabindex="0" hidden></section>
+    </main>
+  </div>
+</div>
+
+<footer class="site" id="footer"></footer>
+
+<script>
+(function(){
+"use strict";
+const D = window.WORKSHOP_DATA && window.WORKSHOP_DATA.uhri;
+if(!D || !D.records){ document.body.innerHTML = "<p style='padding:30px'>No UHRI data found.</p>"; return; }
+const recs = D.records;
+const COUNTRY = D.country;
+const fmt = n => Number(n).toLocaleString("en-US");
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- derived per-record ---------- */
+function paraOf(t){ const m = /^(\d{1,3}(?:\.\d{1,3})?)\.?\s/.exec(t||""); return m ? m[1] : null; }
+function statesOf(r){
+  if(r.mechanism !== "Universal Periodic Review") return null;
+  const run = /((?:\s*\((?:[^()]|\([^()]*\))*\))+)\s*[;.]?\s*$/.exec(r.text||"");
+  if(!run) return "State not found";
+  const out = [];
+  const groups = (run[1].match(/\((?:[^()]|\([^()]*\))*\)/g)||[]);
+  for(let g of groups){
+    let inner = g.replace(/^\(/,"").replace(/\)$/,"").trim();
+    if(inner.includes(",") || inner.length > 60) return "State not found";
+    out.push(inner);
+  }
+  if(!out.length) return "State not found";
+  return out;
+}
+recs.forEach(r => { r._para = paraOf(r.text); r._states = statesOf(r); r._fl = firstLine(r.text); });
+function firstLine(t){
+  t = (t||"").replace(/\s+/g," ").trim();
+  if(t.length <= 120) return t;
+  let cut = t.lastIndexOf(" ", 120);
+  if(cut < 40) cut = 120;
+  return t.slice(0,cut) + "…";
+}
+
+/* ---------- global stats ---------- */
+const N = recs.length;
+const symbols = new Set(recs.map(r=>r.symbol));
+const yearMin = Math.min(...recs.map(r=>r.year)), yearMax = Math.max(...recs.map(r=>r.year));
+const typeCounts = new Map(), mechCounts = new Map(), bodyCounts = new Map();
+recs.forEach(r=>{
+  typeCounts.set(r.type,(typeCounts.get(r.type)||0)+1);
+  mechCounts.set(r.mechanism,(mechCounts.get(r.mechanism)||0)+1);
+  bodyCounts.set(r.body,(bodyCounts.get(r.body)||0)+1);
+});
+const years = [...new Set(recs.map(r=>r.year))].sort((a,b)=>a-b);
+const sdgPresent = [...new Set(recs.flatMap(r=>r.sdgs||[]))].sort((a,b)=>a-b);
+const stateCounts = new Map();
+recs.forEach(r=>{ if(Array.isArray(r._states)) r._states.forEach(s=>stateCounts.set(s,(stateCounts.get(s)||0)+1)); });
+const MECHCOLOR = {"Universal Periodic Review":"#c2410c","Treaty bodies":"#0f766e","Special Procedures":"#7c3aed"};
+const mechs = [...mechCounts.keys()];
+
+/* ---------- header / footer ---------- */
+document.getElementById("hdr-datalabel").textContent = "UHRI · " + COUNTRY;
+document.getElementById("hdr-title").textContent = "UN human rights recommendations and observations: " + COUNTRY;
+document.getElementById("hdr-meta").innerHTML =
+  'Source: <a href="'+esc(D.source_url)+'" target="_blank" rel="noopener">'+esc(D.source)+'</a> · '+
+  fmt(N)+' records · '+fmt(symbols.size)+' documents · '+yearMin+'–'+yearMax+
+  ' · built '+esc(D.built)+' · <span class="mono">dated by document</span>';
+document.getElementById("footer").innerHTML =
+  'Built on OHCHR UHRI data · '+fmt(N)+' records · <a href="'+esc(D.source_url)+'" target="_blank" rel="noopener">source</a> · '+esc(COUNTRY);
+
+/* ---------- filter state ---------- */
+const F = { kw:"", mech:"", body:"", type:"", state:"", y1:"", y2:"", sdg:"", theme:"" };
+let filtered = recs.slice();
+let sortAsc = false, shown = 50;
+
+function applyFilters(){
+  const kw = F.kw.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  filtered = recs.filter(r=>{
+    if(F.mech && r.mechanism!==F.mech) return false;
+    if(F.body && r.body!==F.body) return false;
+    if(F.type && r.type!==F.type) return false;
+    if(F.state){
+      if(!Array.isArray(r._states) || !r._states.includes(F.state)) return false;
+    }
+    if(F.y1!=="" && r.year < Number(F.y1)) return false;
+    if(F.y2!=="" && r.year > Number(F.y2)) return false;
+    if(F.sdg!=="" && !(r.sdgs||[]).includes(Number(F.sdg))) return false;
+    if(F.theme && !(r.themes||[]).includes(F.theme)) return false;
+    if(kw.length){
+      const hay = (r.text+" "+r.symbol).toLowerCase();
+      for(const w of kw) if(!hay.includes(w)) return false;
+    }
+    return true;
+  });
+}
+function filterDesc(){
+  const d=[];
+  if(F.kw) d.push('keyword "'+F.kw+'"');
+  if(F.mech) d.push("mechanism: "+F.mech);
+  if(F.body) d.push("body: "+F.body);
+  if(F.type) d.push("type: "+F.type);
+  if(F.state) d.push("recommending State: "+F.state);
+  if(F.y1!==""||F.y2!=="") d.push("years "+(F.y1||yearMin)+"–"+(F.y2||yearMax));
+  if(F.sdg!=="") d.push("SDG "+F.sdg);
+  if(F.theme) d.push('theme "'+F.theme+'"');
+  return d.length?d.join(" AND "):"none";
+}
+
+/* ---------- rail ---------- */
+const groupsEl = document.getElementById("filterGroups");
+const GROUPDEFS = [
+  {key:"kw", title:"Keyword"},
+  {key:"mbt", title:"Mechanism, body, type"},
+  {key:"ys",  title:"Years and SDG"}
+];
+let openGroup = "kw";
+function railRender(){
+  // number + bar
+  document.getElementById("matchNum").innerHTML = fmt(filtered.length)+' <small>matching records</small>';
+  document.getElementById("matchOf").textContent = "of " + fmt(N) + " in the file";
+  document.getElementById("shareFill").style.width = N? (100*filtered.length/N).toFixed(1)+"%" : "0%";
+  const anyF = Object.values(F).some(v=>v!=="");
+  document.getElementById("clearAll").hidden = !anyF;
+  // chips
+  const chips = [];
+  const chip = (label,key)=>{ if(F[key]) chips.push({label,key}); };
+  if(F.kw) chips.push({label:"keyword: "+F.kw,key:"kw"});
+  if(F.mech) chips.push({label:"mech: "+F.mech,key:"mech"});
+  if(F.body) chips.push({label:"body: "+F.body,key:"body"});
+  if(F.type) chips.push({label:"type: "+F.type,key:"type"});
+  if(F.state) chips.push({label:"State: "+F.state,key:"state"});
+  if(F.y1!==""||F.y2!=="") chips.push({label:"years "+(F.y1||yearMin)+"–"+(F.y2||yearMax),key:"yr"});
+  if(F.sdg!=="") chips.push({label:"SDG "+F.sdg,key:"sdg"});
+  if(F.theme) chips.push({label:"theme: "+F.theme,key:"theme"});
+  document.getElementById("chips").innerHTML = chips.map(c=>
+    '<button class="chip" data-k="'+c.key+'">'+esc(c.label)+'<b>×</b></button>').join("");
+}
+document.getElementById("chips").addEventListener("click", e=>{
+  const b = e.target.closest(".chip"); if(!b) return;
+  const k = b.dataset.k;
+  if(k==="yr"){F.y1="";F.y2="";} else F[k]="";
+  refresh({rebuildSelects:true});
+});
+document.getElementById("clearAll").addEventListener("click", ()=>{
+  Object.keys(F).forEach(k=>F[k]=""); refresh({rebuildSelects:true});
+});
+
+function buildRail(){
+  groupsEl.innerHTML = GROUPDEFS.map(g=>
+    '<div class="fgroup">'+
+    '<button class="fhead" data-g="'+g.key+'" aria-expanded="'+(openGroup===g.key)+'">'+
+    '<span><span class="n">0'+(GROUPDEFS.indexOf(g)+1)+'</span>'+esc(g.title)+'</span><span aria-hidden="true">'+(openGroup===g.key?"–":"+")+'</span></button>'+
+    '<div class="fbody" data-body="'+g.key+'" '+(openGroup===g.key?"":"hidden")+'></div></div>').join("");
+  groupsEl.querySelectorAll(".fhead").forEach(b=>b.addEventListener("click",()=>{
+    openGroup = (b.getAttribute("aria-expanded")==="true") ? "" : b.dataset.g;
+    buildRail();
+  }));
+  // kw
+  const kwBody = groupsEl.querySelector('[data-body="kw"]');
+  kwBody.innerHTML = '<input type="text" id="kwInput" value="'+esc(F.kw)+'" aria-label="Keyword">'+
+    '<div class="hint">literal match, not synonyms · every word must occur in text or symbol</div>';
+  const kwIn = document.getElementById("kwInput");
+  let t; kwIn.addEventListener("input",()=>{ clearTimeout(t); t=setTimeout(()=>{F.kw=kwIn.value; refresh();},300); });
+  // mbt
+  const mbt = groupsEl.querySelector('[data-body="mbt"]');
+  const bodiesHere = recs.filter(r=>!F.mech||r.mechanism===F.mech);
+  const bc = new Map(); bodiesHere.forEach(r=>bc.set(r.body,(bc.get(r.body)||0)+1));
+  mbt.innerHTML =
+    '<label for="selMech">Mechanism</label>'+
+    '<select id="selMech"><option value="">all</option>'+mechs.map(m=>'<option '+(F.mech===m?"selected":"")+'>'+esc(m)+'</option>').join("")+'</select>'+
+    '<label for="selBody">Body or mandate</label>'+
+    '<select id="selBody"><option value="">all</option>'+[...bc.entries()].sort((a,b)=>b[1]-a[1]).map(([b,c])=>'<option '+(F.body===b?"selected":"")+'>'+esc(b)+' ('+c+')</option>').join("")+'</select>'+
+    '<label for="selType">Type</label>'+
+    '<select id="selType"><option value="">all</option>'+[...typeCounts.keys()].map(v=>'<option '+(F.type===v?"selected":"")+'>'+esc(v)+'</option>').join("")+'</select>'+
+    (stateCounts.size ?
+      '<label for="selState">Recommending State (UPR)</label>'+
+      '<select id="selState"><option value="">all</option>'+[...stateCounts.entries()].sort((a,b)=>b[1]-a[1]).map(([s,c])=>'<option '+(F.state===s?"selected":"")+'>'+esc(s)+' ('+c+')</option>').join("")+'</select>' : '');
+  mbt.querySelector("#selMech").addEventListener("change",e=>{F.mech=e.target.value; F.body=""; refresh({rebuildSelects:true});});
+  mbt.querySelector("#selBody").addEventListener("change",e=>{F.body=e.target.value; refresh();});
+  mbt.querySelector("#selType").addEventListener("change",e=>{F.type=e.target.value; refresh();});
+  const ss = mbt.querySelector("#selState"); if(ss) ss.addEventListener("change",e=>{F.state=e.target.value; refresh();});
+  // ys
+  const ys = groupsEl.querySelector('[data-body="ys"]');
+  ys.innerHTML =
+    '<label for="selY1">Year from</label><select id="selY1"><option value="">'+yearMin+'</option>'+years.map(y=>'<option '+(String(F.y1)===String(y)?"selected":"")+'>'+y+'</option>').join("")+'</select>'+
+    '<label for="selY2">Year to</label><select id="selY2"><option value="">'+yearMax+'</option>'+years.map(y=>'<option '+(String(F.y2)===String(y)?"selected":"")+'>'+y+'</option>').join("")+'</select>'+
+    (sdgPresent.length ?
+      '<label for="selSdg">SDG goal</label><select id="selSdg"><option value="">all</option>'+sdgPresent.map(g=>{
+        const nm = D.sdg_names && D.sdg_names[String(g)] ? " · "+D.sdg_names[String(g)] : "";
+        return '<option value="'+g+'" '+(String(F.sdg)===String(g)?"selected":"")+'>'+g+esc(nm)+'</option>';}).join("")+'</select>' : '');
+  ys.querySelector("#selY1").addEventListener("change",e=>{F.y1=e.target.value; fixYears(); refresh();});
+  ys.querySelector("#selY2").addEventListener("change",e=>{F.y2=e.target.value; fixYears(); refresh();});
+  const sg = ys.querySelector("#selSdg"); if(sg) sg.addEventListener("change",e=>{F.sdg=e.target.value; refresh();});
+}
+function fixYears(){
+  if(F.y1!=="" && F.y2!=="" && Number(F.y1)>Number(F.y2)){ const t=F.y1; F.y1=F.y2; F.y2=t; buildRail(); }
+}
+
+/* ---------- theme chart helper ---------- */
+function themeStats(){
+  const m = new Map();
+  for(const r of filtered){
+    for(const th of (r.themes||[])){
+      let e = m.get(th);
+      if(!e){ e={count:0,y1:r.year,y2:r.year}; m.set(th,e); }
+      e.count++;
+      if(r.year<e.y1)e.y1=r.year; if(r.year>e.y2)e.y2=r.year;
+    }
+  }
+  return m;
+}
+function topThemes(n){
+  const m = themeStats();
+  return [...m.entries()].sort((a,b)=> b[1].count-a[1].count || (a[0]<b[0]?-1:1)).slice(0,n);
+}
+
+/* ---------- charts ---------- */
+const valuePlugin = {
+  id:"valAtEnd",
+  afterDatasetsDraw(chart){
+    if(chart.config.type!=="bar" || chart.options.indexAxis!=="y") return;
+    const ctx = chart.ctx;
+    ctx.save(); ctx.font = "12px ui-monospace, Menlo, Consolas, monospace"; ctx.fillStyle = "#1d1b18"; ctx.textBaseline="middle";
+    chart.data.datasets.forEach((ds,di)=>{
+      const meta = chart.getDatasetMeta(di);
+      if(chart.config._fig==="fig1" || di===chart.data.datasets.length-1){
+        meta.data.forEach((el,i)=>{
+          const v = ds.data[i];
+          if(v==null) return;
+          if(chart.config._fig!=="fig1" && di!==chart.data.datasets.length-1) return;
+          ctx.fillText(String(v), el.x+6, el.y);
+        });
+      }
+    });
+    ctx.restore();
+  }
+};
+let fig1=null, fig2=null;
+function drawFig1(){
+  const el = document.getElementById("fig1canvas");
+  if(!el) return;
+  const top = topThemes(10);
+  if(fig1){ fig1.destroy(); fig1=null; }
+  if(!filtered.length || !top.length){ el.closest(".chartwrap").innerHTML='<p class="emptymsg">No records match.</p>'; return; }
+  fig1 = new Chart(el, {
+    _fig:"fig1",
+    type:"bar",
+    data:{ labels: top.map(t=>t[0]), datasets:[{ data: top.map(t=>t[1].count),
+      backgroundColor:"rgba(155,35,53,0.8)", borderColor:"#9b2335", borderWidth:0, barPercentage:0.75 }] },
+    options:{
+      indexAxis:"y", responsive:true, maintainAspectRatio:false,
+      onClick(e,els){ if(els.length){ F.theme = top[els[0].index][0]; refresh(); } },
+      onHover(e,els){ e.native.target.style.cursor = els.length?"pointer":"default"; },
+      scales:{
+        x:{ grid:{color:"#e7e0d2",drawTicks:false}, border:{display:false}, ticks:{font:{family:"ui-monospace, Menlo, Consolas, monospace",size:11}} },
+        y:{ grid:{display:false}, border:{display:false},
+            ticks:{font:{family:"-apple-system,Segoe UI,sans-serif",size:13}, crossAlign:"far"} }
+      },
+      plugins:{ legend:{display:false}, tooltip:{enabled:true} },
+      animation:false, layout:{padding:{right:34}}
+    },
+    plugins:[valuePlugin]
+  });
+}
+function drawFig2(){
+  const el = document.getElementById("fig2canvas");
+  if(!el) return;
+  if(fig2){ fig2.destroy(); fig2=null; }
+  if(!filtered.length){ el.closest(".chartwrap").innerHTML='<p class="emptymsg">No records match.</p>'; return; }
+  const allYears = []; for(let y=yearMin;y<=yearMax;y++) allYears.push(y);
+  const datasets = mechs.map(m=>({
+    label:m, backgroundColor:MECHCOLOR[m]||"#888",
+    data: allYears.map(y=> filtered.filter(r=>r.year===y && r.mechanism===m).length)
+  }));
+  fig2 = new Chart(el, {
+    type:"bar",
+    data:{ labels: allYears.map(String), datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{
+        x:{stacked:true, grid:{display:false}, border:{display:false}, ticks:{font:{family:"ui-monospace, Menlo, Consolas, monospace",size:11}}},
+        y:{stacked:true, grid:{color:"#e7e0d2"}, border:{display:false}, ticks:{precision:0,font:{family:"ui-monospace, Menlo, Consolas, monospace",size:11}}}
+      },
+      plugins:{ legend:{display:false}, tooltip:{enabled:true} },
+      animation:false
+    }
+  });
+}
+
+/* ---------- panel 01 ---------- */
+function panel0(){
+  const p = document.getElementById("panel0");
+  const tBreak = [...typeCounts.entries()].map(([t,c])=>fmt(c)+" "+t).join(" · ");
+  const tileHtml = [];
+  tileHtml.push(
+    '<div class="tile"><div class="lbl">All records</div><div class="val">'+fmt(filtered.length)+'</div>'+
+    '<div class="sub">'+esc(tBreak)+'</div><div class="howt">records in the file, after filters; breakdown by type as spelled in the data</div></div>');
+  const dSymbols = new Set(filtered.map(r=>r.symbol));
+  tileHtml.push(
+    '<div class="tile"><div class="lbl">Documents</div><div class="val">'+fmt(dSymbols.size)+'</div>'+
+    '<div class="sub">distinct symbols</div><div class="howt">count of distinct '+esc(COUNTRY)+' symbols in the filtered set</div></div>');
+  if(filtered.length){
+    tileHtml.push(
+      '<div class="tile"><div class="lbl">Years</div><div class="val">'+Math.min(...filtered.map(r=>r.year))+'–'+Math.max(...filtered.map(r=>r.year))+'</div>'+
+      '<div class="sub">min–max of year</div><div class="howt">dates are document dates, not dates of acceptance</div></div>');
+  }
+  for(const m of mechs){
+    const sub = filtered.filter(r=>r.mechanism===m);
+    const sd = new Set(sub.map(r=>r.symbol));
+    const tile =
+      '<div class="tile"><div class="lbl"><span class="dot" style="background:'+(MECHCOLOR[m]||"#888")+'"></span>'+esc(m)+'</div>'+
+      '<div class="val">'+fmt(sub.length)+'</div>'+
+      '<div class="sub">'+fmt(sd.size)+' documents · latest '+(sub.length?Math.max(...sub.map(r=>r.year)):"–")+
+      ' · '+(filtered.length?(100*sub.length/filtered.length).toFixed(0):0)+'% of filtered set</div>'+
+      '<div class="howt">exact match on mechanism field</div>'+
+      (m==="Universal Periodic Review" && sub.length ?
+        '<button class="btn ghost" style="margin-top:8px" id="seeStates">see the States</button><div id="statesList" hidden></div>' : "")+
+      '</div>';
+    tileHtml.push(tile);
+  }
+  const top = topThemes(10);
+  const themeRows = top.map(([th,e])=>
+    '<tr><td>'+esc(th)+'</td><td class="num">'+fmt(e.count)+'</td><td class="num">'+(filtered.length?(100*e.count/filtered.length).toFixed(1):"0.0")+'%</td><td class="num">'+e.y1+'–'+e.y2+'</td></tr>').join("");
+  p.innerHTML =
+    '<div class="tiles">'+tileHtml.join("")+'</div>'+
+    '<div class="figno">Fig.01</div><div class="figtitle">Ten most frequent themes among '+fmt(filtered.length)+' filtered records</div>'+
+    '<div class="how"><span class="mono">How this is computed</span> — a record can carry several themes, so the bars add up to more than '+fmt(filtered.length)+'. Percentages are of records, not of labels. Click a bar = filter by that theme. The year range is the first–last year of the filtered records carrying the theme.</div>'+
+    '<div class="chartwrap" style="height:'+Math.max(220, 34*top.length+40)+'px"><canvas id="fig1canvas" role="img" aria-label="Horizontal bar chart of the ten most frequent themes"></canvas></div>'+
+    '<table><caption>Fig.01 — data table</caption>'+
+    '<thead><tr><th scope="col">Theme</th><th scope="col" class="num">Records</th><th scope="col" class="num">% of filtered</th><th scope="col" class="num">Years</th></tr></thead>'+
+    '<tbody>'+(top.length?themeRows:'<tr><td colspan="4">No records match.</td></tr>')+'</tbody></table>'+
+    '<div class="srcline">Source: '+esc(D.source)+' · n = '+fmt(filtered.length)+' filtered records of '+fmt(N)+' · click bar = filter</div>'+
+    '<hr class="rule" style="margin:30px 0 18px">'+
+    '<div class="figno">Fig.02</div><div class="figtitle">Records per year by mechanism</div>'+
+    '<div class="legend">'+mechs.map(m=>'<span><span class="dot" style="background:'+(MECHCOLOR[m]||"#888")+'"></span>'+esc(m)+'</span>').join("")+'</div>'+
+    '<div class="how"><span class="mono">How this is computed</span> — records per year per mechanism in the filtered set; every year from '+yearMin+' to '+yearMax+' appears, so empty years show as gaps.</div>'+
+    '<div class="chartwrap" style="height:340px"><canvas id="fig2canvas" role="img" aria-label="Stacked bar chart of records per year by mechanism"></canvas></div>'+
+    '<div class="srcline">Source: '+esc(D.source)+' · filter: '+esc(filterDesc())+' · dated by document</div>';
+  drawFig1(); drawFig2();
+  const ss = document.getElementById("seeStates");
+  if(ss) ss.addEventListener("click",()=>{
+    const box = document.getElementById("statesList");
+    if(!box.hidden){ box.hidden=true; return; }
+    const sc = new Map();
+    filtered.forEach(r=>{ if(Array.isArray(r._states)) r._states.forEach(s=>sc.set(s,(sc.get(s)||0)+1)); });
+    const top10 = [...sc.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10);
+    box.innerHTML = '<div class="mono" style="margin:8px 0 4px">Ten States that made most recommendations to '+esc(COUNTRY)+'</div>'+
+      '<table class="statelist"><tbody>'+top10.map(([s,c])=>'<tr><td>'+esc(s)+'</td><td class="num">'+fmt(c)+'</td></tr>').join("")+'</tbody></table>'+
+      '<div class="srcline">A record counts once for each State named; co-sponsorship counts for both. Not a measure of influence.</div>';
+    box.hidden = false;
+  });
+}
+
+/* ---------- panel 02 ---------- */
+function sortedFiltered(){
+  const idx = new Map(recs.map((r,i)=>[r.id,i]));
+  const arr = filtered.slice();
+  arr.sort((a,b)=>{
+    const da = sortAsc ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date);
+    if(da) return da;
+    const bd = (a.body||"").localeCompare(b.body||""); if(bd) return bd;
+    const pa = a._para!==null?parseFloat(a._para):Infinity, pb = b._para!==null?parseFloat(b._para):Infinity;
+    const pd = pa-pb; if(pd) return pd;
+    return (idx.get(a.id)||0)-(idx.get(b.id)||0);
+  });
+  return arr;
+}
+function hl(s){
+  const words = F.kw.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  let out = esc(s);
+  for(const w of words){
+    if(!w) continue;
+    const re = new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"gi");
+    out = out.replace(re, m=>"<mark>"+m+"</mark>");
+  }
+  return out;
+}
+function panel1(){
+  const p = document.getElementById("panel1");
+  const arr = sortedFiltered();
+  const shownArr = arr.slice(0,shown);
+  p.innerHTML =
+    '<input type="text" id="recSearch" value="'+esc(F.kw)+'" aria-label="Search records" '+
+      'style="width:100%;max-width:560px;padding:9px 12px;border:1px solid var(--rule);background:#fbf9f4;font:16px Georgia,serif" '+
+      'placeholder="Search '+fmt(filtered.length)+' records, e.g. torture">'+
+    '<div class="hint">Searches text and symbol · literal match, not synonyms · same box as the Keyword filter</div>'+
+    '<table style="margin-top:14px"><caption id="tblCap"></caption>'+
+    '<thead><tr>'+
+    '<th scope="col" class="sortable" id="thDate" style="white-space:nowrap"><button class="btn ghost" style="padding:2px 6px" id="sortBtn">Date '+(sortAsc?"▲":"▼")+'</button></th>'+
+    '<th scope="col">Body</th><th scope="col">Symbol</th><th scope="col" class="num">Para.</th>'+
+    '<th scope="col">First line</th><th scope="col">Recommending State</th></tr></thead>'+
+    '<tbody id="tblBody"></tbody></table>'+
+    '<div id="moreWrap" style="margin-top:14px"></div>';
+  const cap = document.getElementById("tblCap");
+  cap.textContent = arr.length ? ("Showing "+fmt(shownArr.length)+" of "+fmt(arr.length)+" matching records · newest first"+(sortAsc?" (oldest first)":"")) : "No records match the current filters.";
+  const tb = document.getElementById("tblBody");
+  tb.innerHTML = shownArr.map(r=>{
+    const st = Array.isArray(r._states) ? esc(r._states.join(", ")) : (r._states==="State not found" ? '<span style="color:#a06a00">not found</span>' : "–");
+    return '<tr class="recrow" data-id="'+esc(r.id)+'" tabindex="0" aria-expanded="false">'+
+      '<td style="white-space:nowrap">'+esc(r.date)+'</td>'+
+      '<td>'+esc(r.body)+'</td>'+
+      '<td class="symbols"><a href="'+esc(r.doc_url)+'" target="_blank" rel="noopener">'+esc(r.symbol)+'</a></td>'+
+      '<td class="num">'+(r._para!==null?esc(r._para):"–")+'</td>'+
+      '<td>'+hl(r._fl)+'</td>'+
+      '<td>'+(r.mechanism==="Universal Periodic Review"?st:"–")+'</td></tr>';
+  }).join("");
+  document.getElementById("sortBtn").addEventListener("click",()=>{ sortAsc=!sortAsc; shown=50; panel1(); });
+  const mw = document.getElementById("moreWrap");
+  if(arr.length > shownArr.length){
+    mw.innerHTML = '<button class="btn" id="moreBtn">Show 50 more</button> <span class="hint" style="margin-left:8px">'+fmt(arr.length-shownArr.length)+' more</span>';
+    document.getElementById("moreBtn").addEventListener("click",()=>{ shown+=50; panel1(); });
+  }
+  const si = document.getElementById("recSearch");
+  let t; si.addEventListener("input",()=>{ clearTimeout(t); t=setTimeout(()=>{ F.kw=si.value; shown=50; refresh(); },300); });
+  tb.addEventListener("click",e=>{
+    if(e.target.closest("a,button")) return;
+    const tr = e.target.closest(".recrow"); if(tr) toggleRow(tr);
+  });
+  tb.addEventListener("keydown",e=>{
+    if(e.key==="Enter" && e.target.classList.contains("recrow")) toggleRow(e.target);
+  });
+}
+function toggleRow(tr){
+  const id = tr.dataset.id;
+  const next = tr.nextElementSibling;
+  if(next && next.classList.contains("detail")){
+    next.remove(); tr.setAttribute("aria-expanded","false"); return;
+  }
+  document.querySelectorAll("tr.detail").forEach(x=>x.remove());
+  document.querySelectorAll("tr.recrow[aria-expanded=true]").forEach(x=>x.setAttribute("aria-expanded","false"));
+  const r = recs.find(x=>x.id===id); if(!r) return;
+  const lab = (k,vals)=> vals && vals.length ?
+    '<div class="row"><span class="k">'+k+'</span>'+vals.map(v=>'<span class="v">'+esc(v)+'</span>').join("")+'</div>' : "";
+  const sdgNames = (r.sdgs||[]).map(g=> g + (D.sdg_names && D.sdg_names[String(g)] ? " · "+D.sdg_names[String(g)] : ""));
+  const cite = r._para!==null ? r.symbol+", para. "+r._para : r.symbol;
+  const d = document.createElement("tr");
+  d.className = "detail";
+  d.innerHTML = '<td colspan="6">'+
+    '<div class="para-big">'+(r._para!==null?esc(r._para):"—")+'</div>'+
+    '<p class="fulltext">'+esc(r.text)+'</p>'+
+    '<div class="labels">'+
+      (r.section ? '<div class="row"><span class="k">Section</span><span class="v">'+esc(r.section)+'</span></div>' : "")+
+      lab("Themes", r.themes)+ lab("SDGs", sdgNames)+ lab("SDG targets", r.sdg_targets)+ lab("Affected persons", r.affected_persons)+
+      ((r.themes||[]).length||(r.sdgs||[]).length||(r.affected_persons||[]).length ? "" :
+        '<div class="row"><span class="k">Labels</span><span style="color:#a06a00;font-size:13px">not labelled</span></div>')+
+    '</div>'+
+    '<div class="btnrow">'+
+      '<button class="btn" data-copy="'+esc(cite)+'">'+(r._para!==null?"Copy citation":"Copy citation (no paragraph number in this extract)")+'</button>'+
+      '<span class="copied" hidden>Copied</span>'+
+      '<a class="btn ghost" href="'+esc(r.doc_url)+'" target="_blank" rel="noopener" style="text-decoration:none">Open the UN document</a>'+
+    '</div></td>';
+  tr.after(d);
+  tr.setAttribute("aria-expanded","true");
+  d.querySelector("[data-copy]").addEventListener("click",ev=>{
+    const txt = ev.currentTarget.dataset.copy;
+    const done = ()=>{ const c = d.querySelector(".copied"); c.hidden=false; setTimeout(()=>c.hidden=true,2000); };
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,done); }
+    else {
+      const ta = document.createElement("textarea"); ta.value = txt; document.body.appendChild(ta);
+      ta.select(); try{document.execCommand("copy");}catch(e){} ta.remove(); done();
+    }
+  });
+}
+
+/* ---------- panel 03: checks ---------- */
+function computeChecks(){
+  const lines = [];
+  const ok = (what, detail, pass)=> lines.push({what, detail, pass});
+  // record count
+  const claimed = Number(D.count);
+  ok("Record count", "records.length = "+fmt(N)+" · file header count = "+fmt(claimed), N===claimed?"pass":"fail");
+  // partitions
+  const sum = m => [...m.values()].reduce((a,b)=>a+b,0);
+  ok("Mechanism partition", "sum of counts per mechanism = "+fmt(sum(mechCounts))+" · record count = "+fmt(N), sum(mechCounts)===N?"pass":"fail");
+  ok("Body partition", "sum of counts per body = "+fmt(sum(bodyCounts))+" · record count = "+fmt(N), sum(bodyCounts)===N?"pass":"fail");
+  const yc = new Map(); recs.forEach(r=>yc.set(r.year,(yc.get(r.year)||0)+1));
+  ok("Year partition", "sum of counts per year = "+fmt(sum(yc))+" · record count = "+fmt(N), sum(yc)===N?"pass":"fail");
+  ok("Type partition", "sum of counts per type = "+fmt(sum(typeCounts))+" · headline total = "+fmt(N), sum(typeCounts)===N?"pass":"fail");
+  // chart vs table (fig1, current filter)
+  const top = topThemes(10);
+  let chartOk = true, chartDetail = [];
+  if(filtered.length){
+    for(const [th,e] of top){
+      let c2 = 0; for(const r of filtered) if((r.themes||[]).includes(th)) c2++;
+      if(c2!==e.count){ chartOk=false; chartDetail.push(th); }
+    }
+    if(top.length && top[0][1].count > filtered.length){ chartOk = false; }
+    chartDetail = top.length? "largest bar = "+fmt(top[0][1].count)+" of "+fmt(filtered.length)+" filtered records; each bar re-counted by a second loop"+(chartOk?"":" — mismatch in: "+chartDetail.join("; ")) : "no themes in the filtered set";
+  } else chartDetail = "filtered set is empty";
+  ok("Chart against table", chartDetail, !filtered.length || chartOk ? "pass":"fail");
+  // links
+  const badLinks = recs.filter(r=>{
+    const u = r.doc_url||"";
+    if(!u.startsWith("https://docs.un.org/")) return true;
+    let tail; try{ tail = decodeURIComponent(u).trim().replace(/\/+$/,"").split("/").pop(); }catch(e){ return true; }
+    return tail.toLowerCase() !== (r.symbol||"").toLowerCase();
+  });
+  ok("Links", fmt(N-badLinks.length)+" of "+fmt(N)+" doc_urls start with https://docs.un.org/ and end with the symbol", badLinks.length? "fail":"pass");
+  // paragraphs per mechanism
+  let paraDetail = [], paraWarn = false;
+  for(const m of mechs){
+    const sub = recs.filter(r=>r.mechanism===m);
+    const withP = sub.filter(r=>r._para!==null).length;
+    const pct = sub.length?(100*withP/sub.length).toFixed(1):"0";
+    paraDetail.push(m+": "+pct+"%");
+    if(m==="Universal Periodic Review" && sub.length && withP<sub.length) paraWarn = true;
+  }
+  ok("Paragraph numbers", "share of records with a number found, per mechanism — "+paraDetail.join(" · "), paraWarn?"warn":"pass");
+  // states
+  const upr = recs.filter(r=>r.mechanism==="Universal Periodic Review");
+  const withS = upr.filter(r=>Array.isArray(r._states)).length;
+  const missing = upr.filter(r=>!Array.isArray(r._states));
+  ok("States found", fmt(withS)+" of "+fmt(upr.length)+" UPR records have at least one State"+(missing.length?"; without one: "+missing.slice(0,8).map(r=>r.symbol+" (para. "+(r._para||"?")+")").join(", ")+(missing.length>8?" and "+(missing.length-8)+" more":""):""), missing.length?"warn":"pass");
+  // duplicates & gaps
+  const ids = new Set(recs.map(r=>r.id));
+  const texts = new Map(); let dupT = 0;
+  recs.forEach(r=>{ if(texts.has(r.text)) dupT++; else texts.set(r.text,1); });
+  const noTheme = recs.filter(r=>!(r.themes||[]).length).length;
+  const noSdg = recs.filter(r=>!(r.sdgs||[]).length).length;
+  const noAff = recs.filter(r=>!(r.affected_persons||[]).length).length;
+  ok("Duplicates", "distinct id = "+fmt(ids.size)+" of "+fmt(N)+" records; duplicate texts = "+fmt(dupT), ids.size===N?"pass":"fail");
+  ok("Missing labels", "not labelled — themes: "+fmt(noTheme)+" · SDGs: "+fmt(noSdg)+" · affected persons: "+fmt(noAff)+" (shown as missing, not hidden)", "pass");
+  return lines;
+}
+
+let sampleSeed = 1, sampleCards = [], verdicts = {};
+function mulberry32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+function drawSample(seed){
+  sampleSeed = seed; verdicts = {};
+  const rnd = mulberry32(seed>>>0);
+  const pool = filtered.slice();
+  sampleCards = [];
+  const n = Math.min(10, pool.length);
+  const used = new Set();
+  let guard = 0;
+  while(sampleCards.length < n && guard < 10000){
+    guard++;
+    const i = Math.floor(rnd()*pool.length);
+    if(used.has(i) && used.size < pool.length) continue;
+    used.add(i); sampleCards.push(pool[i]);
+  }
+}
+function panel2(){
+  const p = document.getElementById("panel2");
+  const checks = computeChecks();
+  p.innerHTML =
+    '<div class="figtitle">Can I trust these numbers?</div>'+
+    '<div class="how"><span class="mono">How the app checks itself</span> — every check compares two values computed independently in the browser; nothing is hidden. Checks marked in amber are warnings (the data looks unusual), red means a check failed.</div>'+
+    '<div id="checkPanel">'+ checks.map(c=>
+      '<div class="checkline"><span class="'+(c.pass==="pass"?"pass":c.pass==="warn"?"warn":"fail")+'">'+(c.pass==="pass"?"✓ PASS":c.pass==="warn"?"⚠ WARNING":"✗ CHECK FAILED")+'</span>'+
+      '<span class="what">'+esc(c.what)+'</span><span class="detail">'+esc(c.detail)+'</span></div>').join("")+'</div>'+
+    '<hr class="rule" style="margin:28px 0 18px">'+
+    '<div class="figtitle">Check the UN’s own labels</div>'+
+    '<div class="how">Ten records drawn at random from the current filter ('+fmt(filtered.length)+' records). Read the paragraph, then judge the UN’s theme labels as a set. This is your judgement of the UN’s labels; nothing is sent anywhere. A seed lets a colleague draw the same ten.</div>'+
+    '<div class="btnrow" style="margin:0 0 6px">'+
+      '<button class="btn" id="drawBtn">Draw again</button>'+
+      '<label class="mono" style="align-self:center">Seed <input type="number" class="seedbox" id="seedBox" value="'+sampleSeed+'"></label>'+
+      '<button class="btn ghost" id="seedBtn">Draw with this seed</button>'+
+    '</div>'+
+    '<p class="stateline" id="tally"></p><div id="cards"></div>';
+  document.getElementById("drawBtn").addEventListener("click",()=>{ drawSample((sampleSeed%2147483646)+1); panel2(); });
+  document.getElementById("seedBtn").addEventListener("click",()=>{
+    const v = parseInt(document.getElementById("seedBox").value,10);
+    drawSample(isNaN(v)?1:v); panel2();
+  });
+  renderCards();
+}
+function renderCards(){
+  const box = document.getElementById("cards"); if(!box) return;
+  const tally = document.getElementById("tally");
+  const upd = ()=>{
+    let f=0,d=0,u=0,j=0;
+    Object.values(verdicts).forEach(v=>{ j++; if(v==="fit")f++; else if(v==="no")d++; else u++; });
+    tally.textContent = "Themes: "+f+" fit, "+d+" don’t, "+u+" unsure of "+j+" of "+sampleCards.length+" judged · seed "+sampleSeed+" · reader’s judgement, the app never changes a UN label";
+  };
+  if(!sampleCards.length){
+    box.innerHTML = '<p class="emptymsg">No records in the current filter to draw.</p>'; upd(); return;
+  }
+  box.innerHTML = sampleCards.map((r,i)=>{
+    const v = verdicts[r.id]||"";
+    return '<div class="card">'+
+      '<button class="cardhead" aria-expanded="false" data-i="'+i+'">'+
+      '<span><span class="symbols"><a href="'+esc(r.doc_url)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+esc(r.symbol)+'</a></span>'+(r._para!==null?" · para. "+esc(r._para):"")+'</span>'+
+      '<span class="mono" aria-hidden="true">open</span></button>'+
+      '<div class="cardbody" hidden>'+
+        '<p class="fulltext">'+esc(r.text)+'</p>'+
+        '<div class="labels"><div class="row"><span class="k">Themes (the UN’s labels)</span>'+
+        ((r.themes||[]).length ? r.themes.map(t=>'<span class="v">'+esc(t)+'</span>').join("") : '<span style="color:#a06a00;font-size:13px">not labelled</span>')+'</div></div>'+
+        '<div class="btnrow">'+
+          '<button class="btn" data-v="fit" '+(v==="fit"?'aria-pressed="true"':'')+'>Fits</button>'+
+          '<button class="btn" data-v="no" '+(v==="no"?'aria-pressed="true"':'')+'>Doesn’t fit</button>'+
+          '<button class="btn" data-v="unsure" '+(v==="unsure"?'aria-pressed="true"':'')+'>Unsure</button>'+
+        '</div></div></div>';
+  }).join("");
+  box.querySelectorAll(".cardhead").forEach(b=>b.addEventListener("click",e=>{
+    if(e.target.closest("a")) return;
+    const body = b.nextElementSibling, open = !body.hidden;
+    body.hidden = open; b.setAttribute("aria-expanded",String(!open));
+  }));
+  box.querySelectorAll(".btn[data-v]").forEach(b=>b.addEventListener("click",()=>{
+    const card = b.closest(".card"); const i = +card.querySelector(".cardhead").dataset.i;
+    const r = sampleCards[i];
+    const same = verdicts[r.id]===b.dataset.v;
+    if(same) delete verdicts[r.id]; else verdicts[r.id]=b.dataset.v;
+    card.querySelectorAll(".btn[data-v]").forEach(x=>x.removeAttribute("aria-pressed"));
+    if(!same) b.setAttribute("aria-pressed","true");
+    upd();
+  }));
+  upd();
+}
+
+/* ---------- panel 04 ---------- */
+function csvEscape(v){
+  v = String(v==null?"":v);
+  return /[",\n\r]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+}
+function downloadCSV(){
+  const arr = sortedFiltered();
+  const head = ["date","body","mechanism","type","symbol","doc_url","paragraph","recommending_states","text","themes","sdgs","sdg_targets","affected_persons","section"];
+  const lines = [];
+  lines.push("# "+COUNTRY+" — UN human rights recommendations and observations");
+  lines.push("# Source: "+D.source+" ("+D.source_url+")");
+  lines.push("# Built: "+D.built+" · dated by document");
+  lines.push("# Filters applied: "+filterDesc());
+  lines.push("# Rows: "+arr.length+" of "+N+" records in the file");
+  lines.push(head.join(","));
+  for(const r of arr){
+    lines.push([r.date,r.body,r.mechanism,r.type,r.symbol,r.doc_url,r._para||"",
+      Array.isArray(r._states)?r._states.join("; "):(r._states==="State not found"?"State not found":""),
+      r.text,(r.themes||[]).join("; "),(r.sdgs||[]).join("; "),(r.sdg_targets||[]).join("; "),
+      (r.affected_persons||[]).join("; "),r.section||""].map(csvEscape).join(","));
+  }
+  const blob = new Blob([lines.join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "uhri_"+COUNTRY.toLowerCase().replace(/\s+/g,"_")+".csv";
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1000);
+}
+function copySummary(){
+  const top = topThemes(10);
+  const dS = new Set(filtered.map(r=>r.symbol));
+  const txt =
+    "UN human rights recommendations and observations: "+COUNTRY+". "+
+    "Source: "+D.source+", built "+D.built+" (dated by document). "+
+    "Filter: "+filterDesc()+". "+
+    fmt(filtered.length)+" records from "+fmt(dS.size)+" documents, "+
+    (filtered.length? Math.min(...filtered.map(r=>r.year))+"–"+Math.max(...filtered.map(r=>r.year)) : "no years")+". "+
+    "Breakdown by type: "+[...typeCounts.entries()].map(([t,c])=>c+" "+t).join(", ")+". "+
+    "Ten most frequent themes: "+(top.map(([t,e])=>t+" ("+e.count+")").join("; ")||"none")+". "+
+    "A record can carry several themes; counts are of label occurrences, not records.";
+  const done = ()=>{ const c=document.getElementById("sumCopied"); c.hidden=false; setTimeout(()=>c.hidden=true,2000); };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,done); }
+  else {
+    const ta = document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta);
+    ta.select(); try{document.execCommand("copy");}catch(e){} ta.remove(); done();
+  }
+}
+function panel3(){
+  const p = document.getElementById("panel3");
+  p.innerHTML =
+    '<div class="figtitle">How was this made?</div>'+
+    '<div class="how" style="font-size:15px;line-height:1.7;max-width:76ch">'+
+    'Every number on this page is computed in your browser by counting records; nothing is estimated and no model is called. '+
+    'The headline total is the number of records after the filters; documents are counted as distinct symbols and years as the minimum and maximum of the year field. '+
+    'Theme counts count each label once per record that carries it, so they add up to more than the record count; the year range per theme is the first and last year of the records carrying it. '+
+    'Paragraph numbers are read from the start of the text itself, and the citation copies the symbol with that number. '+
+    'Recommending States are read only from UPR texts, from the parenthesised groups at the end; a group with a comma or over 60 characters is not counted as a State. '+
+    'Keyword search is literal: every word must occur somewhere in the text or symbol, so “torture” does not find “ill-treatment”.</div>'+
+    '<div class="btnrow" style="margin:8px 0 24px">'+
+      '<button class="btn" id="dlBtn">Download CSV of the current filter</button>'+
+      '<button class="btn ghost" id="sumBtn">Copy summary</button>'+
+      '<span class="copied" id="sumCopied" hidden>Copied</span></div>'+
+    '<div class="how">The CSV contains the visible columns plus the full text and all labels, preceded by comment lines (starting with #) naming the country, source, build date, filters applied and row count. Generated in the browser; only the clipboard write leaves the page.</div>'+
+    '<hr class="rule" style="margin:22px 0">'+
+    '<table><caption>Current filter</caption><tbody>'+
+    '<tr><th scope="row" style="font:11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase">Records</th><td>'+fmt(filtered.length)+' of '+fmt(N)+' · '+ (N?(100*filtered.length/N).toFixed(1):0)+'% of the file</td></tr>'+
+    '<tr><th scope="row" style="font:11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase">Filters</th><td>'+esc(filterDesc())+'</td></tr>'+
+    '</tbody></table>'+
+    '<div class="srcline" style="margin-top:18px">Data source: '+esc(D.source)+' · <a href="'+esc(D.source_url)+'" target="_blank" rel="noopener">'+esc(D.source_url)+'</a> · built '+esc(D.built)+' · n = '+fmt(N)+' records</div>';
+  document.getElementById("dlBtn").addEventListener("click",downloadCSV);
+  document.getElementById("sumBtn").addEventListener("click",copySummary);
+}
+
+/* ---------- tabs ---------- */
+const tabs = [...document.querySelectorAll("nav.tabs button")];
+function showTab(i){
+  tabs.forEach((t,j)=>{
+    t.setAttribute("aria-selected", String(i===j));
+    t.tabIndex = i===j?0:-1;
+    document.getElementById("panel"+j).hidden = i!==j;
+  });
+  // rail: full filters on 0 and 1; number, bar, chips only on 2 and 3
+  document.getElementById("filterGroups").hidden = i>=2;
+  document.querySelector(".rail-head").hidden = i>=2;
+  if(i===0) panel0();
+  if(i===1){ shown=50; panel1(); }
+  if(i===2) panel2();
+  if(i===3) panel3();
+  if(i===0||i===1) buildRail();
+}
+tabs.forEach((t,i)=>{
+  t.addEventListener("click",()=>showTab(i));
+  t.addEventListener("keydown",e=>{
+    let j=null;
+    if(e.key==="ArrowRight") j=(i+1)%tabs.length;
+    if(e.key==="ArrowLeft") j=(i-1+tabs.length)%tabs.length;
+    if(e.key==="Home") j=0; if(e.key==="End") j=tabs.length-1;
+    if(j!==null){ e.preventDefault(); showTab(j); tabs[j].focus(); }
+  });
+});
+
+/* ---------- refresh ---------- */
+function refresh(opts){
+  applyFilters();
+  shown = Math.min(shown, Math.max(50, filtered.length));
+  railRender();
+  if(opts && opts.rebuildSelects) buildRail();
+  const cur = tabs.findIndex(t=>t.getAttribute("aria-selected")==="true");
+  if(cur===0) panel0();
+  if(cur===1) panel1();
+  if(cur===2 && sampleCards.length) panel2();
+}
+
+/* ---------- init ---------- */
+applyFilters();
+railRender();
+buildRail();
+drawSample(1);
+showTab(0);
+})();
+</script>
+</body>
+</html>
+```
+
+I built the complete dashboard: the filter rail with three collapsible groups and removable chips, the overview tiles plus the theme chart (click a bar to filter) and year-by-mechanism timeline, the records table with in-place expansion, verbatim text and copyable citations, the self-check panel with the seeded ten-card label check, and the method/export tab with CSV and summary copy. All figures, checks, States and paragraph numbers are computed live from the file, including the UPR parentheses rules and the link/duplicate/label-gap checks.

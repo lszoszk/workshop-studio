@@ -181,8 +181,13 @@ window.studio = { ask: async (prompt, opts) => {
     )
 
 
+CHART_CDN = re.compile(r"""<script\b[^>]*\bsrc=["']https?://[^"']*\bchart(?:\.js|\.umd|\.min)[^"']*["'][^>]*>\s*</script>""", re.I)
+
+
 def inject(page_html, init):
-    """Put the bootstrap in front of the app's own scripts, as the studio's srcdoc does."""
+    """Put the bootstrap in front of the app's own scripts, as the studio's srcdoc does (which also drops
+    a Chart.js loaded from a CDN: the studio has its own, site/preview-doc.js)."""
+    page_html = CHART_CDN.sub("<!-- Chart.js: the studio's own copy, not the internet -->", page_html)
     tag = "<script>" + init + "</script>"
     m = re.search(r"<head[^>]*>", page_html, re.I) or re.search(r"<html[^>]*>", page_html, re.I)
     if m:
