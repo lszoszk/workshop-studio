@@ -155,6 +155,11 @@ class Seats:
         r = self.db.execute("SELECT COALESCE(SUM(cost),0) s FROM usage WHERE day=?", (dt.date.today().isoformat(),))
         return float(r.fetchone()["s"])
 
+    def spent_on(self, model: str, host: str) -> float:
+        """All that one route has cost, every day: the Anthropic cap is a total, not a daily limit."""
+        r = self.db.execute("SELECT COALESCE(SUM(cost),0) s FROM usage WHERE model=? AND host=?", (model, host))
+        return float(r.fetchone()["s"])
+
     def hit(self, code: str, now: float | None = None) -> int:
         """Count a request against the seat's window. Returns 0 if allowed, else seconds to wait."""
         now = time.monotonic() if now is None else now

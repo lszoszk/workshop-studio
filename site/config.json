@@ -47,12 +47,12 @@
       "maker": "Anthropic",
       "origin": "USA",
       "region": "USA",
-      "host": "Amazon Bedrock",
-      "host_note": "Amazon's cloud (AWS)",
+      "host": "Anthropic",
+      "host_note": "the developer's own service; it keeps requests for a limited time (no zero data retention)",
       "openrouter": "anthropic/claude-sonnet-5.5",
       "provider": "amazon-bedrock/us-east-1",
-      "price": "$2.20 in / $11 out per million tokens",
-      "reasoning": "high"
+      "price": "$2 in / $10 out per million tokens",
+      "reasoning": "medium"
     },
     "glm-eu": {
       "host_region": "the EU",

@@ -1,0 +1,30 @@
+[
+ {
+  "model": "claude-api",
+  "label": "Claude Sonnet 5.5 · USA · Anthropic API",
+  "prompt": "s8-1-verbatim",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "search_box": true,
+   "source_matches": true,
+   "text_contains_after_search": true,
+   "button_matches": true
+  },
+  "passed": 8,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 739,
+  "seconds": 395.6,
+  "first_token": 276.6,
+  "first_thought": 3.3,
+  "reasoning_chars": 31277,
+  "prompt_tokens": 28125,
+  "completion_tokens": 61794,
+  "cost": 0.67419,
+  "provider": "anthropic"
+ }
+]

@@ -40,6 +40,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+import anthropic
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -74,20 +75,53 @@ PLACEHOLDER_BUILD = ("Return one complete HTML document in a single ```html code
 log = logging.getLogger("studio")
 
 
-def _home_env_key() -> str:
-    """Locally the key lives in ~/.env, as for the other proxies on the laptop."""
+def _home_env_key(name: str = "OPENROUTER_API_KEY") -> str:
+    """Locally the keys live in ~/.env, as for the other proxies on the laptop."""
     p = Path.home() / ".env"
     if not p.exists():
         return ""
     for line in p.read_text().splitlines():
-        if line.startswith("OPENROUTER_API_KEY="):
+        if line.startswith(name + "="):
             return line.split("=", 1)[1].strip().strip("\"'")
     return ""
+
+
+class AnthropicLines:
+    """An Anthropic message stream, read as the OpenRouter stream relay() already reads: `data:` lines with
+    reasoning and content deltas, then one usage chunk with the cost, or an error chunk."""
+
+    def __init__(self, manager, stream, model: models.Model):
+        self.manager, self.stream, self.model = manager, stream, model
+
+    async def aiter_lines(self):
+        def line(d: dict) -> str:
+            return "data: " + json.dumps(d)
+        try:
+            async for event in self.stream:
+                if event.type == "content_block_delta":
+                    if event.delta.type == "thinking_delta" and event.delta.thinking:
+                        yield line({"choices": [{"delta": {"reasoning": event.delta.thinking}}]})
+                    elif event.delta.type == "text_delta" and event.delta.text:
+                        yield line({"choices": [{"delta": {"content": event.delta.text}}]})
+            u = (await self.stream.get_final_message()).usage
+            pt = int(u.input_tokens or 0) + int(getattr(u, "cache_read_input_tokens", 0) or 0) \
+                + int(getattr(u, "cache_creation_input_tokens", 0) or 0)
+            ct = int(u.output_tokens or 0)
+            yield line({"usage": {"prompt_tokens": pt, "completion_tokens": ct,
+                                  "cost": models.estimate_cost(self.model, pt, ct)}})
+        except anthropic.APIError as e:   # the message is not logged: it may quote the prompt
+            yield line({"error": {"code": f"anthropic_{getattr(e, 'status_code', None) or type(e).__name__}"}})
+
+    async def aclose(self):
+        await self.manager.__aexit__(None, None, None)
 
 
 @dataclass
 class Config:
     api_key: str = field(default_factory=lambda: os.environ.get("OPENROUTER_API_KEY") or _home_env_key())
+    anthropic_key: str = field(default_factory=lambda: os.environ.get("ANTHROPIC_API_KEY") or _home_env_key("ANTHROPIC_API_KEY"))
+    # dollars the server may spend on Anthropic's API in all; past it, Claude's requests go to its fallback
+    anthropic_cap: float = field(default_factory=lambda: float(os.environ.get("STUDIO_ANTHROPIC_CAP", "15")))
     admin_key: str = field(default_factory=lambda: os.environ.get("STUDIO_ADMIN_KEY", ""))
     state_dir: Path = field(default_factory=lambda: Path(os.environ.get("STUDIO_STATE_DIR", HERE / "state")))
     data_dir: Path = field(default_factory=lambda: Path(os.environ.get("STUDIO_DATA_DIR", HERE.parent / "site" / "data")))
@@ -200,12 +234,16 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
     systems = {"build": build_system_prompt(cfg.data_dir), "inapp": INAPP_SYSTEM, "question": None}
     client = httpx.AsyncClient(transport=transport, timeout=httpx.Timeout(10.0, read=180.0),
                                limits=httpx.Limits(max_connections=100, max_keepalive_connections=20))
+    # no retries here: a failure goes to the model's fallback at once, as on OpenRouter
+    claude = anthropic.AsyncAnthropic(api_key=cfg.anthropic_key or "missing", max_retries=0,
+                                      http_client=httpx.AsyncClient(transport=transport, timeout=httpx.Timeout(10.0, read=180.0)))
     balance = {"value": None, "at": 0.0, "task": None}
 
     @asynccontextmanager
     async def lifespan(_app):
         yield
         await client.aclose()
+        await claude.close()
 
     app = FastAPI(title="Workshop Studio API", version=VERSION, lifespan=lifespan,
                   docs_url=None, redoc_url=None, openapi_url=None)
@@ -232,7 +270,29 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         return {"Authorization": f"Bearer {cfg.api_key}", "HTTP-Referer": "https://lszoszk.github.io/workshop-studio/",
                 "X-Title": "Workshop Studio"}
 
+    async def open_anthropic(m: models.Model, messages: list, purpose: str):
+        if not cfg.anthropic_key:
+            return None, "no_anthropic_key"
+        if seats.spent_on(m.key, "anthropic") >= cfg.anthropic_cap:
+            return None, "anthropic_cap"
+        _, max_tokens = PURPOSES[purpose]   # Sonnet 5.5 takes no temperature: only its default is accepted
+        params = {"model": m.id, "max_tokens": max_tokens, "messages": messages,
+                  "thinking": {"type": "adaptive", "display": "summarized"},
+                  "output_config": {"effort": (m.reasoning or "high") if purpose == "build" else "low"}}
+        if systems[purpose]:
+            params["system"] = systems[purpose]
+        manager = claude.messages.stream(**params)
+        try:
+            stream = await manager.__aenter__()
+        except anthropic.APIStatusError as e:   # the body is not read: it may quote the prompt
+            return None, f"http_{e.status_code}"
+        except anthropic.APIError as e:
+            return None, type(e).__name__
+        return AnthropicLines(manager, stream, m), None
+
     async def open_upstream(m: models.Model, messages: list, purpose: str):
+        if m.api == "anthropic":
+            return await open_anthropic(m, messages, purpose)
         temperature, max_tokens = PURPOSES[purpose]
         system = systems[purpose]
         payload = {"model": m.id, "stream": True, "usage": {"include": True}, "temperature": temperature,
@@ -334,7 +394,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         if status != "aborted":
             u = {"model": used.key, "model_label": used.label, "openrouter_model": used.id,
                  "host": used.host_label if used.host else (provider or used.host_label),
-                 "host_region": used.host_region, "zdr": True, "prompt_tokens": pt, "completion_tokens": ct,
+                 "host_region": used.host_region, "zdr": used.zdr, "prompt_tokens": pt, "completion_tokens": ct,
                  "cost": round(cost, 6), "seconds": seconds,
                  "budget_left": round(max(0.0, seat["budget"] - seat["spent"] - cost), 4)}
             if estimated:

@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UHRI dashboard</title>
+<style>
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{margin:0;background:#f4f0e8;color:#1d1b18;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:#9b2335}
+:focus-visible{outline:3px solid #9b2335;outline-offset:2px}
+.mono{font:11.5px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.07em;text-transform:uppercase}
+.hint{font:12px ui-monospace,Menlo,Consolas,monospace;color:#5a554c}
+.serif{font-family:Georgia,"Times New Roman",serif}
+header{padding:18px 24px 8px;border-bottom:1px solid #d9d2c3;max-width:1240px;margin:0 auto}
+header h1{font:normal 30px/1.2 Georgia,"Times New Roman",serif;margin:4px 0 6px}
+header .meta{font-size:14px;color:#3b372f}
+.wrap{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:255px 1fr;gap:28px;padding:0 24px}
+@media(max-width:860px){.wrap{grid-template-columns:1fr}}
+nav[role=tablist]{max-width:1240px;margin:0 auto;padding:0 24px;display:flex;gap:4px;border-bottom:1px solid #d9d2c3;flex-wrap:wrap}
+nav button{background:none;border:0;border-bottom:3px solid transparent;padding:12px 14px;cursor:pointer;color:#1d1b18;font:12px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.07em;text-transform:uppercase}
+nav button[aria-selected=true]{border-bottom-color:#9b2335;color:#9b2335;font-weight:700}
+aside{padding:18px 0;border-right:1px solid #d9d2c3;padding-right:20px}
+@media(max-width:860px){aside{border-right:0;border-bottom:1px solid #d9d2c3;padding-right:0}}
+.rhead{display:flex;justify-content:space-between;align-items:center}
+.linkbtn{background:none;border:0;color:#9b2335;text-decoration:underline;cursor:pointer;font:inherit;padding:2px}
+.big{font:normal 48px/1.05 Georgia,"Times New Roman",serif}
+.bar{height:4px;background:#d9d2c3;margin:6px 0 10px}.bar i{display:block;height:100%;background:#9b2335}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.chip{border:1px solid #9b2335;color:#9b2335;background:none;border-radius:12px;padding:1px 9px;font-size:13px;cursor:pointer}
+.fh{width:100%;text-align:left;background:none;border:0;border-top:1px solid #d9d2c3;padding:10px 0;cursor:pointer;color:#1d1b18;display:flex;justify-content:space-between}
+.fh[aria-expanded=true]{color:#9b2335;font-weight:700}
+.fp{padding:0 0 12px}
+.fp label{display:block;font:11px ui-monospace,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 2px;color:#5a554c}
+input[type=text],input[type=search],input[type=number],select{width:100%;font:15px system-ui,sans-serif;padding:6px;border:1px solid #b9b19f;background:#fffdf8;color:#1d1b18;border-radius:2px}
+main{padding:18px 0 40px;min-width:0}
+h2{font:normal 22px Georgia,"Times New Roman",serif;margin:0 0 4px}
+.q{color:#5a554c;margin:0 0 16px}
+.tiles{display:flex;flex-wrap:wrap;gap:0;border-top:1px solid #d9d2c3;border-bottom:1px solid #d9d2c3;margin:12px 0}
+.tile{padding:12px 22px 12px 0;margin-right:22px;min-width:150px;flex:1}
+.tile .big{font-size:44px}
+.tile .lab{font:11.5px ui-monospace,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:.07em}
+.tile .sub{font-size:13px;color:#3b372f}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.note{font:12px ui-monospace,Menlo,Consolas,monospace;color:#5a554c;margin:4px 0 14px}
+figure{margin:26px 0;padding:0}
+figcaption.t{font:normal 18px Georgia,serif;margin-bottom:6px}
+figcaption .mono{color:#9b2335;margin-right:8px}
+.cw{position:relative;height:380px}.cw2{position:relative;height:300px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+caption{text-align:left;font:12px ui-monospace,Menlo,Consolas,monospace;color:#3b372f;padding:6px 0}
+th{font:11.5px ui-monospace,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:.06em;text-align:left;border-bottom:2px solid #1d1b18;padding:6px 8px 6px 0}
+td{border-bottom:1px solid #d9d2c3;padding:7px 8px 7px 0;vertical-align:top}
+.r{text-align:right}
+th.r{text-align:right}
+tr.row{cursor:pointer}tr.row:hover{background:#ece6d8}
+tr.det>td{background:#fbf8f1;padding:14px 14px 18px}
+.pnum{font:normal 44px Georgia,serif;color:#9b2335;line-height:1}
+.full{white-space:pre-wrap;max-width:80ch;margin:8px 0}
+.btn{background:#1d1b18;color:#f4f0e8;border:0;padding:7px 12px;cursor:pointer;font:12px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.05em;text-transform:uppercase;text-decoration:none;display:inline-block;margin:4px 6px 4px 0}
+.btn.alt{background:none;color:#1d1b18;border:1px solid #1d1b18}
+.btn.on{background:#9b2335;color:#fff;border-color:#9b2335}
+mark{background:#f3d9a4;color:inherit}
+dl.lab{display:grid;grid-template-columns:130px 1fr;gap:4px 12px;margin:10px 0;font-size:14px}dl.lab dt{font:11px ui-monospace,monospace;text-transform:uppercase;color:#5a554c}dl.lab dd{margin:0}
+.tag{display:inline-block;border:1px solid #d9d2c3;border-radius:10px;padding:0 8px;margin:1px 3px 1px 0;font-size:13px;background:#fffdf8}
+ul.checks{list-style:none;padding:0;margin:0}
+ul.checks li{border-bottom:1px solid #d9d2c3;padding:8px 0}
+.pass{color:#1f6b3a;font-weight:700}.fail{color:#9b2335;font-weight:700}.warn{color:#8a5a00;font-weight:700}
+.card{border-bottom:1px solid #d9d2c3}
+.card>button.ch{width:100%;text-align:left;background:none;border:0;padding:9px 0;cursor:pointer;font:inherit;color:#1d1b18}
+.card .body{padding:4px 0 14px}
+footer{max-width:1240px;margin:0 auto;padding:14px 24px 30px;border-top:1px solid #d9d2c3}
+.empty{padding:30px 0;color:#5a554c;font-style:italic}
+.sl{columns:2;font-size:14px;margin:6px 0 14px;padding-left:18px}
+</style></head><body>
+<header>
+ <div class="mono" id="hlab"></div>
+ <h1 id="htitle"></h1>
+ <div class="meta" id="hmeta"></div>
+</header>
+<nav role="tablist" aria-label="Dashboard sections" id="tabs"></nav>
+<div class="wrap">
+<aside aria-label="Filters">
+ <div class="rhead"><span class="mono">Filters</span><button class="linkbtn" id="clear">Clear all</button></div>
+ <div class="big" id="nmatch" aria-live="polite"></div>
+ <div class="hint" id="nof"></div>
+ <div class="bar"><i id="nbar"></i></div>
+ <div class="chips" id="chips"></div>
+ <div id="fgroup">
+  <button class="fh" aria-expanded="false" data-s="0"><span class="mono">01 Keyword</span><span>+</span></button>
+  <div class="fp" hidden data-p="0"><input type="text" id="kw" aria-label="Keyword" placeholder="e.g. torture"><div class="hint">literal match, not synonyms</div></div>
+  <button class="fh" aria-expanded="false" data-s="1"><span class="mono">02 Mechanism, body, type</span><span>+</span></button>
+  <div class="fp" hidden data-p="1">
+   <label for="fmech">Mechanism</label><select id="fmech"></select>
+   <label for="fbody">Body or mandate</label><select id="fbody"></select>
+   <label for="ftype">Type</label><select id="ftype"></select>
+   <label for="fstate">Recommending State (UPR)</label><select id="fstate"></select>
+  </div>
+  <button class="fh" aria-expanded="false" data-s="2"><span class="mono">03 Years and SDG</span><span>+</span></button>
+  <div class="fp" hidden data-p="2">
+   <label for="fyf">Year from</label><select id="fyf"></select>
+   <label for="fyt">Year to</label><select id="fyt"></select>
+   <label for="fsdg">SDG</label><select id="fsdg"></select>
+  </div>
+ </div>
+</aside>
+<main>
+ <section role="tabpanel" id="p0" aria-labelledby="tab0">
+  <h2>What has the UN said, how much, and when?</h2>
+  <p class="q hint">Everything here reads the filtered set shown on the left.</p>
+  <div class="tiles" id="tiles"></div>
+  <div class="note" id="tnote"></div>
+  <div id="statebox" hidden></div>
+  <div class="tiles" id="mtiles"></div>
+  <div class="note">How this is computed: per mechanism, records and distinct symbols are counted in the filtered set; share = its records / filtered records.</div>
+  <figure><figcaption class="t" id="f1t"></figcaption>
+   <div class="cw" id="f1w"><canvas id="c1" role="img" aria-label="Ranked bar chart of the ten most frequent themes"></canvas></div>
+   <div class="empty" id="f1e" hidden>No records match.</div>
+   <div class="hint">click a bar = add that theme as a filter</div>
+   <table id="f1tab"></table>
+   <div class="note">How this is computed: each value in a record's themes counts once for that record; top ten by count, ties alphabetical. A record can carry several themes, so bars add up to more than n. Years = first–last year of the records carrying the theme. Source: OHCHR UHRI, <span class="n"></span> filtered records. The theme label is the UN's; a long year range or an old-only range may mark a legacy label, so check a sample on tab 03.</div>
+  </figure>
+  <figure><figcaption class="t" id="f2t"></figcaption>
+   <div class="cw2" id="f2w"><canvas id="c2" role="img" aria-label="Stacked bars of records per year by mechanism"></canvas></div>
+   <div class="empty" id="f2e" hidden>No records match.</div>
+   <div class="note">How this is computed: records per year and mechanism in the filtered set, zero where none; every year from first to last is shown, so gaps are real. Years are the document's date year. Source: OHCHR UHRI.</div>
+  </figure>
+ </section>
+ <section role="tabpanel" id="p1" aria-labelledby="tab1" hidden>
+  <h2>Which paragraph says it, and in which UN document?</h2>
+  <p class="q hint">Click a row to open the full paragraph in place.</p>
+  <input type="search" id="kw2" aria-label="Search records">
+  <div class="hint">literal match, not synonyms</div>
+  <table id="rt"><caption id="rcap"></caption>
+   <thead><tr><th scope="col"><button class="linkbtn mono" id="dsort" style="color:inherit;text-decoration:none"></button></th><th scope="col">Body</th><th scope="col">Symbol</th><th scope="col">Para.</th><th scope="col">Recommending State</th><th scope="col">First line</th></tr></thead>
+   <tbody id="rb"></tbody></table>
+  <div style="margin:12px 0"><button class="btn alt" id="more">Show 50 more</button></div>
+  <div class="note">How this is computed: sorted by date, then body, then paragraph number (numeric), then file order. Paragraph number = leading number of the text; State = trailing parentheses of UPR texts only. Source: OHCHR UHRI.</div>
+ </section>
+ <section role="tabpanel" id="p2" aria-labelledby="tab2" hidden>
+  <h2>Can I trust these numbers?</h2>
+  <p class="q hint">The app compares its own numbers; failures are shown, never hidden.</p>
+  <h3 class="mono">How the app checks itself</h3>
+  <ul class="checks" id="checks"></ul>
+  <h3 class="mono" style="margin-top:28px">Random-sample label check</h3>
+  <p>This is your judgement of the UN's labels; nothing is sent anywhere.</p>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+   <button class="btn" id="draw"></button>
+   <label class="hint" for="seed">Seed</label><input type="number" id="seed" value="1" style="width:110px">
+   <button class="btn alt" id="drawseed">Draw with this seed</button>
+  </div>
+  <div class="note" id="tally"></div>
+  <div id="cards"></div>
+ </section>
+ <section role="tabpanel" id="p3" aria-labelledby="tab3" hidden>
+  <h2>How was this made, and how do I take it with me?</h2>
+  <p class="q hint">Method, export, source.</p>
+  <ol id="method" style="max-width:80ch"></ol>
+  <div style="margin:16px 0"><button class="btn" id="csv">Download CSV of the current filter</button><button class="btn alt" id="sum">Copy summary</button> <span class="hint" id="sumok"></span></div>
+  <div class="note" id="src"></div>
+ </section>
+</main></div>
+<footer class="mono" id="foot" style="font-size:11px"></footer>
+<script>
+(function(){
+const D=window.WORKSHOP_DATA&&WORKSHOP_DATA.uhri||{};
+const raw=Array.isArray(D.records)?D.records:[];
+const COUNTRY=D.country||'(country not given)';
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Number(n).toLocaleString('en-GB');
+const $=id=>document.getElementById(id);
+const UPR='Universal Periodic Review';
+const PARA=/^(\d{1,3}(?:\.\d{1,3})?)\.?\s/;
+const TAIL=/((?:\s*\((?:[^()]|\([^()]*\))*\))+)\s*[;.]?\s*$/;
+const GRP=/\((?:[^()]|\([^()]*\))*\)/g;
+const MCOL={'Universal Periodic Review':'#c2410c','Treaty bodies':'#0f766e','Special Procedures':'#7c3aed'};
+const mcol=m=>MCOL[m]||'#6b6558';
+const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const arr=x=>Array.isArray(x)?x:[];
+const sdgNames=D.sdg_names||{};
+
+const recs=raw.map((r,i)=>{
+ const text=String(r.text||'');
+ const pm=text.match(PARA);
+ let states=[];
+ if(r.mechanism===UPR){
+  const m=text.match(TAIL);
+  if(m){(m[1].match(GRP)||[]).forEach(g=>{const s=g.slice(1,-1).trim();if(s&&s.indexOf(',')<0&&s.length<=60)states.push(s);});}
+ }
+ const flat=text.replace(/\s+/g,' ').trim();
+ let first=flat;
+ if(flat.length>120){let c=flat.slice(0,120);const sp=c.lastIndexOf(' ');if(sp>40)c=c.slice(0,sp);first=c+'…';}
+ return Object.assign({},r,{_i:i,text,themes:arr(r.themes),sdgs:arr(r.sdgs).map(Number),sdg_targets:arr(r.sdg_targets),affected_persons:arr(r.affected_persons),
+  para:pm?pm[1]:null,states,first,hay:(text+' '+(r.symbol||'')).toLowerCase()});
+});
+const N=recs.length;
+const uniq=a=>Array.from(new Set(a));
+const years=uniq(recs.map(r=>r.year).filter(y=>y!=null)).sort((a,b)=>a-b);
+const ymin=years[0],ymax=years[years.length-1];
+const mechs=Object.entries(recs.reduce((o,r)=>(o[r.mechanism]=(o[r.mechanism]||0)+1,o),{})).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+const types=uniq(recs.map(r=>r.type).filter(Boolean)).sort();
+const docsAll=uniq(recs.map(r=>r.symbol)).length;
+const goals=uniq([].concat(...recs.map(r=>r.sdgs))).sort((a,b)=>a-b);
+const stateCount={};recs.forEach(r=>r.states.forEach(s=>stateCount[s]=(stateCount[s]||0)+1));
+const stateList=Object.keys(stateCount).sort();
+
+let F,openSec=-1,tab=0,shown=50,dateDir=-1,expanded=new Set(),c1=null,c2=null,view={bars:[],rows:[]},filtered=[];
+function resetF(){F={kw:'',mech:'',body:'',type:'',state:'',yf:'',yt:'',sdg:'',themes:[]};}
+resetF();
+
+function words(){return F.kw.trim().toLowerCase().split(/\s+/).filter(Boolean);}
+function applyF(){
+ const w=words();
+ return recs.filter(r=>{
+  if(F.mech&&r.mechanism!==F.mech)return false;
+  if(F.body&&r.body!==F.body)return false;
+  if(F.type&&r.type!==F.type)return false;
+  if(F.state&&!r.states.includes(F.state))return false;
+  if(F.yf!==''&&!(r.year>=Number(F.yf)))return false;
+  if(F.yt!==''&&!(r.year<=Number(F.yt)))return false;
+  if(F.sdg!==''&&!r.sdgs.includes(Number(F.sdg)))return false;
+  for(const t of F.themes)if(!r.themes.includes(t))return false;
+  for(const x of w)if(r.hay.indexOf(x)<0)return false;
+  return true;
+ });
+}
+function descF(){
+ const o=[];
+ if(F.kw.trim())o.push('keyword: '+F.kw.trim());
+ if(F.mech)o.push('mechanism: '+F.mech);
+ if(F.body)o.push('body: '+F.body);
+ if(F.type)o.push('type: '+F.type);
+ if(F.state)o.push('recommending State: '+F.state);
+ if(F.yf!=='')o.push('year from: '+F.yf);
+ if(F.yt!=='')o.push('year to: '+F.yt);
+ if(F.sdg!=='')o.push('SDG: '+F.sdg+(sdgNames[F.sdg]?' '+sdgNames[F.sdg]:''));
+ F.themes.forEach(t=>o.push('theme: '+t));
+ return o;
+}
+const countBy=(a,f)=>{const o={};a.forEach(r=>{const k=f(r);o[k]=(o[k]||0)+1;});return o;};
+function hl(str,w){
+ if(!w.length)return esc(str);
+ const re=new RegExp('('+w.map(reEsc).join('|')+')','gi');
+ return str.split(re).map((p,i)=>i%2?'<mark>'+esc(p)+'</mark>':esc(p)).join('');
+}
+function topThemes(a){
+ const c={},yr={};
+ a.forEach(r=>uniq(r.themes).forEach(t=>{c[t]=(c[t]||0)+1;const y=r.year;if(y!=null){if(!yr[t])yr[t]=[y,y];else{yr[t][0]=Math.min(yr[t][0],y);yr[t][1]=Math.max(yr[t][1],y);}}}));
+ return Object.keys(c).sort((x,y)=>c[y]-c[x]||(x<y?-1:1)).slice(0,10).map(t=>({t,n:c[t],y:yr[t]||null}));
+}
+function cmpPara(a,b){
+ if(a==null&&b==null)return 0;if(a==null)return 1;if(b==null)return -1;
+ const x=a.split('.').map(Number),y=b.split('.').map(Number);
+ for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d;}return 0;
+}
+function sorted(a){
+ return a.slice().sort((p,q)=>{
+  const d=String(p.date||'')<String(q.date||'')?-1:String(p.date||'')>String(q.date||'')?1:0;
+  if(d)return d*(-dateDir)*-1*-1*-1*-1*(dateDir<0?1:1)*(dateDir<0?-1:-1)*-1;
+  return 0;
+ });
+}
+// clear comparator (above helper replaced):
+function sortRecs(a){
+ return a.slice().sort((p,q)=>{
+  const pd=String(p.date||''),qd=String(q.date||'');
+  if(pd!==qd)return (pd<qd?-1:1)*(-dateDir);
+  const pb=String(p.body||''),qb=String(q.body||'');
+  if(pb!==qb)return pb<qb?-1:1;
+  const c=cmpPara(p.para,q.para);if(c)return c;
+  return p._i-q._i;
+ });
+}
+
+/* header & footer */
+function header(){
+ const docs=docsAll;
+ $('hlab').textContent='UHRI · '+COUNTRY;
+ $('htitle').textContent='UN human rights recommendations and observations: '+COUNTRY;
+ const src=D.source_url?'<a href="'+esc(D.source_url)+'" target="_blank" rel="noopener">'+esc(D.source||'source')+'</a>':esc(D.source||'source not stated');
+ $('hmeta').innerHTML='Source: '+src+' · '+fmt(N)+' records · '+fmt(docs)+' documents · '+(ymin!=null?ymin+'–'+ymax:'years not given')+' · built '+esc(D.built||'date not given')+' · <span class="hint">dated by document</span>';
+ $('foot').innerHTML='Built on OHCHR UHRI data · '+fmt(N)+' records · '+(D.source_url?'<a href="'+esc(D.source_url)+'" target="_blank" rel="noopener">source</a>':'source not linked');
+}
+
+/* tabs */
+const TABS=['01 Overview','02 Records','03 Check','04 Method & export'];
+function buildTabs(){
+ $('tabs').innerHTML=TABS.map((t,i)=>'<button role="tab" id="tab'+i+'" aria-selected="'+(i===tab)+'" aria-controls="p'+i+'" tabindex="'+(i===tab?0:-1)+'" data-t="'+i+'">'+t+'</button>').join('');
+ $('tabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b)setTab(+b.dataset.t,false);});
+ $('tabs').addEventListener('keydown',e=>{
+  let n=null;
+  if(e.key==='ArrowRight')n=(tab+1)%4;else if(e.key==='ArrowLeft')n=(tab+3)%4;else if(e.key==='Home')n=0;else if(e.key==='End')n=3;
+  if(n!=null){e.preventDefault();setTab(n,true);}
+ });
+}
+function setTab(i,focus){
+ tab=i;
+ TABS.forEach((_,k)=>{const b=$('tab'+k);b.setAttribute('aria-selected',k===i);b.tabIndex=k===i?0:-1;$('p'+k).hidden=k!==i;});
+ if(focus)$('tab'+i).focus();
+ $('fgroup').hidden=i>=2;
+ update();
+}
+
+/* rail */
+function fillSelect(sel,opts,val){
+ sel.innerHTML=opts.map(o=>'<option value="'+esc(o[0])+'">'+esc(o[1])+'</option>').join('');sel.value=val;
+}
+function buildFilters(){
+ const mc=countBy(recs,r=>r.mechanism);
+ fillSelect($('fmech'),[['','All mechanisms']].concat(mechs.map(m=>[m,m+' ('+fmt(mc[m])+')'])),'');
+ buildBody();
+ const tc=countBy(recs,r=>r.type);
+ fillSelect($('ftype'),[['','All types']].concat(types.map(t=>[t,t+' ('+fmt(tc[t])+')'])),'');
+ fillSelect($('fstate'),[['','All States']].concat(stateList.map(s=>[s,s+' ('+fmt(stateCount[s])+')'])),'');
+ const ys=years.map(y=>[String(y),String(y)]);
+ fillSelect($('fyf'),[['','Earliest']].concat(ys),'');
+ fillSelect($('fyt'),[['','Latest']].concat(ys),'');
+ fillSelect($('fsdg'),[['','All goals']].concat(goals.map(g=>[String(g),'SDG '+g+(sdgNames[g]?': '+sdgNames[g]:'')])),'');
+}
+function buildBody(){
+ const pool=recs.filter(r=>!F.mech||r.mechanism===F.mech);
+ const bc=countBy(pool.filter(r=>r.body),r=>r.body);
+ fillSelect($('fbody'),[['','All bodies']].concat(Object.keys(bc).sort().map(b=>[b,b+' ('+fmt(bc[b])+')'])),F.body);
+}
+function syncInputs(){
+ $('fmech').value=F.mech;$('fbody').value=F.body;$('ftype').value=F.type;$('fstate').value=F.state;
+ $('fyf').value=F.yf;$('fyt').value=F.yt;$('fsdg').value=F.sdg;
+ if($('kw').value!==F.kw)$('kw').value=F.kw;if($('kw2').value!==F.kw)$('kw2').value=F.kw;
+}
+function renderRail(){
+ $('nmatch').textContent=fmt(filtered.length);
+ $('nof').textContent='matching records of '+fmt(N)+' in the file';
+ $('nbar').style.width=(N?filtered.length/N*100:0)+'%';
+ const chips=[];
+ const add=(k,label,v)=>chips.push('<button class="chip" data-k="'+k+'"'+(v!=null?' data-v="'+esc(v)+'"':'')+' aria-label="Remove filter '+esc(label)+'">'+esc(label)+' ×</button>');
+ if(F.kw.trim())add('kw','“'+F.kw.trim()+'”');
+ if(F.mech)add('mech',F.mech);if(F.body)add('body',F.body);if(F.type)add('type',F.type);if(F.state)add('state',F.state);
+ if(F.yf!=='')add('yf','from '+F.yf);if(F.yt!=='')add('yt','to '+F.yt);
+ if(F.sdg!=='')add('sdg','SDG '+F.sdg);
+ F.themes.forEach(t=>add('theme',t,t));
+ $('chips').innerHTML=chips.join('');
+}
+function wireRail(){
+ document.querySelectorAll('.fh').forEach(b=>b.addEventListener('click',()=>{
+  const s=+b.dataset.s;openSec=openSec===s?-1:s;
+  document.querySelectorAll('.fh').forEach(x=>x.setAttribute('aria-expanded',+x.dataset.s===openSec));
+  document.querySelectorAll('.fp').forEach(x=>x.hidden=+x.dataset.p!==openSec);
+ }));
+ $('chips').addEventListener('click',e=>{
+  const b=e.target.closest('.chip');if(!b)return;
+  const k=b.dataset.k;
+  if(k==='theme')F.themes=F.themes.filter(t=>t!==b.dataset.v);
+  else if(k==='kw')F.kw='';
+  else F[k]='';
+  if(k==='mech')buildBody();
+  shown=50;syncInputs();update();
+ });
+ $('clear').addEventListener('click',()=>{resetF();buildBody();shown=50;syncInputs();update();});
+ const sel=(id,key)=>$(id).addEventListener('change',e=>{
+  F[key]=e.target.value;
+  if(key==='mech'){F.body='';buildBody();}
+  if((key==='yf'||key==='yt')&&F.yf!==''&&F.yt!==''&&Number(F.yf)>Number(F.yt)){const t=F.yf;F.yf=F.yt;F.yt=t;}
+  shown=50;syncInputs();update();
+ });
+ sel('fmech','mech');sel('fbody','body');sel('ftype','type');sel('fstate','state');sel('fyf','yf');sel('fyt','yt');sel('fsdg','sdg');
+ let tm=null;
+ const kwh=e=>{clearTimeout(tm);const v=e.target.value;tm=setTimeout(()=>{F.kw=v;shown=50;syncInputs();update();},300);};
+ $('kw').addEventListener('input',kwh);$('kw2').addEventListener('input',kwh);
+}
+
+/* tab 01 */
+function renderOverview(){
+ const f=filtered,n=f.length;
+ const tc=countBy(f,r=>r.type||'(no type)');
+ const tline=Object.keys(tc).sort((a,b)=>tc[b]-tc[a]).map(k=>fmt(tc[k])+' '+esc(k)).join(' · ')||'no records';
+ const docs=uniq(f.map(r=>r.symbol)).length;
+ const ys=f.map(r=>r.year).filter(y=>y!=null);
+ $('tiles').innerHTML=
+  '<div class="tile"><div class="lab">Records</div><div class="big">'+fmt(n)+'</div><div class="sub">'+tline+'</div><div class="hint">of '+fmt(N)+' in the file</div></div>'+
+  '<div class="tile"><div class="lab">Documents</div><div class="big">'+fmt(docs)+'</div><div class="sub">distinct symbols</div></div>'+
+  '<div class="tile"><div class="lab">Years</div><div class="big" style="font-size:36px">'+(ys.length?Math.min.apply(null,ys)+'–'+Math.max.apply(null,ys):'—')+'</div><div class="sub">first–last year</div></div>';
+ $('tnote').textContent='How this is computed: records = the filtered set; type counts use the values as spelled in the data; documents = distinct symbols; years = min–max of year.';
+ const mt=mechs.map(m=>{
+  const g=f.filter(r=>r.mechanism===m);
+  const ly=g.map(r=>r.year).filter(y=>y!=null);
+  return '<div class="tile"><div class="lab"><span class="dot" style="background:'+mcol(m)+'"></span>'+esc(m)+'</div><div class="big" style="font-size:36px">'+fmt(g.length)+'</div><div class="sub">'+fmt(uniq(g.map(r=>r.symbol)).length)+' documents · latest '+(ly.length?Math.max.apply(null,ly):'—')+'<br>'+(n?(g.length/n*100).toFixed(1):'0.0')+'% of filtered'+(m===UPR&&stateList.length?'<br><button class="linkbtn" id="seest" aria-expanded="'+!$('statebox').hidden+'">see the States</button>':'')+'</div></div>';
+ }).join('');
+ $('mtiles').innerHTML=mt;
+ const sb=$('seest');if(sb)sb.addEventListener('click',()=>{$('statebox').hidden=!$('statebox').hidden;sb.setAttribute('aria-expanded',!$('statebox').hidden);renderStates();});
+ renderStates();
+ // FIG.01
+ const bars=view.bars;
+ $('f1t').innerHTML='<span class="mono">FIG.01</span>Ten most frequent themes among '+fmt(n)+' filtered records';
+ document.querySelectorAll('.n').forEach(x=>x.textContent=fmt(n));
+ const none=!bars.length;
+ $('f1w').hidden=none;$('f1e').hidden=!none;$('f1tab').hidden=none;
+ $('f1tab').innerHTML=none?'':'<caption>Same ten themes as FIG.01. Source: OHCHR UHRI, '+fmt(n)+' filtered records.</caption><thead><tr><th scope="col">Theme</th><th scope="col" class="r">Records</th><th scope="col" class="r">% of filtered</th><th scope="col">Years</th></tr></thead><tbody>'+bars.map(b=>'<tr><td>'+esc(b.t)+'</td><td class="r">'+fmt(b.n)+'</td><td class="r">'+(n?(b.n/n*100).toFixed(1):'0.0')+'</td><td>'+(b.y?(b.y[0]===b.y[1]?b.y[0]:b.y[0]+'–'+b.y[1]):'—')+'</td></tr>').join('')+'</tbody>';
+ if(c1){c1.destroy();c1=null;}
+ if(!none&&window.Chart){
+  c1=new Chart($('c1'),{type:'bar',data:{labels:bars.map(b=>b.t.length>46?b.t.slice(0,45)+'…':b.t),datasets:[{data:bars.map(b=>b.n),backgroundColor:'rgba(155,35,53,.8)'}]},
+   options:{indexAxis:'y',animation:false,maintainAspectRatio:false,responsive:true,layout:{padding:{right:46}},
+    plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>bars[i[0].dataIndex].t}}},
+    scales:{x:{display:false,beginAtZero:true},y:{grid:{display:false},ticks:{autoSkip:false,color:'#1d1b18',font:{size:12}}}},
+    onClick:(e,els)=>{if(els.length){const t=bars[els[0].index].t;if(!F.themes.includes(t)){F.themes.push(t);shown=50;update();}}},
+    onHover:(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default';}},
+   plugins:[{id:'vl',afterDatasetsDraw(ch){const m=ch.getDatasetMeta(0),x=ch.ctx;x.save();x.fillStyle='#1d1b18';x.font='12px system-ui';x.textBaseline='middle';m.data.forEach((b,i)=>x.fillText(fmt(ch.data.datasets[0].data[i]),b.x+6,b.y));x.restore();}}]});
+ }
+ // FIG.02
+ $('f2t').innerHTML='<span class="mono">FIG.02</span>Records per year by mechanism ('+fmt(n)+' filtered records)';
+ if(c2){c2.destroy();c2=null;}
+ $('f2w').hidden=!ys.length;$('f2e').hidden=!!ys.length;
+ if(ys.length&&window.Chart){
+  const a=Math.min.apply(null,ys),b=Math.max.apply(null,ys),lab=[];for(let y=a;y<=b;y++)lab.push(y);
+  const cnt={};f.forEach(r=>{const k=r.mechanism+'|'+r.year;cnt[k]=(cnt[k]||0)+1;});
+  c2=new Chart($('c2'),{type:'bar',data:{labels:lab,datasets:mechs.map(m=>({label:m,backgroundColor:mcol(m),data:lab.map(y=>cnt[m+'|'+y]||0)}))},
+   options:{animation:false,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{stacked:true,grid:{display:false},ticks:{autoSkip:true,maxRotation:0}},y:{stacked:true,beginAtZero:true,grid:{color:'#e7e1d3'}}}}});
+ }
+}
+function renderStates(){
+ const box=$('statebox');if(box.hidden)return;
+ const c={};filtered.forEach(r=>r.states.forEach(s=>c[s]=(c[s]||0)+1));
+ const top=Object.keys(c).sort((a,b)=>c[b]-c[a]||(a<b?-1:1)).slice(0,10);
+ box.innerHTML='<h3 class="mono">Ten States that made most recommendations to '+esc(COUNTRY)+'</h3>'+(top.length?'<ol class="sl">'+top.map(s=>'<li>'+esc(s)+' — '+fmt(c[s])+'</li>').join('')+'</ol>':'<div class="empty">No recommending State in the current filter.</div>')+'<div class="note">How this is computed: State names in the trailing parentheses of UPR texts; a record naming several States counts once for each. A count of recommendations, not of influence.</div>';
+}
+
+/* tab 02 */
+function stateCell(r){return r.mechanism!==UPR?'—':(r.states.length?esc(r.states.join('; ')):'<span class="hint">State not found</span>');}
+function citation(r){return r.para?r.symbol+', para. '+r.para:r.symbol;}
+function renderRecords(){
+ const rows=sortRecs(filtered),w=words();
+ $('kw2').placeholder='Search '+fmt(N)+' records, e.g. torture';
+ $('dsort').textContent='Date '+(dateDir<0?'▼':'▲');
+ const vis=rows.slice(0,shown);
+ $('rcap').textContent=rows.length?'Showing '+fmt(vis.length)+' of '+fmt(rows.length)+' matching records, '+(dateDir<0?'newest':'oldest')+' first':'No records match the filters.';
+ $('more').hidden=rows.length<=shown;
+ $('rb').innerHTML=vis.map(r=>{
+  const open=expanded.has(r._i);
+  let h='<tr class="row" tabindex="0" role="button" aria-expanded="'+open+'" data-i="'+r._i+'"><td>'+esc(r.date||'')+'</td><td>'+esc(r.body||'')+'</td><td><a href="'+esc(r.doc_url||'#')+'" target="_blank" rel="noopener">'+esc(r.symbol)+'</a></td><td>'+esc(r.para||'—')+'</td><td>'+stateCell(r)+'</td><td>'+hl(r.first,w)+'</td></tr>';
+  if(open){
+   const sd=r.sdgs.map(g=>'<span class="tag">'+g+(sdgNames[g]?' '+esc(sdgNames[g]):'')+'</span>').join('');
+   const tg=a=>a.length?a.map(x=>'<span class="tag">'+esc(x)+'</span>').join(''):'<span class="hint">not labelled</span>';
+   h+='<tr class="det"><td colspan="6">'+(r.para?'<div class="pnum" aria-label="Paragraph '+esc(r.para)+'">'+esc(r.para)+'</div>':'<div class="hint">no paragraph number in this extract</div>')+
+    '<div class="full">'+hl(r.text,w)+'</div>'+
+    '<dl class="lab"><dt>Themes</dt><dd>'+tg(r.themes)+'</dd><dt>SDGs</dt><dd>'+(sd||'<span class="hint">not labelled</span>')+'</dd><dt>SDG targets</dt><dd>'+tg(r.sdg_targets)+'</dd><dt>Affected persons</dt><dd>'+tg(r.affected_persons)+'</dd>'+(r.section?'<dt>Section</dt><dd>'+esc(r.section)+'</dd>':'')+'<dt>Type · mechanism</dt><dd>'+esc(r.type||'')+' · '+esc(r.mechanism||'')+'</dd></dl>'+
+    '<button class="btn copy" data-i="'+r._i+'">Copy citation'+(r.para?'':' (no paragraph number in this extract)')+'</button><a class="btn alt" href="'+esc(r.doc_url||'#')+'" target="_blank" rel="noopener">Open the UN document</a></td></tr>';
+  }
+  return h;
+ }).join('');
+}
+function copyText(t,btn,msg){
+ const done=()=>{if(btn){const o=btn.textContent;btn.textContent='Copied ✓';setTimeout(()=>btn.textContent=o,2000);}else if(msg){msg.textContent='Copied ✓';setTimeout(()=>msg.textContent='',2000);}};
+ const fb=()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');}catch(e){}a.remove();done();};
+ if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,fb);else fb();
+}
+function wireRecords(){
+ const tb=$('rb');
+ const tog=tr=>{const i=+tr.dataset.i;expanded.has(i)?expanded.delete(i):expanded.add(i);renderRecords();const x=tb.querySelector('tr.row[data-i="'+i+'"]');if(x)x.focus();};
+ tb.addEventListener('click',e=>{
+  const c=e.target.closest('.copy');
+  if(c){copyText(citation(recs[+c.dataset.i]),c);return;}
+  if(e.target.closest('a'))return;
+  const tr=e.target.closest('tr.row');if(tr)tog(tr);
+ });
+ tb.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('tr.row')){e.preventDefault();tog(e.target);}});
+ $('more').addEventListener('click',()=>{shown+=50;renderRecords();});
+ $('dsort').addEventListener('click',()=>{dateDir=-dateDir;renderRecords();});
+}
+
+/* tab 03 */
+let sample=null;
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function draw(seed){
+ const rnd=mulberry32(seed),idx=filtered.map(r=>r._i);
+ const k=Math.min(10,idx.length);
+ for(let i=0;i<k;i++){const j=i+Math.floor(rnd()*(idx.length-i));const t=idx[i];idx[i]=idx[j];idx[j]=t;}
+ sample={seed,ids:idx.slice(0,k),v:{},open:-1,filt:descF().join('; ')||'no filters'};
+ $('seed').value=seed;renderSample();
+}
+function renderSample(){
+ $('draw').textContent=sample?'Draw again':'Check 10 at random';
+ if(!sample){$('cards').innerHTML='';$('tally').textContent='No sample drawn yet. It is drawn from the current filter.';return;}
+ const vs=Object.values(sample.v),c=x=>vs.filter(v=>v===x).length;
+ $('tally').textContent='Themes: '+c('fit')+' fit, '+c('no')+' don\u2019t, '+c('unsure')+' unsure of '+vs.length+' judged · seed '+sample.seed+' · drawn from: '+sample.filt+' · this is your judgement, not the UN\u2019s.';
+ if(!sample.ids.length){$('cards').innerHTML='<div class="empty">No records match.</div>';return;}
+ $('cards').innerHTML=sample.ids.map((id,n)=>{
+  const r=recs[id],o=sample.open===id,v=sample.v[id];
+  return '<div class="card"><button class="ch" aria-expanded="'+o+'" data-id="'+id+'"><span class="mono">'+(n+1)+'</span> · '+esc(r.symbol)+' · para. '+esc(r.para||'—')+' · '+esc(r.first)+(v?' <b>['+(v==='fit'?'fits':v==='no'?'doesn\u2019t fit':'unsure')+']</b>':'')+'</button>'+
+   (o?'<div class="body"><div class="hint"><a href="'+esc(r.doc_url||'#')+'" target="_blank" rel="noopener">'+esc(r.symbol)+'</a> · para. '+esc(r.para||'no number')+'</div><div class="full">'+esc(r.text)+'</div><div>'+(r.themes.length?r.themes.map(t=>'<span class="tag">'+esc(t)+'</span>').join(''):'<span class="hint">not labelled</span>')+'</div><div class="hint" style="margin-top:6px">Do these themes, as a set, fit this paragraph?</div>'+
+   ['fit|Fits','no|Doesn\u2019t fit','unsure|Unsure'].map(s=>{const p=s.split('|');return '<button class="btn alt vb'+(v===p[0]?' on':'')+'" data-id="'+id+'" data-v="'+p[0]+'" aria-pressed="'+(v===p[0])+'">'+p[1]+'</button>';}).join('')+'</div>':'')+'</div>';
+ }).join('');
+}
+function wireSample(){
+ $('draw').addEventListener('click',()=>draw(Math.floor(Math.random()*1000000)+1));
+ $('drawseed').addEventListener('click',()=>draw(Math.floor(Number($('seed').value))||1));
+ $('cards').addEventListener('click',e=>{
+  const v=e.target.closest('.vb');
+  if(v){sample.v[+v.dataset.id]=v.dataset.v;renderSample();const b=$('cards').querySelector('.vb[data-id="'+v.dataset.id+'"][data-v="'+v.dataset.v+'"]');if(b)b.focus();return;}
+  const c=e.target.closest('.ch');
+  if(c){const id=+c.dataset.id;sample.open=sample.open===id?-1:id;renderSample();const b=$('cards').querySelector('.ch[data-id="'+id+'"]');if(b)b.focus();}
+ });
+}
+function renderChecks(){
+ const L=[];
+ const P=(name,a,b,ok,extra,warn)=>L.push('<li><b>'+esc(name)+'</b> — '+esc(a)+' vs '+esc(b)+' · '+(ok?'<span class="pass">✓ pass</span>':warn?'<span class="warn">⚠ warning</span>':'<span class="fail">check failed</span>')+(extra?'<div class="hint">'+extra+'</div>':'')+'</li>');
+ const cn=Number(D.count);
+ P('Record count','records.length = '+fmt(N),'count in file = '+(isNaN(cn)?String(D.count):fmt(cn)),N===cn);
+ [['mechanism',r=>r.mechanism],['body',r=>r.body],['year',r=>r.year]].forEach(p=>{
+  const c=countBy(recs.filter(r=>p[1](r)!=null&&p[1](r)!==''),p[1]);const s=Object.values(c).reduce((a,b)=>a+b,0);
+  P('Partition by '+p[0],'sum of '+Object.keys(c).length+' groups = '+fmt(s),'records = '+fmt(N),s===N);
+ });
+ const tcs=countBy(filtered.filter(r=>r.type),r=>r.type),ts=Object.values(tcs).reduce((a,b)=>a+b,0);
+ P('Type partition (filtered set)','sum per type = '+fmt(ts),'headline total = '+fmt(filtered.length),ts===filtered.length);
+ const bars=view.bars,mx=bars.length?Math.max.apply(null,bars.map(b=>b.n)):0;
+ const re=bars.map(b=>filtered.filter(r=>r.themes.includes(b.t)).length);
+ const okB=bars.every((b,i)=>b.n===re[i]);
+ const chartVals=c1?c1.data.datasets[0].data:bars.map(b=>b.n);
+ const okC=chartVals.length===bars.length&&chartVals.every((v,i)=>v===re[i]);
+ P('Chart against table','bars = ['+chartVals.join(', ')+']','recount = ['+re.join(', ')+']',okB&&okC&&mx<=filtered.length,'largest bar '+fmt(mx)+' ≤ filtered '+fmt(filtered.length)+': '+(mx<=filtered.length?'yes':'NO'));
+ const bad=recs.filter(r=>{let u=String(r.doc_url||'');try{u=decodeURIComponent(u);}catch(e){}return !(u.indexOf('https://docs.un.org/')===0&&u.toLowerCase().endsWith(String(r.symbol||'~').toLowerCase()));});
+ P('Links','records with a docs.un.org link ending in the symbol = '+fmt(N-bad.length),'records = '+fmt(N),!bad.length,bad.length?'Failing: '+esc(uniq(bad.map(r=>r.symbol)).slice(0,20).join(', '))+(bad.length>20?' …':''):'');
+ mechs.forEach(m=>{
+  const g=recs.filter(r=>r.mechanism===m),k=g.filter(r=>r.para).length,sh=g.length?k/g.length*100:0;
+  P('Paragraph numbers, '+m,fmt(k)+' of '+fmt(g.length)+' found ('+sh.toFixed(1)+'%)',m===UPR?'expected 100%':'no fixed expectation',m!==UPR||k===g.length,m===UPR?'':'Many Special Procedures items are lettered, with no number.',m===UPR&&k!==g.length);
+ });
+ const up=recs.filter(r=>r.mechanism===UPR),ok=up.filter(r=>r.states.length),nf=up.filter(r=>!r.states.length);
+ P('States found','UPR records with a State = '+fmt(ok.length),'UPR records = '+fmt(up.length),ok.length===up.length,nf.length?'Without a State: '+nf.slice(0,15).map(r=>esc(r.symbol)+(r.para?' para. '+esc(r.para):'')+' (ends “'+esc(r.text.slice(-40))+'”)').join('; ')+(nf.length>15?' … and '+(nf.length-15)+' more':''):'',nf.length>0);
+ const dupT=N-uniq(recs.map(r=>r.text)).length,ids=uniq(recs.map(r=>r.id)).length;
+ P('Distinct id','distinct ids = '+fmt(ids),'records = '+fmt(N),ids===N);
+ P('Duplicate texts',fmt(dupT)+' record(s) repeat another text','expected 0',dupT===0,'Shown as they are; not removed.',dupT>0);
+ [['themes','themes'],['sdgs','SDGs'],['affected_persons','affected persons']].forEach(p=>{const k=recs.filter(r=>!r[p[0]].length).length;P('Not labelled: '+p[1],fmt(k)+' record(s) with none','of '+fmt(N),true,'Shown as “not labelled”; the app never fills them in.');});
+ $('checks').innerHTML=L.join('');
+}
+
+/* tab 04 */
+function renderMethod(){
+ $('method').innerHTML=[
+  'Headline total = number of records in the file; the filtered number is the same loop over records that pass every filter (AND).',
+  'Documents = distinct <code>symbol</code>; years = lowest and highest <code>year</code>, which is the date of the document, not of the recommendation.',
+  'Theme counts: each theme of a record counts once; the top ten by count (ties alphabetical); percentages are of records, not labels.',
+  'Paragraph number = the leading number of the text; Recommending State = names in the trailing parentheses of UPR texts only (no comma, up to 60 characters).',
+  'Keyword search is literal: every word must occur in the text or symbol. “torture” does not find “ill-treatment”.',
+  'Nothing is estimated and no model is called; labels (themes, SDGs) are the UN’s and are never changed. Tab 03 lets you judge a sample of them.'
+ ].map(s=>'<li>'+s+'</li>').join('');
+ $('src').innerHTML='Data: '+esc(D.title||'UHRI')+' · source: '+(D.source_url?'<a href="'+esc(D.source_url)+'" target="_blank" rel="noopener">'+esc(D.source||D.source_url)+'</a>':esc(D.source||'not stated'))+' · built '+esc(D.built||'date not given')+' · licence: not stated in the file; check the source before reuse.';
+}
+function summary(){
+ const f=filtered,tc=countBy(f,r=>r.type||'(no type)'),mc=countBy(f,r=>r.mechanism);
+ const ys=f.map(r=>r.year).filter(y=>y!=null);
+ return COUNTRY+': '+fmt(f.length)+' matching records of '+fmt(N)+' in the file ('+(descF().join('; ')||'no filters')+'), from '+fmt(uniq(f.map(r=>r.symbol)).length)+' documents'+(ys.length?', '+Math.min.apply(null,ys)+'–'+Math.max.apply(null,ys):'')+'. By type: '+Object.keys(tc).map(k=>k+' '+fmt(tc[k])).join(', ')+'. By mechanism: '+Object.keys(mc).map(k=>k+' '+fmt(mc[k])).join(', ')+'. Ten most frequent themes (a record can carry several): '+view.bars.map(b=>b.t+' '+fmt(b.n)).join('; ')+'. Source: '+(D.source||'OHCHR UHRI')+(D.source_url?' ('+D.source_url+')':'')+', built '+(D.built||'n/a')+'. Dates are the document dates.';
+}
+function csvCell(v){return '"'+String(v==null?'':v).replace(/"/g,'""').replace(/\r?\n/g,' ')+'"';}
+function wireMethod(){
+ $('csv').addEventListener('click',()=>{
+  const head=['# Country: '+COUNTRY,'# Source: '+(D.source||'')+' '+(D.source_url||''),'# Built: '+(D.built||''),'# Filters: '+(descF().join('; ')||'none'),'# Rows: '+filtered.length+' of '+N];
+  const cols=['date','body','mechanism','type','symbol','paragraph','recommending_state','doc_url','section','themes','sdgs','sdg_targets','affected_persons','text'];
+  const rows=sortRecs(filtered).map(r=>[r.date,r.body,r.mechanism,r.type,r.symbol,r.para||'',r.mechanism===UPR?r.states.join('; '):'',r.doc_url,r.section||'',r.themes.join('; '),r.sdgs.join('; '),r.sdg_targets.join('; '),r.affected_persons.join('; '),r.text].map(csvCell).join(','));
+  const blob=new Blob([head.join('\n')+'\n'+cols.join(',')+'\n'+rows.join('\n')+'\n'],{type:'text/csv;charset=utf-8'});
+  const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='uhri-'+COUNTRY.toLowerCase().replace(/\W+/g,'-')+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);
+ });
+ $('sum').addEventListener('click',()=>copyText(summary(),null,$('sumok')));
+}
+
+function update(){
+ filtered=applyF();
+ view.bars=topThemes(filtered);
+ renderRail();
+ if(tab===0)renderOverview();
+ else if(tab===1)renderRecords();
+ else if(tab===2){renderChecks();if(!sample)renderSample();}
+ else renderMethod();
+}
+header();buildTabs();buildFilters();wireRail();wireRecords();wireSample();wireMethod();
+setTab(0,false);
+})();
+</script>
+</body></html>

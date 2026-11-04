@@ -37,17 +37,43 @@ def chunk(content=None, usage=None, provider="Mistral", reasoning=None):
 USAGE = {"prompt_tokens": 1200, "completion_tokens": 300, "cost": 0.0123}
 
 
+def anthropic_sse(thinking="plan the app", text="ok", input_tokens=1000, output_tokens=300):
+    """A Messages API stream as Anthropic sends it: a thinking block, a text block, then the usage."""
+    ev = [("message_start", {"type": "message_start", "message": {"id": "msg_1", "type": "message", "role": "assistant",
+           "model": "claude-sonnet-5-5", "content": [], "stop_reason": None, "stop_sequence": None,
+           "usage": {"input_tokens": input_tokens, "output_tokens": 1}}}),
+          ("content_block_start", {"type": "content_block_start", "index": 0,
+                                   "content_block": {"type": "thinking", "thinking": "", "signature": ""}}),
+          ("content_block_delta", {"type": "content_block_delta", "index": 0, "delta": {"type": "thinking_delta", "thinking": thinking}}),
+          ("content_block_stop", {"type": "content_block_stop", "index": 0}),
+          ("content_block_start", {"type": "content_block_start", "index": 1, "content_block": {"type": "text", "text": ""}}),
+          ("content_block_delta", {"type": "content_block_delta", "index": 1, "delta": {"type": "text_delta", "text": text}}),
+          ("content_block_stop", {"type": "content_block_stop", "index": 1}),
+          ("message_delta", {"type": "message_delta", "delta": {"stop_reason": "end_turn", "stop_sequence": None},
+                             "usage": {"output_tokens": output_tokens}}),
+          ("message_stop", {"type": "message_stop"})]
+    return "".join(f"event: {e}\ndata: {json.dumps(d)}\n\n" for e, d in ev).encode()
+
+
 class FakeOpenRouter:
-    """Answers /chat/completions from a queue of scripted replies and records every request."""
+    """Answers /chat/completions from a queue of scripted replies and records every request; Anthropic's
+    /v1/messages likewise, from its own queue (claude goes straight to Anthropic)."""
 
     def __init__(self):
         self.replies, self.requests, self.credit_calls = [], [], 0
+        self.anthropic_replies, self.anthropic_requests = [], []
 
     def stream(self, *parts, status=200, error=None):
         self.replies.append((status, list(parts) if status == 200 else error))
         return self
 
     async def handler(self, request: httpx.Request):
+        if request.url.host == "api.anthropic.com":
+            self.anthropic_requests.append(json.loads(request.content))
+            status = self.anthropic_replies.pop(0) if self.anthropic_replies else 200
+            if status != 200:
+                return httpx.Response(status, json={"type": "error", "error": {"type": "api_error", "message": f"echo: {SECRET}"}})
+            return httpx.Response(200, headers={"content-type": "text/event-stream"}, content=anthropic_sse())
         if request.url.path.endswith("/credits"):
             self.credit_calls += 1
             return httpx.Response(200, json={"data": {"total_credits": 300, "total_usage": 12.5}})
@@ -68,7 +94,7 @@ class FakeOpenRouter:
 @pytest.fixture
 def env(tmp_path):
     fake = FakeOpenRouter()
-    cfg = studio.Config(api_key="sk-test", admin_key="admin-test", state_dir=tmp_path / "state",
+    cfg = studio.Config(api_key="sk-test", anthropic_key="sk-ant-test", anthropic_cap=15.0, admin_key="admin-test", state_dir=tmp_path / "state",
                         data_dir=ROOT / "site" / "data", seats_csv=None, seat_budget=8.0, daily_budget=100.0,
                         rate_limit=20, rate_window=300, origins=studio.ORIGINS.split(","), build="test",
                         busy_retry_s=0.3)
@@ -202,6 +228,8 @@ def test_menu_matches_the_contract():
 
 def test_every_request_is_pinned_with_zdr(env):
     for m in models.MODELS.values():
+        if m.api == "anthropic":                        # not OpenRouter: test_claude_goes_straight_to_anthropic
+            continue
         assert env.client.post("/studio-api/chat", json=body(model=m.key)).status_code == 200, m.key
         sent = env.fake.requests[-1]
         assert sent["model"] == m.id and sent["stream"] is True and sent["usage"] == {"include": True}
@@ -239,7 +267,7 @@ def test_build_system_message_is_exactly_the_bakeoff_one(env):
 
 def test_inapp_and_question_purposes(env):
     env.client.post("/studio-api/chat", json=body(model="fast", purpose="inapp"))
-    env.client.post("/studio-api/chat", json=body(model="claude", purpose="question"))
+    env.client.post("/studio-api/chat", json=body(model="glm-cn", purpose="question"))
     inapp, question = env.fake.requests
     assert inapp["messages"][0] == {"role": "system", "content": studio.INAPP_SYSTEM}
     assert (inapp["temperature"], inapp["max_tokens"]) == (0.2, 8000)
@@ -281,13 +309,16 @@ def test_stream_is_normalised_and_ends_with_usage_then_done(env):
 
 
 def test_reasoning_effort_per_model_for_builds_low_for_questions(env):
-    """Mistral Large 3 does not think; GLM thinks at medium, past which it ran out of its answer budget (4.11.2026)."""
+    """Mistral Large 3 does not think; GLM thinks at medium, past which it ran out of its answer budget (4.11.2026);
+    Claude, on Anthropic's API, at medium for builds and low for questions."""
     for key in ("mistral", "claude", "glm-cn", "glm-eu"):
         env.client.post("/studio-api/chat", json=body(model=key))
     env.client.post("/studio-api/chat", json=body(model="mistral", purpose="inapp"))
+    env.client.post("/studio-api/chat", json=body(model="glm-cn", purpose="question"))
     env.client.post("/studio-api/chat", json=body(model="claude", purpose="question"))
     efforts = [r.get("reasoning") for r in env.fake.requests]
-    assert efforts == [None, {"effort": "high"}, {"effort": "medium"}, {"effort": "medium"}, None, {"effort": "low"}]
+    assert efforts == [None, {"effort": "medium"}, {"effort": "medium"}, None, {"effort": "low"}]
+    assert [q["output_config"] for q in env.fake.anthropic_requests] == [{"effort": "medium"}, {"effort": "low"}]
 
 
 def test_reasoning_and_text_in_one_chunk_keep_their_order(env):
@@ -328,15 +359,15 @@ def test_in_flight_402_that_persists_is_503_busy_and_logged(env, caplog):
 
 def test_other_402_is_not_retried_but_falls_back(env):
     env.fake.stream(status=402, error={"code": 402, "message": "Insufficient credits"})
-    r = env.client.post("/studio-api/chat", json=body(model="claude"))
+    r = env.client.post("/studio-api/chat", json=body(model="glm-eu"))
     assert r.status_code == 200
-    assert [q["model"] for q in env.fake.requests] == ["anthropic/claude-sonnet-5.5", "mistralai/mistral-large-2512"]
+    assert [q["model"] for q in env.fake.requests] == ["z-ai/glm-5.3", "mistralai/mistral-large-2512"]
 
 
 def test_out_of_credit_on_both_models_says_so(env):
     for _ in range(2):
         env.fake.stream(status=402, error={"code": 402, "message": "Insufficient credits"})
-    r = env.client.post("/studio-api/chat", json=body(model="claude"))
+    r = env.client.post("/studio-api/chat", json=body(model="glm-eu"))
     assert r.status_code == 503 and r.json()["code"] == "credit" and "run out of credit" in r.json()["error"]
     assert env.seats.db.execute("SELECT status FROM usage").fetchone()["status"] == "credit"
 
@@ -432,13 +463,13 @@ def test_client_abort_is_still_charged(env):
 
 def test_fallback_when_the_pinned_host_fails(env):
     env.fake.stream(status=503).stream(chunk("from fallback"), chunk(usage=USAGE))
-    r = env.client.post("/studio-api/chat", json=body(model="claude"))
+    r = env.client.post("/studio-api/chat", json=body(model="glm-eu"))
     assert r.status_code == 200
-    assert [q["model"] for q in env.fake.requests] == ["anthropic/claude-sonnet-5.5", "mistralai/mistral-large-2512"]
+    assert [q["model"] for q in env.fake.requests] == ["z-ai/glm-5.3", "mistralai/mistral-large-2512"]
     ev = events(r.text)
     assert ev[0] == ("message", {"delta": "from fallback"})
     u = ev[-2][1]
-    assert u["model"] == "mistral" and u["host"] == "Mistral" and u["fallback_from"] == "claude"
+    assert u["model"] == "mistral" and u["host"] == "Mistral" and u["fallback_from"] == "glm-eu"
 
 
 def test_both_hosts_failing_is_502_json_and_logged(env, caplog):
@@ -712,3 +743,33 @@ def test_a_database_from_before_labels_is_upgraded(tmp_path):
     c.close()
     s = Seats(db)
     assert s.get("ABCDEF")["label"] == "" and s.get("ABCDEF")["spent"] == 2
+
+
+def test_claude_goes_straight_to_anthropic(env):
+    """Claude's requests go to Anthropic's API with adaptive thinking shown as a summary and the build effort;
+    the stream comes back in the studio's own format, priced from the tokens, without zero data retention."""
+    ev = events(env.client.post("/studio-api/chat", json=body(model="claude")).text)
+    assert ("message", {"reasoning": "plan the app"}) in ev and ("message", {"delta": "ok"}) in ev
+    u = next(d for e, d in ev if e == "usage")
+    assert (u["model"], u["host"], u["host_region"], u["zdr"]) == ("claude", "Anthropic", "US", False)
+    assert u["cost"] == round((1000 * 2.0 + 300 * 10.0) / 1e6, 6) and "estimated" not in u
+    q = env.fake.anthropic_requests[-1]
+    assert q["model"] == "claude-sonnet-5-5" and q["thinking"] == {"type": "adaptive", "display": "summarized"}
+    assert q["output_config"] == {"effort": "medium"} and "temperature" not in q and q["system"]
+    assert env.fake.requests == []                                   # nothing went to OpenRouter
+
+
+def test_anthropic_cap_sends_claude_to_its_fallback(env):
+    env.seats.record("GHJKMN", model="claude", host="anthropic", purpose="build", cost=15.0)   # the cap is shared by all seats
+    ev = events(env.client.post("/studio-api/chat", json=body(model="claude")).text)
+    u = next(d for e, d in ev if e == "usage")
+    assert u["model"] == "mistral" and u["fallback_from"] == "claude" and u["zdr"] is True
+    assert env.fake.anthropic_requests == []
+
+
+def test_an_anthropic_error_falls_back_and_never_leaks(env):
+    env.fake.anthropic_replies.append(500)
+    r = env.client.post("/studio-api/chat", json=body(model="claude"))
+    u = next(d for e, d in events(r.text) if e == "usage")
+    assert u["model"] == "mistral" and u["fallback_from"] == "claude"
+    assert SECRET not in r.text

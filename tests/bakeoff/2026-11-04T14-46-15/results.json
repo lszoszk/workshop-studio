@@ -1,0 +1,55 @@
+[
+ {
+  "model": "claude-api",
+  "label": "Claude Sonnet 5.5 · USA · Anthropic API",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true
+  },
+  "passed": 8,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 683,
+  "seconds": 294.1,
+  "first_token": 175.4,
+  "first_thought": 4.7,
+  "reasoning_chars": 20507,
+  "prompt_tokens": 27453,
+  "completion_tokens": 45884,
+  "cost": 0.51375,
+  "provider": "anthropic"
+ },
+ {
+  "model": "claude-api",
+  "label": "Claude Sonnet 5.5 · USA · Anthropic API",
+  "prompt": "s7-3-check-ten",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "text_matches": true,
+   "download": true
+  },
+  "passed": 5,
+  "total": 5,
+  "errors": [],
+  "network": [],
+  "lines": 892,
+  "seconds": 286.7,
+  "first_token": 142.9,
+  "first_thought": 5.1,
+  "reasoning_chars": 15643,
+  "prompt_tokens": 51938,
+  "completion_tokens": 50191,
+  "cost": 0.60579,
+  "provider": "anthropic"
+ }
+]

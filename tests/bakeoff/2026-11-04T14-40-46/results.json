@@ -1,0 +1,30 @@
+[
+ {
+  "model": "claude-api",
+  "label": "Claude Sonnet 5.5 · USA · Anthropic API",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true
+  },
+  "passed": 8,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 722,
+  "seconds": 298.3,
+  "first_token": 172.4,
+  "first_thought": 7.2,
+  "reasoning_chars": 19939,
+  "prompt_tokens": 27453,
+  "completion_tokens": 46126,
+  "cost": 0.51617,
+  "provider": "anthropic"
+ }
+]

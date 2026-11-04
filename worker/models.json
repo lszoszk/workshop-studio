@@ -23,7 +23,7 @@
    "price_in": 2.2,
    "price_out": 11.0,
    "fallback": "mistral",
-   "reasoning": "high"
+   "reasoning": "medium"
   },
   {
    "key": "glm-cn",

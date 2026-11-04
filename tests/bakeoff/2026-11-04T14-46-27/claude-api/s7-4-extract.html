@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paragraphs out of a UN document</title>
+<style>
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+:root{--paper:#f4f0e8;--ink:#1d1b18;--rule:#d9d2c3;--red:#9b2335;--green:#2d6a3a;--muted:#5f594e}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+.lab{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.serif{font-family:Georgia,"Times New Roman",serif}
+a{color:var(--red)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+header{padding:18px 28px 14px;border-bottom:1px solid var(--rule)}
+.hrow{display:flex;gap:24px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+h1{font:400 28px/1.2 Georgia,"Times New Roman",serif;margin:4px 0 6px;max-width:900px}
+.hline{font-size:14px;color:var(--muted)}
+.hstat{text-align:right;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.05em;text-transform:uppercase}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:baseline}
+.wrap{display:grid;grid-template-columns:250px minmax(0,1fr);gap:36px;padding:22px 28px 10px;max-width:1280px;margin:0 auto}
+@media(max-width:860px){.wrap{grid-template-columns:1fr;gap:16px}}
+.rail{border-right:1px solid var(--rule);padding-right:24px}
+@media(max-width:860px){.rail{border-right:0;border-bottom:1px solid var(--rule);padding:0 0 14px}}
+.card{border:1px solid var(--rule);padding:10px 12px;margin:8px 0 18px;font-size:14px}
+.card .mono{font-size:13px;font-weight:bold}
+.big{font:400 48px/1 Georgia,"Times New Roman",serif}
+.rail .big{margin-top:4px}
+.sub{font-size:13px;color:var(--muted);margin-top:4px}
+.bar{height:6px;background:var(--rule);margin:8px 0 18px}
+.bar i{display:block;height:100%}
+.ok{color:var(--green);font-weight:600}
+.bad{color:var(--red);font-weight:600}
+.nr{color:var(--muted);font-weight:600}
+[role=tablist]{display:flex;gap:4px;border-bottom:1px solid var(--rule);margin-bottom:20px;flex-wrap:wrap}
+[role=tab]{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+[role=tab][aria-selected=true]{color:var(--red);border-bottom-color:var(--red);font-weight:700}
+h2.q{font:400 24px/1.25 Georgia,"Times New Roman",serif;margin:0 0 16px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:0;border-top:1px solid var(--rule);border-left:1px solid var(--rule);margin-bottom:18px}
+.tile{padding:14px 16px 12px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.tile .big{margin:6px 0 4px}
+.how{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.45}
+.list{font-size:14px;margin:0 0 20px;padding:0;list-style:none}
+.list li{padding:3px 0;border-bottom:1px dotted var(--rule)}
+h3.sec{font:400 20px Georgia,serif;margin:22px 0 8px}
+.btns{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 6px}
+.btn{background:var(--ink);color:var(--paper);border:1px solid var(--ink);padding:9px 16px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.alt{background:transparent;color:var(--ink)}
+.acc{width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--rule);padding:12px 0;display:flex;justify-content:space-between;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.acc[aria-expanded=true]{color:var(--red);font-weight:700}
+.accwrap{border-bottom:1px solid var(--rule);margin-top:14px}
+.accwrap .acc:last-of-type{}
+table{width:100%;border-collapse:collapse;font-size:15px}
+caption{text-align:left;font:400 18px Georgia,serif;padding:6px 0 8px}
+caption .lab{display:block;margin-bottom:2px}
+th{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;text-align:left;color:var(--muted);border-bottom:1px solid var(--ink);padding:6px 8px}
+td{padding:7px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
+th.n,td.n{text-align:right}
+tr.main{cursor:pointer}
+tr.main:hover{background:#ece6d8}
+.rowbtn{background:none;border:0;padding:0 4px;color:var(--red);font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;font-size:15px;text-decoration:underline}
+tr.detail td{background:#faf7f1;padding:14px 18px}
+.fulltext{font-size:16px;max-width:760px;margin:6px 0 12px}
+.fix{outline:1px solid var(--red);outline-offset:1px;background:#f6e3e6}
+.kv{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;margin:2px 0;word-break:break-word}
+.chk{list-style:none;margin:8px 0 0;padding:0}
+.chk li{border-top:1px solid var(--rule);padding:10px 0;font-size:14px}
+.chk .cn{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+.st{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;letter-spacing:.05em;margin-left:10px;text-transform:none}
+.linkbtn{background:none;border:0;padding:0;color:var(--red);text-decoration:underline;font-size:14px}
+.rules{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;margin:8px 0}
+.note{font-size:14px;color:var(--muted);margin:8px 0 0}
+.hd li{padding:2px 0}
+.hd .l3{margin-left:22px}
+footer{max-width:1280px;margin:0 auto;padding:16px 28px 30px;border-top:1px solid var(--rule);font-size:13px;color:var(--muted)}
+.empty{padding:20px;border:1px dashed var(--red);color:var(--red)}
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <div>
+      <div class="lab">UN DOCUMENT · HTML</div>
+      <h1 id="title"></h1>
+      <div class="hline" id="hline"></div>
+    </div>
+    <div class="hstat" id="hstat"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <aside class="rail" id="rail" aria-label="Document summary"></aside>
+  <main>
+    <div role="tablist" aria-label="Views">
+      <button role="tab" id="tab0" aria-controls="p0" aria-selected="true" tabindex="0">01 RESULT</button>
+      <button role="tab" id="tab1" aria-controls="p1" aria-selected="false" tabindex="-1">02 PARAGRAPHS</button>
+    </div>
+    <section role="tabpanel" id="p0" aria-labelledby="tab0"></section>
+    <section role="tabpanel" id="p1" aria-labelledby="tab1" hidden></section>
+  </main>
+</div>
+
+<footer id="foot"></footer>
+
+<script>
+(function(){
+"use strict";
+const WD = window.WORKSHOP_DATA || {};
+const D = WD.html_doc;
+
+function h(tag, attrs){
+  const e = document.createElement(tag);
+  attrs = attrs || {};
+  for (const k in attrs){
+    const v = attrs[k];
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k.slice(0,2) === 'on') e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (let i = 2; i < arguments.length; i++){
+    const kids = [].concat(arguments[i]);
+    for (const c of kids){
+      if (c == null || c === false) continue;
+      e.append(c && c.nodeType ? c : document.createTextNode(String(c)));
+    }
+  }
+  return e;
+}
+const $ = id => document.getElementById(id);
+
+if (!D || typeof D.html !== 'string'){
+  $('title').textContent = 'No document attached';
+  $('p0').append(h('div',{class:'empty'},'No HTML document was found in WORKSHOP_DATA.html_doc. Drag the file into the chat and ask again.'));
+  return;
+}
+
+/* ---------- metadata ---------- */
+const symbol = D.symbol || '';
+const ref = (D.reference && typeof D.reference === 'object') ? D.reference : {};
+const refP = Number.isFinite(ref.paragraphs) ? ref.paragraphs : null;
+const refF = Number.isFinite(ref.footnotes) ? ref.footnotes : null;
+const refFW = (ref.first_words && typeof ref.first_words === 'object') ? ref.first_words : null;
+const built = D.built || WD.built || '';
+const today = new Date().toISOString().slice(0,10);
+
+/* ---------- parse ---------- */
+const clean = s => (s || '').replace(/\s+/g,' ').trim();
+const doc = new DOMParser().parseFromString(D.html, 'text/html');
+const all = Array.from(doc.body.querySelectorAll('table, p, h2, h3'));
+const firstTable = doc.body.querySelector('table');
+const counts = {cover:0,title:0,heading:0,paragraph:0,committee:0,empty:0,unclassified:0};
+const unclassified = [];
+const blocks = [], paras = [], headings = [];
+let titleText = '', committee = '', curH2 = null, curH3 = null, curPart = null, glued = 0, h2n = 0, h3n = 0, pn = 0;
+
+const RULES = [
+  {id:'sentence', label:'sentence join', re:/([a-z])\.([A-Z])/g, rep:(m,a,b)=>a+'.\uE000'+b},
+  {id:'comma', label:'comma join', re:/([a-z]),([A-Za-z])/g, rep:(m,a,b)=>a+',\uE000'+b},
+  {id:'quote', label:'quote join', re:/([a-z])\u201C/g, rep:(m,a)=>a+'\uE000\u201C'},
+  {id:'dash', label:'dash join', re:/\u2013([A-Za-z])/g, rep:(m,a)=>'\u2013\uE000'+a}
+];
+const repairs = [];
+function repair(n, raw){
+  let s = raw;
+  for (const r of RULES){
+    s = s.replace(r.re, function(){
+      const a = arguments, m = a[0], off = a[a.length-2], str = a[a.length-1];
+      const rep = r.rep.apply(null, Array.prototype.slice.call(a, 0, a.length-2));
+      const s0 = Math.max(0, off-20), e0 = Math.min(str.length, off+m.length+20);
+      const cl = x => x.replace(/\uE000/g,' ');
+      repairs.push({n, rule:r.id, label:r.label,
+        before: cl(str.slice(s0,e0)),
+        after: cl(str.slice(s0,off)+rep+str.slice(off+m.length,e0))});
+      return rep;
+    });
+  }
+  let out = '', marks = [];
+  for (let i = 0; i < s.length; i++){
+    if (s[i] === '\uE000'){ marks.push(out.length); out += ' '; } else out += s[i];
+  }
+  return {text:out, marks};
+}
+const normFW = s => (s||'').replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"').replace(/[\u2013\u2014\u2011]/g,'-').replace(/\u00A0/g,' ').replace(/\s+/g,' ').trim();
+const first6 = s => s.split(/\s+/).filter(Boolean).slice(0,6).join(' ');
+const headDisplay = hd => hd.label ? hd.label + '. ' + hd.text : hd.text;
+
+for (const e of all){
+  const tag = e.tagName.toLowerCase();
+  if (firstTable && (e === firstTable || firstTable.contains(e))){ counts.cover++; continue; }
+  if (tag === 'table'){ counts.unclassified++; unclassified.push({tag, text:clean(e.textContent).slice(0,80)}); continue; }
+  const t = clean(e.textContent);
+  if (!t){ counts.empty++; continue; }
+  if (tag === 'p'){
+    const m = /^(\d{1,3})\.\s*(.*)$/s.exec(t);
+    if (m){
+      counts.paragraph++;
+      const n = parseInt(m[1],10);
+      const raw = clean(m[2]);
+      const rp = repair(n, raw);
+      const sec = curH3 || curH2;
+      const p = {n, raw, text:rp.text, marks:rp.marks,
+        section: sec ? headDisplay(sec) : '', part: curPart ? headDisplay(curPart) : '',
+        path: [curH2, curH3].filter(Boolean).map(headDisplay)};
+      p.fwFound = first6(p.text);
+      if (refFW){
+        const rr = refFW[String(n)];
+        if (rr == null){ p.fwRef = ''; p.fwMatch = false; }
+        else { p.fwRef = String(rr); p.fwMatch = normFW(p.fwFound) === normFW(p.fwRef); }
+      } else { p.fwRef = ''; p.fwMatch = null; }
+      p.citation = symbol + ', para. ' + n;
+      paras.push(p); blocks.push({kind:'para', p});
+    } else if (!committee){ committee = t; counts.committee++; }
+    else { counts.unclassified++; unclassified.push({tag, text:t.slice(0,80)}); }
+  } else {
+    if (/^([IVX]+|[A-Z])\.\S/.test(t)) glued++;
+    if (tag === 'h2' && !titleText){ titleText = t; counts.title++; continue; }
+    const m = /^([IVX]+|[A-Z])\.\s*(.+)$/.exec(t);
+    const hd = {tag, label:m?m[1]:'', text:m?m[2]:t};
+    hd.display = headDisplay(hd);
+    counts.heading++;
+    if (tag === 'h2'){ h2n++; curH2 = hd; curH3 = null; if (/^[IVX]+$/.test(hd.label)) curPart = hd; }
+    else { h3n++; curH3 = hd; }
+    headings.push(hd); blocks.push({kind:'heading', hd});
+  }
+}
+const totalEls = all.length;
+const sumCls = Object.keys(counts).reduce((a,k)=>a+counts[k],0);
+const footEls = doc.querySelectorAll('sup, .footnote, .footnotes, aside, a[href^="#fn"], [id^="fn"]').length;
+
+/* ---------- derived numbers ---------- */
+const nums = paras.map(p=>p.n);
+const dups = nums.filter((x,i)=>nums.indexOf(x) !== i);
+const maxN = nums.length ? Math.max.apply(null, nums) : 0;
+const gaps = []; for (let i=1;i<=maxN;i++) if (nums.indexOf(i) < 0) gaps.push(i);
+const inOrder = nums.every((x,i)=>x === i+1);
+const fwOK = paras.filter(p=>p.fwMatch === true).length;
+const fwBad = paras.filter(p=>p.fwMatch === false);
+const mismatches = fwBad.map(p=>({n:p.n, found:p.fwFound, ref:p.fwRef || '(no entry in reference)'}));
+if (refFW) Object.keys(refFW).forEach(k=>{ const n = parseInt(k,10); if (nums.indexOf(n) < 0) mismatches.push({n, found:'(paragraph not found)', ref:String(refFW[k])}); });
+mismatches.sort((a,b)=>a.n-b.n);
+const fwDenom = refP != null ? refP : (refFW ? Object.keys(refFW).length : null);
+const repParas = new Set(repairs.map(r=>r.n)).size;
+const perRule = RULES.map(r=>({label:r.label, n:repairs.filter(x=>x.rule===r.id).length}));
+const limText = 'no footnotes in this HTML version' + (refF != null ? '; the document has ' + refF : '');
+const spaceRemoved = paras.every(p=>p.text.replace(/ /g,'') === p.raw.replace(/ /g,''));
+
+/* ---------- exports ---------- */
+const records = paras.map(p=>({symbol, paragraph:p.n, section:p.section, part:p.part, text:p.text, text_raw:p.raw,
+  first_words_match:p.fwMatch, citation:p.citation, doc_url:D.doc_url || '', limitations:limText}));
+const jsonText = JSON.stringify(records, null, 2);
+let roundOK = false;
+try { roundOK = JSON.parse(jsonText).length === paras.length; } catch(e){}
+function mdText(){
+  const q = v => JSON.stringify(v == null ? '' : String(v));
+  const L = ['---','title: '+q(D.title),'symbol: '+q(symbol),'adopted: '+q(ref.adopted),'source: '+q(D.source),
+    'source_url: '+q(D.doc_url),'extracted: '+q(today),'paragraphs_found: '+paras.length,
+    'paragraphs_expected: '+(refP != null ? refP : 'null'),'footnotes: '+q(limText),'---',''];
+  for (const b of blocks){
+    if (b.kind === 'heading') L.push((b.hd.tag === 'h2' ? '## ' : '### ') + b.hd.display, '');
+    else L.push('**'+b.p.n+'.** '+b.p.text, '');
+  }
+  return L.join('\n');
+}
+const fname = symbol.replace(/\//g,'-') || 'document';
+function download(name, text, mime){
+  const u = URL.createObjectURL(new Blob([text], {type:mime+';charset=utf-8'}));
+  const a = h('a',{href:u, download:name});
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u), 3000);
+}
+
+/* ---------- checks ---------- */
+const checks = [];
+checks.push({name:'Paragraph count', status: refP == null ? 'notrun' : (paras.length === refP ? 'pass':'fail'),
+  story:'Given the HTML, having counted every numbered <p> after the cover, we expect the number in the reference.',
+  found: paras.length + ' found / ' + (refP != null ? refP + ' expected' : 'no reference in this file'), rows:[]});
+checks.push({name:'Numbering', status: !paras.length ? 'fail' : ((inOrder && !dups.length && !gaps.length) ? 'pass':'fail'),
+  story:'Given the paragraphs in document order, having read their numbers, we expect exactly 1 to n with no gap or duplicate.',
+  found: (inOrder && !dups.length && !gaps.length) ? '1 to '+paras.length+' in order' :
+    ('gaps: ' + (gaps.join(', ') || 'none') + '; duplicates: ' + (dups.join(', ') || 'none') + (inOrder ? '' : '; not in order')),
+  rows: gaps.concat(dups)});
+checks.push({name:'First words', status: !refFW ? 'notrun' : (mismatches.length ? 'fail':'pass'),
+  story:'Given the repaired text, having taken the first six words of each paragraph, we expect them to equal the reference after normalising quotes, dashes and hyphens.',
+  found: refFW ? (fwOK + ' match, ' + mismatches.length + ' differ') : 'no reference in this file',
+  rows: mismatches.map(m=>m.n).filter(n=>nums.indexOf(n)>=0)});
+checks.push({name:'Footnotes', status: refF == null ? 'notrun' : (footEls >= refF ? 'pass' : 'limit'),
+  story:'Given the HTML, having looked for footnote elements and marks, we expect as many as the reference counts.',
+  found: footEls + ' found / ' + (refF != null ? refF + ' expected. The HTML version has no footnotes: a limit of the source, not of the app.' : 'no reference in this file'), rows:[]});
+checks.push({name:'Repairs', status: spaceRemoved ? 'pass':'fail',
+  story:'Given the raw text, having applied four space rules, we expect the text to differ from text_raw only by inserted spaces.',
+  found: repairs.length + ' spaces restored in ' + repParas + ' paragraphs (' + perRule.map(r=>r.n+' '+r.label).join(', ') + '); text_raw keeps the text as found',
+  rows: Array.from(new Set(repairs.map(r=>r.n)))});
+checks.push({name:'Headings', status: (counts.title + counts.heading === h2n + h3n + counts.title - 0 && counts.title <= 1) ? 'pass':'fail',
+  story:'Given the <h2> and <h3> elements, having taken the first <h2> as title, we expect every other one to be a heading.',
+  found: (h2n + counts.title) + ' <h2> (one is the title), ' + h3n + ' <h3>, ' + headings.length + ' headings; ' + glued + ' glued labels separated', rows:[]});
+checks.push({name:'Nothing lost', status: (sumCls === totalEls && !unclassified.length) ? 'pass':'fail',
+  story:'Given every table, p, h2 and h3 element, having classified each once, we expect the classes to add up to the total with none left over.',
+  found: totalEls + ' elements = ' + counts.cover + ' cover + ' + counts.title + ' title + ' + counts.heading + ' headings + ' + counts.paragraph + ' paragraphs + ' + counts.committee + ' committee line + ' + counts.empty + ' empty + ' + counts.unclassified + ' unclassified',
+  rows:[]});
+checks.push({name:'Export round trip', status: roundOK ? 'pass':'fail',
+  story:'Given the JSON to download, having parsed it back, we expect as many records as the table has rows.',
+  found: roundOK ? paras.length + ' records = ' + paras.length + ' rows' : 'record count differs', rows:[]});
+const nPass = checks.filter(c=>c.status==='pass').length;
+const nFail = checks.filter(c=>c.status==='fail').length;
+const nLimit = checks.filter(c=>c.status==='limit').length;
+const nNot = checks.filter(c=>c.status==='notrun').length;
+const mChecks = checks.length - nLimit;
+
+const stWord = {pass:'pass', fail:'check failed', limit:'source limit', notrun:'not run'};
+const stCls = {pass:'ok', fail:'bad', limit:'bad', notrun:'nr'};
+const stEl = s => h('span',{class:'st '+stCls[s]}, stWord[s]);
+
+/* ---------- header and rail ---------- */
+$('title').textContent = D.title || symbol;
+const hl = $('hline');
+hl.append(D.doc_url ? h('a',{href:D.doc_url, target:'_blank', rel:'noopener', class:'mono'}, symbol) : h('span',{class:'mono'},symbol));
+if (ref.adopted) hl.append(' · adopted ' + ref.adopted);
+if (D.source) hl.append(' · ' + D.source);
+const hs = $('hstat');
+const dotCol = nFail ? 'var(--red)' : (nNot ? 'var(--muted)' : 'var(--green)');
+hs.append(h('div',{class: nFail ? 'bad' : (nNot ? 'nr':'ok')}, h('span',{class:'dot',style:'background:'+dotCol}),
+  nFail ? nFail + (nFail === 1 ? ' check failed' : ' checks failed') : nPass + ' of ' + mChecks + ' checks pass' + (nNot ? ' (' + nNot + ' not run)' : '')));
+if (nLimit) hs.append(h('div',{class:'bad'}, nLimit + ' source limit'));
+
+const shortTitle = ((D.title||'').match(/^General comment No\. \d+ \(\d{4}\)/i) || [(D.title||'').slice(0,60)])[0];
+const pOK = refP != null && paras.length === refP;
+const rail = $('rail');
+rail.append(
+  h('div',{class:'lab'},'DOCUMENT'),
+  h('div',{class:'card'}, h('div',{class:'mono'}, symbol), h('div',{}, shortTitle)),
+  h('div',{class:'lab'},'PARAGRAPHS'),
+  h('div',{class:'big'}, String(paras.length)),
+  h('div',{class:'sub'}, refP != null ? 'paragraphs of ' + refP + ' in the reference' : 'no reference in this file'),
+  h('div',{class:'bar'}, h('i',{style:'width:'+(refP ? Math.min(100, paras.length/refP*100) : 100)+'%;background:'+(refP == null ? 'var(--muted)' : (pOK ? 'var(--green)' : 'var(--red)'))})),
+  h('div',{class:'lab'},'FOOTNOTES'),
+  h('div',{class:'big bad'}, String(footEls)),
+  h('div',{class:'sub bad'}, (refF != null ? 'footnotes of ' + refF + ': ' : '') + 'not in this HTML'),
+  h('div',{class:'bar'}),
+  h('div',{class:'lab'},'CHECKS'),
+  h('div',{class:'sub'}, nPass + ' of ' + mChecks + ' checks pass')
+);
+
+/* ---------- tabs ---------- */
+function selectTab(i, focus){
+  [0,1].forEach(k=>{
+    const t = $('tab'+k), on = k === i;
+    t.setAttribute('aria-selected', on ? 'true':'false');
+    t.tabIndex = on ? 0 : -1;
+    $('p'+k).hidden = !on;
+    if (on && focus) t.focus();
+  });
+}
+document.querySelector('[role=tablist]').addEventListener('keydown', ev=>{
+  const cur = $('tab1').getAttribute('aria-selected') === 'true' ? 1 : 0;
+  let nx = null;
+  if (ev.key === 'ArrowRight') nx = (cur+1)%2;
+  else if (ev.key === 'ArrowLeft') nx = (cur+1)%2;
+  else if (ev.key === 'Home') nx = 0;
+  else if (ev.key === 'End') nx = 1;
+  if (nx != null){ ev.preventDefault(); selectTab(nx, true); }
+});
+$('tab0').addEventListener('click',()=>selectTab(0));
+$('tab1').addEventListener('click',()=>selectTab(1));
+
+/* ---------- tab 01 ---------- */
+const p0 = $('p0');
+p0.append(h('h2',{class:'q'},'Did the app find everything the document has?'));
+if (!totalEls || !paras.length && !all.some(e=>e.tagName==='P')){
+  p0.append(h('div',{class:'empty'},'The HTML contains no paragraphs (<p>), so there is nothing to extract. Exports are disabled.'));
+}
+const tile = (lab, big, bigCls, sub, how) => h('div',{class:'tile'},
+  h('div',{class:'lab'},lab), h('div',{class:'big '+(bigCls||'')}, big), h('div',{class:'sub'}, sub), h('div',{class:'how'}, how));
+const diff = refP != null ? paras.length - refP : 0;
+p0.append(h('div',{class:'tiles'},
+  tile('PARAGRAPHS FOUND', String(paras.length), refP == null ? '' : (pOK ? 'ok':'bad'),
+    refP == null ? 'no reference in this file' : ('the document has ' + refP + (pOK ? ' · equal' : ' · ' + (diff < 0 ? (-diff) + ' short' : diff + ' over'))),
+    'How this is computed: every <p> after the cover that starts with a number and a full stop, counted by the page code.'),
+  tile('FIRST WORDS MATCH', String(fwOK), !refFW ? '' : (fwOK === fwDenom ? 'ok':'bad'),
+    refFW ? 'of ' + fwDenom + ' paragraphs in the reference' : 'no reference in this file',
+    'How this is computed: first six words of each paragraph against reference.first_words; curly quotes, en dashes and non-breaking hyphens normalised.'),
+  tile('FOOTNOTES', String(footEls), 'bad',
+    (refF != null ? 'of ' + refF + ' · ' : '') + 'this HTML version has none: no footnote text, no footnote marks. To cite a footnote, use the PDF or Word version.',
+    'How this is computed: footnote elements and marks looked for in the HTML; compared with reference.footnotes.'),
+  tile('SPACES RESTORED', String(repairs.length), '', 'in ' + repParas + ' paragraphs',
+    'How this is computed: a space is inserted only where the characters prove it was there (four rules, each one logged).')
+));
+if (mismatches.length){
+  p0.append(h('div',{class:'lab'},'FIRST WORDS THAT DIFFER'));
+  const ul = h('ul',{class:'list mono'});
+  mismatches.slice(0,10).forEach(m=>ul.append(h('li',{}, h('span',{class:'bad'},'para. '+m.n+': '), 'found “'+m.found+'” / reference “'+m.ref+'”')));
+  if (mismatches.length > 10) ul.append(h('li',{}, 'and ' + (mismatches.length-10) + ' more'));
+  p0.append(ul);
+}
+
+p0.append(h('h3',{class:'sec'},'Take the paragraphs away'));
+const noP = paras.length === 0;
+p0.append(h('div',{class:'btns'},
+  h('button',{class:'btn', disabled:noP, onclick:()=>download(fname+'.json', jsonText, 'application/json')},'Download JSON'),
+  h('button',{class:'btn alt', disabled:noP, onclick:()=>download(fname+'.md', mdText(), 'text/markdown')},'Download Markdown')));
+p0.append(h('div',{class:'how'},'Each record carries symbol, paragraph, section, part, text, text_raw, first_words_match, citation, doc_url and its limitations. Done in this page, nothing leaves the browser.'));
+
+/* accordions */
+const accs = [];
+function accordion(label, body){
+  const id = 'acc' + accs.length;
+  const btn = h('button',{class:'acc','aria-expanded':'false','aria-controls':id}, h('span',{},label), h('span',{'aria-hidden':'true'},'+'));
+  const panel = h('div',{id, hidden:true, role:'region','aria-label':label}, body);
+  accs.push({btn, panel});
+  btn.addEventListener('click',()=>{
+    const open = btn.getAttribute('aria-expanded') === 'true';
+    accs.forEach(a=>{a.btn.setAttribute('aria-expanded','false'); a.panel.hidden = true; a.btn.lastChild.textContent = '+';});
+    if (!open){ btn.setAttribute('aria-expanded','true'); panel.hidden = false; btn.lastChild.textContent = '–'; }
+  });
+  return [btn, panel];
+}
+const chkList = h('ol',{class:'chk'});
+checks.forEach(c=>{
+  const li = h('li',{}, h('div',{class:'cn'}, c.name, stEl(c.status)), h('div',{}, c.story), h('div',{class:'kv'}, c.found));
+  if (c.status === 'fail' && c.rows.length){
+    const first = paras.findIndex(p=>p.n === c.rows[0]);
+    if (first >= 0) li.append(h('div',{class:'kv'}, 'rows: para. ' + c.rows.slice(0,12).join(', ') + (c.rows.length > 12 ? ' …':'') + ' · ',
+      h('button',{class:'linkbtn', onclick:()=>openPara(first)}, 'open para. ' + c.rows[0])));
+  }
+  if (c.name === 'Nothing lost' && unclassified.length){
+    const u = h('ul',{class:'list bad'});
+    unclassified.forEach(x=>u.append(h('li',{}, '<'+x.tag+'> ' + x.text)));
+    li.append(u);
+  }
+  chkList.append(li);
+});
+const repTable = h('table',{},
+  h('caption',{}, h('span',{class:'lab'},'TAB.01'), repairs.length + ' spaces restored in ' + repParas + ' paragraphs'),
+  h('thead',{}, h('tr',{}, h('th',{scope:'col',class:'n'},'Paragraph'), h('th',{scope:'col'},'Before'), h('th',{scope:'col'},'After'), h('th',{scope:'col'},'Rule'))),
+  h('tbody',{}, repairs.map(r=>{
+    const i = paras.findIndex(p=>p.n === r.n);
+    const tr = h('tr',{class:'main', onclick:()=>openPara(i)},
+      h('td',{class:'n'}, h('button',{class:'rowbtn', 'aria-label':'Open paragraph '+r.n+' on the paragraphs tab'}, String(r.n))),
+      h('td',{class:'mono'}, '…'+r.before+'…'), h('td',{class:'mono'}, '…'+r.after+'…'), h('td',{}, r.label));
+    return tr;
+  })));
+const repBody = h('div',{},
+  h('div',{class:'rules'}, perRule.map(r=>r.n + ' ' + r.label).join(' · ')),
+  repairs.length ? repTable : h('p',{class:'note'},'No space needed restoring.'),
+  h('p',{class:'note'},'Rules restore a space only where the characters prove it was there. Word pairs such as “Giventhe” are not touched.'));
+const a1 = accordion('Every check (' + checks.length + ')', chkList);
+const a2 = accordion('The spaces restored (' + repairs.length + ')', repBody);
+p0.append(h('div',{class:'accwrap'}, a1, a2));
+
+/* ---------- tab 02 ---------- */
+const p1 = $('p1');
+p1.append(h('h2',{class:'q'},'What does each paragraph say, and how do I cite it?'));
+const hdList = h('ul',{class:'list hd'}, headings.map(x=>h('li',{class:x.tag === 'h3' ? 'l3':''}, x.display)));
+const hdBtn = h('button',{class:'acc','aria-expanded':'false','aria-controls':'hdpanel'}, h('span',{},'Headings found: ' + headings.length), h('span',{'aria-hidden':'true'},'+'));
+const hdPanel = h('div',{id:'hdpanel', hidden:true}, hdList);
+hdBtn.addEventListener('click',()=>{
+  const o = hdBtn.getAttribute('aria-expanded') === 'true';
+  hdBtn.setAttribute('aria-expanded', o ? 'false':'true'); hdPanel.hidden = o; hdBtn.lastChild.textContent = o ? '+':'–';
+});
+p1.append(h('div',{class:'accwrap', style:'margin:0 0 16px'}, hdBtn, hdPanel));
+
+function firstLine(t){
+  if (t.length <= 120) return t;
+  let c = t.slice(0,120); const sp = c.lastIndexOf(' ');
+  if (sp > 60) c = c.slice(0,sp);
+  return c + '…';
+}
+function markedText(text, marks){
+  const frag = document.createDocumentFragment();
+  const rs = [];
+  marks.slice().sort((a,b)=>a-b).forEach(m=>{
+    const r = [Math.max(0,m-1), Math.min(text.length,m+2)];
+    if (rs.length && r[0] <= rs[rs.length-1][1]) rs[rs.length-1][1] = Math.max(rs[rs.length-1][1], r[1]); else rs.push(r);
+  });
+  let pos = 0;
+  rs.forEach(r=>{
+    if (r[0] > pos) frag.append(text.slice(pos, r[0]));
+    frag.append(h('span',{class:'fix'}, text.slice(r[0], r[1])));
+    pos = r[1];
+  });
+  if (pos < text.length) frag.append(text.slice(pos));
+  return frag;
+}
+async function copyText(t){
+  try { await navigator.clipboard.writeText(t); return true; }
+  catch(e){
+    const ta = document.createElement('textarea'); ta.value = t; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.append(ta); ta.select(); let ok = false;
+    try { ok = document.execCommand('copy'); } catch(_){}
+    ta.remove(); return ok;
+  }
+}
+const rowRefs = [];
+const tbody = h('tbody');
+paras.forEach((p,i)=>{
+  const did = 'det' + i;
+  const btn = h('button',{class:'rowbtn','aria-expanded':'false','aria-controls':did,'aria-label':'Paragraph '+p.n+', show full text'}, String(p.n));
+  const chk = p.fwMatch === true ? h('span',{class:'ok'},'OK') : (p.fwMatch === false ? h('span',{class:'bad'},'first words differ') : h('span',{class:'nr'},'not run'));
+  const tr = h('tr',{class:'main'}, h('td',{class:'n'}, btn), h('td',{}, p.section || '—'), h('td',{}, firstLine(p.text)), h('td',{}, chk));
+  const cbtn = h('button',{class:'btn alt'},'Copy citation');
+  cbtn.addEventListener('click', async ev=>{
+    ev.stopPropagation();
+    const ok = await copyText(p.citation);
+    cbtn.textContent = ok ? 'Copied' : 'Copy failed';
+    setTimeout(()=>{cbtn.textContent = 'Copy citation';}, 2000);
+  });
+  const det = h('td',{colspan:'4'},
+    h('div',{class:'kv'}, 'PATH · ' + (p.path.length ? p.path.join(' › ') : '(no heading above this paragraph)')),
+    h('p',{class:'fulltext'}, markedText(p.text, p.marks)),
+    p.marks.length ? h('div',{class:'kv'}, p.marks.length + (p.marks.length === 1 ? ' place' : ' places') + ' where a space was missing, marked with a red box. The text as found is text_raw in the JSON.') : null,
+    h('div',{class:'kv'}, 'reference first words · ' + (refFW ? (p.fwRef || '(no entry)') : 'no reference in this file')),
+    h('div',{class:'kv'}, 'found first words · ' + p.fwFound),
+    h('div',{style:'margin-top:10px', class:'btns'}, cbtn, h('span',{class:'kv'}, p.citation)));
+  const dtr = h('tr',{class:'detail', id:did, hidden:true}, det);
+  const toggle = ()=>{
+    const open = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', open ? 'false':'true'); dtr.hidden = open;
+  };
+  tr.addEventListener('click', toggle);
+  tbody.append(tr, dtr);
+  rowRefs.push({btn, dtr, tr});
+});
+p1.append(h('table',{},
+  h('caption',{}, h('span',{class:'lab'},'TAB.02'), paras.length + ' paragraphs found' + (refP != null ? ', ' + refP + ' expected' : '')),
+  h('thead',{}, h('tr',{}, h('th',{scope:'col',class:'n'},'No.'), h('th',{scope:'col'},'Section'), h('th',{scope:'col'},'First line'), h('th',{scope:'col'},'Check'))),
+  tbody));
+if (!paras.length) p1.append(h('div',{class:'empty'},'No numbered paragraph was found in this HTML.'));
+p1.append(h('p',{class:'how'},'How this is computed: section = nearest <h2>/<h3> above the paragraph; first line = first 120 characters cut at a word; check = first six words against the reference. Click a row for the full text.'));
+
+function openPara(i){
+  if (i < 0 || !rowRefs[i]) return;
+  selectTab(1);
+  const r = rowRefs[i];
+  r.btn.setAttribute('aria-expanded','true'); r.dtr.hidden = false;
+  r.tr.scrollIntoView({block:'center'});
+  r.btn.focus();
+}
+
+/* ---------- footer ---------- */
+$('foot').append(
+  h('div',{}, 'Source: ' + (D.source || D.doc_url || '') + (built ? ' · built ' + built : '')),
+  h('div',{}, 'Done by this page’s code; no model was called and nothing left the browser.'));
+})();
+</script>
+</body>
+</html>

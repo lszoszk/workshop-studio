@@ -63,6 +63,13 @@ elif ! ssh "$VM_HOST" "test -f $VM_DIR/server/.env"; then
 else
   echo "  present, left as it is"
 fi
+# Claude goes straight to Anthropic (server/models.py): its key joins the VM's .env once, the same way
+if [ "$DRY" = 1 ]; then
+  echo "  would add ANTHROPIC_API_KEY from ~/.env to $VM_DIR/server/.env if it is not there yet"
+elif grep -q '^ANTHROPIC_API_KEY=' ~/.env 2>/dev/null && ! ssh "$VM_HOST" "grep -q '^ANTHROPIC_API_KEY=' $VM_DIR/server/.env"; then
+  grep '^ANTHROPIC_API_KEY=' ~/.env | ssh "$VM_HOST" "umask 077; cat >> $VM_DIR/server/.env"
+  echo "  ✓ ANTHROPIC_API_KEY added (not printed)"
+fi
 
 # Same guard as aiact: the box runs production services on a disk near 90% full.
 echo "▸ checking disk headroom"
