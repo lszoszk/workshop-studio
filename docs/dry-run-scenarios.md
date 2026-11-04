@@ -17,6 +17,16 @@ Written on 4 November 2026, before the rehearsal of about 20 November. Nothing h
 
 Two consequences follow. First, the default model (Mistral) gives a broken first dashboard about half the time, and the dashboard is the first thing all 30 people build: if half the room keeps the default, seven or eight people start with a broken app. Second, the 15-minute slot "Modify, in their own words" holds at most two changes per person, and only if nothing breaks.
 
+## Third pass, 4 November, late afternoon
+
+Run again after Session 8 moved from the PDF to the HTML of GC 27, in two tabs. Times and results are the bake-off's, with the studio's settings.
+
+**Session 7 has not changed, and its first minutes are still the riskiest of the morning.** The default model, Mistral Large 3, gave 2 dashboards with no error in 6; GLM-5.3 gave 5 in 6. Amara (default) has a one-in-two chance of an empty dashboard at 09:47; the gallery's *Improve it in the studio* brings her back for the video at 09:45–09:48 if a co-facilitator is at her side. Claude through the studio is still unmeasured.
+
+**Session 8 is now shorter and calmer.** Opening the HTML, planning (2.5 minutes) and building (1.6–3.4 minutes) fit the 13 minutes from 11:23. Every Mistral build shows what the lesson needs on its first tab: 90 of 90 paragraphs, footnotes 0 of 141, the five paragraphs whose first words differ, and the JSON and Markdown downloads. Two of its three builds leave the paragraph table on tab 02 empty, and all three log a JavaScript error, so Amara sees the lesson but not the table; the gallery's app gives her the table. Mr Chen on GLM may get "the model stopped before writing the code" (one build in three) and sends again, which still lands before the slide at 11:36. Leila on Claude gets the recorded quality (7 of 7) and spends the time comparing a paragraph with the PDF. Fatou, in recorded mode, gets Sonnet's build at once. Tomás, with a seat code, has five suggested improvements in seconds at 11:42 and builds one in about two minutes. The slide on three formats then explains what everyone has just seen, so the story of the UN Human Rights Database lands on a question the room already has: how can anyone cite a General Comment without its footnotes?
+
+**What the third pass changes in the risks.** The extraction is no longer a risk to the timeline; the S7 dashboard and the logins are. Two things are open and need money first: the OpenRouter balance was $1.22 at 14:10 (the session plan asks for at least $300 on the day), and Claude and GLM run in the EU have not been measured through the studio, so the S7 default model is still to be decided.
+
 ## Second pass, 4 November afternoon
 
 The morning was run again on paper after three changes: six dashboards per model were measured; the studio now supplies Chart.js when a model also loads it from the internet (Mistral Large 3 did in every build, which only gave a blocked request and an error in the console); and the gallery shows each model's best of six dashboards, with the count. What this changes:
