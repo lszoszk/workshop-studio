@@ -1,60 +1,64 @@
+/* The look of the author's tools and of the apps the plans ask for: paper and ink, one deep red, serif
+   titles, a few small monospace labels, thin rules; the chat behaves like any chatbot's. */
 :root {
-  --bg: #f2f4f7;
-  --panel: #ffffff;
-  --surface: #ffffff;          /* controls, cards, inputs */
-  --ink: #16202b;
-  --muted: #4a5664;
-  --faint: #6b7785;
-  --line: #dfe4ea;
-  --accent: #1f6fb2;
-  --accent-hover: #195d95;
+  --bg: #ece8de;
+  --panel: #f4f1ea;
+  --surface: #fbf9f4;          /* controls, cards, inputs */
+  --ink: #1d1b18;
+  --muted: #57524a;
+  --faint: #6f695e;
+  --line: #d9d2c3;
+  --accent: #9b2335;
+  --accent-hover: #7f1c2b;
   --accent-ink: #ffffff;
-  --accent-soft: #e9f2fb;
-  --code-bg: #0e1621;
-  --code-bar: #172231;
-  --code-ink: #cfe3f7;
+  --accent-soft: #f1e4e2;
+  --code-bg: #1d1b18;
+  --code-bar: #2a2724;
+  --code-ink: #ece5d6;
   --model: #c47f00;
   --script: #2ea043;
   --ai: #8957e5;
-  --danger: #b42318;
-  --err-bg: #fdecea;
-  --err-line: #f5c2bc;
-  --ok-bg: #e6f4ea;
-  --ok-ink: #1e6b34;
-  --warn-bg: #fff4e0;
-  --warn-ink: #8a5300;
-  --note-bg: #fffaf0;
-  --note-line: #f1dfb8;
-  --assist-bg: #f7f9fb;
-  --lesson-ink: #2f3d4c;
-  --truth-bg: #f3fbf5;
-  --radius: 12px;
-  --shadow: 0 1px 2px rgba(16, 30, 54, .06), 0 4px 16px rgba(16, 30, 54, .07);
+  --danger: #a4410e;           /* rust, so an error is never mistaken for the accent */
+  --err-bg: #fbeee4;
+  --err-line: #ecc9b0;
+  --ok-bg: #e7f0e3;
+  --ok-ink: #1f5f30;
+  --warn-bg: #fbf1dc;
+  --warn-ink: #7d4a00;
+  --note-bg: #fbf5e6;
+  --note-line: #e8d9b5;
+  --assist-bg: #fbf9f4;
+  --lesson-ink: #3a352e;
+  --truth-bg: #eef5ea;
+  --radius: 4px;
+  --shadow: 0 1px 2px rgba(29, 27, 24, .05), 0 6px 22px rgba(29, 27, 24, .07);
+  --serif: Georgia, "Times New Roman", serif;
+  --mono: ui-monospace, Menlo, Consolas, monospace;
   --top-h: 56px;
   --foot-h: 34px;
   font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--ink);
   color-scheme: light;
 }
-/* dark mode: the system's choice, or the footer's switch */
+/* dark mode: the system's choice, or the footer's switch; a dark paper, not navy */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme=light]) {
-    --bg: #0e131a; --panel: #151c25; --surface: #1b2430; --ink: #e5ebf1; --muted: #aab6c3; --faint: #8796a5; --line: #29343f;
-    --accent: #5ea8e4; --accent-hover: #7ab8ea; --accent-ink: #08131d; --accent-soft: #17304a;
-    --code-bg: #0a0f15; --code-bar: #111a24; --err-bg: #3a1714; --err-line: #6b2a24; --danger: #ff8a7a;
-    --ok-bg: #12301e; --ok-ink: #7fd69a; --warn-bg: #36280e; --warn-ink: #f1c26b; --note-bg: #2a2412; --note-line: #4d421f;
-    --assist-bg: #18212b; --lesson-ink: #cfd9e3; --truth-bg: #112619;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 4px 16px rgba(0, 0, 0, .35);
+    --bg: #141311; --panel: #1b1a17; --surface: #23211e; --ink: #ede8de; --muted: #b5aea2; --faint: #958f84; --line: #37332d;
+    --accent: #e0707f; --accent-hover: #ea8c98; --accent-ink: #1b0a0d; --accent-soft: #3a1f23;
+    --code-bg: #0f0e0d; --code-bar: #1a1917; --err-bg: #3a1d10; --err-line: #6b3a20; --danger: #f0a070;
+    --ok-bg: #16281a; --ok-ink: #8fd3a0; --warn-bg: #33270f; --warn-ink: #f1c26b; --note-bg: #2a2412; --note-line: #4d421f;
+    --assist-bg: #1b1a17; --lesson-ink: #d9d3c7; --truth-bg: #15241a;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 22px rgba(0, 0, 0, .35);
     color-scheme: dark;
   }
 }
 :root[data-theme=dark] {
-  --bg: #0e131a; --panel: #151c25; --surface: #1b2430; --ink: #e5ebf1; --muted: #aab6c3; --faint: #8796a5; --line: #29343f;
-  --accent: #5ea8e4; --accent-hover: #7ab8ea; --accent-ink: #08131d; --accent-soft: #17304a;
-  --code-bg: #0a0f15; --code-bar: #111a24; --err-bg: #3a1714; --err-line: #6b2a24; --danger: #ff8a7a;
-  --ok-bg: #12301e; --ok-ink: #7fd69a; --warn-bg: #36280e; --warn-ink: #f1c26b; --note-bg: #2a2412; --note-line: #4d421f;
-  --assist-bg: #18212b; --lesson-ink: #cfd9e3; --truth-bg: #112619;
-  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 4px 16px rgba(0, 0, 0, .35);
+  --bg: #141311; --panel: #1b1a17; --surface: #23211e; --ink: #ede8de; --muted: #b5aea2; --faint: #958f84; --line: #37332d;
+  --accent: #e0707f; --accent-hover: #ea8c98; --accent-ink: #1b0a0d; --accent-soft: #3a1f23;
+  --code-bg: #0f0e0d; --code-bar: #1a1917; --err-bg: #3a1d10; --err-line: #6b3a20; --danger: #f0a070;
+  --ok-bg: #16281a; --ok-ink: #8fd3a0; --warn-bg: #33270f; --warn-ink: #f1c26b; --note-bg: #2a2412; --note-line: #4d421f;
+  --assist-bg: #1b1a17; --lesson-ink: #d9d3c7; --truth-bg: #15241a;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 22px rgba(0, 0, 0, .35);
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -514,3 +518,33 @@ body.wall .work { grid-template-columns: 1fr; height: calc(100% - var(--top-h));
 .tour-card h3 { margin: 4px 0 6px; font-size: 18px; }
 .tour-card p { margin: 0 0 14px; font-size: 15px; line-height: 1.5; }
 .tour-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+
+/* ---------- the look: paper, with a chat that behaves like any chatbot's ---------- */
+/* serif for names and headings; monospace only for sessions, the App/Code switch and small labels */
+.name { font-family: var(--serif); font-weight: 400; font-size: 19px; }
+.shelf-head h2, .drawer-head h3, .fcard h3, .plan-doc h4, .tour-card h3, .handoff-card h1 { font-family: var(--serif); font-weight: 400; }
+.shelf-head h2 { font-size: 30px; }
+.session button, .seg button, .msg .who, .suggest .lbl, .lesson .lbl { font-family: var(--mono); font-size: 12px; letter-spacing: .07em; text-transform: uppercase; }
+/* tabs underlined in red, as in the author's tools */
+.session, .seg { background: none; border-radius: 0; padding: 0; gap: 0; border-bottom: 1px solid var(--line); }
+.session button, .seg button { border-radius: 0; border-bottom: 2px solid transparent; padding: 6px 10px 5px; }
+.session button[aria-selected=true], .seg button[aria-selected=true] { background: none; box-shadow: none; color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+/* nearly square corners, thin rules */
+.primary, .ghost, .tool, .versions button, .suggest button, .fcard, .filechip, .needs, .msg.note, .msg.err, .drawer .verdict, .tour-card { border-radius: 3px; }
+.chip { border-radius: 3px; background: none; border: 1px solid var(--line); }
+.fcard { box-shadow: none; }
+.fcard:hover { border-color: var(--accent); }
+.empty { background: var(--panel); }
+.lesson { background: none; border-radius: 0; border-left: 3px solid var(--accent); padding: 4px 0 4px 12px; }
+/* the chat, as in ChatGPT and Claude: the model's replies without a frame, yours in a soft bubble,
+   the message box as a card that floats above the bottom edge */
+.msg.assistant { background: transparent; border: 0; padding-left: 2px; padding-right: 2px; }
+.msg.user { background: color-mix(in srgb, var(--ink) 7%, var(--panel)); border-radius: 14px; }
+.composer { margin: 0 12px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); padding: 8px 10px; }
+.composer:focus-within { border-color: var(--accent); }
+.composer textarea { border: 0; border-radius: 0; background: transparent; padding: 6px 4px; }
+.composer textarea:focus { outline: none; }
+/* the app on the stage: a sheet on the desk, so it is clear where the studio ends and the app begins */
+.viewport { background: var(--bg); }
+.viewport > iframe { inset: auto; top: 10px; left: 10px; width: calc(100% - 20px); height: calc(100% - 20px); border: 1px solid var(--line); box-shadow: var(--shadow); }
+body.wall .viewport > iframe { top: 0; left: 0; width: 100%; height: 100%; border: 0; box-shadow: none; }
