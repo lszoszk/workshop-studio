@@ -1,0 +1,33 @@
+[
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "s7-4-extract-pdf",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "download": true,
+   "text_matches": true
+  },
+  "passed": 4,
+  "total": 7,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Unexpected token ':'"
+  ],
+  "network": [],
+  "lines": 1518,
+  "edit": null,
+  "repair": null,
+  "seconds": 124.4,
+  "first_token": 0.7,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 19942,
+  "completion_tokens": 14843,
+  "cost": 0.02570161,
+  "provider": "Mistral"
+ }
+]

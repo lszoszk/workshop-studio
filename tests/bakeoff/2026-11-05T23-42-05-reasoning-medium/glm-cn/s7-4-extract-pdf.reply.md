@@ -1,0 +1,1 @@
+I built the app exactly to the plan: a one-pass parser that strips headers and footers, joins paragraphs across page breaks, attributes headings, flags suspect footnote lines without removing them, and checks itself against the document's reference. Two tabs (Result, Paragraphs), JSON and Markdown exports, and a QA panel in the Analysis Function style.

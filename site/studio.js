@@ -1466,12 +1466,24 @@
   // a suggestion fills the message box, as in any chatbot: read it, change it if you like, send it.
   // The four workshop apps fill it with a short problem, in plan mode.
   function useSuggestion(p, fresh) {
+    preferModel(p);
     if (plannable(p)) return openPlanning(p, fresh);
     openComposer(promptText(p));
     Object.assign(S, { pendingPromptId: p.id, pendingText: promptText(p), freshNext: !!fresh });
     renderNeeds();
     renderSuggest();
     renderContinuing();
+  }
+
+  // an exercise may name the model it runs on best (prompts.json "model", "model_note"); the participant can switch back
+  function preferModel(p) {
+    const m = p.model && S.config.models[p.model];
+    if (!m || S.model === p.model) return;
+    S.model = p.model;
+    localSet('ws:model', S.model);
+    $('modelSelect').value = S.model;
+    renderBadge();
+    note(`This exercise runs on <b>${esc(m.label)}</b> (${esc(whereOf(S.model))})${p.model_note ? ': ' + esc(p.model_note) : ''}. You can switch back in the model menu.`);
   }
 
   /* ---------- plan mode: a recorded planning session, then a live plan and build ---------- */
@@ -2133,7 +2145,7 @@
     const m = S.config.models[S.model];
     $('modelBadge').innerHTML = `Made in <b>${esc(m.origin)}</b> · runs in <b>${esc(m.host_region)}</b>`;
     $('modelBadge').title = `${m.label} by ${m.maker}, made in ${m.origin}. Runs on ${m.host}: ${m.host_note}. ` +
-      `Zero data retention: the host may not keep what is sent. Price: ${m.price}.`;
+      (m.zdr === false ? 'No zero data retention: the host keeps requests for a limited time. ' : 'Zero data retention: the host may not keep what is sent. ') + `Price: ${m.price}.`;
     $('modelSelect').title = $('modelBadge').title;
   }
 

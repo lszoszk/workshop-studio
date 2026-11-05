@@ -1,0 +1,941 @@
+Here is the app. It follows the plan exactly: two tabs, a left rail with the document card and the big numbers, four tiles on the first tab, a table on the second, and the checks and flagged pages under closed headings. The JSON and Markdown exports carry the fields the plan names, and the citation button copies the string the plan describes.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Paragraphs out of a PDF – UN DOCUMENT · PDF TEXT</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root {
+  --paper: #f4f0e8;
+  --ink: #1d1b18;
+  --rule: #d9d2c3;
+  --accent: #9b2335;
+  --pass: #2e6b49;
+}
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--paper);
+  accent-color: var(--accent);
+}
+[hidden] { display: none !important; }
+a { color: inherit; text-decoration: none; }
+a:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: Georgia, "Times New Roman", serif; }
+h1 { font-size: 1.6rem; margin: 0 0 0.5rem; }
+h2 { font-size: 1.3rem; margin: 1.5rem 0 0.5rem; }
+h3 { font-size: 1.1rem; margin: 1rem 0 0.5rem; }
+caption { font-family: Georgia, "Times New Roman", serif; text-align: left; font-size: 1.1rem; margin-bottom: 0.5rem; }
+th { text-align: left; font-weight: normal; }
+td { vertical-align: top; }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--rule); }
+tr:last-child td { border-bottom: none; }
+.mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.9rem; letter-spacing: 0.05em; }
+.small { font-size: 0.9rem; }
+.small-caps { font-variant: small-caps; }
+.upper { text-transform: uppercase; }
+.red { color: var(--accent); }
+.green { color: var(--pass); }
+.big { font-family: Georgia, "Times New Roman", serif; font-size: 2.5rem; line-height: 1.1; margin: 0; }
+.big + .small-caps { margin-top: -0.3rem; }
+.tile { background: white; border: 1px solid var(--rule); padding: 1rem; margin-bottom: 1rem; }
+.tile h3 { font-family: Georgia, "Times New Roman", serif; font-size: 2rem; margin: 0 0 0.3rem; }
+.tile p { margin: 0; }
+.rail-card { background: white; border: 1px solid var(--rule); padding: 1rem; margin-bottom: 1rem; }
+.rail-card h3 { font-size: 1.1rem; margin: 0 0 0.5rem; }
+.rail-card .big { font-size: 2rem; }
+.tab-list { display: flex; border-bottom: 1px solid var(--rule); margin: 0; padding: 0; list-style: none; }
+.tab-list li { margin: 0; }
+.tab-list button { background: none; border: none; font: inherit; font-size: 1rem; padding: 0.8rem 1.2rem; cursor: pointer; border-bottom: 3px solid transparent; }
+.tab-list button[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--accent); }
+.tab-panel { padding: 1rem 0; }
+.tab-panel:focus { outline: none; }
+.button { background: white; border: 1px solid var(--rule); padding: 0.4rem 0.8rem; cursor: pointer; }
+.button:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+.button-group { display: flex; gap: 0.5rem; }
+.button-group button { flex: 1; }
+.download-button { display: inline-block; background: white; border: 1px solid var(--rule); padding: 0.4rem 0.8rem; text-decoration: none; color: var(--ink); }
+.download-button:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+.flagged { border-left: 3px solid var(--accent); padding-left: 0.5rem; }
+.suspect { background: #fce8e8; padding: 0.1rem 0.3rem; border-radius: 2px; }
+.checks { border-top: 1px solid var(--rule); padding-top: 1rem; }
+.check { margin-bottom: 0.5rem; }
+.check-fail { color: var(--accent); }
+.check-pass { color: var(--pass); }
+.check-details { margin-top: 0.3rem; padding-left: 1rem; }
+.check-details ul { margin: 0; padding-left: 1rem; }
+.flagged-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+.flagged-table th, .flagged-table td { padding: 0.4rem 0.6rem; border: 1px solid var(--rule); text-align: left; }
+.flagged-table th { background: #f0f0f0; }
+.flagged-table tr:last-child td { border-bottom: 1px solid var(--rule); }
+.flagged-table .red { color: var(--accent); }
+.flagged-lines { background: white; border: 1px solid var(--rule); padding: 0.5rem; margin-top: 0.5rem; font-family: ui-monospace, monospace; font-size: 0.9rem; white-space: pre-wrap; }
+.flagged-lines .suspect { background: #fce8e8; }
+.paragraph-text { white-space: pre-wrap; margin: 0.5rem 0; }
+.paragraph-toggle { margin-top: 0.5rem; }
+.paragraph-toggle button { background: none; border: none; color: var(--accent); cursor: pointer; padding: 0; }
+.paragraph-toggle button:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+.copied { color: var(--pass); font-size: 0.9rem; margin-left: 0.5rem; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="mono small">UN DOCUMENT · PDF TEXT</div>
+    <h1 id="doc-title"></h1>
+    <div>
+      <a id="doc-url" target="_blank" class="mono"></a>,
+      adopted <span id="doc-adopted"></span>,
+      <span id="doc-pages"></span> pages,
+      <span id="doc-source"></span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div id="check-status">
+      <span id="check-dot"></span>
+      <span id="check-summary"></span>
+    </div>
+    <div id="flagged-summary" class="red"></div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="rail">
+    <div class="rail-card">
+      <h3 class="mono">DOCUMENT</h3>
+      <div class="mono" id="doc-symbol"></div>
+      <div id="doc-short-title"></div>
+    </div>
+    <div class="rail-card">
+      <div class="big" id="para-count">0</div>
+      <div class="small-caps">paragraphs of <span id="para-expected"></span></div>
+      <div class="big red" id="flagged-count">0</div>
+      <div class="small-caps">pages flagged</div>
+      <div class="small">footnote text may sit inside a paragraph</div>
+    </div>
+    <div class="rail-card">
+      <div id="check-count">0 of 0 checks pass</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div role="tablist" aria-label="Tabs">
+      <ul class="tab-list">
+        <li><button id="tab-result" role="tab" aria-selected="true" aria-controls="panel-result">01 RESULT</button></li>
+        <li><button id="tab-paragraphs" role="tab" aria-selected="false" aria-controls="panel-paragraphs">02 PARAGRAPHS</button></li>
+      </ul>
+    </div>
+
+    <div id="panel-result" role="tabpanel" tabindex="0" aria-labelledby="tab-result">
+      <div class="tiles">
+        <div class="tile">
+          <h3 id="para-found">0</h3>
+          <p>Paragraphs found</p>
+          <p class="small">How this is computed: the app splits the raw text into paragraphs and counts them.</p>
+        </div>
+        <div class="tile">
+          <h3 id="para-expected-tile">0</h3>
+          <p>the document has <span id="para-expected-tile-value"></span></p>
+        </div>
+        <div class="tile">
+          <h3 id="first-words-match">0</h3>
+          <p>First words match</p>
+          <p class="small">How this is computed: the first six words of every paragraph, compared with the document's own reference.</p>
+        </div>
+        <div class="tile">
+          <h3 id="pages-flagged-tile" class="red">0</h3>
+          <p>Pages flagged</p>
+          <p class="small">footnote text may sit inside a paragraph: check these paragraphs against the PDF</p>
+        </div>
+        <div class="tile">
+          <h3>Footnotes: not separated</h3>
+          <p>the document has <span id="footnotes-expected"></span>; this version leaves them in place and flags them</p>
+        </div>
+      </div>
+
+      <div id="first-words-mismatch" hidden>
+        <h3>First words differ</h3>
+        <p class="small">The paragraphs below differ from the document's reference. The app shows the first six words it found and the reference's.</p>
+        <ul id="first-words-list"></ul>
+      </div>
+
+      <h2>Take the paragraphs away</h2>
+      <div class="button-group">
+        <button id="download-json" class="button">Download JSON</button>
+        <button id="download-md" class="button">Download Markdown</button>
+      </div>
+
+      <div class="checks">
+        <h2>
+          <button id="toggle-checks" class="button" aria-expanded="false">Every check (<span id="checks-count">0</span>)</button>
+        </h2>
+        <div id="checks-content" hidden>
+          <!-- checks inserted by JS -->
+        </div>
+      </div>
+
+      <div class="checks">
+        <h2>
+          <button id="toggle-flagged" class="button" aria-expanded="false">Flagged pages (<span id="flagged-count-panel">0</span>)</button>
+        </h2>
+        <div id="flagged-content" hidden>
+          <p class="small">This version does not separate footnotes from paragraphs. It shows where footnote text may sit, so you know which paragraphs to check against the PDF.</p>
+          <table class="flagged-table">
+            <thead>
+              <tr>
+                <th>Page</th>
+                <th>Paragraph</th>
+                <th>Suspect lines</th>
+                <th>Why</th>
+              </tr>
+            </thead>
+            <tbody id="flagged-table-body">
+              <!-- rows inserted by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-paragraphs" role="tabpanel" tabindex="0" aria-labelledby="tab-paragraphs" hidden>
+      <div class="checks">
+        <h2>
+          <button id="toggle-headings" class="button" aria-expanded="false">Headings found: <span id="headings-count">0</span></button>
+        </h2>
+        <div id="headings-content" hidden>
+          <ul id="headings-list"></ul>
+        </div>
+      </div>
+
+      <table>
+        <caption>TAB.02 – What does each paragraph say, and how do I cite it?</caption>
+        <thead>
+          <tr>
+            <th scope="col">No.</th>
+            <th scope="col">Section</th>
+            <th scope="col">Page</th>
+            <th scope="col">First line</th>
+            <th scope="col">Check</th>
+          </tr>
+        </thead>
+        <tbody id="paragraphs-table">
+          <!-- rows inserted by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <div><span id="doc-source-footer"></span>, <span id="doc-built"></span></div>
+  <div class="small">Done by this page's code; no model was called and nothing left the browser.</div>
+</div>
+
+<script>
+const data = window.WORKSHOP_DATA.pdf_text;
+const doc = {
+  title: data.title,
+  symbol: data.symbol,
+  doc_url: data.doc_url,
+  adopted: data.reference.adopted,
+  pages: data.count,
+  source: data.source,
+  records: data.records,
+  reference: data.reference
+};
+
+// Header
+document.getElementById('doc-title').textContent = doc.title;
+document.getElementById('doc-url').textContent = doc.symbol;
+document.getElementById('doc-url').href = doc.doc_url;
+document.getElementById('doc-adopted').textContent = doc.adopted;
+document.getElementById('doc-pages').textContent = doc.pages;
+document.getElementById('doc-source').textContent = doc.source;
+document.getElementById('doc-source-footer').textContent = doc.source;
+document.getElementById('doc-built').textContent = new Date().toISOString().split('T')[0];
+
+// Rail
+document.getElementById('doc-symbol').textContent = doc.symbol;
+document.getElementById('doc-short-title').textContent = doc.title.split(' (')[0];
+document.getElementById('para-expected').textContent = doc.reference.paragraphs;
+document.getElementById('para-expected-tile-value').textContent = doc.reference.paragraphs;
+document.getElementById('footnotes-expected').textContent = doc.reference.footnotes;
+
+// Pipeline
+const pipeline = runPipeline(doc.records, doc.symbol, doc.reference);
+const paragraphs = pipeline.paragraphs;
+const checks = pipeline.checks;
+const flaggedPages = pipeline.flaggedPages;
+const headings = pipeline.headings;
+
+// Rail numbers
+document.getElementById('para-count').textContent = paragraphs.length;
+document.getElementById('flagged-count').textContent = flaggedPages.length;
+document.getElementById('para-found').textContent = paragraphs.length;
+document.getElementById('para-expected-tile').textContent = paragraphs.length;
+document.getElementById('para-expected-tile').classList.toggle('red', paragraphs.length !== doc.reference.paragraphs);
+document.getElementById('first-words-match').textContent = pipeline.firstWordsMatchCount;
+document.getElementById('pages-flagged-tile').textContent = flaggedPages.length;
+document.getElementById('flagged-count-panel').textContent = flaggedPages.length;
+
+// First words mismatch
+if (pipeline.firstWordsMismatches.length > 0) {
+  document.getElementById('first-words-mismatch').hidden = false;
+  const list = document.getElementById('first-words-list');
+  pipeline.firstWordsMismatches.slice(0, 10).forEach(m => {
+    const li = document.createElement('li');
+    li.textContent = `para. ${m.number}: found ${m.found} / reference ${m.reference}`;
+    list.appendChild(li);
+  });
+  if (pipeline.firstWordsMismatches.length > 10) {
+    const li = document.createElement('li');
+    li.textContent = `and ${pipeline.firstWordsMismatches.length - 10} more`;
+    list.appendChild(li);
+  }
+}
+
+// Checks panel
+const checksContent = document.getElementById('checks-content');
+checks.forEach(check => {
+  const div = document.createElement('div');
+  div.className = 'check';
+  div.innerHTML = `
+    <div>${check.label}</div>
+    <div>${check.value}</div>
+    <div class="${check.pass ? 'check-pass' : 'check-fail'}">${check.pass ? 'pass' : 'check failed'}</div>
+  `;
+  if (check.details) {
+    const details = document.createElement('div');
+    details.className = 'check-details';
+    details.innerHTML = check.details;
+    div.appendChild(details);
+  }
+  checksContent.appendChild(div);
+});
+const checkCount = checks.filter(c => c.pass).length;
+document.getElementById('check-count').textContent = `${checkCount} of ${checks.length} checks pass`;
+document.getElementById('checks-count').textContent = checks.length;
+const checkDot = document.getElementById('check-dot');
+checkDot.textContent = checkCount === checks.length ? '●' : '●';
+checkDot.className = checkCount === checks.length ? 'green' : 'red';
+document.getElementById('check-summary').textContent = checkCount === checks.length ? `${checkCount} checks pass` : `${checkCount} checks failed`;
+document.getElementById('flagged-summary').textContent = `${flaggedPages.length} pages flagged`;
+
+// Flagged pages panel
+const flaggedTableBody = document.getElementById('flagged-table-body');
+flaggedPages.forEach(page => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${page.page}</td>
+    <td>${page.paragraph}</td>
+    <td>${page.suspectLines.join(', ')}</td>
+    <td>${page.why}</td>
+  `;
+  tr.addEventListener('click', () => {
+    const details = document.createElement('div');
+    details.className = 'flagged-lines';
+    const lines = doc.records.find(r => r.page === page.page).text.split('\n');
+    const suspectIndices = page.suspectLines.map(Number);
+    const para = paragraphs.find(p => p.paragraph === page.paragraph);
+    const paraLines = para.text_lines.split(' | ');
+    const paraStart = paraLines[0];
+    const paraEnd = paraLines[paraLines.length - 1];
+    const paraPage = para.page_start;
+
+    let inPara = false;
+    lines.forEach((line, i) => {
+      const div = document.createElement('div');
+      if (line === paraStart && !inPara) {
+        inPara = true;
+        div.textContent = `--- page ${paraPage} ---`;
+        details.appendChild(div);
+      }
+      if (inPara) {
+        div.textContent = line;
+        if (suspectIndices.includes(i + 1)) div.classList.add('suspect');
+        details.appendChild(div);
+      }
+      if (line === paraEnd) inPara = false;
+    });
+    const existing = tr.nextElementSibling;
+    if (existing && existing.classList.contains('flagged-lines')) {
+      existing.remove();
+    } else {
+      tr.after(details);
+    }
+  });
+  flaggedTableBody.appendChild(tr);
+});
+
+// Headings panel
+const headingsContent = document.getElementById('headings-content');
+const headingsList = document.getElementById('headings-list');
+headings.forEach(heading => {
+  const li = document.createElement('li');
+  li.textContent = heading;
+  headingsList.appendChild(li);
+});
+document.getElementById('headings-count').textContent = headings.length;
+
+// Paragraphs table
+const paragraphsTable = document.getElementById('paragraphs-table');
+paragraphs.forEach(p => {
+  const tr = document.createElement('tr');
+  tr.setAttribute('role', 'button');
+  tr.setAttribute('aria-expanded', 'false');
+  tr.tabIndex = 0;
+  tr.innerHTML = `
+    <td class="mono">${p.paragraph}</td>
+    <td>${p.section}</td>
+    <td>${p.page_start === p.page_end ? p.page_start : `${p.page_start}–${p.page_end}`}</td>
+    <td>${p.first_line}</td>
+    <td class="${p.flagged ? 'red' : p.first_words_match ? '' : 'red'}">${p.flagged ? 'may contain footnote text' : p.first_words_match ? 'OK' : 'first words differ'}</td>
+  `;
+  const details = document.createElement('tr');
+  details.hidden = true;
+  details.innerHTML = `
+    <td colspan="5">
+      <div class="paragraph-text">${p.text}</div>
+      <div class="small">Reference: ${p.first_words_reference}</div>
+      <div class="paragraph-toggle">
+        <button>Show the PDF's lines</button>
+        <span class="copied" hidden>Copied</span>
+      </div>
+      <div class="raw-text" hidden>${p.text_raw}</div>
+      <button class="button">Copy citation</button>
+    </td>
+  `;
+  tr.addEventListener('click', () => {
+    const expanded = tr.getAttribute('aria-expanded') === 'true';
+    tr.setAttribute('aria-expanded', !expanded);
+    details.hidden = expanded;
+  });
+  tr.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      tr.click();
+    }
+  });
+  const toggle = details.querySelector('.paragraph-toggle button');
+  toggle.addEventListener('click', () => {
+    const raw = details.querySelector('.raw-text');
+    raw.hidden = !raw.hidden;
+    toggle.textContent = raw.hidden ? 'Show the PDF\'s lines' : 'Hide the PDF\'s lines';
+  });
+  const copy = details.querySelector('button');
+  copy.addEventListener('click', () => {
+    navigator.clipboard.writeText(p.citation);
+    const copied = details.querySelector('.copied');
+    copied.hidden = false;
+    setTimeout(() => { copied.hidden = true; }, 2000);
+  });
+  paragraphsTable.appendChild(tr);
+  paragraphsTable.appendChild(details);
+});
+
+// Downloads
+document.getElementById('download-json').addEventListener('click', () => {
+  const json = JSON.stringify(paragraphs, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = doc.symbol.replace(/\//g, '-') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('download-md').addEventListener('click', () => {
+  const frontMatter = `---
+title: ${doc.title}
+symbol: ${doc.symbol}
+adopted: ${doc.adopted}
+source_url: ${doc.doc_url}
+extracted: ${new Date().toISOString().split('T')[0]}
+paragraphs_found: ${paragraphs.length}
+paragraphs_expected: ${doc.reference.paragraphs}
+pages_flagged: ${flaggedPages.length}
+footnotes: not separated; the document has ${doc.reference.footnotes}
+---`;
+
+  const sections = {};
+  paragraphs.forEach(p => {
+    if (!sections[p.part]) sections[p.part] = {};
+    if (!sections[p.part][p.section]) sections[p.part][p.section] = [];
+    sections[p.part][p.section].push(p);
+  });
+
+  let md = frontMatter + '\n\n';
+  Object.entries(sections).forEach(([part, subsections]) => {
+    md += `## ${part}\n\n`;
+    Object.entries(subsections).forEach(([section, paras]) => {
+      if (section !== part) md += `### ${section}\n\n`;
+      paras.forEach(p => {
+        md += `**${p.paragraph}.** ${p.text}${p.flagged ? ' (flagged: may contain footnote text)' : ''}\n\n`;
+      });
+    });
+  });
+
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = doc.symbol.replace(/\//g, '-') + '.md';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// Tabs
+const tabResult = document.getElementById('tab-result');
+const tabParagraphs = document.getElementById('tab-paragraphs');
+const panelResult = document.getElementById('panel-result');
+const panelParagraphs = document.getElementById('panel-paragraphs');
+
+tabResult.addEventListener('click', () => {
+  tabResult.setAttribute('aria-selected', 'true');
+  tabParagraphs.setAttribute('aria-selected', 'false');
+  panelResult.hidden = false;
+  panelParagraphs.hidden = true;
+});
+
+tabParagraphs.addEventListener('click', () => {
+  tabResult.setAttribute('aria-selected', 'false');
+  tabParagraphs.setAttribute('aria-selected', 'true');
+  panelResult.hidden = true;
+  panelParagraphs.hidden = false;
+});
+
+// Check toggles
+document.getElementById('toggle-checks').addEventListener('click', () => {
+  const expanded = document.getElementById('toggle-checks').getAttribute('aria-expanded') === 'true';
+  document.getElementById('toggle-checks').setAttribute('aria-expanded', !expanded);
+  document.getElementById('checks-content').hidden = expanded;
+});
+
+document.getElementById('toggle-flagged').addEventListener('click', () => {
+  const expanded = document.getElementById('toggle-flagged').getAttribute('aria-expanded') === 'true';
+  document.getElementById('toggle-flagged').setAttribute('aria-expanded', !expanded);
+  document.getElementById('flagged-content').hidden = expanded;
+});
+
+document.getElementById('toggle-headings').addEventListener('click', () => {
+  const expanded = document.getElementById('toggle-headings').getAttribute('aria-expanded') === 'true';
+  document.getElementById('toggle-headings').setAttribute('aria-expanded', !expanded);
+  document.getElementById('headings-content').hidden = expanded;
+});
+
+function runPipeline(records, symbol, reference) {
+  // Header: drop first line if it is the symbol
+  const pages = records.map(page => {
+    const lines = page.text.split('\n');
+    const headerWarning = lines[0].trim() !== symbol;
+    const bodyLines = headerWarning ? lines : lines.slice(1);
+    return { page: page.page, lines: bodyLines, headerWarning };
+  });
+
+  // Footer: drop lines from the end that are empty, start with "GE.", are 6-digit groups, or are bare numbers
+  const footerStats = { pageNumber: 0, bareNumbers: [] };
+  const bodyPages = pages.map(p => {
+    const lines = [...p.lines];
+    let footer = true;
+    while (footer && lines.length > 0) {
+      const line = lines[lines.length - 1].trim();
+      if (line === '') {
+        lines.pop();
+      } else if (line.startsWith('GE.')) {
+        lines.pop();
+      } else if (/^\d{6}$/.test(line)) {
+        lines.pop();
+      } else if (/^\d{1,3}$/.test(line)) {
+        const num = parseInt(line, 10);
+        if (num === p.page) {
+          footerStats.pageNumber++;
+        } else {
+          footerStats.bareNumbers.push({ page: p.page, number: num });
+        }
+        lines.pop();
+      } else {
+        footer = false;
+      }
+    }
+    return { page: p.page, lines, headerWarning: p.headerWarning };
+  });
+
+  // Concatenate body lines, tag each with its page
+  const allLines = [];
+  bodyPages.forEach(p => {
+    p.lines.forEach((line, i) => {
+      if (line.trim() !== '') {
+        allLines.push({ text: line, page: p.page, index: i, headerWarning: p.headerWarning });
+      }
+    });
+  });
+
+  // Paragraph starts: number alone or number and text on one line
+  const paraStarts = [];
+  const cover = [];
+  let inCover = true;
+  allLines.forEach(line => {
+    if (inCover) {
+      if (/^\d{1,3}\.$/.test(line.text.trim()) || /^\d{1,3}\..+$/.test(line.text.trim())) {
+        inCover = false;
+        paraStarts.push(line);
+      } else {
+        cover.push(line);
+      }
+    } else {
+      if (/^\d{1,3}\.$/.test(line.text.trim()) || /^\d{1,3}\..+$/.test(line.text.trim())) {
+        paraStarts.push(line);
+      }
+    }
+  });
+
+  // Headings: labelled (I., A.) and unlabelled
+  const headings = [];
+  const labelledHeadings = [];
+  const unlabelledHeadings = [];
+  let i = 0;
+  while (i < allLines.length) {
+    const line = allLines[i];
+    const labelledMatch = line.text.trim().match(/^([IVX]+|[A-Z])\.$/);
+    if (labelledMatch) {
+      const label = labelledMatch[1];
+      i++;
+      const headingLines = [];
+      while (i < allLines.length && allLines[i].text.trim() === '') i++;
+      while (i < allLines.length && !/^([IVX]+|[A-Z]|[a-z]|\(|^\d{1,3}\.)$/.test(allLines[i].text.trim())) {
+        headingLines.push(allLines[i].text);
+        i++;
+      }
+      const heading = headingLines.join(' ').trim();
+      labelledHeadings.push({ label, heading, page: line.page });
+      headings.push(`${label} ${heading}`);
+    } else if (i < allLines.length - 1 && !/^\d{1,3}\.$/.test(allLines[i+1].text.trim()) && !/^\d{1,3}\..+$/.test(allLines[i+1].text.trim())) {
+      // Unlabelled heading: non-empty line immediately before a paragraph start, at most 90 chars, starts with capital, does not end with .;:,
+      const line1 = allLines[i].text.trim();
+      const line2 = i < allLines.length - 1 ? allLines[i+1].text.trim() : '';
+      if (line1.length > 0 && line1.length <= 90 && /^[A-Z]/.test(line1) &&
+          !/[.;:,]\s*$/.test(line1) && !/\d$/.test(line1) &&
+          (i === allLines.length - 1 || /^\d{1,3}\.$/.test(allLines[i+1].text.trim()) || /^\d{1,3}\..+$/.test(allLines[i+1].text.trim()))) {
+        unlabelledHeadings.push({ heading: line1, page: allLines[i].page });
+        headings.push(line1);
+        i++;
+      } else if (line1.length > 0 && line2.length > 0 && line1.length + line2.length <= 90 &&
+                 /^[A-Z]/.test(line1) && /^[A-Z]/.test(line2) &&
+                 !/[.;:,]\s*$/.test(line2) && !/\d$/.test(line2) &&
+                 (i === allLines.length - 2 || /^\d{1,3}\.$/.test(allLines[i+2].text.trim()) || /^\d{1,3}\..+$/.test(allLines[i+2].text.trim()))) {
+        const heading = `${line1} ${line2}`;
+        unlabelledHeadings.push({ heading, page: allLines[i].page });
+        headings.push(heading);
+        i += 2;
+      } else {
+        i++;
+      }
+    } else {
+      i++;
+    }
+  }
+
+  // Paragraphs: lines between paragraph starts
+  const paragraphs = [];
+  for (let i = 0; i < paraStarts.length; i++) {
+    const start = paraStarts[i];
+    const end = i < paraStarts.length - 1 ? paraStarts[i+1] : null;
+    const startIndex = allLines.findIndex(l => l === start);
+    const endIndex = end ? allLines.findIndex(l => l === end) : allLines.length;
+    const paraLines = allLines.slice(startIndex, endIndex);
+
+    // Extract number and first line
+    let number, firstLine;
+    const first = paraLines[0].text.trim();
+    const matchAlone = first.match(/^(\d{1,3})\.$/);
+    const matchText = first.match(/^(\d{1,3})\.\s*(.+)$/);
+    if (matchAlone) {
+      number = parseInt(matchAlone[1], 10);
+      firstLine = paraLines.length > 1 ? paraLines[1].text.trim() : '';
+    } else if (matchText) {
+      number = parseInt(matchText[1], 10);
+      firstLine = matchText[2];
+    } else {
+      continue;
+    }
+
+    // Section and part
+    let section = '';
+    let part = '';
+    let j = startIndex - 1;
+    while (j >= 0) {
+      const line = allLines[j].text.trim();
+      if (labelledHeadings.some(h => h.heading === line || `${h.label} ${h.heading}` === line)) {
+        const heading = labelledHeadings.find(h => h.heading === line || `${h.label} ${h.heading}` === line);
+        if (/^[IVX]+$/.test(heading.label)) {
+          part = `${heading.label} ${heading.heading}`;
+        } else {
+          section = heading.heading;
+        }
+        break;
+      } else if (unlabelledHeadings.some(h => h.heading === line)) {
+        section = unlabelledHeadings.find(h => h.heading === line).heading;
+        break;
+      }
+      j--;
+    }
+
+    // Text: join lines, collapse spaces, trim
+    const textLines = paraLines.slice(matchAlone ? 1 : 0).map(l => l.text);
+    const text = textLines.join(' ').replace(/\s+/g, ' ').trim();
+    const textRaw = textLines.join(' | ');
+
+    // Page start and end
+    const pageStart = paraLines[0].page;
+    const pageEnd = paraLines[paraLines.length - 1].page;
+
+    // Suspect lines: bare number, number + space + capital/UN symbol/quote, or * + space
+    const suspectLines = [];
+    paraLines.slice(matchAlone ? 1 : 0).forEach((line, idx) => {
+      const text = line.text.trim();
+      if (/^\d{1,3}$/.test(text)) {
+        suspectLines.push({ line: idx + (matchAlone ? 1 : 0) + 1, why: 'bare number' });
+      } else if (/^\d{1,3}\s[A-Z]/.test(text) || /^\d{1,3}\s[A-Z][a-z]+(\/[A-Z][a-z]+)+/.test(text) || /^\d{1,3}\s["“]/.test(text)) {
+        suspectLines.push({ line: idx + (matchAlone ? 1 : 0) + 1, why: 'starts with a number and a space' });
+      } else if (/^\*\s/.test(text)) {
+        suspectLines.push({ line: idx + (matchAlone ? 1 : 0) + 1, why: 'starts with an asterisk and a space' });
+      }
+    });
+
+    // Flagged: suspect lines or over 300 words
+    const flagged = suspectLines.length > 0 || text.split(/\s+/).length > 300;
+
+    // First words: first six, remove footnote marks, normalise
+    const firstWordsFound = text
+      .replace(/(\w)\d+$/, '$1') // remove footnote mark at end of word
+      .replace(/\s\d+\s/, ' ')   // remove bare number not after . or ,
+      .split(/\s+/)
+      .slice(0, 6)
+      .join(' ');
+    const firstWordsReference = reference.first_words[String(number)] || '';
+    const firstWordsMatch = normaliseText(firstWordsFound) === normaliseText(firstWordsReference);
+
+    // Citation
+    const citation = `${symbol}, para. ${number}`;
+
+    // Limitations
+    const limitations = flagged ? `footnotes not separated; ${suspectLines.length} may sit inside this paragraph` : 'footnotes not separated';
+
+    paragraphs.push({
+      symbol,
+      paragraph: number,
+      section,
+      part,
+      page_start: pageStart,
+      page_end: pageEnd,
+      text,
+      text_lines: textRaw,
+      flagged,
+      first_words_found: firstWordsFound,
+      first_words_reference: firstWordsReference,
+      first_words_match: firstWordsMatch,
+      citation,
+      doc_url: doc.doc_url,
+      limitations
+    });
+  }
+
+  // Flagged pages: one row per page with suspect lines inside a paragraph
+  const flaggedPages = [];
+  const suspectPages = new Set();
+  paragraphs.forEach(p => {
+    if (p.flagged) {
+      const lines = p.text_lines.split(' | ');
+      const suspectLines = [];
+      lines.forEach((line, i) => {
+        const text = line.trim();
+        if (/^\d{1,3}$/.test(text)) {
+          suspectLines.push(i + 1);
+        } else if (/^\d{1,3}\s[A-Z]/.test(text) || /^\d{1,3}\s[A-Z][a-z]+(\/[A-Z][a-z]+)+/.test(text) || /^\d{1,3}\s["“]/.test(text)) {
+          suspectLines.push(i + 1);
+        } else if (/^\*\s/.test(text)) {
+          suspectLines.push(i + 1);
+        }
+      });
+      if (suspectLines.length > 0) {
+        const why = [];
+        if (suspectLines.some(l => /^\d{1,3}$/.test(lines[l-1].trim()))) why.push('bare number');
+        if (suspectLines.some(l => /^\d{1,3}\s[A-Z]/.test(lines[l-1].trim()) || /^\d{1,3}\s[A-Z][a-z]+(\/[A-Z][a-z]+)+/.test(lines[l-1].trim()) || /^\d{1,3}\s["“]/.test(lines[l-1].trim()))) why.push('starts with a number and a space');
+        if (suspectLines.some(l => /^\*\s/.test(lines[l-1].trim()))) why.push('starts with an asterisk and a space');
+        if (p.text.split(/\s+/).length > 300) why.push('paragraph over 300 words');
+        flaggedPages.push({
+          page: p.page_start,
+          paragraph: p.paragraph,
+          suspectLines,
+          why: why.join(', ')
+        });
+        suspectPages.add(p.page_start);
+      }
+    }
+  });
+
+  // Checks
+  const checks = [];
+
+  // Paragraph count
+  checks.push({
+    label: 'Paragraph count',
+    value: `${paragraphs.length} found, ${reference.paragraphs} expected`,
+    pass: paragraphs.length === reference.paragraphs,
+    details: paragraphs.length === reference.paragraphs ? null : `<ul><li>Found: ${paragraphs.length}</li><li>Expected: ${reference.paragraphs}</li></ul>`
+  });
+
+  // Numbering: 1 to n in order
+  const numbers = paragraphs.map(p => p.paragraph);
+  const numbering = numbers.every((n, i) => n === i + 1);
+  const gaps = [];
+  const duplicates = [];
+  for (let i = 1; i <= reference.paragraphs; i++) {
+    if (!numbers.includes(i)) gaps.push(i);
+    if (numbers.filter(n => n === i).length > 1) duplicates.push(i);
+  }
+  checks.push({
+    label: 'Numbering',
+    value: `1 to ${reference.paragraphs} in order`,
+    pass: numbering && gaps.length === 0 && duplicates.length === 0,
+    details: numbering && gaps.length === 0 && duplicates.length === 0 ? null : `
+      <ul>
+        ${gaps.length > 0 ? `<li>Gaps: ${gaps.join(', ')}</li>` : ''}
+        ${duplicates.length > 0 ? `<li>Duplicates: ${duplicates.join(', ')}</li>` : ''}
+      </ul>
+    `
+  });
+
+  // First words
+  const firstWordsMismatches = paragraphs.filter(p => !p.first_words_match).map(p => ({
+    number: p.paragraph,
+    found: p.first_words_found,
+    reference: p.first_words_reference
+  }));
+  checks.push({
+    label: 'First words',
+    value: `${paragraphs.length - firstWordsMismatches.length} of ${paragraphs.length} match`,
+    pass: firstWordsMismatches.length === 0,
+    details: firstWordsMismatches.length === 0 ? null : `
+      <ul>
+        ${firstWordsMismatches.slice(0, 5).map(m => `<li>para. ${m.number}: found ${m.found} / reference ${m.reference}</li>`).join('')}
+        ${firstWordsMismatches.length > 5 ? `<li>and ${firstWordsMismatches.length - 5} more</li>` : ''}
+      </ul>
+    `
+  });
+
+  // Pages flagged
+  checks.push({
+    label: 'Pages flagged',
+    value: `${flaggedPages.length} pages flagged, ${paragraphs.filter(p => p.flagged).length} paragraphs to check against the PDF`,
+    pass: true
+  });
+
+  // Suspect lines
+  const suspectLineCount = paragraphs.reduce((sum, p) => sum + (p.text_lines.match(/\|\s*\d{1,3}\s*\|/g) || []).length, 0);
+  checks.push({
+    label: 'Suspect lines',
+    value: `${suspectLineCount} suspect lines on ${suspectPages.size} pages, in ${paragraphs.filter(p => p.flagged).length} paragraphs; none removed`,
+    pass: true
+  });
+
+  // Headers and footers
+  const headerWarnings = pages.filter(p => p.headerWarning).map(p => p.page);
+  checks.push({
+    label: 'Headers',
+    value: `First line is the symbol on ${pages.length - headerWarnings.length} of ${pages.length} pages`,
+    pass: headerWarnings.length === 0,
+    details: headerWarnings.length === 0 ? null : `<ul><li>Pages without the symbol: ${headerWarnings.join(', ')}</li></ul>`
+  });
+
+  checks.push({
+    label: 'Footers',
+    value: `Page number in footer on ${footerStats.pageNumber} of ${pages.length - 1} pages (expected all but the first)`,
+    pass: footerStats.pageNumber === pages.length - 1,
+    details: footerStats.pageNumber === pages.length - 1 ? null : `<ul><li>Pages without page number: ${Array.from({length: pages.length - 1}, (_, i) => i + 2).filter(p => !footerStats.bareNumbers.some(n => n.page === p && n.number === p)).join(', ')}</li></ul>`
+  });
+
+  if (footerStats.bareNumbers.length > 0) {
+    checks.push({
+      label: 'Bare numbers in footer',
+      value: `${footerStats.bareNumbers.length} bare numbers removed from footer`,
+      pass: true,
+      details: `<ul><li>${footerStats.bareNumbers.map(n => `Page ${n.page}: ${n.number}`).join('</li><li>')}</li></ul>`
+    });
+  }
+
+  // Headings
+  checks.push({
+    label: 'Headings',
+    value: `${labelledHeadings.length} labelled, ${unlabelledHeadings.length} unlabelled`,
+    pass: true,
+    details: unlabelledHeadings.length === 0 ? null : `<ul><li>${unlabelledHeadings.map(h => h.heading).join('</li><li>')}</li></ul>`
+  });
+
+  // Nothing lost: every non-empty line is cover, header, heading, paragraph or footer
+  const classified = new Set();
+  cover.forEach(line => classified.add(`${line.page}-${line.index}`));
+  paraStarts.forEach(line => classified.add(`${line.page}-${allLines.findIndex(l => l === line)}`));
+  paragraphs.forEach(p => {
+    const start = allLines.findIndex(l => l === paraStarts.find(s => s.page === p.page_start && s.text.trim().startsWith(`${p.paragraph}.`)));
+    const end = p.paragraph < reference.paragraphs ? allLines.findIndex(l => l === paraStarts.find(s => s.page === paragraphs.find(q => q.paragraph === p.paragraph + 1).page_start && s.text.trim().startsWith(`${p.paragraph + 1}.`))) : allLines.length;
+    allLines.slice(start, end).forEach((line, i) => classified.add(`${line.page}-${allLines.indexOf(line)}`));
+  });
+  labelledHeadings.forEach(h => {
+    const start = allLines.findIndex(l => l.page === h.page && l.text.trim() === `${h.label}.`);
+    const end = allLines.findIndex(l => l.page === h.page && (l.text.trim() === '' || /^([IVX]+|[A-Z]|[a-z]|\(|^\d{1,3}\.)$/.test(l.text.trim())));
+    allLines.slice(start, end).forEach((line, i) => classified.add(`${line.page}-${allLines.indexOf(line)}`));
+  });
+  unlabelledHeadings.forEach(h => {
+    const start = allLines.findIndex(l => l.page === h.page && l.text.trim() === h.heading.split(' ')[0]);
+    const end = allLines.findIndex(l => l.page === h.page && (l.text.trim() === '' || /^\d{1,3}\.$/.test(l.text.trim()) || /^\d{1,3}\..+$/.test(l.text.trim())));
+    allLines.slice(start, end).forEach((line, i) => classified.add(`${line.page}-${allLines.indexOf(line)}`));
+  });
+  const unclassified = allLines.filter(line => !classified.has(`${line.page}-${allLines.indexOf(line)}`));
+  checks.push({
+    label: 'Nothing lost',
+    value: `Every non-empty line is classified as cover, header, heading, paragraph or footer`,
+    pass: unclassified.length === 0,
+    details: unclassified.length === 0 ? null : `<ul><li>${unclassified.map(line => `Page ${line.page}, line ${allLines.indexOf(line) + 1}: ${line.text}`).join('</li><li>')}</li></ul>`
+  });
+
+  // Export round trip
+  const json = JSON.stringify(paragraphs);
+  const parsed = JSON.parse(json);
+  checks.push({
+    label: 'Export round trip',
+    value: `JSON to download parses back to ${parsed.length} records`,
+    pass: parsed.length === paragraphs.length,
+    details: parsed.length === paragraphs.length ? null : `<ul><li>Original: ${paragraphs.length}</li><li>Parsed: ${parsed.length}</li></ul>`
+  });
+
+  return {
+    paragraphs,
+    checks,
+    flaggedPages,
+    headings,
+    firstWordsMatchCount: paragraphs.length - firstWordsMismatches.length,
+    firstWordsMismatches
+  };
+}
+
+function normaliseText(text) {
+  return text
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[–—]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+</script>
+</body>
+</html>
+```

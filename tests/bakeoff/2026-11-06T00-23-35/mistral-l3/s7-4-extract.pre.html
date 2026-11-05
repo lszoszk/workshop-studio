@@ -1,0 +1,1351 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paragraphs from PDF text – E/C.12/GC/27</title>
+  <style>
+    :root {
+      --paper: #f4f0e8;
+      --ink: #1d1b18;
+      --rule: #d9d2c3;
+      --red: #9b2335;
+      --green: #2e6b49;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      color: var(--ink);
+      background-color: var(--paper);
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 0;
+    }
+    @media (max-width: 800px) {
+      body { grid-template-columns: 1fr; }
+      #rail { display: none; }
+    }
+    #rail {
+      padding: 1rem;
+      border-right: 1px solid var(--rule);
+      background-color: var(--paper);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    #main {
+      padding: 1rem;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    .label {
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--ink);
+      opacity: 0.7;
+    }
+    h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.4rem;
+      font-weight: normal;
+      margin: 0;
+      line-height: 1.3;
+    }
+    .meta {
+      font-size: 0.9rem;
+      color: var(--ink);
+      opacity: 0.8;
+    }
+    .meta a {
+      color: var(--ink);
+      text-decoration: none;
+    }
+    .meta a:focus { outline: 2px solid var(--red); outline-offset: 2px; }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .dot.pass { background-color: var(--green); }
+    .dot.fail { background-color: var(--red); }
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    .tab {
+      padding: 0.5rem 1rem;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--ink);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .tab:hover { background-color: rgba(155, 35, 53, 0.05); }
+    .tab[aria-selected="true"] {
+      color: var(--red);
+      border-bottom-color: var(--red);
+      font-weight: bold;
+    }
+    .tab:focus { outline: 2px solid var(--red); outline-offset: -2px; }
+    .tab::before {
+      content: attr(data-tab);
+      font-weight: bold;
+    }
+    .tab-panel { display: none; }
+    .tab-panel[aria-hidden="false"] { display: block; }
+    .rail-card {
+      background: white;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .rail-card h2 {
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin: 0 0 0.5rem;
+      color: var(--ink);
+      opacity: 0.7;
+    }
+    .rail-card p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+    .big-number {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 2.5rem;
+      line-height: 1;
+      margin: 0.5rem 0;
+    }
+    .big-number.red { color: var(--red); }
+    .progress {
+      height: 4px;
+      background-color: var(--rule);
+      margin: 0.5rem 0;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: var(--red);
+    }
+    .tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .tile {
+      background: white;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 1rem;
+    }
+    .tile h3 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.5rem;
+      margin: 0 0 0.5rem;
+      line-height: 1.2;
+    }
+    .tile .number {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 2.5rem;
+      line-height: 1;
+      margin: 0.5rem 0;
+    }
+    .tile .number.red { color: var(--red); }
+    .tile .number.green { color: var(--green); }
+    .tile .how {
+      font-size: 0.8rem;
+      color: var(--ink);
+      opacity: 0.7;
+      margin-top: 0.5rem;
+    }
+    .tile ul {
+      margin: 0.5rem 0 0;
+      padding-left: 1.2rem;
+      font-size: 0.9rem;
+    }
+    .tile li { margin-bottom: 0.2rem; }
+    .export {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 0.9rem;
+      background: white;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover { background-color: rgba(155, 35, 53, 0.05); }
+    button:focus { outline: 2px solid var(--red); outline-offset: 2px; }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--rule);
+      cursor: pointer;
+      user-select: none;
+    }
+    .section-heading button {
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section-heading button::before {
+      content: attr(data-count);
+      font-weight: bold;
+    }
+    .section-heading button[aria-expanded="true"]::after { content: "−"; }
+    .section-heading button[aria-expanded="false"]::after { content: "+"; }
+    .section-content { display: none; }
+    .section-content[aria-hidden="false"] { display: block; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    caption {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      text-align: left;
+    }
+    th, td {
+      padding: 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid var(--rule);
+    }
+    th {
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background-color: var(--paper);
+    }
+    th[scope="col"]:first-child { border-top-left-radius: 4px; }
+    th[scope="col"]:last-child { border-top-right-radius: 4px; }
+    td { vertical-align: top; }
+    td.num { text-align: right; font-family: Georgia, "Times New Roman", serif; }
+    td.red { color: var(--red); }
+    tr[aria-expanded="false"] td { padding-bottom: 0; }
+    .row-content {
+      padding: 0.5rem;
+      border-top: 1px solid var(--rule);
+      display: none;
+    }
+    tr[aria-expanded="true"] .row-content { display: block; }
+    .row-content p {
+      margin: 0.5rem 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .suspect {
+      background-color: rgba(155, 35, 53, 0.1);
+      border: 1px solid var(--red);
+      padding: 0 0.2rem;
+      border-radius: 2px;
+    }
+    .citation {
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.9rem;
+      background-color: var(--paper);
+      padding: 0.2rem 0.4rem;
+      border-radius: 2px;
+      margin: 0.5rem 0;
+    }
+    .copied {
+      font-size: 0.8rem;
+      color: var(--green);
+      margin-left: 0.5rem;
+    }
+    .checks {
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .check {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--rule);
+    }
+    .check.pass { color: var(--green); }
+    .check.fail { color: var(--red); }
+    .check a {
+      color: var(--red);
+      text-decoration: none;
+    }
+    .check a:focus { outline: 2px solid var(--red); outline-offset: 2px; }
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--rule);
+      font-size: 0.8rem;
+      color: var(--ink);
+      opacity: 0.7;
+    }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div id="rail">
+  <div class="rail-card">
+    <h2>Document</h2>
+    <p id="rail-symbol" class="label"></p>
+    <p id="rail-title"></p>
+  </div>
+  <div class="rail-card">
+    <p class="big-number" id="rail-paragraphs-found">0</p>
+    <p>paragraphs of <span id="rail-paragraphs-expected">0</span></p>
+    <div class="progress"><div class="progress-bar" id="rail-progress"></div></div>
+  </div>
+  <div class="rail-card">
+    <p class="big-number red" id="rail-paragraphs-flagged">0</p>
+    <p>paragraphs flagged</p>
+    <p style="font-size: 0.8rem; opacity: 0.8;">footnote text may sit inside: check them against the PDF</p>
+  </div>
+  <div class="rail-card">
+    <p><span id="rail-checks-pass">0</span> of <span id="rail-checks-total">0</span> checks pass</p>
+  </div>
+</div>
+
+<div id="main">
+  <header>
+    <div>
+      <p class="label">UN DOCUMENT · PDF TEXT</p>
+      <h1 id="title"></h1>
+      <p class="meta">
+        <a id="symbol" href="#" target="_blank"></a>,
+        adopted <span id="adopted"></span>,
+        <span id="pages"></span> pages,
+        <span id="source"></span>
+      </p>
+    </div>
+    <div class="status">
+      <div class="dot" id="status-dot"></div>
+      <span id="status-text"></span>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Tabs">
+    <button id="tab-01" class="tab" role="tab" aria-selected="true" aria-controls="panel-01" data-tab="01">
+      Result
+    </button>
+    <button id="tab-02" class="tab" role="tab" aria-selected="false" aria-controls="panel-02" data-tab="02">
+      Paragraphs
+    </button>
+  </div>
+
+  <div id="panel-01" class="tab-panel" role="tabpanel" aria-labelledby="tab-01" aria-hidden="false">
+    <div class="tiles">
+      <div class="tile">
+        <h3>Paragraphs found</h3>
+        <p class="number" id="paragraphs-found">0</p>
+        <p>the document has <span id="paragraphs-expected">0</span></p>
+        <p class="how">How this is computed: the app splits the raw text into numbered paragraphs.</p>
+      </div>
+      <div class="tile">
+        <h3>First words match</h3>
+        <p class="number" id="first-words-match">0</p>
+        <p>of <span id="first-words-expected">0</span></p>
+        <p class="how">How this is computed: the first six words of each paragraph, after removing footnote marks, compared with the document's own reference.</p>
+        <ul id="first-words-mismatch-list"></ul>
+      </div>
+      <div class="tile">
+        <h3>Paragraphs flagged</h3>
+        <p class="number red" id="paragraphs-flagged">0</p>
+        <p>of the paragraphs found, on <span id="pages-flagged">0</span> pages</p>
+        <p class="how">How this is computed: a paragraph is flagged when it may contain footnote text (a line that starts with a number and a space, or a bare number, or is over 300 words).</p>
+      </div>
+      <div class="tile">
+        <h3>Footnotes</h3>
+        <p class="number">not separated</p>
+        <p>the document has <span id="footnotes-expected">0</span></p>
+        <p class="how">How this is computed: this version leaves footnotes in place and flags them.</p>
+      </div>
+    </div>
+
+    <div class="export">
+      <button id="download-json" disabled>Download JSON</button>
+      <button id="download-md" disabled>Download Markdown</button>
+    </div>
+
+    <div class="section-heading" role="button" tabindex="0" aria-expanded="false" aria-controls="checks-content">
+      <button id="checks-toggle" aria-expanded="false">Every check (<span id="checks-count">0</span>)</button>
+    </div>
+    <div id="checks-content" class="section-content" aria-hidden="true">
+      <div class="checks" id="checks-list"></div>
+    </div>
+
+    <div class="section-heading" role="button" tabindex="0" aria-expanded="false" aria-controls="flagged-content">
+      <button id="flagged-toggle" aria-expanded="false">Flagged paragraphs (<span id="flagged-count">0</span>)</button>
+    </div>
+    <div id="flagged-content" class="section-content" aria-hidden="true">
+      <p style="font-size: 0.9rem; margin-bottom: 1rem;">This version does not separate footnotes from paragraphs. It shows where footnote text may sit, so you know which paragraphs to check against the PDF.</p>
+      <table>
+        <caption>Flagged paragraphs: 0 of 0</caption>
+        <thead>
+          <tr>
+            <th scope="col">Paragraph</th>
+            <th scope="col">Page</th>
+            <th scope="col">Suspect lines</th>
+            <th scope="col">Why</th>
+          </tr>
+        </thead>
+        <tbody id="flagged-table"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="panel-02" class="tab-panel" role="tabpanel" aria-labelledby="tab-02" aria-hidden="true">
+    <div class="section-heading" role="button" tabindex="0" aria-expanded="false" aria-controls="headings-content">
+      <button id="headings-toggle" aria-expanded="false">Headings found: <span id="headings-count">0</span></button>
+    </div>
+    <div id="headings-content" class="section-content" aria-hidden="true">
+      <p id="headings-list" style="font-size: 0.9rem; white-space: pre-wrap;"></p>
+    </div>
+    <table>
+      <caption id="paragraphs-caption">0 paragraphs found</caption>
+      <thead>
+        <tr>
+          <th scope="col">No.</th>
+          <th scope="col">Section</th>
+          <th scope="col">Page</th>
+          <th scope="col">First line</th>
+          <th scope="col">Check</th>
+        </tr>
+      </thead>
+      <tbody id="paragraphs-table"></tbody>
+    </table>
+  </div>
+
+  <footer>
+    <p><span id="source-footer"></span>, <span id="built"></span>. Done by this page's code; no model was called and nothing left the browser.</p>
+  </footer>
+</div>
+
+<script>
+  // Data
+  const data = window.WORKSHOP_DATA.pdf_text;
+  const records = data.records.sort((a, b) => a.page - b.page);
+  const reference = data.reference || {};
+
+  // State
+  let paragraphs = [];
+  let checks = [];
+  let headings = [];
+  let firstWordsMismatches = [];
+  let flaggedParagraphs = [];
+
+  // Run the pipeline
+  function runPipeline() {
+    // 1. Header: first non-empty line equals symbol
+    const headerWarnings = [];
+    records.forEach(record => {
+      const lines = record.text.split(/\r?\n/).filter(line => line.trim() !== '');
+      if (lines.length === 0) return;
+      if (lines[0] === data.symbol) {
+        // Drop it
+      } else {
+        headerWarnings.push({ page: record.page, line: lines[0] });
+      }
+    });
+
+    // 2. Footer: from the end, drop empty, GE., 6-digit groups, bare numbers
+    const footerBareNumbers = [];
+    const pageNumbers = new Set();
+    records.forEach(record => {
+      const lines = record.text.split(/\r?\n/).reverse();
+      let i = 0;
+      while (i < lines.length) {
+        const line = lines[i].trim();
+        if (line === '') { i++; continue; }
+        if (line.startsWith('GE.')) { i++; continue; }
+        if (/^\d{6}( \d{6})*$/.test(line)) { i++; continue; } // date stamp
+        if (/^\d{1,3}$/.test(line)) {
+          if (parseInt(line) === record.page) {
+            pageNumbers.add(record.page);
+          } else {
+            footerBareNumbers.push({ page: record.page, number: line });
+          }
+          i++;
+          continue;
+        }
+        break;
+      }
+    });
+
+    // 3. Body lines: all lines not header or footer, tagged with page
+    const bodyLines = [];
+    records.forEach(record => {
+      const lines = record.text.split(/\r?\n/);
+      const firstNonEmpty = lines.findIndex(line => line.trim() !== '');
+      const lastNonEmpty = lines.length - 1 - lines.slice().reverse().findIndex(line => line.trim() !== '');
+      const headerLine = (firstNonEmpty !== -1 && lines[firstNonEmpty] === data.symbol) ? firstNonEmpty : null;
+      const footerStart = (() => {
+        const reversed = lines.slice().reverse();
+        let i = 0;
+        while (i < reversed.length) {
+          const line = reversed[i].trim();
+          if (line === '') { i++; continue; }
+          if (line.startsWith('GE.')) { i++; continue; }
+          if (/^\d{6}( \d{6})*$/.test(line)) { i++; continue; }
+          if (/^\d{1,3}$/.test(line)) { i++; continue; }
+          break;
+        }
+        return lines.length - i;
+      })();
+      for (let i = 0; i < lines.length; i++) {
+        if (i === headerLine) continue;
+        if (i >= footerStart) continue;
+        if (lines[i].trim() === '') continue;
+        bodyLines.push({ page: record.page, line: lines[i] });
+      }
+    });
+
+    // 4. Paragraph starts: /^(\d{1,3})\.$/ or /^(\d{1,3})\. (.+)$/
+    const paragraphStarts = [];
+    for (let i = 0; i < bodyLines.length; i++) {
+      const line = bodyLines[i].line;
+      const match1 = line.match(/^(\d{1,3})\.$/);
+      const match2 = line.match(/^(\d{1,3})\. (.+)$/);
+      if (match1) {
+        paragraphStarts.push({ index: i, number: parseInt(match1[1]), line: line, page: bodyLines[i].page });
+      } else if (match2) {
+        paragraphStarts.push({ index: i, number: parseInt(match2[1]), line: line, page: bodyLines[i].page, firstLine: match2[2] });
+      }
+    }
+
+    // 5. Headings: labelled (I., A.) and unlabelled
+    const labelledHeadings = [];
+    const unlabelledHeadings = [];
+    let i = 0;
+    while (i < bodyLines.length) {
+      const line = bodyLines[i].line;
+      const labelledMatch = line.match(/^([IVX]+|[A-Z])\.$/);
+      if (labelledMatch) {
+        const label = labelledMatch[1];
+        i++;
+        // Skip blank lines
+        while (i < bodyLines.length && bodyLines[i].line.trim() === '') i++;
+        // Heading text: every line up to next label or paragraph start
+        const headingLines = [];
+        while (i < bodyLines.length) {
+          const nextLine = bodyLines[i].line;
+          if (nextLine.match(/^([IVX]+|[A-Z]|[0-9]{1,3})\.$/) || nextLine.match(/^[0-9]{1,3}\. /)) break;
+          headingLines.push(nextLine);
+          i++;
+        }
+        const headingText = headingLines.join(' ').replace(/\s+/g, ' ').trim();
+        labelledHeadings.push({ label, text: headingText, page: bodyLines[i - headingLines.length].page });
+        continue;
+      }
+      i++;
+    }
+
+    // Unlabelled headings: non-empty line immediately followed by a paragraph-start line, at most 90 chars, starts with capital, does not end with .;,:
+    for (let i = 0; i < bodyLines.length; i++) {
+      const line = bodyLines[i].line;
+      if (line.trim() === '') continue;
+      if (i + 1 >= bodyLines.length) continue;
+      const nextLine = bodyLines[i + 1].line;
+      const isParagraphStart = nextLine.match(/^[0-9]{1,3}\. /) || nextLine.match(/^[0-9]{1,3}\.$/);
+      if (!isParagraphStart) continue;
+      if (line.length > 90) continue;
+      if (!/^[A-Z]/.test(line)) continue;
+      if (/[.;,:]\s*$/.test(line)) continue;
+      // Check if the line before is also a heading line
+      let headingLines = [line];
+      if (i > 0) {
+        const prevLine = bodyLines[i - 1].line;
+        if (prevLine.trim() !== '' && !/[.;,:]\s*$/.test(prevLine) && !prevLine.match(/^[0-9]{1,3}\. /) && !prevLine.match(/^[0-9]{1,3}\.$/) && !prevLine.match(/^([IVX]+|[A-Z])\.$/)) {
+          headingLines.unshift(prevLine);
+          i--; // skip the previous line in the next iteration
+        }
+      }
+      const headingText = headingLines.join(' ').replace(/\s+/g, ' ').trim();
+      unlabelledHeadings.push({ text: headingText, page: bodyLines[i].page });
+    }
+
+    // 6. Paragraph lines: every other non-empty line
+    const paragraphs = [];
+    let currentParagraph = null;
+    let currentHeading = null;
+    let currentPart = null;
+    let lastLabelledHeading = null;
+
+    for (let i = 0; i < bodyLines.length; i++) {
+      const line = bodyLines[i].line;
+      const isParagraphStart = line.match(/^[0-9]{1,3}\. /) || line.match(/^[0-9]{1,3}\.$/);
+      const isLabelledHeading = line.match(/^([IVX]+|[A-Z])\.$/);
+      const isUnlabelledHeading = unlabelledHeadings.some(h => h.page === bodyLines[i].page && h.text === line);
+
+      if (isLabelledHeading) {
+        const label = line.match(/^([IVX]+|[A-Z])\.$/)[1];
+        const heading = labelledHeadings.find(h => h.label === label && h.page === bodyLines[i].page);
+        if (heading) {
+          currentHeading = heading.text;
+          if (/^[IVX]+$/.test(label)) {
+            currentPart = heading.text;
+            lastLabelledHeading = heading.text;
+          } else {
+            currentPart = lastLabelledHeading;
+          }
+        }
+        continue;
+      }
+
+      if (isUnlabelledHeading) {
+        currentHeading = line;
+        continue;
+      }
+
+      if (isParagraphStart) {
+        if (currentParagraph) {
+          paragraphs.push(currentParagraph);
+        }
+        const match1 = line.match(/^(\d{1,3})\.$/);
+        const match2 = line.match(/^(\d{1,3})\. (.+)$/);
+        const number = match1 ? parseInt(match1[1]) : parseInt(match2[1]);
+        const firstLine = match2 ? match2[2] : null;
+        currentParagraph = {
+          number,
+          section: currentHeading,
+          part: currentPart,
+          page_start: bodyLines[i].page,
+          page_end: bodyLines[i].page,
+          lines: [line],
+          text_lines: [line],
+          firstLine,
+          flagged: false,
+          suspectLines: []
+        };
+        continue;
+      }
+
+      if (currentParagraph) {
+        currentParagraph.lines.push(line);
+        currentParagraph.page_end = bodyLines[i].page;
+      }
+    }
+    if (currentParagraph) {
+      paragraphs.push(currentParagraph);
+    }
+
+    // 7. Paragraph text: join lines with a single space
+    paragraphs.forEach(p => {
+      p.text = p.lines.join(' ').replace(/\s+/g, ' ').trim();
+      p.text_raw = p.lines.join('\n');
+    });
+
+    // 8. Suspect lines: bare number, starts with number and space, or over 300 words
+    const suspectLines = [];
+    paragraphs.forEach(p => {
+      const words = p.text.split(/\s+/).filter(word => word !== '');
+      if (words.length > 300) {
+        p.flagged = true;
+        p.suspectLines.push({ reason: 'over 300 words', lines: [p.lines[p.lines.length - 1]] });
+      }
+      for (let i = 0; i < p.lines.length; i++) {
+        const line = p.lines[i];
+        const bareNumberMatch = line.match(/^\d{1,3}$/);
+        const numberSpaceMatch = line.match(/^\d{1,3} [A-Z"(*]/);
+        const asteriskMatch = line.match(/^\* /);
+        if (bareNumberMatch || numberSpaceMatch || asteriskMatch) {
+          const reason = bareNumberMatch ? 'bare number' : numberSpaceMatch ? 'starts with number and space' : 'starts with asterisk';
+          p.flagged = true;
+          p.suspectLines.push({ reason, lines: p.lines.slice(i) });
+          suspectLines.push({ paragraph: p.number, page: p.page_start, line, reason });
+          break;
+        }
+      }
+    });
+
+    // 9. First words: first six words, remove footnote marks
+    const firstWords = {};
+    paragraphs.forEach(p => {
+      const words = p.text.split(/\s+/).filter(word => word !== '');
+      const cleanWords = words.map(word => {
+        // Remove footnote marks: digits glued to the end of a word or punctuation
+        let clean = word.replace(/[.,;:!?"')]\d+$/, match => match.slice(0, -1));
+        clean = clean.replace(/\d+$/, '');
+        return clean;
+      }).filter(word => word !== '');
+      // Drop a token of digits alone only when the token before ends with .,",', or ) and is not an abbreviation
+      const finalWords = [];
+      for (let i = 0; i < cleanWords.length; i++) {
+        if (i > 0 && /^\d+$/.test(cleanWords[i])) {
+          const prev = cleanWords[i - 1];
+          if (/[."')]$/.test(prev) && !['No', 'Art', 'art', 'para', 'No.', 'Art.', 'art.'].includes(prev)) {
+            continue;
+          }
+        }
+        finalWords.push(cleanWords[i]);
+      }
+      const sixWords = finalWords.slice(0, 6).join(' ');
+      firstWords[p.number] = sixWords;
+      p.first_words = sixWords;
+    });
+
+    // 10. First words match reference
+    let firstWordsMatch = 0;
+    const mismatches = [];
+    if (reference.first_words) {
+      paragraphs.forEach(p => {
+        const ref = reference.first_words[String(p.number)];
+        if (!ref) return;
+        const normFound = normalizeText(p.first_words);
+        const normRef = normalizeText(ref);
+        if (normFound === normRef) {
+          p.first_words_match = true;
+          firstWordsMatch++;
+        } else {
+          p.first_words_match = false;
+          mismatches.push({ number: p.number, found: p.first_words, ref });
+        }
+      });
+    }
+
+    // 11. Citation
+    paragraphs.forEach(p => {
+      p.citation = `${data.symbol}, para. ${p.number}`;
+    });
+
+    // Checks
+    checks = [];
+
+    // Paragraph count
+    const paragraphCountCheck = {
+      name: 'Paragraph count',
+      found: paragraphs.length,
+      expected: reference.paragraphs || 'no reference',
+      pass: reference.paragraphs ? paragraphs.length === reference.paragraphs : null,
+      message: reference.paragraphs ? (paragraphs.length === reference.paragraphs ? 'pass' : `check failed: found ${paragraphs.length}, expected ${reference.paragraphs}`) : 'not run: no reference in this file'
+    };
+    checks.push(paragraphCountCheck);
+
+    // Numbering: 1 to n in order
+    const numbering = paragraphs.map(p => p.number);
+    const numberingSet = new Set(numbering);
+    const numberingCheck = {
+      name: 'Numbering',
+      found: numbering.join(', '),
+      expected: `1 to ${paragraphs.length}`,
+      pass: numberingSet.size === paragraphs.length && numbering.every((n, i) => n === i + 1),
+      message: numberingSet.size === paragraphs.length && numbering.every((n, i) => n === i + 1) ? 'pass' : `check failed: ${[...numberingSet].filter(n => !numbering.includes(n)).join(', ')} missing, ${numbering.filter((n, i) => numbering.indexOf(n) !== i).join(', ')} duplicate`
+    };
+    checks.push(numberingCheck);
+
+    // First words
+    const firstWordsCheck = {
+      name: 'First words',
+      found: `${firstWordsMatch} match`,
+      expected: reference.first_words ? `${Object.keys(reference.first_words).length} expected` : 'no reference',
+      pass: reference.first_words ? firstWordsMatch === Object.keys(reference.first_words).length : null,
+      message: reference.first_words ? (firstWordsMatch === Object.keys(reference.first_words).length ? 'pass' : `check failed: ${firstWordsMatch} of ${Object.keys(reference.first_words).length} match`) : 'not run: no reference in this file'
+    };
+    checks.push(firstWordsCheck);
+
+    // Paragraphs flagged
+    const flaggedCount = paragraphs.filter(p => p.flagged).length;
+    const flaggedCheck = {
+      name: 'Paragraphs flagged',
+      found: `${flaggedCount} flagged on ${new Set(paragraphs.filter(p => p.flagged).map(p => p.page_start)).size} pages`,
+      expected: 'to check against the PDF',
+      pass: null,
+      message: `${flaggedCount} paragraphs flagged on ${new Set(paragraphs.filter(p => p.flagged).map(p => p.page_start)).size} pages, to check against the PDF`
+    };
+    checks.push(flaggedCheck);
+
+    // Suspect lines
+    const suspectLinesCheck = {
+      name: 'Suspect lines',
+      found: `${suspectLines.length} suspect lines on ${new Set(suspectLines.map(s => s.page)).size} pages, in ${new Set(suspectLines.map(s => s.paragraph)).size} paragraphs`,
+      expected: 'none removed',
+      pass: true,
+      message: `${suspectLines.length} suspect lines on ${new Set(suspectLines.map(s => s.page)).size} pages, in ${new Set(suspectLines.map(s => s.paragraph)).size} paragraphs; none removed`
+    };
+    checks.push(suspectLinesCheck);
+
+    // Headers and footers
+    const headerCheck = {
+      name: 'Headers',
+      found: `${records.length - headerWarnings.length} pages have the symbol as first line`,
+      expected: `${records.length} pages`,
+      pass: headerWarnings.length === 0,
+      message: headerWarnings.length === 0 ? 'pass' : `check failed: ${headerWarnings.length} pages do not start with the symbol (${headerWarnings.map(w => `p.${w.page}: ${w.line}`).join(', ')})`
+    };
+    checks.push(headerCheck);
+
+    const pageNumberCheck = {
+      name: 'Page numbers in footer',
+      found: `${pageNumbers.size} pages have a page number in the footer`,
+      expected: `${records.length - 1} pages (all but the first)`,
+      pass: pageNumbers.size === records.length - 1,
+      message: pageNumbers.size === records.length - 1 ? 'pass' : `check failed: ${pageNumbers.size} pages have a page number, expected ${records.length - 1}`
+    };
+    checks.push(pageNumberCheck);
+
+    const footerBareNumbersCheck = {
+      name: 'Bare numbers removed from footer',
+      found: `${footerBareNumbers.length} bare numbers (${footerBareNumbers.map(n => `p.${n.page}: ${n.number}`).join(', ')})`,
+      expected: 'none',
+      pass: footerBareNumbers.length === 0,
+      message: footerBareNumbers.length === 0 ? 'pass' : `check failed: ${footerBareNumbers.length} bare numbers removed (${footerBareNumbers.map(n => `p.${n.page}: ${n.number}`).join(', ')})`
+    };
+    checks.push(footerBareNumbersCheck);
+
+    // Headings
+    const headingsCheck = {
+      name: 'Headings',
+      found: `${labelledHeadings.length} labelled, ${unlabelledHeadings.length} unlabelled (${unlabelledHeadings.map(h => h.text).join('; ')})`,
+      expected: 'all headings found',
+      pass: true,
+      message: `${labelledHeadings.length} labelled, ${unlabelledHeadings.length} unlabelled (${unlabelledHeadings.map(h => h.text).join('; ')})`
+    };
+    checks.push(headingsCheck);
+
+    // Nothing lost: every non-empty line is classified
+    const classifiedLines = [];
+    records.forEach(record => {
+      const lines = record.text.split(/\r?\n/).filter(line => line.trim() !== '');
+      const firstNonEmpty = lines.findIndex(line => line.trim() !== '');
+      const lastNonEmpty = lines.length - 1 - lines.slice().reverse().findIndex(line => line.trim() !== '');
+      const headerLine = (firstNonEmpty !== -1 && lines[firstNonEmpty] === data.symbol) ? firstNonEmpty : null;
+      const footerStart = (() => {
+        const reversed = lines.slice().reverse();
+        let i = 0;
+        while (i < reversed.length) {
+          const line = reversed[i].trim();
+          if (line === '') { i++; continue; }
+          if (line.startsWith('GE.')) { i++; continue; }
+          if (/^\d{6}( \d{6})*$/.test(line)) { i++; continue; }
+          if (/^\d{1,3}$/.test(line)) { i++; continue; }
+          break;
+        }
+        return lines.length - i;
+      })();
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].trim() === '') continue;
+        if (i === headerLine) {
+          classifiedLines.push({ page: record.page, line: lines[i], kind: 'header' });
+          continue;
+        }
+        if (i >= footerStart) {
+          classifiedLines.push({ page: record.page, line: lines[i], kind: 'footer' });
+          continue;
+        }
+        classifiedLines.push({ page: record.page, line: lines[i], kind: 'body' });
+      }
+    });
+    // Body lines: classified as cover, heading, or paragraph
+    const coverLines = bodyLines.slice(0, paragraphStarts[0] ? paragraphStarts[0].index : 0);
+    const bodyClassified = [];
+    coverLines.forEach(line => bodyClassified.push({ ...line, kind: 'cover' }));
+    for (let i = coverLines.length; i < bodyLines.length; i++) {
+      const line = bodyLines[i].line;
+      const isLabelledHeading = line.match(/^([IVX]+|[A-Z])\.$/);
+      const isUnlabelledHeading = unlabelledHeadings.some(h => h.page === bodyLines[i].page && h.text === line);
+      const isParagraphStart = line.match(/^[0-9]{1,3}\. /) || line.match(/^[0-9]{1,3}\.$/);
+      if (isLabelledHeading || isUnlabelledHeading) {
+        bodyClassified.push({ ...bodyLines[i], kind: 'heading' });
+      } else if (isParagraphStart) {
+        bodyClassified.push({ ...bodyLines[i], kind: 'paragraph' });
+      } else if (paragraphs.some(p => p.lines.includes(line))) {
+        bodyClassified.push({ ...bodyLines[i], kind: 'paragraph' });
+      } else {
+        bodyClassified.push({ ...bodyLines[i], kind: 'unclassified' });
+      }
+    }
+    const unclassifiedLines = bodyClassified.filter(line => line.kind === 'unclassified');
+    const nothingLostCheck = {
+      name: 'Nothing lost',
+      found: `${classifiedLines.length} non-empty lines classified (${classifiedLines.filter(l => l.kind === 'header').length} header, ${classifiedLines.filter(l => l.kind === 'footer').length} footer, ${bodyClassified.filter(l => l.kind === 'cover').length} cover, ${bodyClassified.filter(l => l.kind === 'heading').length} heading, ${bodyClassified.filter(l => l.kind === 'paragraph').length} paragraph)`,
+      expected: `${classifiedLines.length} lines classified exactly once`,
+      pass: unclassifiedLines.length === 0,
+      message: unclassifiedLines.length === 0 ? 'pass' : `check failed: ${unclassifiedLines.length} unclassified lines (${unclassifiedLines.map(l => `p.${l.page}: ${l.line}`).join(', ')})`
+    };
+    checks.push(nothingLostCheck);
+
+    // Export round trip
+    const exportRoundTripCheck = {
+      name: 'Export round trip',
+      found: 'JSON parsed back',
+      expected: `${paragraphs.length} records`,
+      pass: null,
+      message: 'not run'
+    };
+    checks.push(exportRoundTripCheck);
+
+    // Flagged paragraphs
+    flaggedParagraphs = paragraphs.filter(p => p.flagged).map(p => {
+      const suspectLines = p.suspectLines.flatMap(s => s.lines);
+      const reasons = [...new Set(p.suspectLines.map(s => s.reason))].join(', ');
+      return {
+        number: p.number,
+        page: `${p.page_start}${p.page_start !== p.page_end ? `–${p.page_end}` : ''}`,
+        suspectLines: suspectLines.join(' | '),
+        reason: reasons
+      };
+    });
+
+    // First words mismatches
+    firstWordsMismatches = mismatches.slice(0, 10);
+    if (mismatches.length > 10) {
+      firstWordsMismatches.push({ number: null, found: `and ${mismatches.length - 10} more`, ref: '' });
+    }
+
+    // Headings for the list
+    headings = [];
+    labelledHeadings.forEach(h => headings.push({ label: h.label, text: h.text, page: h.page }));
+    unlabelledHeadings.forEach(h => headings.push({ text: h.text, page: h.page }));
+
+    return {
+      paragraphs,
+      checks,
+      headings,
+      firstWordsMismatches,
+      flaggedParagraphs,
+      firstWordsMatch,
+      flaggedCount: paragraphs.filter(p => p.flagged).length,
+      pagesFlagged: new Set(paragraphs.filter(p => p.flagged).map(p => p.page_start)).size
+    };
+  }
+
+  function normalizeText(text) {
+    return text
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’]/g, "'")
+      .replace(/[–—]/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  // Render
+  function render() {
+    const result = runPipeline();
+    paragraphs = result.paragraphs;
+    checks = result.checks;
+    headings = result.headings;
+    firstWordsMismatches = result.firstWordsMismatches;
+    flaggedParagraphs = result.flaggedParagraphs;
+
+    // Header
+    document.getElementById('title').textContent = data.title;
+    document.getElementById('symbol').textContent = data.symbol;
+    document.getElementById('symbol').href = data.doc_url;
+    document.getElementById('adopted').textContent = reference.adopted || 'unknown';
+    document.getElementById('pages').textContent = records.length;
+    document.getElementById('source').textContent = data.source;
+    document.getElementById('source-footer').textContent = data.source;
+    document.getElementById('built').textContent = new Date(data.built).toLocaleDateString('en-CA');
+
+    // Rail
+    document.getElementById('rail-symbol').textContent = data.symbol;
+    document.getElementById('rail-title').textContent = data.title.split(' (')[0];
+    document.getElementById('rail-paragraphs-found').textContent = paragraphs.length;
+    document.getElementById('rail-paragraphs-expected').textContent = reference.paragraphs || '?';
+    document.getElementById('rail-paragraphs-flagged').textContent = result.flaggedCount;
+    const progress = reference.paragraphs ? Math.min(1, paragraphs.length / reference.paragraphs) : 0;
+    document.getElementById('rail-progress').style.width = `${progress * 100}%`;
+    if (paragraphs.length < reference.paragraphs || paragraphs.length > reference.paragraphs) {
+      document.getElementById('rail-paragraphs-found').classList.add('red');
+    } else {
+      document.getElementById('rail-paragraphs-found').classList.remove('red');
+    }
+    const checksPass = checks.filter(c => c.pass === true).length;
+    const checksTotal = checks.filter(c => c.pass !== null).length;
+    document.getElementById('rail-checks-pass').textContent = checksPass;
+    document.getElementById('rail-checks-total').textContent = checksTotal;
+    document.getElementById('status-dot').className = checksPass === checksTotal ? 'dot pass' : 'dot fail';
+    document.getElementById('status-text').textContent = checksPass === checksTotal ? `${checksPass} of ${checksTotal} checks pass` : `${checksTotal - checksPass} checks failed`;
+
+    // Tiles
+    document.getElementById('paragraphs-found').textContent = paragraphs.length;
+    document.getElementById('paragraphs-expected').textContent = reference.paragraphs || 'no reference in this file';
+    if (reference.paragraphs && paragraphs.length !== reference.paragraphs) {
+      document.getElementById('paragraphs-found').classList.add('red');
+    } else {
+      document.getElementById('paragraphs-found').classList.remove('red');
+    }
+    if (reference.paragraphs && paragraphs.length === reference.paragraphs) {
+      document.getElementById('paragraphs-found').classList.add('green');
+    } else {
+      document.getElementById('paragraphs-found').classList.remove('green');
+    }
+    document.getElementById('first-words-match').textContent = result.firstWordsMatch;
+    document.getElementById('first-words-expected').textContent = reference.first_words ? Object.keys(reference.first_words).length : 'no reference';
+    document.getElementById('paragraphs-flagged').textContent = result.flaggedCount;
+    document.getElementById('pages-flagged').textContent = result.pagesFlagged;
+    document.getElementById('footnotes-expected').textContent = reference.footnotes || 'no reference';
+
+    const mismatchList = document.getElementById('first-words-mismatch-list');
+    mismatchList.innerHTML = '';
+    if (firstWordsMismatches.length > 0) {
+      firstWordsMismatches.forEach(m => {
+        const li = document.createElement('li');
+        li.textContent = m.number ? `para. ${m.number}: found ${m.found} / reference ${m.ref}` : m.found;
+        mismatchList.appendChild(li);
+      });
+    }
+
+    // Export buttons
+    document.getElementById('download-json').disabled = paragraphs.length === 0;
+    document.getElementById('download-md').disabled = paragraphs.length === 0;
+
+    // Checks
+    const checksList = document.getElementById('checks-list');
+    checksList.innerHTML = '';
+    checks.forEach(check => {
+      const div = document.createElement('div');
+      div.className = `check ${check.pass === true ? 'pass' : check.pass === false ? 'fail' : ''}`;
+      const name = document.createElement('span');
+      name.textContent = check.name;
+      const value = document.createElement('span');
+      if (check.pass === false && check.name === 'Numbering') {
+        const a = document.createElement('a');
+        a.href = '#';
+        a.textContent = 'check failed';
+        a.addEventListener('click', e => {
+          e.preventDefault();
+          document.getElementById('tab-02').click();
+          const rows = document.querySelectorAll('#paragraphs-table tr');
+          rows.forEach(row => {
+            const number = parseInt(row.cells[0].textContent);
+            if (check.message.includes(number)) {
+              row.setAttribute('aria-expanded', 'true');
+              row.querySelector('.row-content').style.display = 'block';
+            }
+          });
+        });
+        value.appendChild(a);
+      } else if (check.pass === false && check.name === 'First words') {
+        const a = document.createElement('a');
+        a.href = '#';
+        a.textContent = 'check failed';
+        a.addEventListener('click', e => {
+          e.preventDefault();
+          document.getElementById('tab-02').click();
+          const rows = document.querySelectorAll('#paragraphs-table tr');
+          rows.forEach(row => {
+            const number = parseInt(row.cells[0].textContent);
+            if (firstWordsMismatches.some(m => m.number === number)) {
+              row.setAttribute('aria-expanded', 'true');
+              row.querySelector('.row-content').style.display = 'block';
+            }
+          });
+        });
+        value.appendChild(a);
+      } else {
+        value.textContent = check.message;
+      }
+      div.appendChild(name);
+      div.appendChild(value);
+      checksList.appendChild(div);
+    });
+    document.getElementById('checks-count').textContent = checks.length;
+
+    // Flagged paragraphs
+    const flaggedTable = document.getElementById('flagged-table');
+    flaggedTable.innerHTML = '';
+    flaggedParagraphs.forEach(p => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${p.number}</td>
+        <td>${p.page}</td>
+        <td>${p.suspectLines}</td>
+        <td>${p.reason}</td>
+      `;
+      tr.setAttribute('tabindex', '0');
+      tr.setAttribute('role', 'button');
+      tr.setAttribute('aria-expanded', 'false');
+      tr.addEventListener('click', () => {
+        document.getElementById('tab-02').click();
+        const rows = document.querySelectorAll('#paragraphs-table tr');
+        rows.forEach(row => {
+          if (parseInt(row.cells[0].textContent) === p.number) {
+            row.setAttribute('aria-expanded', 'true');
+            row.querySelector('.row-content').style.display = 'block';
+          }
+        });
+      });
+      tr.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          tr.click();
+        }
+      });
+      flaggedTable.appendChild(tr);
+    });
+    document.getElementById('flagged-count').textContent = flaggedParagraphs.length;
+    document.querySelector('#flagged-content caption').textContent = `Flagged paragraphs: ${flaggedParagraphs.length} of ${paragraphs.length}`;
+
+    // Paragraphs table
+    const table = document.getElementById('paragraphs-table');
+    table.innerHTML = '';
+    paragraphs.forEach(p => {
+      const tr = document.createElement('tr');
+      tr.setAttribute('tabindex', '0');
+      tr.setAttribute('role', 'button');
+      tr.setAttribute('aria-expanded', 'false');
+      tr.innerHTML = `
+        <td class="num">${p.number}</td>
+        <td>${p.section || ''}</td>
+        <td>${p.page_start}${p.page_start !== p.page_end ? `–${p.page_end}` : ''}</td>
+        <td>${p.firstLine ? p.firstLine.slice(0, 120) + (p.firstLine.length > 120 ? '…' : '') : p.text.slice(0, 120) + (p.text.length > 120 ? '…' : '')}</td>
+        <td class="${!p.first_words_match ? 'red' : p.flagged ? 'red' : ''}">${!p.first_words_match ? 'first words differ' : p.flagged ? 'may contain footnote text' : 'OK'}</td>
+      `;
+      const content = document.createElement('tr');
+      content.className = 'row-content';
+      content.innerHTML = `
+        <td colspan="5">
+          <p>${p.text.split('\n').map((line, i) => {
+            const isSuspect = p.suspectLines.some(s => s.lines.includes(line));
+            return isSuspect ? `<span class="suspect">${line}</span>` : line;
+          }).join('<br>')}</p>
+          <p><strong>Reference first words:</strong> ${p.first_words_match ? p.first_words : `<span class="red">${p.first_words}</span> (reference: ${reference.first_words ? reference.first_words[String(p.number)] : 'no reference'})`}</p>
+          <div style="margin: 0.5rem 0;">
+            <button class="show-pdf-lines" data-paragraph="${p.number}">Show the PDF's lines</button>
+            <span class="pdf-lines" style="display: none; font-family: ui-monospace; font-size: 0.8rem; white-space: pre-wrap; background: #f9f9f9; padding: 0.5rem; border-radius: 2px; margin-top: 0.5rem;">${p.text_raw.split('\n').map((line, i) => {
+              const pageBreak = i > 0 && p.text_lines[i - 1].page !== p.text_lines[i].page;
+              return (pageBreak ? `--- page ${p.text_lines[i].page} ---\n` : '') + line;
+            }).join('\n')}</span>
+          </div>
+          <div class="citation">${p.citation} <span class="copied" style="display: none;">Copied</span></div>
+        </td>
+      `;
+      tr.addEventListener('click', () => {
+        const expanded = tr.getAttribute('aria-expanded') === 'true';
+        tr.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+        content.style.display = expanded ? 'none' : 'table-row';
+      });
+      tr.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          tr.click();
+        }
+      });
+      table.appendChild(tr);
+      table.appendChild(content);
+    });
+    document.getElementById('paragraphs-caption').textContent = `${paragraphs.length} paragraphs found${reference.paragraphs ? `, ${reference.paragraphs} expected` : ''}`;
+
+    // Headings
+    const headingsList = document.getElementById('headings-list');
+    headingsList.innerHTML = headings.map(h => h.label ? `${h.label}. ${h.text} (p. ${h.page})` : h.text + (h.page ? ` (p. ${h.page})` : '')).join('\n');
+    document.getElementById('headings-count').textContent = headings.length;
+
+    // Tabs
+    document.getElementById('tab-01').addEventListener('click', () => {
+      document.getElementById('tab-01').setAttribute('aria-selected', 'true');
+      document.getElementById('tab-02').setAttribute('aria-selected', 'false');
+      document.getElementById('panel-01').setAttribute('aria-hidden', 'false');
+      document.getElementById('panel-02').setAttribute('aria-hidden', 'true');
+    });
+    document.getElementById('tab-02').addEventListener('click', () => {
+      document.getElementById('tab-01').setAttribute('aria-selected', 'false');
+      document.getElementById('tab-02').setAttribute('aria-selected', 'true');
+      document.getElementById('panel-01').setAttribute('aria-hidden', 'true');
+      document.getElementById('panel-02').setAttribute('aria-hidden', 'false');
+    });
+
+    // Section headings
+    document.getElementById('checks-toggle').addEventListener('click', () => {
+      const expanded = document.getElementById('checks-toggle').getAttribute('aria-expanded') === 'true';
+      document.getElementById('checks-toggle').setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      document.getElementById('checks-content').setAttribute('aria-hidden', expanded ? 'true' : 'false');
+    });
+    document.getElementById('flagged-toggle').addEventListener('click', () => {
+      const expanded = document.getElementById('flagged-toggle').getAttribute('aria-expanded') === 'true';
+      document.getElementById('flagged-toggle').setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      document.getElementById('flagged-content').setAttribute('aria-hidden', expanded ? 'true' : 'false');
+    });
+    document.getElementById('headings-toggle').addEventListener('click', () => {
+      const expanded = document.getElementById('headings-toggle').getAttribute('aria-expanded') === 'true';
+      document.getElementById('headings-toggle').setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      document.getElementById('headings-content').setAttribute('aria-hidden', expanded ? 'true' : 'false');
+    });
+
+    // Show PDF lines
+    document.querySelectorAll('.show-pdf-lines').forEach(button => {
+      button.addEventListener('click', e => {
+        e.stopPropagation();
+        const paragraph = parseInt(button.getAttribute('data-paragraph'));
+        const p = paragraphs.find(p => p.number === paragraph);
+        const pdfLines = button.nextElementSibling;
+        if (pdfLines.style.display === 'none') {
+          pdfLines.style.display = 'block';
+          button.textContent = 'Hide the PDF\'s lines';
+        } else {
+          pdfLines.style.display = 'none';
+          button.textContent = 'Show the PDF\'s lines';
+        }
+      });
+    });
+
+    // Copy citation
+    document.querySelectorAll('.citation').forEach(citation => {
+      citation.addEventListener('click', () => {
+        navigator.clipboard.writeText(citation.textContent.split(' ')[0]);
+        const copied = citation.querySelector('.copied');
+        copied.style.display = 'inline';
+        setTimeout(() => { copied.style.display = 'none'; }, 2000);
+      });
+    });
+
+    // Download JSON
+    document.getElementById('download-json').addEventListener('click', () => {
+      const json = paragraphs.map(p => ({
+        symbol: data.symbol,
+        paragraph: p.number,
+        section: p.section,
+        part: p.part,
+        page_start: p.page_start,
+        page_end: p.page_end,
+        text: p.text,
+        text_lines: p.text_lines.join(' | '),
+        flagged: p.flagged,
+        first_words_match: p.first_words_match,
+        citation: p.citation,
+        doc_url: data.doc_url,
+        limitations: p.flagged ? `footnotes not separated; ${p.suspectLines.length} may sit inside this paragraph` : 'footnotes not separated'
+      }));
+      const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.symbol.replace(/\//g, '-') + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Download Markdown
+    document.getElementById('download-md').addEventListener('click', () => {
+      const frontMatter = `---
+title: ${data.title}
+symbol: ${data.symbol}
+adopted: ${reference.adopted || 'unknown'}
+source_url: ${data.doc_url}
+extracted: ${new Date().toISOString().split('T')[0]}
+paragraphs_found: ${paragraphs.length}
+paragraphs_expected: ${reference.paragraphs || 'no reference'}
+paragraphs_flagged: ${result.flaggedCount}
+footnotes: not separated; the document has ${reference.footnotes || 'no reference'}
+---`;
+
+      const headingsMap = {};
+      paragraphs.forEach(p => {
+        if (p.part && !headingsMap[p.part]) {
+          headingsMap[p.part] = { part: p.part, sections: {} };
+        }
+        if (p.section && p.part) {
+          if (!headingsMap[p.part].sections[p.section]) {
+            headingsMap[p.part].sections[p.section] = [];
+          }
+        }
+      });
+
+      let md = frontMatter + '\n\n';
+      Object.entries(headingsMap).forEach(([part, { sections }]) => {
+        md += `## ${part}\n\n`;
+        Object.entries(sections).forEach(([section, _]) => {
+          md += `### ${section}\n\n`;
+          paragraphs.filter(p => p.part === part && p.section === section).forEach(p => {
+            md += `**${p.number}.** ${p.text}${p.flagged ? ' (flagged: may contain footnote text)' : ''}\n\n`;
+          });
+        });
+      });
+
+      const blob = new Blob([md], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.symbol.replace(/\//g, '-') + '.md';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Export round trip check
+    const exportRoundTripCheck = checks.find(c => c.name === 'Export round trip');
+    if (exportRoundTripCheck) {
+      const json = paragraphs.map(p => ({
+        symbol: data.symbol,
+        paragraph: p.number,
+        section: p.section,
+        part: p.part,
+        page_start: p.page_start,
+        page_end: p.page_end,
+        text: p.text,
+        text_lines: p.text_lines.join(' | '),
+        flagged: p.flagged,
+        first_words_match: p.first_words_match,
+        citation: p.citation,
+        doc_url: data.doc_url,
+        limitations: p.flagged ? `footnotes not separated; ${p.suspectLines.length} may sit inside this paragraph` : 'footnotes not separated'
+      }));
+      try {
+        const parsed = JSON.parse(JSON.stringify(json));
+        exportRoundTripCheck.pass = parsed.length === paragraphs.length;
+        exportRoundTripCheck.message = `pass: ${parsed.length} records`;
+      } catch {
+        exportRoundTripCheck.pass = false;
+        exportRoundTripCheck.message = 'check failed: invalid JSON';
+      }
+      const checkDiv = checksList.querySelector(`.check:nth-child(${checks.indexOf(exportRoundTripCheck) + 1})`);
+      checkDiv.className = `check ${exportRoundTripCheck.pass ? 'pass' : 'fail'}`;
+      checkDiv.lastChild.textContent = exportRoundTripCheck.message;
+    }
+  }
+
+  render();
+</script>
+</body>
+</html>

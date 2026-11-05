@@ -457,7 +457,9 @@ async def run(models, prompt_ids, outdir):
                             fixed, _ = apply_edits(page_html, parse_edits(g3["text"]))
                         repair = {"error": load_err[:120], "seconds": g3.get("seconds"), "cost": g3.get("cost"),
                                   "applied": bool(fixed), "checks_before": sum(checks0.values())}
-                        if fixed:
+                        if fixed:   # the app as built stays beside the repaired one
+                            (d / f"{p['id']}.pre.html").write_text(page_html, encoding="utf-8")
+                            (d / f"{p['id']}.html").write_text(fixed, encoding="utf-8")
                             page_html = fixed
                 if page_html:
                     html_of[p["id"]] = page_html

@@ -27,7 +27,7 @@ Session 7 (pick *Session 7* at the top):
 
 Session 8 (pick *Session 8*):
 
-5. *Paragraphs out of a UN document*: drag *CESCR General comment No. 27 (HTML)* into the chat and build it. The web version of the document gives the paragraphs almost for free, but its footnotes are missing: check whether the app says so, and try the JSON and Markdown downloads. Then *Suggest improvements* (it needs a seat code).
+5. *Paragraphs out of a PDF*: drag *CESCR General comment No. 27 (PDF)* into the chat and build it; for this exercise the studio switches to Claude, which built a working app every time in our tests. The paragraphs come back from the PDF's text by rule, but the footnotes stay mixed in at the foot of each page: check whether the app flags the paragraphs concerned, and try the JSON and Markdown downloads. Then *Suggest improvements* (it needs a seat code).
 6. *Verbatim finder for General Comments*: search for something from your own work and copy a citation.
 7. *A research wiki on neurotechnology and justice*: open a page and click a citation. The PDF should open next to the app, at the right page, with the quoted passage marked.
 

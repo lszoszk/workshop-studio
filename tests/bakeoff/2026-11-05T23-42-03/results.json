@@ -1,0 +1,33 @@
+[
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "s7-4-extract-pdf",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": false,
+   "text_contains": true,
+   "download": true,
+   "text_matches": true
+  },
+  "passed": 5,
+  "total": 7,
+  "errors": [
+   "Assignment to constant variable."
+  ],
+  "network": [],
+  "lines": 1499,
+  "edit": null,
+  "repair": null,
+  "seconds": 170.5,
+  "first_token": 1.0,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 19942,
+  "completion_tokens": 13783,
+  "cost": 0.02395261,
+  "provider": "Mistral"
+ }
+]

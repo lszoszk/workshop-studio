@@ -1,89 +1,114 @@
 {
  "id": "s7-4-extract",
- "title": "Paragraphs out of a UN document",
- "dataset": "html_doc",
- "problem": "Our office copies paragraphs out of UN documents by hand. Can a tool turn a General Comment into a clean list of numbered paragraphs we can cite and reuse, and show me where it may have got things wrong?",
- "facilitator_brief": "The file is CESCR General comment No. 27 as OHCHR publishes it in HTML, with a reference (paragraph count, footnote count, first words of each paragraph). The tool must check itself against the reference, say what the HTML version lacks, and let us take the paragraphs away as a dataset, in JSON and Markdown.",
+ "title": "Paragraphs out of a PDF",
+ "dataset": "pdf_text",
+ "problem": "Our office copies paragraphs out of UN PDFs by hand. Can a tool turn a General Comment into a clean list of numbered paragraphs we can cite and reuse, and show me where it may have got things wrong?",
+ "facilitator_brief": "The file is the raw text of CESCR General comment No. 27 as a PDF converter produced it, page by page, with a reference (paragraph count, footnote count, first words of each paragraph). The tool must check itself against the reference, flag the paragraphs where footnote text may sit, and let us take the paragraphs away as a dataset, in JSON and Markdown. Footnotes are not separated.",
  "planner": "Claude Fable 5.1",
- "recorded": "2026-11-04",
- "notes": "The problem: an office copies paragraphs out of UN documents by hand and wants a tool that turns a General Comment into numbered paragraphs it can cite and reuse, and shows where it may have gone wrong. The facilitator adds three things: check the result against the reference, say plainly what the HTML version lacks, and let the office take the paragraphs away as a dataset, in JSON and Markdown. The data is one document, CESCR General comment No. 27, as the OHCHR treaty body database serves it in HTML, plus a reference: the paragraph count, the footnote count and the first six words of each paragraph.\n\n The overview: one record, the `html` string of 71,380 characters, with `title`, `symbol`, `doc_url` and `source`, and a `reference` of 90 paragraphs, 141 footnotes, adopted 26 September 2025. The look tool splits it into 128 block elements.  By tag: 91 `<p>`, 24 `<h3>`, 7 `<h2>` and 6 `<td>`, the cover table; six more `<p>` sit inside those cells, so the DOM has 97 `<p>` in all.  90 `<p>` start with a number, a full stop and then text with no space: \"1.A clean, healthy…\".  None has a space after the stop. The PDF's trap in reverse: there every number stood on its own line; here it is glued to its first word, and a split on \"1. \" finds nothing.  The raw HTML: a cover `<table>` with the symbol broken over a `<span>` (\"E\" in large type, then \"/C.12/GC/27\"); then a `<div class=\"content\">` with the committee's name as a bold `<p>`, the title as an `<h2>` ending in \" *\", the heading \"I.Introduction\", and the paragraphs. The note the asterisk points to is not in the file; nor are footnotes or footnote marks: paragraph 1 ends \"chemicals and waste.\" where the PDF has \"waste.2\". And spaces are missing inside the text: \"andthe\" in the title, \"levels.Key\" and \"crises“increase\" in the first two paragraphs.\n\n Counting the sentence joins: 23 places where a lowercase letter, a full stop and a capital letter touch (\"extraction.At\", \"right.States\").  Twelve more where a comma, an opening quote or an en dash touch a letter (\"land,wetlands\", \"crises“increase\", \"challenges –to\").  Then a character a reader does not expect: 8 non-breaking hyphens (U+2011) in \"business‑related\", \"large‑scale\", \"whistle‑blowers\", beside 106 ordinary hyphens; a search typed with the hyphen key misses all eight.\n\nI then ran the rules in a short script of my own. Every `<p>` that starts with one to three digits and a full stop: 90 paragraphs, numbered 1 to 90 without a gap, 42 to 253 words each. The headings are 6 roman-numbered `<h2>` and 24 `<h3>`, 4 lettered and 20 plain (\"Right to work (art. 6)\"); 8 of the 10 labels are glued (\"A.General obligations\"), 2 have their space (\"D. Obligation\"). The first six words of 84 paragraphs match the reference exactly; 6 differ (13, 18, 19, 30, 41, 60): five lost a space inside a word pair (\"Giventhe\", \"Partiesto\", \"theobligation\") and one the spaces in \"11 (2) (a)\". A rule can restore a space only where the characters prove it was there: a full stop or a comma between letters, a quote or an en dash touching a letter. That is 35 places in 24 paragraphs, and it brings paragraph 18 back into line with the reference; the glued word pairs are invisible to a rule, and the reference sees six words, so what sits deeper in a paragraph stays unknown. Then the typography: 26 en dashes, 20 right single quotes, 5 pairs of curly quotes, 2 non-breaking spaces inside headings; the non-breaking hyphens are written as the entity \"&#8209;\" in the source. Correct, not damage, but anyone searching the text has to know they are there.\n\nSo the HTML splits more cleanly than the PDF, with no page breaks, headers, footers or footnote blocks to remove, and loses more: all 141 footnotes, every footnote mark, the cover note, and spaces the PDF kept. The app must make both halves visible.\n\nThen the shelf.  A search on dataset export and Markdown brought The Turing Way's page on documentation and metadata.  Quality assurance: the Analysis Function's page on testing code.  Citing UN documents: the Dag Hammarskjöld Library's answer.  Accessible tables: the A11Y Project checklist and the Analysis Function's tables page, which the earlier plans follow.  The Turing Way page says a dataset should travel with a README in plain text that names its source, its fields and its known limitations; that became the Markdown file's front matter and the \"limitations\" line in every export.  The testing page: good tests tell a story, given this data, having run this code, we expect this output; and every bug found gets a test of its own. Here every damage I found gets a named check.  The Library lists what a citation carries: the symbol first, the paragraph as the pinpoint, the URL with the date accessed; the fields are stored apart and formatted on copy, and the form is a question.\n\nTrade-offs. The script repairs only what the characters prove and logs each repair; the reference is a yardstick, not the truth, and the app never adjusts its count to match it. No footnote extraction: the HTML has none, and the app says so in red instead of hiding the tile. No model calls; nothing leaves the browser. The plan is short on purpose: two tabs, the result and the paragraphs, with the downloads and every check one click away; a reader who sees such a tool for the first time needs no more. The four questions are the office's: headings, the missing spaces, the export formats, the citation form.",
+ "recorded": "2026-11-06",
+ "notes": "The problem, as I read it: an office copies paragraphs out of UN PDFs by hand and wants a tool that splits a document into its numbered paragraphs and, just as important, shows where it may have gone wrong. The facilitator sets the standard: check the result against the reference, and make every repair visible. The data is one document, CESCR General comment No. 27, as 20 pages of raw converter output, plus a reference block with the paragraph count, the footnote count and the first six words of each paragraph.\n\n The overview: 20 records, one per page, two fields, `page` and `text`; the top-level `count` is the string \"20\". The reference says 90 paragraphs, 141 footnotes, adopted 26 September 2025.  Page 1 shows the converter's habits at once. A paragraph number stands alone on its line (\"1.\", a line break, then \"A clean, healthy…\"); a section heading is split into \"I.\", a blank line and \"Introduction\"; footnote references are glued to the word before them (\"waste.2\") or set off by a space (\"”. 3\"); the footnote block at the foot of the page opens with a bare \"1\" on its own line, then the text, while the next footnotes read \"2 Summary for policymakers…\".  Page 2 opens with the header \"E/C.12/GC/27\" and the rest of paragraph 2, so paragraphs cross pages and the pages must be joined before the text is split. Its footnotes held a surprise: footnote 6 reads \"A/42/427, p. 24.\" with no number, and a bare \"6\" turns up at the very end of the page, next to the page number.\n\n Counting: 88 lines are a number and a full stop alone.  Allowing any whitespace after the stop gives 90, the document's count,  and the two extra are paragraphs 23 and 87, whose number and text share a line (\"23. The full realization…\"). A rule for one form alone misses two or finds two.  Bare numbers on a line: 51, of three kinds: the page number in the footer (2 to 20), the first footnote on each page, and displaced footnote numbers like that \"6\". The footer comes in two orders, \"page, GE code\" and \"GE code, page\".  The last page ends with paragraph 90, footnotes 139 to 141 and the footer, nothing after.  Lines that start with a number and a space: 110; one is \"6 November 2025\" on the cover, the rest are footnotes.  No lettered sub-paragraphs \"(a)\": the paragraphs are plain prose, 43 to 254 words each.\n\nI then ran these rules in a short script of my own. Dropping each page's header line, footer lines and footnote block, joining the rest and splitting at the paragraph numbers gives exactly 90 paragraphs, numbered 1 to 90 without a gap, and all 90 first six words match the reference once curly quotes and spacing are normalised. Footnotes are another matter: 129 start with their number, the other 12 lost it to the page foot, and the first footnote on each page is a bare number on a line of its own. A rule that follows the numbers has to repair all of that, and one missed number stops it on every page that follows; on 3 and 4 November, builds that tried lost the count, left footnote text inside paragraphs, or returned no app at all. So this version does the simple part by rule and flags the rest: a line inside a paragraph that is a bare number, or starts with a number, a space and a capital letter or a UN symbol, marks its paragraph as one where footnote text may sit; on this file that is 20 of 90, the paragraph at the foot of each page. A paragraph start always has a full stop after its number, so the two never mix. Separating the footnotes is left out of this exercise. Two more traps: 20 unlabelled headings such as \"Right to work (art. 6)\" and \"Children\" stand on the line just before a paragraph number and are glued to the end of the previous paragraph unless a rule catches them; and the labelled headings wrap (\"III.\" has a two-line title). Sixteen paragraphs span a page break.\n\nThen the shelf.  A search on PDF cleaning found nothing on the subject; the shelf is about presenting results, not converters.  A search on quality assurance led to the Analysis Function's page on testing code.  Accessible tables: four pages, the Analysis Function's first.  Citing UN documents: the Dag Hammarskjöld Library's answer.  The testing page gave the check panel its shape: tests that tell a story, \"given this data, having run this code, we expect this output\", and a new test for every bug found, which here means a named check for every repair the script makes.  The clear-language page: short sentences, explain a specialist term the first time, \"must\" for a requirement.  The tables page: right-aligned numbers, a title that states the message, the source under the table, no footnotes in data cells.  A search on working with AI assistants brought back the testing page and the Claude Code best practices, whose fifth point is the same lesson: give the machine a check that returns pass or fail.  The Library's page lists what a citation carries, the symbol first and the paragraph as the pinpoint; the citation form became a question.\n\nTrade-offs. The script repairs only the damage I found, names each repair on screen and guesses nothing. The reference is the yardstick, not the truth: the app shows its own count next to the document's and never adjusts a result to match. No model calls; nothing leaves the browser. Footnotes are flagged, not separated. The five questions are the office's choices, not mine: headings, what to do with the lines that look like footnotes, the files to download, citation form, line breaks.",
  "steps": [
   {
-   "at": 610,
+   "at": 518,
    "kind": "look",
-   "label": "Looked at the data: the fields in html_doc",
-   "detail": "128 records, 4 fields"
+   "label": "Looked at the data: the fields in pdf_text",
+   "detail": "20 records, 2 fields"
   },
   {
-   "at": 852,
+   "at": 708,
    "kind": "look",
-   "label": "Looked at the data: the values of tag in html_doc",
-   "detail": "4 distinct values of tag"
+   "label": "Looked at the data: the raw text in pdf_text, page 1",
+   "detail": "raw text of page 1"
   },
   {
-   "at": 993,
+   "at": 1173,
    "kind": "look",
-   "label": "Looked at the data: every match of /^\\d{1,3}\\.\\S/ in html_doc",
-   "detail": "90 matches of /^\\d{1,3}\\.\\S/"
+   "label": "Looked at the data: the raw text in pdf_text, page 2",
+   "detail": "raw text of page 2"
   },
   {
-   "at": 1088,
+   "at": 1490,
    "kind": "look",
-   "label": "Looked at the data: every match of /^\\d{1,3}\\. / in html_doc",
-   "detail": "0 matches of /^\\d{1,3}\\. /"
+   "label": "Looked at the data: every match of /^\\d{1,3}\\.$/ in pdf_text",
+   "detail": "88 matches of /^\\d{1,3}\\.$/"
   },
   {
-   "at": 1263,
+   "at": 1546,
    "kind": "look",
-   "label": "Looked at the data: the raw HTML in html_doc",
-   "detail": "the raw HTML"
+   "label": "Looked at the data: every match of /^\\d{1,3}\\.\\s\\S/ in pdf_text",
+   "detail": "90 matches of /^\\d{1,3}\\.\\s\\S/"
   },
   {
-   "at": 1825,
+   "at": 1618,
    "kind": "look",
-   "label": "Looked at the data: every match of /[a-z]\\.[A-Z]/ in html_doc",
-   "detail": "23 matches of /[a-z]\\.[A-Z]/"
+   "label": "Looked at the data: every match of /^\\d{1,3}\\. \\S/ in pdf_text",
+   "detail": "2 matches of /^\\d{1,3}\\. \\S/"
   },
   {
-   "at": 1965,
+   "at": 1780,
    "kind": "look",
-   "label": "Looked at the data: every match of /[a-z],[A-Za-z]|[a-z]“|–[A-Za-z]/ in html_doc",
-   "detail": "12 matches of /[a-z],[A-Za-z]|[a-z]“|–[A-Za-z]/"
+   "label": "Looked at the data: every match of /^\\d{1,3}$/ in pdf_text",
+   "detail": "51 matches of /^\\d{1,3}$/"
   },
   {
-   "at": 2095,
+   "at": 2014,
    "kind": "look",
-   "label": "Looked at the data: every match of /‑/ in html_doc",
-   "detail": "8 matches of /‑/"
+   "label": "Looked at the data: the raw text in pdf_text, page 20",
+   "detail": "raw text of page 20"
   },
   {
-   "at": 3843,
+   "at": 2105,
+   "kind": "look",
+   "label": "Looked at the data: every match of /^\\d{1,3} \\S/ in pdf_text",
+   "detail": "110 matches of /^\\d{1,3} \\S/"
+  },
+  {
+   "at": 2218,
+   "kind": "look",
+   "label": "Looked at the data: every match of /^\\([a-z]\\)/ in pdf_text",
+   "detail": "0 matches of /^\\([a-z]\\)/"
+  },
+  {
+   "at": 3827,
    "kind": "search",
-   "label": "Searched the reference shelf: \"dataset export JSON Markdown clean text further work\"",
+   "label": "Searched the reference shelf: \"PDF text extraction clean paragraphs footnotes page headers converter\"",
    "detail": "5 results",
    "results": [
-    "a11y-project-checklist",
-    "turing-way-reproducibility-definitions",
+    "uk-af-tables",
+    "govuk-content-guidance-clear-language",
     "claude-code-best-practices",
-    "turing-way-data-documentation-and-metadata",
-    "uk-af-tables"
+    "w3c-wai-tables-tutorial",
+    "ohchr-human-rights-based-approach-to-data"
    ]
   },
   {
-   "at": 3945,
+   "at": 3938,
    "kind": "search",
-   "label": "Searched the reference shelf: \"quality assurance testing code expected output checks\"",
+   "label": "Searched the reference shelf: \"quality assurance verify output against reference tests checks code\"",
    "detail": "5 results",
    "results": [
     "uk-af-qa-code-testing",
     "uk-af-qa-code-generative-ai",
     "claude-code-best-practices",
-    "claude-cookbook-citations",
-    "uk-af-charts-choosing-and-supplying"
+    "uk-af-colours-in-charts",
+    "chartability-workbook"
    ]
   },
   {
-   "at": 4011,
+   "at": 4022,
+   "kind": "search",
+   "label": "Searched the reference shelf: \"accessible table expand row keyboard status messages\"",
+   "detail": "5 results",
+   "results": [
+    "uk-af-tables",
+    "a11y-project-checklist",
+    "govuk-design-system-table",
+    "w3c-wai-tables-tutorial",
+    "wcag22-keyboard-and-focus"
+   ]
+  },
+  {
+   "at": 4085,
    "kind": "search",
    "label": "Searched the reference shelf: \"cite UN document symbol paragraph general comment\"",
    "detail": "5 results",
@@ -96,34 +121,41 @@
    ]
   },
   {
-   "at": 4072,
-   "kind": "search",
-   "label": "Searched the reference shelf: \"accessible table expand row keyboard\"",
-   "detail": "5 results",
-   "results": [
-    "a11y-project-checklist",
-    "uk-af-tables",
-    "govuk-design-system-table",
-    "w3c-wai-tables-tutorial",
-    "chartability-workbook"
-   ]
-  },
-  {
-   "at": 4192,
-   "kind": "read",
-   "label": "Read: The Turing Way: Documentation and metadata (README for datasets, codebook or data dictionary, metadata, tagging)",
-   "detail": "https://github.com/the-turing-way/the-turing-way/blob/bcd8050eed319acc55f8ce0fe0410db157a17f04/book/website/reproducible-research/rdm/rdm-metadata.md",
-   "shelf_id": "turing-way-data-documentation-and-metadata"
-  },
-  {
-   "at": 4420,
+   "at": 4146,
    "kind": "read",
    "label": "Read: Quality assurance of code for analysis and research: Testing code",
    "detail": "https://github.com/best-practice-and-impact/qa-of-code-guidance/blob/fa39f2089905fe07c08ae4d66671736a1becd3c5/book/testing_code.md",
    "shelf_id": "uk-af-qa-code-testing"
   },
   {
-   "at": 4616,
+   "at": 4387,
+   "kind": "read",
+   "label": "Read: GOV.UK content guidance: Clear language (plain English)",
+   "detail": "https://guidance.publishing.service.gov.uk/writing-to-gov-uk-standards/writing-guidelines/clear-language/",
+   "shelf_id": "govuk-content-guidance-clear-language"
+  },
+  {
+   "at": 4498,
+   "kind": "read",
+   "label": "Read: Data visualisation: tables (layout, headers, titles, HTML markup)",
+   "detail": "https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-tables/",
+   "shelf_id": "uk-af-tables"
+  },
+  {
+   "at": 4628,
+   "kind": "search",
+   "label": "Searched the reference shelf: \"working with AI assistant verify output do not trust repair visible\"",
+   "detail": "5 results",
+   "results": [
+    "uk-af-qa-code-testing",
+    "claude-code-best-practices",
+    "claude-cookbook-citations",
+    "uk-af-qa-code-generative-ai",
+    "ico-ai-data-protection-accountability-and-governance"
+   ]
+  },
+  {
+   "at": 4824,
    "kind": "read",
    "label": "Read: Dag Hammarskjöld Library, Ask DAG: how should I cite a UN document? (summary)",
    "detail": "https://ask.un.org/faq/401380",
@@ -143,11 +175,15 @@
      "fragments": [
       {
        "section": "q1",
-       "text": "One row per paragraph: No. | Section | First line | Check. **Section** is the nearest heading above the paragraph (\"Right to work (art. 6)\"); the expanded row shows the full path (\"IV. … › Right to work (art. 6)\"). A closed \"Headings found: n\" box above the table lists them, so none can hide inside a paragraph."
+       "text": "One row per paragraph: No. | Section | Page | First line | Check. **Section** is the nearest heading above the paragraph (\"Right to work (art. 6)\"); the expanded row shows the full path (\"IV. … › Right to work (art. 6)\"). A closed \"Headings found: n\" box above the table lists them, so none can hide inside a paragraph."
       },
       {
        "section": "q1.export",
        "text": "`paragraph` (its number), `section` and `part` (the nearest heading and the roman-numbered section above it)"
+      },
+      {
+       "section": "q1.compute",
+       "text": "Each paragraph's `section` is the most recent heading before it and `part` the most recent roman-numbered heading."
       }
      ]
     },
@@ -157,55 +193,59 @@
      "fragments": [
       {
        "section": "q1",
-       "text": "One row per paragraph or heading, in document order: No. | Kind | First line | Check. Headings are rows of their own, grey, bold and unnumbered, with \"heading\" in the Kind column for screen readers, so the table reads like the document's table of contents and a reader sees where each heading was found."
+       "text": "One row per paragraph or heading, in document order: No. | Kind | Page | First line | Check. Headings are rows of their own, grey, bold and unnumbered, with \"heading\" in the Kind column for screen readers, so the table reads like the document's table of contents and a reader sees where each heading was found."
       },
       {
        "section": "q1.export",
        "text": "`kind` (\"paragraph\" or \"heading\", in document order), `paragraph` (the number; null for a heading, whose `citation` and `first_words_match` are null too), and for a heading `label` and `level` (2 or 3)"
+      },
+      {
+       "section": "q1.compute",
+       "text": "Headings are records of their own in document order, with `label` and `level` (roman-numbered or lettered: 2, unlabelled: 3)."
       }
      ]
     }
    ]
   },
   {
-   "id": "q2",
-   "header": "Spaces",
-   "question": "The HTML lost spaces inside the text (\"levels.Key\", \"land,wetlands\"). Should the app restore the ones a rule can prove, or only point at them?",
+   "id": "q3",
+   "header": "Footnotes",
+   "question": "This version does not separate the footnotes. What should the app do with lines inside a paragraph that look like footnote text?",
    "options": [
     {
-     "label": "Repair and log",
+     "label": "Flag, keep text",
      "default": true,
-     "description": "A space is inserted where the characters prove it was there (after a full stop or comma between letters, around a quote or dash), every insertion is listed, and the text as found is kept beside it.",
+     "description": "The paragraph text stays exactly as found; the lines that look like footnotes are highlighted and their paragraph is listed under Flagged paragraphs on tab 01, so nothing is cut on a guess.",
      "fragments": [
       {
-       "section": "q2",
-       "text": "**The spaces restored (n)**: Paragraph | Before | After | Rule, the count per rule above it (sentence, comma, quote, dash join); clicking a row opens the paragraph on tab 02. Under it: \"Rules restore a space only where the characters prove it was there. Word pairs such as 'Giventhe' are not touched.\""
+       "section": "q3",
+       "text": "One row per flagged paragraph: Paragraph | Page | Suspect lines | Why (\"starts with a number and a space\", \"bare number\", \"paragraph over 300 words\"). Clicking a row opens the paragraph on tab 02, with the suspect lines highlighted. A note above the table: \"This version does not separate footnotes from paragraphs. It shows where footnote text may sit, so you know which paragraphs to check against the PDF. \""
       },
       {
-       "section": "q2.compute",
-       "text": "- **Repairs.** `text` = `text_raw` with a space inserted after a full stop between a lowercase and a capital letter (`/([a-z])\\.([A-Z])/g` → \"$1. $2\"), after a comma between letters (`/([a-z]),([A-Za-z])/g`), before an opening curly quote touching a letter (`/([a-z])“/g`) and after an en dash touching a letter (`/–([A-Za-z])/g`). Each insertion is logged with the paragraph, the rule and 20 characters each side; nothing else changes."
+       "section": "q3.compute",
+       "text": "- **Suspect lines stay in the text.** They remain part of their paragraph's `text` and `text_raw`; the expanded paragraph on tab 02 highlights them."
       },
       {
-       "section": "q2.checks",
-       "text": "- **Repairs.** n spaces restored in n paragraphs, counted per rule; every one is listed under its closed heading on tab 01, and `text_raw` still holds the text as found."
+       "section": "q3.checks",
+       "text": "- **Suspect lines.** n suspect lines on n pages, in n paragraphs; none is removed."
       }
      ]
     },
     {
-     "label": "Flag only",
-     "description": "The text stays exactly as OHCHR's HTML has it; the places where a space is probably missing are marked in red and listed, for a reader to check.",
+     "label": "Flag, set aside",
+     "description": "Lines that look like footnotes are taken out of the paragraph text and listed under Flagged paragraphs on tab 01, each logged as a repair: the text is cleaner, but a wrong guess cuts real text.",
      "fragments": [
       {
-       "section": "q2",
-       "text": "**Where a space is missing (n)**: Paragraph | Where (20 characters each side) | Rule, the count per rule above it; nothing is changed, and each place is marked in red in the expanded paragraph on tab 02. Under it: \"The text is exactly as OHCHR's HTML has it; word pairs such as 'Giventhe' are found by no rule.\""
+       "section": "q3",
+       "text": "One row per flagged paragraph: Paragraph | Page | Lines set aside | Why (\"starts with a number and a space\", \"bare number\", \"paragraph over 300 words\"). Clicking a row shows the lines set aside, in full, with their page and the paragraph they came from, so a reader can put a line back by hand. A note above the table: \"This version does not separate footnotes. It sets aside the lines that look like footnote text and lists them here; check them against the PDF.\""
       },
       {
-       "section": "q2.compute",
-       "text": "- **No repairs.** `text` equals `text_raw`. The places where a space is probably missing are found by four patterns, a full stop between a lowercase and a capital letter (`/[a-z]\\.[A-Z]/g`), a comma between letters (`/[a-z],[A-Za-z]/g`), an opening curly quote touching a letter (`/[a-z]“/g`) and an en dash touching a letter (`/–[A-Za-z]/g`), and stored as `flags` (paragraph, offset, rule), never applied."
+       "section": "q3.compute",
+       "text": "- **Suspect lines are set aside.** They are removed from the paragraph's `text`, kept in `set_aside` with their page, and logged as \"line set aside as possible footnote text\"; `text_raw` keeps the paragraph with them, and the CSV has both."
       },
       {
-       "section": "q2.checks",
-       "text": "- **Flags.** n places in n paragraphs where a space is probably missing, counted per rule; every one is listed under its closed heading on tab 01 and none is changed."
+       "section": "q3.checks",
+       "text": "- **Lines set aside.** n lines from n pages; every one is listed, and the paragraph count and first words are computed after setting them aside."
       }
      ]
     }
@@ -255,7 +295,7 @@
       },
       {
        "section": "q5.compute",
-       "text": "- **Citation** = `symbol` + \", para. \" + the paragraph number, with `symbol` read from `WORKSHOP_DATA.html_doc`, never typed in."
+       "text": "- **Citation** = `symbol` + \", para. \" + the paragraph number, with `symbol` read from `WORKSHOP_DATA.pdf_text`, never typed in."
       }
      ]
     },
@@ -269,12 +309,48 @@
       },
       {
        "section": "q5.compute",
-       "text": "- **Citation** is assembled from fields, never typed in: `title`, `symbol` and `doc_url` from `WORKSHOP_DATA.html_doc`, `reference.adopted`, the paragraph number, and the access date from `new Date()` as day, month name, year. Every export also carries `adopted` and `accessed` as fields of their own."
+       "text": "- **Citation** is assembled from fields, never typed in: `title`, `symbol` and `doc_url` from `WORKSHOP_DATA.pdf_text`, `reference.adopted`, the paragraph number, and the access date from `new Date()` as day, month name, year. Every export also carries `adopted` and `accessed` as fields of their own."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "q6",
+   "header": "Line breaks",
+   "question": "Should a paragraph be one block of text, or keep the PDF's line breaks?",
+   "options": [
+    {
+     "label": "One block",
+     "default": true,
+     "description": "The converter's line breaks are replaced by single spaces, so a paragraph pastes into a document as one paragraph.",
+     "fragments": [
+      {
+       "section": "q6",
+       "text": "The expanded paragraph is one block of running text; a \"Show the PDF's lines\" toggle under it reveals the same text with the converter's line breaks and the page number where each page began, so the join can be checked."
+      },
+      {
+       "section": "q6.compute",
+       "text": "- **Paragraph text** = the paragraph's lines joined with a single space, double spaces collapsed, trimmed. No line in the file ends with a hyphen, so no hyphen joining is done; the app counts such lines anyway and reports the number. `text_lines` keeps the original lines for the toggle and the export field `text_lines` (lines separated by \" | \")."
+      }
+     ]
+    },
+    {
+     "label": "Keep breaks",
+     "description": "The lines stay as the PDF had them, so a reader can compare against the original line by line; the CSV cell holds the breaks too.",
+     "fragments": [
+      {
+       "section": "q6",
+       "text": "The expanded paragraph keeps the converter's line breaks (a wrapping `<pre>`-like block) with a thin rule and the page number where a new page began, so a reader can compare line by line with the PDF; a \"Copy as one paragraph\" button gives the joined form for pasting."
+      },
+      {
+       "section": "q6.compute",
+       "text": "- **Paragraph text** keeps the converter's lines, separated by a newline; the CSV cell holds the newlines inside its quotes (RFC 4180 allows it; Excel and LibreOffice read it). The joined form, lines joined with a single space and double spaces collapsed, is computed for the first-words check and the copy button. No line in the file ends with a hyphen; the app counts such lines anyway and reports the number in the check panel."
       }
      ]
     }
    ]
   }
  ],
- "plan_base": "# Paragraphs out of a UN document: the numbered paragraphs of a General Comment, from its HTML, checked against the reference\n\n## Context\n\nThe user works in an office that quotes UN documents and copies each paragraph by hand. OHCHR's treaty body database serves the document as HTML, which splits cleanly into paragraphs but has lost things on the way. This app turns `WORKSHOP_DATA.html_doc` into numbered paragraphs with the heading each sits under, compares the result with the document's own reference, says plainly what this HTML version lacks, and lets the office take the paragraphs away as a dataset. The document is `html` (a string: parse it with `new DOMParser().parseFromString(html, 'text/html')`); the yardstick is `reference` (`paragraphs`, `footnotes`, `adopted`, `first_words`); `title`, `symbol`, `doc_url` and `source` describe it; nothing is typed in by hand.\n\n## What I found in the data\n\nThese numbers are from the file I examined; the app computes its own.\n\n- One document, 71,380 characters of HTML; `reference.paragraphs` 90, `reference.footnotes` 141, `reference.first_words` keyed by the paragraph number as a string.\n- **Elements.** A cover `<table>` (the symbol broken over a `<span>`), then `<div class=\"content\">`: a bold `<p>` with the committee's name, the title as an `<h2>` ending in \" *\", 6 roman-numbered `<h2>`, 24 `<h3>` (4 lettered, 20 plain, \"Right to work (art. 6)\") and 90 numbered `<p>`; 97 `<p>` in all.\n- **Paragraph numbers are glued to the text**: all 90 read \"1.A clean…\", none \"1. A clean\". Heading labels too, in 8 of 10 (\"I.Introduction\"; \"D. Obligation\" has its space).\n- **Spaces are missing inside the text.** 23 sentence joins (\"levels.Key\"), 8 comma joins (\"land,wetlands\"), 2 quote joins (\"crises“increase\"), 2 dash joins (\"challenges –to\"): 35 places in 24 paragraphs that a rule can prove. And word pairs no rule can see: \"Giventhe\", \"Partiesto\", \"11(2)(a)\". The first-words check catches 6 paragraphs (13, 18, 19, 30, 41, 60), only in their first six words.\n- **Nothing of the footnotes survives**: no footnote text, no footnote marks (the PDF has \"waste.2\", this file \"waste.\"), and the title's asterisk points to a note that is not in the file.\n- **Characters a reader does not expect** (kept as published; the first-words check normalises them): 8 non-breaking hyphens (U+2011, \"business‑related\") beside 106 ordinary ones; 26 en dashes; 20 right single quotes; 5 pairs of curly quotes; 2 non-breaking spaces inside headings. Correct typography that a search typed on a keyboard misses.\n- Paragraphs are 42 to 253 words of plain prose.\n\n## The app, tab by tab\n\nThe arrangement of the workshop's Verbatim finder, with two tabs: a reader who sees such a tool for the first time needs the result and the paragraphs, and everything else stays one click away, closed.\n\n**Header, always visible.** A monospace label \"UN DOCUMENT · HTML\", the serif `title`, one line: `symbol` linked to `doc_url` (new tab), \"adopted `reference.adopted`\", `source`. At the right a green dot \"n of m checks pass\" or a red dot \"n checks failed\", then \"1 source limit\" (the footnotes).\n\n**Left rail, always visible.** Headed \"DOCUMENT\": a card with `symbol` in monospace and the short title. Two big serif numbers: \"n paragraphs of `reference.paragraphs`\" with a thin bar (red when short or over); \"0 footnotes of `reference.footnotes`\" in red, \"not in this HTML\". Then \"n of m checks pass\".\n\nUnder the header, numbered tabs (`role=\"tablist\"`, arrow keys): `01 RESULT · 02 PARAGRAPHS`.\n\n**01 RESULT. Did the app find everything the document has?** Four tiles, big serif numbers, a \"How this is computed\" line each: **Paragraphs found: n** beside **the document has `reference.paragraphs`** (green when equal, red with the difference); **First words match: n of `reference.paragraphs`**; **Footnotes: 0 of `reference.footnotes`**, in red, \"this HTML version has none: no footnote text, no footnote marks. To cite a footnote, use the PDF or Word version.\"; **Spaces: n** in n paragraphs. When first words differ, the paragraphs concerned are listed under the tiles, one line each, \"para. n: found … / reference …\" (at most ten lines, then \"and n more\").\n\nUnder them **Take the paragraphs away**: {{q4}} The JSON file is an array of records, each with `symbol`, {{q1.export}}, `text`, `text_raw`, `first_words_match`, `citation`, `doc_url` and `limitations` (\"no footnotes in this HTML version; the document has n\"). The Markdown file opens with front matter between `---` lines (`title`, `symbol`, `adopted`, `source_url`, `extracted`: today's date, `paragraphs_found`, `paragraphs_expected`, `footnotes`: the same sentence), then the headings as `##` and `###` lines in document order and each paragraph as its number in bold, then its text. File names: the symbol with slashes replaced by hyphens; a Blob URL, UTF-8.\n\nLast, two closed headings, buttons with `aria-expanded`: **Every check (m)**, the check panel described below, one line per check; and {{q2}} Nothing else on the tab: at most seven things to click.\n\n**02 PARAGRAPHS. What does each paragraph say, and how do I cite it?** {{q1}} First line: the first 120 characters cut at a word with \"…\"; Check: \"OK\" or \"first words differ\" (red). Rows are buttons with `aria-expanded`; click or Enter expands the row in place: the full text, verbatim, never shortened; the reference's six words beside the found six; the places where a space was missing in this paragraph, marked; {{q5}}\n\n**Footer, always visible.** `source`, `built`, and \"Done by this page's code; no model was called and nothing left the browser.\"\n\n## How every number is computed\n\nThe pipeline runs once on load, over the parsed document's `body` elements in order.\n\n- **Classification.** Walk every `table`, `p`, `h2` and `h3` element in document order (`doc.body.querySelectorAll('table, p, h2, h3')`), not only the body's children: everything after the cover sits inside `<div class=\"content\">`. Elements inside the first `<table>` are cover. After it, a `<p>` whose text matches `/^(\\d{1,3})\\.\\s*(.*)$/s` is a paragraph with that number; the first `<h2>` is the title; every other `<h2>` and `<h3>` is a heading, split by `/^([IVX]+|[A-Z])\\.\\s*(.+)$/` into `label` and `heading` when it matches; any other `<p>` is the committee line.\n- **Paragraph text.** `text_raw` = the text after the number and full stop, trimmed, runs of whitespace collapsed to one space.\n{{q2.compute}}\n- **Section** = the nearest heading above the paragraph; `part` = the nearest roman-numbered `<h2>`. A heading is never paragraph text.\n- **First words.** The first six whitespace-separated words of `text` against `reference.first_words[String(number)]`: equal after turning curly quotes straight, en dashes and non-breaking hyphens into a hyphen and non-breaking spaces into spaces; case is kept.\n{{q5.compute}}\n- **Counts** are loops in JavaScript; nothing is estimated, no model is called.\n\n## How the app checks itself\n\nShown under **Every check** on tab 01, closed until opened. One line per check: what was compared, the two values, and \"pass\" in green, \"check failed\" in red with a link to the rows concerned, or \"source limit\" in red for what the source cannot give. A failed check never hides a result.\n\n- **Paragraph count.** Found against `reference.paragraphs`.\n- **Numbering.** Exactly 1 to n in order; gaps and duplicates listed.\n- **First words.** Mismatches counted; listed under the tiles of tab 01, the row flagged on tab 02.\n- **Footnotes.** 0 against `reference.footnotes`: \"source limit\", with \"the HTML version has no footnotes: a limit of the source, not of the app\", counted apart from failures.\n{{q2.checks}}\n- **Headings.** How many `<h2>` and `<h3>`, and how many glued labels were separated.\n- **Nothing lost.** Every block element is classified exactly once and the counts per class sum to the total; any unclassified element is listed in red.\n- **Export round trip.** The JSON to download is parsed back; its record count equals the table's.\n\n## Edge cases and risks\n\n- A number glued to its text and one followed by a space are both accepted (`\\s*`): this file has 90 of the first, none of the second; another file may be the reverse.\n- A rule may insert a space only where the characters prove one was there. \"Giventhe\" stays, caught only when it falls in a paragraph's first six words; a reader who quotes a paragraph still reads it.\n- The reference is a yardstick, not the truth: when the counts disagree, the app shows both and never trims or pads its result to match.\n- If `reference` or one of its fields is missing, the tiles say \"no reference in this file\" and the checks that need it show \"not run\", never \"pass\"; if `html` yields no `<p>`, tab 01 says so and the exports are disabled.\n\n## Design and accessibility\n\nWhat this app adds to the studio look:\n\n- **Red accent** on the active tab, the paragraph numbers, the footnotes tile and the words \"first words differ\", \"check failed\" and \"source limit\"; \"pass\" dark green: words as well as colours.\n- **Big serif numbers** only on the rail and the tiles of tab 01. Every table has a serif `<caption>` stating the message (\"90 paragraphs found, 90 expected\"), a monospace number (`TAB.01`), `<th scope=\"col\">`, numbers right-aligned.\n- A repaired or flagged place is marked in the expanded paragraph by a thin red box.\n- The check panel follows \"Quality assurance of code for analysis and research: Testing code\" (Analysis Function): each check tells a story, given this data, having run this code, we expect this output; every damage found has a named check.\n- The exports follow The Turing Way's \"Documentation and metadata\": a dataset travels with its source, its fields and its known limitations.\n- Citations follow the Dag Hammarskjöld Library's \"How should I cite a UN document?\": fields stored apart and formatted on copy, the symbol as the key, the paragraph as the pinpoint.\n- Keyboard: rows and closed headings are buttons with `aria-expanded`; a hidden tab panel is not focusable.\n\n## Out of scope\n\nNo footnote extraction: the source has none. No model calls, no summaries, no comparison with the PDF text, no editing in the browser, one document.\n\n## Sources consulted\n\n- The Turing Way, Documentation and metadata — https://github.com/the-turing-way/the-turing-way/blob/bcd8050eed319acc55f8ce0fe0410db157a17f04/book/website/reproducible-research/rdm/rdm-metadata.md\n- UK Government Analysis Function, Quality assurance of code for analysis and research: Testing code — https://github.com/best-practice-and-impact/qa-of-code-guidance/blob/fa39f2089905fe07c08ae4d66671736a1becd3c5/book/testing_code.md\n- Dag Hammarskjöld Library, Ask DAG: how should I cite a UN document? — https://ask.un.org/faq/401380"
+ "plan_base": "# Paragraphs out of a PDF: the numbered paragraphs of a General Comment, from a PDF converter's text, checked against the reference\n\n## Context\n\nThe user works in an office that quotes UN documents and copies each paragraph out of the PDF by hand, removing the footnote numbers and page headers that come with it. A PDF converter copies in a second but damages the text: it breaks a paragraph across two pages, adds page headers, footers and date stamps, leaves the footnotes at the foot of each page with the paragraph text, and loses some footnote numbers. This app turns the converter's raw text of one document, `WORKSHOP_DATA.pdf_text`, into numbered paragraphs with the heading each sits under, compares the result with the document's own reference, flags the pages where footnote text may sit inside a paragraph, and lets the office take the paragraphs away as a dataset. Footnotes are not separated in this version. The pages are `records` (`page`, `text`); the yardstick is `reference` (`paragraphs`, `footnotes`, `adopted`, `first_words`); `title`, `symbol`, `doc_url` and `source` describe the document; nothing is typed in by hand.\n\n## What I found in the data\n\nThese numbers are from the file I examined; the app computes its own.\n\n- 20 pages, `text` filled on every page, 2,800 to 4,300 characters each; `count` is the string \"20\". `reference.paragraphs` 90, `reference.footnotes` 141; `reference.first_words` keyed by the paragraph number as a string.\n- **Header.** The first line of every page is the document symbol.\n- **Footer.** The last lines of a page are, in varying order, the page number alone on a line (pages 2 to 20) and the job code \"GE.25-15926\"; page 1 has \"GE.25-15926 (E)\" and a date stamp \"051125 061125\" instead. On 12 pages a third bare number sits in the footer: a footnote number the converter displaced.\n- **Paragraph numbers.** 88 of 90 stand alone on their line (\"1.\" then the text on the next line); 2 (paragraphs 23 and 87) share the line with their text. A rule for one form alone misses the other.\n- **Headings.** Roman-numbered sections (\"I.\", a blank line, \"Introduction\") and lettered subsections (\"A.\") whose title can wrap over two lines; and 20 unlabelled headings (\"Right to work (art. 6)\", \"Children\") on the line or two lines just before a paragraph number, so a naive split glues them to the previous paragraph; the one before paragraph 73 wraps over two lines.\n- **Footnotes.** Each page's footnotes sit at the foot, before the footer: the first is a bare number on its own line, a blank line, then the text; the others start with their number and a space (\"7 E/2003/22…\"). Every page has footnotes, so the paragraph that runs at the foot of each page carries footnote text unless the footnotes are separated: 20 of 90 paragraphs here. Builds that tried to separate them lost the count after the first missing number, so this version flags them and leaves them in place.\n- **Footnote marks in the text.** 141 marks, glued to the word before (\"waste.2\") or after a space (\"”. 3\"); they are left as found, except in the first-words comparison.\n- 16 paragraphs span a page break; paragraphs are 43 to 254 words of plain prose, no line ends with a hyphen; curly quotes and en dashes occur, so comparisons normalise them.\n\n## The app, tab by tab\n\nThe arrangement of the workshop's Verbatim finder, with two tabs: a reader who sees such a tool for the first time needs the result and the paragraphs, and everything else stays one click away, closed.\n\n**Header, always visible.** A monospace label \"UN DOCUMENT · PDF TEXT\", the serif `title`, one line: `symbol` linked to `doc_url` (new tab), \"adopted `reference.adopted`\", \"n pages\", `source`. At the right a green dot \"n of m checks pass\" or a red dot \"n checks failed\", then \"n paragraphs flagged\".\n\n**Left rail, always visible.** Headed \"DOCUMENT\": a card with `symbol` in monospace and the short title. Two big serif numbers: \"n paragraphs of `reference.paragraphs`\" with a thin bar (red when short or over); \"n paragraphs flagged\" of the paragraphs found, in red when more than 0, \"footnote text may sit inside: check them against the PDF\". Then \"n of m checks pass\".\n\nUnder the header, numbered tabs (`role=\"tablist\"`, arrow keys): `01 RESULT · 02 PARAGRAPHS`.\n\n**01 RESULT. Did the app find everything the document has?** Four tiles, big serif numbers, a \"How this is computed\" line each: **Paragraphs found: n** beside **the document has `reference.paragraphs`** (green when equal, red with the difference); **First words match: n of `reference.paragraphs`**; **Paragraphs flagged: n of the paragraphs found**, on n pages, in red when more than 0, \"footnote text may sit inside these paragraphs: check them against the PDF\"; **Footnotes: not separated**, \"the document has `reference.footnotes`; this version leaves them in place and flags them\". When first words differ, the paragraphs concerned are listed under the tiles, one line each, \"para. n: found … / reference …\" (at most ten lines, then \"and n more\").\n\nUnder them **Take the paragraphs away**: {{q4}} The JSON file is an array of records, each with `symbol`, {{q1.export}}, `page_start`, `page_end`, `text`, `flagged`, `first_words_match`, `citation`, `doc_url` and `limitations` (\"footnotes not separated; n may sit inside this paragraph\" for a flagged paragraph, \"footnotes not separated\" for the others). The Markdown file opens with front matter between `---` lines (`title`, `symbol`, `adopted`, `source_url`, `extracted`: today's date, `paragraphs_found`, `paragraphs_expected`, `paragraphs_flagged`, `footnotes`: \"not separated; the document has n\"), then the headings as `##` and `###` lines in document order and each paragraph as its number in bold, then its text, with \"(flagged: may contain footnote text)\" after a flagged one. File names: the symbol with slashes replaced by hyphens; a Blob URL, UTF-8.\n\nLast, two closed headings, buttons with `aria-expanded`: **Every check (m)**, the check panel described below, one line per check; and **Flagged paragraphs (n)**: {{q3}} Nothing else on the tab: at most seven things to click.\n\n**02 PARAGRAPHS. What does each paragraph say, and how do I cite it?** {{q1}} Page: the page(s) it starts and ends on (\"3–4\" across a page break); First line: the first 120 characters cut at a word with \"…\"; Check: \"OK\", \"first words differ\" (red) or \"may contain footnote text\" (red). Rows are buttons with `aria-expanded`; click or Enter expands the row in place: the full text, verbatim as computed, never shortened, with suspect lines marked; the reference's six words beside the found six; {{q6}} {{q5}}\n\n**Footer, always visible.** `source`, `built`, and \"Done by this page's code; no model was called and nothing left the browser.\"\n\n## How every number is computed\n\nThe pipeline runs once on load, in this order, over `records` sorted by `page`.\n\n- **Header.** If a page's first non-empty line equals `symbol`, drop it; otherwise note a warning for that page.\n- **Footer.** From the end of each page, drop lines while the line is empty, starts with \"GE.\" (the job code), consists only of 6-digit groups (the date stamp), or is a bare number of one to three digits. A bare number equal to `page` is the page number; any other is counted as \"bare number removed from the footer\" (a footnote number the converter displaced; the app does not put it back).\n- **Body lines of all pages are concatenated** (every line that is not header or footer, footnote lines included) in page order, each line tagged with its page; this joins the paragraphs that cross a page break.\n- **Paragraph starts.** A line matching `/^(\\d{1,3})\\.$/` (number alone) or `/^(\\d{1,3})\\. (.+)$/` (number and text on one line; the text after the space is the first line). Lines before the first paragraph start are the cover.\n- **Headings.** A line matching `/^([IVX]+|[A-Z])\\.$/` opens a labelled heading: skip blank lines, then every line up to the next label line or paragraph start is heading text; a line starting with a lowercase letter or \"(\" continues the previous heading line. An **unlabelled heading** is a non-empty line immediately followed by a paragraph-start line, at most 90 characters, starting with a capital letter and not ending with a full stop, semicolon, colon, comma or digit; when the line before it passes the same test and does not end a paragraph sentence, the two lines are one heading. A heading line is never paragraph text. {{q1.compute}}\n- **Paragraph lines.** Every other non-empty body line belongs to the current paragraph; blank lines are dropped. `page_start` and `page_end` are the pages of its first and last line.\n{{q6.compute}}\n- **Suspect lines.** A line inside a paragraph is suspect when it is a bare number of one to three digits with no full stop after it, or starts with one to three digits, a space and a capital letter, a UN document symbol or a quotation mark (\"7 E/2003/22…\", \"2 Summary for policymakers…\"), or starts with an asterisk and a space (\"* Adopted by the Committee…\", the note on the first page). A paragraph start always has a full stop after its number, so the two never mix. A suspect line and every line after it to the end of its page are suspect: a footnote block runs to the foot of the page. A paragraph over 300 words is flagged too (the longest real one here has 254). A paragraph is **flagged** when it has a suspect line or is over 300 words, and gets `flagged` true. On this file the rule flags 20 of 90 paragraphs, one per page: the paragraph that runs at the foot of each page, above its footnotes.\n{{q3.compute}}\n- **First words.** The first six whitespace-separated words of `text`, after removing footnote marks: digits glued to the end of a word or a punctuation mark are cut (\"waste.2\" becomes \"waste.\"), and a token of digits alone is dropped only when the token before it ends with a full stop, comma or closing quote and is not an abbreviation such as \"No.\" or \"art.\" (paragraphs 24, 27, 46 and 60 start with real numbers, \"article 2\" or \"No. 3\", which must stay); compared with `reference.first_words[String(number)]`, equal after turning curly quotes straight, en and em dashes into a hyphen and runs of whitespace into one space; case is kept.\n{{q5.compute}}\n- **Counts** are loops in JavaScript; nothing is estimated, no model is called.\n\n## How the app checks itself\n\nShown under **Every check** on tab 01, closed until opened. One line per check: what was compared, the two values, and \"pass\" in green or \"check failed\" in red with a link to the rows concerned. A failed check never hides a result.\n\n- **Paragraph count.** Found against `reference.paragraphs`.\n- **Numbering.** Exactly 1 to n in order; gaps and duplicates listed by number and page.\n- **First words.** Mismatches counted; listed under the tiles of tab 01, the row flagged on tab 02.\n- **Paragraphs flagged.** A flag is not a failure: the paragraph count can be right while footnote text sits inside a paragraph, so this line reads \"n paragraphs flagged on n pages, to check against the PDF\".\n{{q3.checks}}\n- **Headers and footers.** Pages whose first line was the symbol (expected all); pages with a page number in the footer (expected all but the first); bare numbers removed from the footer, listed with their page.\n- **Headings.** The number of labelled and unlabelled headings, with the unlabelled ones listed, so a reader can spot a paragraph's last line mistaken for a heading.\n- **Nothing lost.** Every non-empty line of every page is classified exactly once as cover, header, heading, paragraph or footer, and the counts per kind sum to the total non-empty lines in the file; any unclassified line is listed in red with its page.\n- **Export round trip.** The JSON to download is parsed back; its record count equals the table's.\n\n## Edge cases and risks\n\n- A paragraph number on the same line as its text (2 of 90 here) and alone on its line (88) must both be accepted; handling one form only loses two paragraphs or finds none.\n- \"6 November 2025\" on the cover starts with a number and a space; it is never suspect because the cover comes before the first paragraph.\n- A line of real paragraph text may start with a number and a space (\"17 Sustainable Development Goals\"); it is flagged, which costs a reader one look at the PDF, never a lost line.\n- The reference is a yardstick, not the truth: when the counts disagree, the app shows both and never trims or pads its result to match.\n- If `reference` or one of its fields is missing, the tiles say \"no reference in this file\" and the checks that need it show \"not run\", never \"pass\"; if no paragraph is found, tab 01 says so and the exports are disabled.\n\n## Design and accessibility\n\nWhat this app adds to the studio look:\n\n- **Red accent** on the active tab, the paragraph numbers, the flagged-paragraphs number and the words \"first words differ\", \"may contain footnote text\" and \"check failed\"; \"pass\" dark green: words as well as colours.\n- **Big serif numbers** only on the rail and the tiles of tab 01. Every table has a serif `<caption>` stating the message (\"90 paragraphs found, 90 expected\"), a monospace number (`TAB.01`), `<th scope=\"col\">`, numbers right-aligned.\n- A suspect line in the expanded paragraph is marked by a thin red box.\n- The check panel follows \"Quality assurance of code for analysis and research: Testing code\" (Analysis Function): each check tells a story, given this data, having run this code, we expect this output.\n- The exports follow The Turing Way's \"Documentation and metadata\": a dataset travels with its source, its fields and its known limitations.\n- Citations follow the Dag Hammarskjöld Library's \"How should I cite a UN document?\": fields stored apart and formatted on copy, the symbol as the key, the paragraph as the pinpoint.\n- Keyboard: rows and closed headings are buttons with `aria-expanded`; a hidden tab panel is not focusable.\n\n## Out of scope\n\nNo footnote separation: suspect lines are flagged and stay in the text. No model calls, no summaries, no OCR, no PDF rendering: the input is the converter's text. No editing in the browser, one document.\n\n## Sources consulted\n\n- The Turing Way, Documentation and metadata — https://github.com/the-turing-way/the-turing-way/blob/bcd8050eed319acc55f8ce0fe0410db157a17f04/book/website/reproducible-research/rdm/rdm-metadata.md\n- UK Government Analysis Function, Quality assurance of code for analysis and research: Testing code — https://github.com/best-practice-and-impact/qa-of-code-guidance/blob/fa39f2089905fe07c08ae4d66671736a1becd3c5/book/testing_code.md\n- Dag Hammarskjöld Library, Ask DAG: how should I cite a UN document? — https://ask.un.org/faq/401380"
 }

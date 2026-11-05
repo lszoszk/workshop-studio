@@ -1,0 +1,37 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "download": true,
+   "text_matches": true
+  },
+  "passed": 7,
+  "total": 7,
+  "errors": [],
+  "network": [],
+  "lines": 662,
+  "edit": null,
+  "repair": {
+   "error": "Failed to execute 'write' on 'Document': Invalid or unexpected token",
+   "seconds": 149.9,
+   "cost": 0.0657516,
+   "applied": true,
+   "checks_before": 4
+  },
+  "seconds": 404.5,
+  "first_token": 196.2,
+  "first_thought": 2.4,
+  "reasoning_chars": 23131,
+  "prompt_tokens": 18905,
+  "completion_tokens": 15843,
+  "cost": 0.074653,
+  "provider": "Z.AI"
+ }
+]

@@ -1,0 +1,31 @@
+[
+ {
+  "model": "claude-api",
+  "label": "Claude Sonnet 5.5 · USA · Anthropic API",
+  "prompt": "s7-4-extract-pdf",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "download": true,
+   "text_matches": true
+  },
+  "passed": 7,
+  "total": 7,
+  "errors": [],
+  "network": [],
+  "lines": 472,
+  "edit": null,
+  "repair": null,
+  "seconds": 223.4,
+  "first_token": 143.5,
+  "first_thought": 2.5,
+  "reasoning_chars": 18884,
+  "prompt_tokens": 27590,
+  "completion_tokens": 33650,
+  "cost": 0.35252,
+  "provider": "anthropic"
+ }
+]

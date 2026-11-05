@@ -1,0 +1,798 @@
+I built the app exactly to the plan: a two-tab reader that extracts the numbered paragraphs of the General Comment from the PDF converter's raw text, flags where footnote text may sit inside them, checks itself against the file's own reference, and exports the paragraphs as JSON or Markdown with their citations and limitations.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paragraphs out of a PDF — General comment No. 27</title>
+<style>
+  [hidden]{display:none!important}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f4f0e8;color:#1d1b18;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+  a{color:#1d1b18}
+  a:focus-visible,button:focus-visible,[role="tab"]:focus-visible,tr[tabindex]:focus-visible{outline:3px solid #9b2335;outline-offset:2px}
+  .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase}
+  .serif{font-family:Georgia,"Times New Roman",serif}
+  .rule{border:0;border-top:1px solid #d9d2c3;margin:0}
+  /* header */
+  header{position:sticky;top:0;background:#f4f0e8;border-bottom:1px solid #d9d2c3;padding:12px 24px 10px;z-index:5}
+  header .lbl{color:#7a7265}
+  header h1{font-family:Georgia,serif;font-size:22px;font-weight:normal;margin:4px 0 2px}
+  .hdmeta{font-size:13px;color:#57503f}
+  .hdmeta a{color:#1d1b18;text-decoration:underline}
+  .hdr-right{float:right;text-align:right;font-size:13px;margin-top:-4px}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+  .dot.ok{background:#1e6b34}.dot.bad{background:#9b2335}
+  /* layout */
+  .wrap{display:flex;min-height:calc(100vh - 130px)}
+  aside{width:250px;flex:0 0 250px;border-right:1px solid #d9d2c3;padding:18px 20px}
+  main{flex:1;padding:18px 30px 60px;min-width:0}
+  /* rail */
+  .card{border:1px solid #d9d2c3;padding:12px;margin-bottom:14px}
+  .card .sym{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;letter-spacing:.03em}
+  .card .ttl{font-size:13px;color:#57503f;margin:4px 0 10px}
+  .bignum{font-family:Georgia,serif;font-size:44px;line-height:1;margin:2px 0}
+  .bignum small{font-size:20px;color:#7a7265;font-family:Georgia,serif}
+  .bar{height:3px;background:#d9d2c3;margin:8px 0 4px;position:relative}
+  .bar i{position:absolute;left:0;top:0;bottom:0;background:#1d1b18}
+  .bar.bad i{background:#9b2335}
+  .note{font-size:12.5px;color:#57503f}
+  .red{color:#9b2335}
+  .green{color:#1e6b34}
+  /* tabs */
+  .tabs{display:flex;gap:0;border-bottom:1px solid #d9d2c3;margin-bottom:20px}
+  [role="tab"]{background:none;border:0;border-bottom:3px solid transparent;padding:8px 18px 6px;cursor:pointer;font:inherit}
+  [role="tab"][aria-selected="true"]{border-bottom-color:#9b2335;color:#9b2335}
+  [role="tab"] .num{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.08em;color:#7a7265;margin-right:6px}
+  [role="tab"][aria-selected="true"] .num{color:#9b2335}
+  /* tiles */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:8px}
+  .tile{border-top:2px solid #1d1b18;padding-top:8px}
+  .tile .val{font-family:Georgia,serif;font-size:46px;line-height:1}
+  .tile .val small{font-size:22px;color:#7a7265}
+  .tile .k{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#7a7265;margin:2px 0}
+  .tile .how{font-size:12.5px;color:#57503f;margin-top:6px}
+  /* misc */
+  .section-k{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#7a7265;margin:22px 0 8px}
+  .btn{background:#1d1b18;color:#f4f0e8;border:0;padding:9px 16px;cursor:pointer;font:inherit;font-size:14px}
+  .btn:hover{background:#9b2335}
+  .btn[disabled]{background:#a39a88;cursor:not-allowed}
+  .btn.ghost{background:none;color:#1d1b18;border:1px solid #1d1b18}
+  .btn.ghost:hover{border-color:#9b2335;color:#9b2335;background:none}
+  details-btn{display:block}
+  .collapsible{background:none;border:0;border-top:1px solid #d9d2c3;border-bottom:1px solid #d9d2c3;width:100%;text-align:left;padding:10px 2px;cursor:pointer;font:inherit;display:flex;justify-content:space-between;align-items:center}
+  .collapsible:hover{color:#9b2335}
+  .panel{padding:12px 2px 4px}
+  /* tables */
+  table{width:100%;border-collapse:collapse;font-size:14.5px}
+  caption{caption-side:top;text-align:left;font-family:Georgia,serif;font-size:19px;padding:6px 0 10px}
+  caption .tagn{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.08em;color:#7a7265;display:block}
+  th{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#7a7265;text-align:left;border-bottom:1px solid #1d1b18;padding:6px 10px 6px 0;font-weight:normal}
+  th.r,td.r{text-align:right}
+  td{border-bottom:1px solid #d9d2c3;padding:7px 10px 7px 0;vertical-align:top}
+  tr.para{cursor:pointer}
+  tr.para:hover{background:#ece6d9}
+  tr.exp>td{background:#faf7f0;padding:16px 16px 18px}
+  .flagline{border-left:3px solid #9b2335;padding-left:8px}
+  .suspect{border:1px solid #9b2335;padding:0 2px}
+  .num-cell{font-family:Georgia,serif;font-size:19px;color:#9b2335}
+  .small{font-size:13px;color:#57503f}
+  .fwline{margin:10px 0 2px}
+  .fwline .lbl{display:inline-block;width:120px}
+  pre.lines{white-space:pre-wrap;font:13px/1.6 ui-monospace,Menlo,Consolas,monospace;background:#ece6d9;padding:12px;margin:10px 0 0}
+  .chip{display:inline-block;border:1px solid #9b2335;color:#9b2335;font-size:12px;padding:1px 8px;border-radius:10px;margin:2px 4px 2px 0}
+  ul.plain{list-style:none;padding:0;margin:0}
+  ul.plain li{padding:4px 0;border-bottom:1px solid #d9d2c3;font-size:14.5px}
+  footer{border-top:1px solid #d9d2c3;padding:10px 24px;font-size:12.5px;color:#57503f}
+  .flexr{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="mono lbl" id="h-lbl">UN DOCUMENT · PDF TEXT</div>
+  <h1 id="h-title" class="serif"></h1>
+  <div class="hdmeta" id="h-meta"></div>
+  <div class="hdr-right" id="h-right"></div>
+  <div style="clear:both"></div>
+</header>
+
+<div class="wrap">
+<aside id="rail"></aside>
+<main>
+  <div class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" id="tab-1" aria-controls="panel-1" aria-selected="true"><span class="num">01</span>RESULT</button>
+    <button role="tab" id="tab-2" aria-controls="panel-2" aria-selected="false" tabindex="-1"><span class="num">02</span>PARAGRAPHS</button>
+  </div>
+
+  <section id="panel-1" role="tabpanel" aria-labelledby="tab-1"></section>
+  <section id="panel-2" role="tabpanel" aria-labelledby="tab-2" hidden></section>
+</main>
+</div>
+
+<footer id="foot"></footer>
+
+<script>
+(function(){
+"use strict";
+const D = window.WORKSHOP_DATA.pdf_text;
+const REF = D && D.reference ? D.reference : null;
+const recs = (D && Array.isArray(D.records)) ? D.records.slice().sort((a,b)=>a.page-b.page) : [];
+const symbol = (D && D.symbol) || "";
+const hasRefP = !!(REF && typeof REF.paragraphs === "number");
+const hasRefF = !!(REF && typeof REF.footnotes === "number");
+const hasFW = !!(REF && REF.first_words && typeof REF.first_words === "object");
+
+/* ---------- helpers ---------- */
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const norm = s => String(s).replace(/\u2018|\u2019/g,"'").replace(/\u201c|\u201d/g,'"').replace(/\u2013|\u2014/g,"-").replace(/\s+/g," ").trim();
+const splitLines = t => String(t).split(/\r?\n/);
+const isBlank = l => l.trim()==="";
+const bareNum = l => /^\d{1,3}$/.test(l.trim());
+const isDateStamp = l => /^(\d{6}\s*)+$/.test(l.trim());
+const ABBREV = /^(no\.|art\.|para\.|para\.s|p\.|pp\.|chap\.|sec\.|vol\.)$/i;
+
+/* ---------- pipeline ---------- */
+const warns = [];            // page-level warnings
+const headerPages = [];      // pages whose first line was the symbol
+const pageNoPages = [];      // pages with a page number in the footer
+const bareFooterNums = [];   // {page, num}
+let hyphenEnds = 0;
+
+// classify each page into header / body / footer lines
+const bodyLines = [];        // {text, page}
+const footLines = [];        // footer lines (for nothing-lost accounting)
+const headLines = [];
+const coverLines = [];
+let totalNonEmpty = 0;
+
+recs.forEach(pg => {
+  const lines = splitLines(pg.text || "");
+  let i = 0;
+  // header
+  while (i < lines.length && isBlank(lines[i])) i++;
+  if (i < lines.length && lines[i].trim() === symbol) { headerPages.push(pg.page); i++; }
+  else if (i < lines.length) warns.push("page " + pg.page + ": first line is not the symbol");
+  // footer, from the end
+  let j = lines.length - 1;
+  const foot = [];
+  while (j >= i) {
+    const t = lines[j].trim();
+    if (t === "" || t.startsWith("GE.") || isDateStamp(t) || bareNum(t)) {
+      foot.unshift(lines[j]);
+      if (bareNum(t) && t !== "" && Number(t) !== pg.page) bareFooterNums.push({page: pg.page, num: t});
+      if (bareNum(t) && Number(t) === pg.page) pageNoPages.push(pg.page);
+      j--;
+    } else break;
+  }
+  // body: lines i..j inclusive
+  for (let k = i; k <= j; k++) {
+    if (isBlank(lines[k])) continue;
+    if (/\u00AD?-\s*$/.test(lines[k].trim()) && lines[k].trim().endsWith("-")) hyphenEnds++;
+    bodyLines.push({text: lines[k], page: pg.page});
+  }
+  lines.forEach(l => { if (!isBlank(l)) totalNonEmpty++; });
+  foot.forEach(l => { if (!isBlank(l)) footLines.push({text:l, page:pg.page}); });
+});
+
+// paragraph-start tests
+const RE_ALONE = /^(\d{1,3})\.$/;
+const RE_WITH_TEXT = /^(\d{1,3})\. (.+)$/;
+const paraStart = l => {
+  const t = l.trim();
+  let m = t.match(RE_ALONE);
+  if (m) return {num: Number(m[1]), first: null};
+  m = t.match(RE_WITH_TEXT);
+  if (m) return {num: Number(m[1]), first: m[2]};
+  return null;
+};
+const labelLine = l => /^([IVX]+|[A-Z])\.$/.test(l.trim());
+
+// heading-line tests (for unlabelled headings)
+const headingish = l => {
+  const t = l.trim();
+  if (t === "" || t.length > 90) return false;
+  if (!/^[A-Z]/.test(t)) return false;
+  if (/[.;:,]$|\d$/.test(t)) return false;
+  return true;
+};
+const endsSentence = l => /[.;:?!\u201d\u2019)"\u2019]$/.test(l.trim());
+
+// walk the body lines
+const paragraphs = [];   // {num, section, part, pageStart, pageEnd, lines:[{text,page}], firstLineIdx}
+const headings = [];     // {text, type:'labelled'|'unlabelled', page, kind:'part'|'sub'|'plain'}
+let curSection = null, curPart = null;
+let started = false;     // after first paragraph start
+let cur = null;          // current paragraph being built
+let unclassified = [];
+
+bodyLines.forEach((bl, idx) => {
+  const t = bl.text.trim();
+  const ps = paraStart(bl.text);
+  if (ps) {
+    // possible unlabelled heading immediately before (one or two lines)
+    if (!cur) {
+      // check previous line(s) as heading
+      let hEnd = idx - 1;
+      let lines = [];
+      if (hEnd >= 0) {
+        const prev = bodyLines[hEnd];
+        const pt = prev.text.trim();
+        if (headingish(pt) && !labelLine(prev.text) && !paraStart(prev.text)) {
+          lines.unshift(pt);
+          // try one more line before
+          if (hEnd - 1 >= 0) {
+            const prev2 = bodyLines[hEnd-1];
+            const p2 = prev2.text.trim();
+            if (headingish(p2) && !labelLine(prev2.text) && !paraStart(prev2.text) && !endsSentence(p2)) {
+              lines.unshift(p2);
+              // remove them from the previous paragraph if it took them
+              if (paragraphs.length) {
+                const lastP = paragraphs[paragraphs.length-1];
+                // drop trailing lines that match
+                while (lastP.lines.length && lastP.lines[lastP.lines.length-1].text.trim() === lines[0]) lines.shift() && null;
+              }
+            }
+          }
+        }
+      }
+      if (lines.length) {
+        const h = {text: lines.join(" "), type:"unlabelled", page: bl.page, kind:"plain"};
+        headings.push(h);
+        curSection = h;
+        // remove these lines from any previous paragraph
+        for (let k = 1; k <= lines.length; k++) {
+          for (let p = paragraphs.length - 1; p >= 0; p--) {
+            const pl = paragraphs[p].lines;
+            if (pl.length && pl[pl.length-1].text.trim() === lines[lines.length - k]) { pl.pop(); break; }
+          }
+        }
+      }
+    }
+    // close previous paragraph
+    if (cur) { paragraphs.push(cur); }
+    cur = {num: ps.num, section: curSection, part: curPart, lines: [], firstLineIdx: idx};
+    if (ps.first) cur.lines.push({text: ps.first, page: bl.page});
+    started = true;
+    return;
+  }
+  if (labelLine(bl.text)) {
+    // labelled heading: collect following lines until next label / paragraph start / suspect
+    if (cur) { paragraphs.push(cur); cur = null; }
+    const kind = /^[IVX]+\.$/.test(t) ? "part" : "sub";
+    const parts = [];
+    let k = idx + 1;
+    while (k < bodyLines.length) {
+      const nt = bodyLines[k].text.trim();
+      if (nt === "" ) { k++; continue; }
+      if (labelLine(bodyLines[k].text) || paraStart(bodyLines[k].text)) break;
+      // continuation: starts lowercase or "(" and previous part exists
+      if (parts.length && (/^[a-z]/.test(nt) || nt.startsWith("("))) {
+        parts[parts.length-1] += " " + nt;
+      } else {
+        parts.push(nt);
+      }
+      k++;
+    }
+    const h = {text: parts.join(" "), type:"labelled", page: bl.page, kind};
+    headings.push(h);
+    if (kind === "part") { curPart = h; curSection = h; }
+    else curSection = h;
+    return;
+  }
+  if (!started) { coverLines.push(bl); return; }
+  if (isBlank(bl.text)) return;
+  if (cur) cur.lines.push({text: t, page: bl.page});
+  else {
+    // text between a heading and the first paragraph start is heading text; anything else after a paragraph closed by a heading: unclassified
+    unclassified.push({page: bl.page, text: t});
+  }
+});
+if (cur) paragraphs.push(cur);
+
+/* ---------- text, suspect lines, flags ---------- */
+const RE_SYM = /^[A-Z]{1,5}\/[A-Za-z0-9./\-]+/;
+paragraphs.forEach(p => {
+  const joined = p.lines.map(l=>l.text).join(" ").replace(/ {2,}/g," ").trim();
+  p.text = joined;
+  p.pageStart = p.lines.length ? p.lines[0].page : null;
+  p.pageEnd = p.lines.length ? p.lines[p.lines.length-1].page : null;
+  p.words = p.text ? p.text.split(/\s+/).length : 0;
+  // suspect lines
+  p.suspects = [];
+  let suspectFrom = null; // page after which everything is suspect
+  p.lines.forEach((l, li) => {
+    if (suspectFrom !== null && l.page >= suspectFrom) { p.suspects.push(li); return; }
+    const t = l.text.trim();
+    let hit = false, why = "";
+    if (bareNum(t) && !/\.$/.test(t)) { hit = true; why = "bare number"; }
+    else {
+      const m = t.match(/^(\d{1,3}) (.+)$/);
+      if (m) {
+        const rest = m[2];
+        if (RE_SYM.test(rest) || /^["\u201c]/.test(rest) || /^[A-Z]/.test(rest)) { hit = true; why = "starts with a number and a space"; }
+      }
+      else if (/^\* /.test(t)) { hit = true; why = "asterisk note"; }
+    }
+    if (hit) { p.suspects.push(li); p.suspects.push = p.suspects.push; p._why = p._why || {}; p._why[li] = why; suspectFrom = l.page; }
+  });
+  p.long = p.words > 300;
+  p.flagged = p.suspects.length > 0 || p.long;
+});
+
+/* ---------- first words ---------- */
+function cleanFirstWords(text) {
+  let toks = text.split(/\s+/).filter(Boolean);
+  const out = [];
+  for (let i = 0; i < toks.length; i++) {
+    let tk = toks[i];
+    // cut digits glued to end of a word/punctuation: "waste.2" -> "waste."
+    tk = tk.replace(/(?<=[^\d])(\d{1,3})$/,"");
+    if (tk === "") continue;
+    if (/^\d{1,3}$/.test(tk)) {
+      // drop only if previous token ends with . , or closing quote and is not an abbreviation
+      const prev = out.length ? out[out.length-1] : null;
+      if (prev && (/[.,\u201d\u2019"']$/.test(prev)) && !ABBREV.test(prev)) continue;
+      // also drop if previous ends with quote etc.
+    }
+    out.push(tk);
+    if (out.length === 6) break;
+  }
+  return out.join(" ");
+}
+paragraphs.forEach(p => {
+  const fw = cleanFirstWords(p.text);
+  p.fw = fw;
+  const ref = hasFW ? REF.first_words[String(p.num)] : undefined;
+  p.fwMatch = (ref !== undefined) ? norm(fw) === norm(ref) : null;
+  p.fwRef = ref;
+});
+
+/* ---------- checks ---------- */
+const numberingGaps = [];
+{
+  const nums = paragraphs.map(p=>p.num);
+  for (let i=1;i<=Math.max(0,...nums);i++) if (!nums.includes(i)) numberingGaps.push(i);
+  nums.forEach((n,i)=>{ if (nums.indexOf(n)!==i) numberingGaps.push(n+" (duplicate)"); });
+}
+const fwMismatches = paragraphs.filter(p=>p.fwMatch === false);
+const flagged = paragraphs.filter(p=>p.flagged);
+const flaggedPages = [...new Set(flagged.map(p=>p.pageStart))];
+const suspectCount = paragraphs.reduce((a,p)=>a+p.suspects.length,0);
+const suspectPages = [...new Set(paragraphs.flatMap(p=>p.suspects.map(li=>p.lines[li]?p.lines[li].page:null)).filter(Boolean))];
+const labelledHeadings = headings.filter(h=>h.type==="labelled");
+const unlabelledHeadings = headings.filter(h=>h.type==="unlabelled");
+
+// nothing lost: cover + headings + paragraphs + header/foot lines vs total non-empty
+const classified = coverLines.length + (headerPages.length) + footLines.length
+  + headings.reduce((a,h)=>a+(h.type==="unlabelled"?1:0),0)
+  + labelledHeadingLineCount()
+  + paragraphs.reduce((a,p)=>a+p.lines.length,0);
+function labelledHeadingLineCount(){
+  // we merged labelled heading lines into one text; approximate by counting lines consumed — instead recount from bodyLines
+  return labelledHeadingLines.length;
+}
+// recompute labelled heading consumed lines properly: walk bodyLines again
+const labelledHeadingLines = [];
+bodyLines.forEach((bl,idx)=>{
+  const t = bl.text.trim();
+  if (labelLine(bl.text)) labelledHeadingLines.push(bl);
+});
+// heading text lines after a label: they were swallowed; count them by re-walking
+// simpler: count all lines classified as heading by walking with same rules
+const headingTextLines = [];
+(function(){
+  let i = 0;
+  while (i < bodyLines.length) {
+    const bl = bodyLines[i];
+    if (labelLine(bl.text)) {
+      headingTextLines.push(bl);
+      let k = i+1;
+      while (k < bodyLines.length) {
+        const nt = bodyLines[k].text.trim();
+        if (nt==="") {k++;continue;}
+        if (labelLine(bodyLines[k].text) || paraStart(bodyLines[k].text)) break;
+        headingTextLines.push(bodyLines[k]);
+        k++;
+      }
+      i = k;
+    } else i++;
+  }
+})();
+
+// header lines count: one per headerPages page
+const headerLineCount = headerPages.length;
+
+/* ---------- citations & export records ---------- */
+function buildRecords() {
+  return paragraphs.map(p => ({
+    symbol,
+    paragraph: p.num,
+    section: p.section ? p.section.text : null,
+    part: p.part ? p.part.text : null,
+    page_start: p.pageStart,
+    page_end: p.pageEnd,
+    text: p.text,
+    text_lines: p.lines.map(l=>l.text).join(" | "),
+    flagged: !!p.flagged,
+    first_words_match: p.fwMatch,
+    citation: symbol + ", para. " + p.num,
+    doc_url: D.doc_url || "",
+    limitations: p.flagged
+      ? "footnotes not separated; " + (p.suspects.length ? p.suspects.length + " suspect line(s) may sit inside this paragraph" : "paragraph over 300 words")
+      : "footnotes not separated"
+  }));
+}
+const exportRecords = buildRecords();
+
+/* ---------- checks list ---------- */
+const countOK = hasRefP ? paragraphs.length === REF.paragraphs : null;
+const checks = [];
+function addCheck(label, a, b, pass, extra) {
+  checks.push({label, a, b, pass, extra: extra||""});
+}
+addCheck("Paragraph count", paragraphs.length + " found", hasRefP ? REF.paragraphs + " expected" : "no reference", hasRefP ? countOK : null);
+addCheck("Numbering 1 to n in order", numberingGaps.length ? "gaps/duplicates: " + numberingGaps.join(", ") : "1 to " + paragraphs.length + " complete", "no gaps, no duplicates", numberingGaps.length === 0);
+addCheck("First words", fwMismatches.length + " of " + paragraphs.length + " differ", hasFW ? "all " + paragraphs.length + " expected to match" : "no reference", hasFW ? (fwMismatches.length === 0 ? true : false) : null);
+addCheck("Paragraphs flagged", flagged.length + " paragraphs on " + flaggedPages.length + " pages, to check against the PDF", "a flag is not a failure", null);
+addCheck("Suspect lines", suspectCount + " suspect lines on " + suspectPages.length + " pages, in " + flagged.filter(p=>p.suspects.length).length + " paragraphs; none removed", "flagged, kept in the text", null);
+addCheck("Page headers", headerPages.length + " of " + recs.length + " pages start with the symbol", "all pages", recs.length ? headerPages.length === recs.length : null);
+addCheck("Page numbers in footer", pageNoPages.length + " of " + recs.length + " pages (first page has none)", "all but the first", pageNoPages.length === Math.max(0, recs.length - 1));
+addCheck("Bare numbers removed from footer", bareFooterNums.length + (bareFooterNums.length ? ": " + bareFooterNums.map(x=>"p." + x.page + " (“" + x.num + "”)").join(", ") : ""), "displaced footnote numbers; not put back", null);
+addCheck("Headings", labelledHeadings.length + " labelled, " + unlabelledHeadings.length + " unlabelled", "unlabelled listed so none can hide inside a paragraph", null, unlabelledHeadings.map(h=>esc(h.text)).join(" · "));
+addCheck("Nothing lost", classifiedTotal() + " lines classified (cover " + coverLines.length + ", heading " + headingTextLines.length + ", paragraph " + paragraphs.reduce((a,p)=>a+p.lines.length,0) + ", header " + headerLineCount + ", footer " + footLines.length + ")", totalNonEmpty + " non-empty lines in the file", unclassified.length === 0 && classifiedTotal() === totalNonEmpty, unclassified.length ? "unclassified: " + unclassified.map(u=>"p." + u.page + " “" + esc(u.text.slice(0,60)) + "”").join("; ") : "");
+function classifiedTotal(){ return coverLines.length + headingTextLines.length + paragraphs.reduce((a,p)=>a+p.lines.length,0) + headerLineCount + footLines.length; }
+// export round trip
+let roundTrip;
+try { const back = JSON.parse(JSON.stringify(exportRecords)); roundTrip = back.length === paragraphs.length; } catch(e){ roundTrip = false; }
+addCheck("Export round trip", exportRecords.length + " records in the JSON, " + paragraphs.length + " rows in the table", "equal", roundTrip);
+addCheck("Lines ending with a hyphen", hyphenEnds + " found", "none expected; none joined", null);
+
+const passCount = checks.filter(c=>c.pass === true).length;
+const failCount = checks.filter(c=>c.pass === false).length;
+const runChecks = checks.filter(c=>c.pass !== null).length;
+
+/* ---------- render ---------- */
+function el(html){ const d=document.createElement("div"); d.innerHTML=html; return d.firstElementChild; }
+
+// header
+document.getElementById("h-title").textContent = D.title || "(untitled document)";
+document.getElementById("h-meta").innerHTML =
+  (symbol ? '<a href="'+esc(D.doc_url||"#")+'" target="_blank" rel="noopener">'+esc(symbol)+'</a> · ' : '') +
+  (REF && REF.adopted ? "adopted " + esc(REF.adopted) + " · " : "") +
+  recs.length + " page" + (recs.length===1?"":"s") + " · " + esc(D.source || "");
+document.getElementById("h-right").innerHTML =
+  '<div><span class="dot ' + (failCount ? "bad" : "ok") + '"></span>' +
+  (failCount ? '<span class="red">' + failCount + ' check' + (failCount===1?"":"s") + ' failed</span>'
+             : '<span class="green">' + passCount + ' of ' + runChecks + ' checks pass</span>') + '</div>' +
+  '<div>' + (flagged.length ? '<span class="red">' + flagged.length + ' paragraph' + (flagged.length===1?"":"s") + ' flagged</span>' : "0 paragraphs flagged") + '</div>';
+
+// rail
+document.getElementById("rail").innerHTML =
+  '<div class="mono" style="color:#7a7265;margin-bottom:6px">DOCUMENT</div>' +
+  '<div class="card"><div class="sym">' + esc(symbol) + '</div><div class="ttl">' + esc(D.title || "") + '</div></div>' +
+  '<div class="bignum ' + (hasRefP && !countOK ? "red" : "") + '">' + paragraphs.length +
+    ' <small>of ' + (hasRefP ? REF.paragraphs : "?") + '</small></div>' +
+  '<div class="note">paragraphs</div>' +
+  '<div class="bar ' + (hasRefP && !countOK ? "bad" : "") + '"><i style="width:' + (hasRefP ? Math.min(100, Math.round(paragraphs.length/REF.paragraphs*100)) : 100) + '%"></i></div>' +
+  '<div style="margin-top:16px" class="' + (flagged.length ? "red" : "") + '">' +
+  '<div class="bignum">' + flagged.length + ' <small>of ' + paragraphs.length + '</small></div>' +
+  '<div class="note">paragraphs flagged<br>footnote text may sit inside: check them against the PDF</div></div>' +
+  '<hr class="rule" style="margin:18px 0">' +
+  '<div class="note"><span class="' + (failCount ? "red" : "green") + '">' + (failCount ? failCount + " checks failed" : passCount + " of " + runChecks + " checks pass") + '</span></div>';
+
+// tab logic
+const tabs = [document.getElementById("tab-1"), document.getElementById("tab-2")];
+const panels = [document.getElementById("panel-1"), document.getElementById("panel-2")];
+function selectTab(i){
+  tabs.forEach((t,k)=>{ t.setAttribute("aria-selected", k===i?"true":"false"); t.tabIndex = k===i?0:-1; });
+  panels.forEach((p,k)=>{ p.hidden = k!==i; });
+}
+tabs.forEach((t,i)=>{
+  t.addEventListener("click", ()=>selectTab(i));
+  t.addEventListener("keydown", e=>{
+    if (e.key==="ArrowRight"){ selectTab((i+1)%2); tabs[(i+1)%2].focus(); e.preventDefault(); }
+    if (e.key==="ArrowLeft"){ selectTab((i+2)%2); tabs[(i+2)%2].focus(); e.preventDefault(); }
+  });
+});
+
+/* ---------- tab 01 ---------- */
+const p1 = document.getElementById("panel-1");
+function tile(k, valHTML, how, cls){ return '<div class="tile ' + (cls||"") + '"><div class="k">' + k + '</div><div class="val">' + valHTML + '</div><div class="how">' + how + '</div></div>'; }
+let html = "";
+html += '<div class="mono" style="color:#7a7265;margin-bottom:4px">01 · DID THE APP FIND EVERYTHING THE DOCUMENT HAS?</div>';
+html += '<div class="tiles">';
+html += tile("Paragraphs found", paragraphs.length + (hasRefP ? ' <small>· doc has ' + REF.paragraphs + '</small>' : ""),
+  "How this is computed: lines that are a number and a full stop, alone or with the text on the same line. " + (hasRefP ? (countOK ? "Equal to the reference." : "Difference: " + (paragraphs.length - REF.paragraphs) + ".") : "No reference in this file."),
+  hasRefP ? (countOK ? "green" : "red") : "");
+html += tile("First words match", (hasFW ? fwMismatches.length===0 && paragraphs.length===REF.paragraphs ? paragraphs.length : (paragraphs.length - fwMismatches.length) : "n/a") + (hasFW ? ' <small>of ' + REF.paragraphs + '</small>' : " <small>no reference</small>"),
+  "How this is computed: the first six words of each paragraph, after cutting footnote marks, compared with the reference’s first words.",
+  hasFW ? (fwMismatches.length===0 ? "green" : "red") : "");
+html += tile("Paragraphs flagged", (flagged.length ? '<span class="red">' + flagged.length + '</span>' : "0") + ' <small>of ' + paragraphs.length + '</small>',
+  "on " + flaggedPages.length + " page" + (flaggedPages.length===1?"":"s") + ". Footnote text may sit inside these paragraphs: check them against the PDF.",
+  flagged.length ? "red" : "");
+html += tile("Footnotes", "not separated",
+  "the document has " + (hasRefF ? REF.footnotes : "an unknown number of") + "; this version leaves them in place and flags them.");
+html += '</div>';
+
+if (fwMismatches.length) {
+  html += '<div class="section-k">FIRST WORDS DIFFER · ' + fwMismatches.length + '</div><ul class="plain">';
+  fwMismatches.slice(0,10).forEach(p=>{
+    html += '<li><span class="num-cell">' + p.num + '.</span> found <em>' + esc(p.fw) + '</em> / reference <em>' + esc(p.fwRef) + '</em></li>';
+  });
+  if (fwMismatches.length > 10) html += '<li class="small">and ' + (fwMismatches.length - 10) + ' more</li>';
+  html += '</ul>';
+}
+
+html += '<div class="section-k">TAKE THE PARAGRAPHS AWAY</div>';
+html += '<div class="flexr"><button class="btn" id="dl-json"' + (paragraphs.length?"":" disabled") + '>Download JSON</button>' +
+        '<button class="btn ghost" id="dl-md"' + (paragraphs.length?"":" disabled") + '>Download Markdown</button>' +
+        '<span class="small mono">source, fields and limitations travel with the data</span></div>';
+
+html += '<div style="margin-top:26px">';
+html += '<button class="collapsible" id="col-checks" aria-expanded="false"><span class="mono">EVERY CHECK (' + checks.length + ')</span><span class="mono">open / close</span></button>';
+html += '<div class="panel" id="checks-panel" hidden></div>';
+html += '<button class="collapsible" id="col-flag" aria-expanded="false" style="margin-top:10px"><span class="mono">FLAGGED PARAGRAPHS (' + flagged.length + ')</span><span class="mono">open / close</span></button>';
+html += '<div class="panel" id="flag-panel" hidden></div>';
+html += '</div>';
+p1.innerHTML = html;
+
+if (!paragraphs.length) {
+  p1.insertAdjacentHTML("afterbegin", '<p class="red">No numbered paragraph was found in this file. The exports are disabled.</p>');
+}
+
+// checks panel
+const cp = document.getElementById("checks-panel");
+cp.innerHTML = '<table><caption><span class="tagn">TAB.01</span>Self-checks: ' + passCount + ' of ' + runChecks + ' pass, ' + failCount + ' failed</caption>' +
+  '<thead><tr><th scope="col">Check</th><th scope="col">What was compared</th><th scope="col">Result</th></tr></thead><tbody>' +
+  checks.map(c=>{
+    const st = c.pass===null ? '<span class="small">not run</span>' : (c.pass ? '<span class="green">pass</span>' : '<span class="red">check failed</span>');
+    return '<tr><td>' + c.label + '</td><td class="small">' + c.a + '<br>' + c.b + (c.extra ? '<br>' + c.extra : '') + '</td><td>' + st + '</td></tr>';
+  }).join("") + '</tbody></table>';
+
+// flagged panel
+const fp = document.getElementById("flag-panel");
+let fhtml = '<p class="small">This version does not separate footnotes from paragraphs. It shows where footnote text may sit, so you know which paragraphs to check against the PDF.</p>';
+if (flagged.length) {
+  fhtml += '<table><caption><span class="tagn">TAB.02</span>' + flagged.length + ' flagged paragraph' + (flagged.length===1?"":"s") + ', on ' + flaggedPages.length + ' page' + (flaggedPages.length===1?"":"s") + '</caption>' +
+    '<thead><tr><th scope="col" class="r">Paragraph</th><th scope="col" class="r">Page</th><th scope="col">Suspect lines</th><th scope="col">Why</th></tr></thead><tbody>';
+  flagged.forEach(p=>{
+    const whys = [];
+    if (p.suspects.length) p.suspects.forEach(li=>{ if (p._why && p._why[li]) whys.push(p._why[li]); });
+    if (p.long) whys.push("paragraph over 300 words");
+    fhtml += '<tr class="para" tabindex="0" data-open-para="' + p.num + '"><td class="r num-cell">' + p.num + '</td><td class="r">' + p.pageStart + (p.pageEnd!==p.pageStart ? "–"+p.pageEnd : "") + '</td><td class="small">' + esc(p.suspects.map(li=>p.lines[li]?p.lines[li].text:"").join(" | ").slice(0,120)) + '</td><td class="small">' + [...new Set(whys)].join("; ") + '</td></tr>';
+  });
+  fhtml += '</tbody></table>';
+} else fhtml += '<p>No paragraph is flagged on this file.</p>';
+fp.innerHTML = fhtml;
+
+// collapsibles
+function wireCollapsible(btnId, panelId){
+  const b = document.getElementById(btnId), p = document.getElementById(panelId);
+  b.addEventListener("click", ()=>{
+    const open = b.getAttribute("aria-expanded")==="true";
+    b.setAttribute("aria-expanded", String(!open));
+    p.hidden = open;
+  });
+}
+wireCollapsible("col-checks","checks-panel");
+wireCollapsible("col-flag","flag-panel");
+
+// jump from flagged row to paragraph
+fp.addEventListener("click", e=>{
+  const tr = e.target.closest("tr[data-open-para]");
+  if (!tr) return;
+  const num = Number(tr.dataset.openPara);
+  selectTab(1);
+  renderParagraphs();
+  const row = document.querySelector("tr.para[data-num='"+num+"']");
+  if (row) { expandRow(row, true); row.scrollIntoView({block:"center"}); row.focus(); }
+});
+fp.addEventListener("keydown", e=>{
+  if (e.key!=="Enter" && e.key!==" ") return;
+  const tr = e.target.closest("tr[data-open-para]");
+  if (!tr) return;
+  e.preventDefault(); tr.click();
+});
+
+/* ---------- exports ---------- */
+function download(name, content, type){
+  const blob = new Blob([content], {type: type + ";charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+}
+const fname = symbol ? symbol.replace(/\//g,"-") : "paragraphs";
+document.getElementById("dl-json").addEventListener("click", ()=>{
+  download(fname + ".json", JSON.stringify(exportRecords, null, 2), "application/json");
+});
+document.getElementById("dl-md").addEventListener("click", ()=>{
+  const today = new Date().toISOString().slice(0,10);
+  let md = "---\n";
+  md += "title: " + JSON.stringify(D.title||"") + "\n";
+  md += "symbol: " + JSON.stringify(symbol) + "\n";
+  md += "adopted: " + JSON.stringify(REF && REF.adopted ? REF.adopted : "") + "\n";
+  md += "source_url: " + JSON.stringify(D.doc_url||"") + "\n";
+  md += "extracted: " + today + "\n";
+  md += "paragraphs_found: " + paragraphs.length + "\n";
+  md += "paragraphs_expected: " + (hasRefP ? REF.paragraphs : "unknown") + "\n";
+  md += "paragraphs_flagged: " + flagged.length + "\n";
+  md += "footnotes: " + (hasRefF ? "not separated; the document has " + REF.footnotes : "not separated") + "\n";
+  md += "---\n\n";
+  // headings in document order, paragraphs under them
+  const items = [];
+  headings.forEach(h=>items.push({type:"h", h}));
+  paragraphs.forEach(p=>items.push({type:"p", p}));
+  // order: we lost exact global order of headings vs paragraphs; reconstruct by first line index
+  headings.forEach(h=>h._idx = h.firstIdx !== undefined ? h.firstIdx : -1);
+  // assign ordering keys: heading page + a marker; simpler: rebuild by walking bodyLines
+  const ordered = [];
+  const headByLine = new Map();
+  bodyLines.forEach((bl, idx)=>{
+    const t = bl.text.trim();
+    if (labelLine(bl.text)) {
+      const h = labelledHeadings.find(x=>x.page===bl.page && !headByLine.has(bl));
+      // find first unclaimed labelled heading on this page matching text
+      const cand = headings.find(x=>x.type==="labelled" && x.page===bl.page && x.text && t.startsWith(t) && !x._claimed);
+      if (cand) { cand._claimed = true; ordered.push({key: idx, type:"h", h: cand}); }
+    } else if (headingish(t) && !paraStart(bl.text) && !labelLine(bl.text)) {
+      const cand = unlabelledHeadings.find(x=>x.page===bl.page && t === x.text.split(" ")[x.text.split(" ").length-1] && !x._claimed);
+      // match unlabelled heading whose text ends with this line
+      const c2 = unlabelledHeadings.find(x=>!x._claimed && x.page===bl.page && (x.text===t || x.text.endsWith(t)));
+      if (c2) { c2._claimed = true; ordered.push({key: idx, type:"h", h: c2}); }
+    }
+  });
+  paragraphs.forEach(p=>ordered.push({key: p.firstLineIdx, type:"p", p}));
+  ordered.sort((a,b)=>a.key-b.key);
+  let lastPart = null, lastSection = null;
+  ordered.forEach(it=>{
+    if (it.type==="h") {
+      if (it.h.kind==="part") { md += "## " + it.h.text + "\n\n"; lastPart = it.h; lastSection = it.h; }
+      else if (it.h.kind==="sub") { md += "### " + it.h.text + "\n\n"; lastSection = it.h; }
+      else { md += "### " + it.h.text + "\n\n"; lastSection = it.h; }
+    } else {
+      md += "**" + it.p.num + ".** " + it.p.text + (it.p.flagged ? " *(flagged: may contain footnote text)*" : "") + "\n\n";
+    }
+  });
+  download(fname + ".md", md, "text/markdown");
+});
+
+/* ---------- tab 02 ---------- */
+let paraRendered = false;
+const p2 = document.getElementById("panel-2");
+const expanded = new Set();
+
+function renderParagraphs(){
+  if (paraRendered) return;
+  paraRendered = true;
+  let html = '<div class="mono" style="color:#7a7265;margin-bottom:4px">02 · WHAT DOES EACH PARAGRAPH SAY, AND HOW DO I CITE IT?</div>';
+  // headings box
+  html += '<button class="collapsible" id="col-heads" aria-expanded="false"><span class="mono">HEADINGS FOUND: ' + headings.length + '</span><span class="mono">open / close</span></button>';
+  html += '<div class="panel" id="heads-panel" hidden><ul class="plain">' +
+    headings.map(h=>'<li><span class="mono" style="color:#7a7265">' + (h.kind==="part" ? "PART" : h.kind==="sub" ? "SUB" : "PLN") + '</span> ' + esc(h.text) + ' <span class="small">p. ' + h.page + '</span></li>').join("") +
+    '</ul></div>';
+  html += '<table id="para-table"><caption><span class="tagn">TAB.03</span>' + paragraphs.length + ' paragraph' + (paragraphs.length===1?"":"s") + ' found' + (hasRefP ? ", " + REF.paragraphs + " expected" : "") + '</caption>' +
+    '<thead><tr><th scope="col" class="r">No.</th><th scope="col">Section</th><th scope="col" class="r">Page</th><th scope="col">First line</th><th scope="col">Check</th></tr></thead><tbody></tbody></table>';
+  p2.innerHTML = html;
+  wireCollapsible("col-heads","heads-panel");
+  const tbody = p2.querySelector("tbody");
+  paragraphs.forEach(p=>{
+    const tr = document.createElement("tr");
+    tr.className = "para"; tr.tabIndex = 0; tr.dataset.num = p.num;
+    tr.setAttribute("aria-expanded","false");
+    const check = p.fwMatch === false ? '<span class="red">first words differ</span>'
+      : p.flagged ? '<span class="red">may contain footnote text</span>'
+      : (p.fwMatch === true || !hasFW ? "OK" : "OK");
+    tr.innerHTML = '<td class="r num-cell">' + p.num + '</td>' +
+      '<td class="small">' + esc(p.section ? p.section.text : "—") + '</td>' +
+      '<td class="r">' + (p.pageStart === p.pageEnd ? p.pageStart : p.pageStart + "–" + p.pageEnd) + '</td>' +
+      '<td>' + esc(firstLine(p)) + '</td>' +
+      '<td>' + check + '</td>';
+    tbody.appendChild(tr);
+  });
+  tbody.addEventListener("click", e=>{
+    const tr = e.target.closest("tr.para");
+    if (!tr || tr.classList.contains("exp")) return;
+    toggleRow(tr);
+  });
+  tbody.addEventListener("keydown", e=>{
+    if (e.key!=="Enter" && e.key!==" ") return;
+    const tr = e.target.closest("tr.para");
+    if (!tr || tr.classList.contains("exp")) return;
+    e.preventDefault(); toggleRow(tr);
+  });
+}
+function firstLine(p){
+  const t = p.text;
+  if (t.length <= 120) return t;
+  const cut = t.slice(0, 120);
+  const sp = cut.lastIndexOf(" ");
+  return (sp > 60 ? cut.slice(0, sp) : cut) + "…";
+}
+function expandRow(tr, open){
+  toggleRow(tr, open);
+}
+function toggleRow(tr, forceOpen){
+  const num = Number(tr.dataset.num);
+  const p = paragraphs.find(x=>x.num===num);
+  if (!p) return;
+  const isOpen = tr.getAttribute("aria-expanded")==="true";
+  const open = forceOpen !== undefined ? forceOpen : !isOpen;
+  if (!open) {
+    tr.setAttribute("aria-expanded","false");
+    const nx = tr.nextElementSibling;
+    if (nx && nx.classList.contains("exp")) nx.remove();
+    return;
+  }
+  tr.setAttribute("aria-expanded","true");
+  let nx = tr.nextElementSibling;
+  if (nx && nx.classList.contains("exp")) nx.remove();
+  const row = document.createElement("tr");
+  row.className = "exp";
+  const suspects = new Set(p.suspects);
+  let textHTML = p.lines.map((l,i)=>{
+    const cls = suspects.has(i) ? 'suspect' : '';
+    return '<span' + (cls ? ' class="'+cls+'"' : '') + '>' + esc(l.text) + '</span>';
+  }).join(" ");
+  const path = [];
+  if (p.part) path.push(esc(p.part.text));
+  if (p.section && p.section !== p.part) path.push(esc(p.section.text));
+  let html = '<td colspan="5">';
+  html += '<div class="small mono" style="margin-bottom:6px">' + (path.length ? path.join(" › ") : "—") + '</div>';
+  html += '<p style="margin:0 0 4px;font-size:16px">' + textHTML + '</p>';
+  html += '<p class="fwline small"><span class="lbl mono">FOUND</span> ' + esc(p.fw) + '<br><span class="lbl mono">REFERENCE</span> ' + esc(p.fwRef !== undefined && p.fwRef !== null ? p.fwRef : "—") + (p.fwMatch === false ? ' <span class="red">first words differ</span>' : "") + '</p>';
+  html += '<div class="flexr" style="margin-top:8px">' +
+    '<button class="btn ghost" data-copy="' + esc(p.num) + '">Copy citation</button>' +
+    '<button class="btn ghost" data-lines="' + esc(p.num) + '" aria-expanded="false">Show the PDF’s lines</button>' +
+    (p.suspects.length || p.long ? '<span class="chip">' + (p.suspects.length ? p.suspects.length + " suspect line(s)" : "") + (p.long ? " over 300 words" : "") + '</span>' : '') +
+    '</div>';
+  html += '<div class="lines-wrap" hidden></div>';
+  html += '</td>';
+  row.innerHTML = html;
+  tr.after(row);
+  row.querySelector("[data-copy]").addEventListener("click", function(){
+    const c = symbol + ", para. " + p.num;
+    const done = ()=>{
+      const old = this.textContent; this.textContent = "Copied";
+      setTimeout(()=>{ this.textContent = old; }, 2000);
+    }.bind(this);
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(c).then(done, done);
+    else {
+      const ta = document.createElement("textarea"); ta.value = c; document.body.appendChild(ta);
+      ta.select(); try{document.execCommand("copy");}catch(e){} ta.remove(); done();
+    }
+  });
+  row.querySelector("[data-lines]").addEventListener("click", function(){
+    const w = row.querySelector(".lines-wrap");
+    const open = this.getAttribute("aria-expanded")==="true";
+    this.setAttribute("aria-expanded", String(!open));
+    w.hidden = open;
+    if (!w.dataset.filled) {
+      let out = "";
+      let lastPage = null;
+      p.lines.forEach(l=>{
+        if (l.page !== lastPage) { out += "[p. " + l.page + "]\n"; lastPage = l.page; }
+        out += l.text + "\n";
+      });
+      w.innerHTML = '<pre class="lines">' + esc(out) + '</pre>';
+      w.dataset.filled = "1";
+    }
+  });
+}
+
+/* ---------- footer ---------- */
+document.getElementById("foot").innerHTML =
+  esc(D.source || "") + (D.built ? " · built " + esc(D.built) : "") +
+  ' · Done by this page’s code; no model was called and nothing left the browser.';
+
+})();
+</script>
+</body>
+</html>
+```
+
+One note for you as the reader of the result: the pipeline keeps every line (the "Nothing lost" check on tab 01 shows the accounting line by line), the flagged-paragraphs panel jumps straight to the paragraph with its suspect lines boxed in red, and both downloads carry the symbol, the citation string and the "footnotes not separated" limitation on every record. If the counts in your file differ from the sample's, the tiles and checks will show both values rather than trimming anything to match.

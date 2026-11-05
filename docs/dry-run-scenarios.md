@@ -17,6 +17,10 @@ Written on 4 November 2026, before the rehearsal of about 20 November. Nothing h
 
 Two consequences follow. First, the default model (Mistral) gives a broken first dashboard about half the time, and the dashboard is the first thing all 30 people build: if half the room keeps the default, seven or eight people start with a broken app. Second, the 15-minute slot "Modify, in their own words" holds at most two changes per person, and only if nothing breaks.
 
+## Note, 6 November: Session 8 is back on the PDF, on Claude
+
+Session 8's extraction runs on the PDF of GC 27 again, with the two-tab layout of the HTML version, and the studio switches to Claude when a participant picks it (`docs/session-plan.md`, 11:23–11:36). On the PDF, Claude built a working app in 6 of 6 builds (3.1–3.8 minutes), GLM in 5 of 9 (7–11 minutes with the repair), Mistral in 3 of 11. The passes below describe the HTML exercise; for the PDF, a participant who switches back to Mistral or GLM is the new risk, and the gallery's Claude app is the back-up.
+
 ## Fourth pass, 4 November, evening: edit mode
 
 A change to an app now comes back as the lines to replace, not the whole file, and takes 11–60 seconds instead of 3–5 minutes (18 changes on three models). What this changes in the morning: *Modify, in your own words* (10:02) holds two or three changes per person instead of one; *Fix this error* is fast, so a broken first dashboard costs half a minute rather than three; Tomás's suggested improvement at 11:42 is built before the others have finished reading the list. Two limits stay. A change does not repair an app that was already broken, so a broken dashboard still needs a fix first, or the gallery. And edits from Mistral Large 3 broke the app once in three (a name it never defined), so its first build and its changes both need a look.

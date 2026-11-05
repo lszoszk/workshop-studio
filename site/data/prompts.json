@@ -87,13 +87,13 @@
       "id": "s7-4-extract",
       "session": "S8",
       "minute": 10,
-      "dataset": "html_doc",
+      "dataset": "pdf_text",
       "builds_on": null,
-      "title": "Paragraphs out of a UN document",
-      "blurb": "Turn a General Comment as published on the web into numbered paragraphs you can check, cite and reuse",
-      "prompt": "Here is a UN document as OHCHR publishes it in HTML. Build a tool that turns it into its numbered paragraphs (1, 2, 3 …), each with the section heading it sits under, and checks itself against the reference the file carries. On the left, a card for the document with the paragraphs found next to the number the document really has, and its footnotes, which this HTML lacks. On the right, two tabs. Tab 01 Result: the counts and how they are computed, what this version lacks or damaged, a download of the paragraphs as JSON and as Markdown, and, closed until opened, every check the tool ran on itself. Tab 02 Paragraphs: a table with each paragraph's number, section and first line; clicking a row shows the full paragraph and a citation to copy.",
+      "title": "Paragraphs out of a PDF",
+      "blurb": "Turn a General Comment's PDF text into numbered paragraphs you can check, cite and reuse",
+      "prompt": "Here is a UN document as a PDF converter extracted it, page by page. Build a tool that turns it into its numbered paragraphs (1, 2, 3 …), each with the section heading it sits under, removes the page headers and footers, and checks itself against the reference the file carries. Do not separate the footnotes in this version: flag every paragraph where footnote text may sit. On the left, a card for the document with the paragraphs found next to the number the document really has, and the paragraphs flagged. On the right, two tabs. Tab 01 Result: the counts and how they are computed, a download of the paragraphs as JSON and as Markdown, and, closed until opened, every check the tool ran on itself and the flagged paragraphs. Tab 02 Paragraphs: a table with each paragraph's number, section, page and first line; clicking a row shows the full paragraph and a citation to copy.",
       "planning": "planning/s7-4-extract.json",
-      "lesson": "The format decides half the work. HTML gives the paragraphs almost for free and loses the footnotes; a PDF keeps everything as text without structure; a Word file keeps the footnotes as structure. A dataset you can trust is made from more than one of them, and checked.",
+      "lesson": "The format decides half the work. A PDF keeps everything as text without structure: the paragraphs come back by rule, the footnotes stay mixed in at the foot of each page, and the tool says which paragraphs to check. HTML gives the paragraphs almost for free and loses the footnotes; a Word file keeps the footnotes as structure. A dataset you can trust is made from more than one of them, and checked.",
       "checks": {
         "no_console_errors": true,
         "no_network": true,
@@ -104,8 +104,10 @@
           "141"
         ],
         "download": true,
-        "text_matches": "(?i)markdown"
-      }
+        "text_matches": "(?i)paragraphs? flagged|flagged paragraphs?"
+      },
+      "model": "claude",
+      "model_note": "on this PDF, Mistral and GLM broke more often in our tests (5 November), and Claude built a working app every time"
     },
     {
       "id": "s7-5-second-document",

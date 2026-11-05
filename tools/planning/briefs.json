@@ -8,10 +8,10 @@
       "facilitator_brief": "A dashboard on the participant's country's file from the Universal Human Rights Index. It should be trustworthy enough for a diplomat preparing a meeting: every number explained, and every paragraph one click from its UN document."
     },
     "s7-4-extract": {
-      "title": "Paragraphs out of a UN document",
-      "dataset": "html_doc",
-      "problem": "Our office copies paragraphs out of UN documents by hand. Can a tool turn a General Comment into a clean list of numbered paragraphs we can cite and reuse, and show me where it may have got things wrong?",
-      "facilitator_brief": "The file is CESCR General comment No. 27 as OHCHR publishes it in HTML, with a reference (paragraph count, footnote count, first words of each paragraph). The tool must check itself against the reference, say what the HTML version lacks, and let us take the paragraphs away as a dataset, in JSON and Markdown."
+      "title": "Paragraphs out of a PDF",
+      "dataset": "pdf_text",
+      "problem": "Our office copies paragraphs out of UN PDFs by hand. Can a tool turn a General Comment into a clean list of numbered paragraphs we can cite and reuse, and show me where it may have got things wrong?",
+      "facilitator_brief": "The file is the raw text of CESCR General comment No. 27 as a PDF converter produced it, page by page, with a reference (paragraph count, footnote count, first words of each paragraph). The tool must check itself against the reference, flag the paragraphs where footnote text may sit, and let us take the paragraphs away as a dataset, in JSON and Markdown. Footnotes are not separated."
     },
     "s8-1-verbatim": {
       "title": "Verbatim finder for General Comments",

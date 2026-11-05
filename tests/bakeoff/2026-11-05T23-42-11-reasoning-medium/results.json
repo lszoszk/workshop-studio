@@ -1,0 +1,33 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-4-extract-pdf",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "download": true,
+   "text_matches": true
+  },
+  "passed": 4,
+  "total": 7,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Unexpected token ':'"
+  ],
+  "network": [],
+  "lines": 730,
+  "edit": null,
+  "repair": null,
+  "seconds": 376.4,
+  "first_token": 196.5,
+  "first_thought": 7.2,
+  "reasoning_chars": 28047,
+  "prompt_tokens": 18834,
+  "completion_tokens": 18082,
+  "cost": 0.1059284,
+  "provider": "Z.AI"
+ }
+]

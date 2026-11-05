@@ -435,9 +435,10 @@ def test_layout_holds_on_a_small_laptop(base_url, pw, browser, engine):
         b.close()
 
 
-def test_extraction_from_html(base_url, browser):
-    """The recorded 'Paragraphs out of a UN document' app runs on the HTML as OHCHR publishes it, checks
-    itself against the reference shipped with it, and says the footnotes are missing."""
+def test_extraction_from_pdf(base_url, browser):
+    """The recorded 'Paragraphs out of a PDF' app runs on the converter's page text, checks itself against
+    the reference shipped with it and flags the paragraphs where footnote text may sit; picking it switches
+    the studio to the model it runs on best."""
     if not (SITE / "replay/claude/s7-4-extract.md").exists():
         pytest.skip("no recording for s7-4-extract yet")
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
@@ -446,12 +447,15 @@ def test_extraction_from_html(base_url, browser):
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.goto(base_url + "?via=replay&planpace=1&stage=s8&country=Kenya")   # the extraction is in Session 8
     started(page)
-    send(page, "Paragraphs out of a UN document", "html_doc", 1)
+    send(page, "Paragraphs out of a PDF", "pdf_text", 1)
+    assert page.locator("#modelSelect").input_value() == "claude"
+    assert "This exercise runs on Claude Sonnet 5.5" in page.inner_text("#log")
     body = app_frame(page).locator("body")
     body.get_by_text("E/C.12/GC/27").first.wait_for(timeout=20000)
     text = body.inner_text()
     assert re.search(r"90\s*(paragraphs\s*)?(/|of)\s*90", text, re.I), text[:400]
-    assert "141" in text, text[:400]                                     # the footnotes the HTML lacks
+    assert "141" in text, text[:400]                                     # the footnotes, not separated
+    assert re.search(r"paragraphs? flagged|flagged paragraphs?", text, re.I), text[:400]
     assert page.locator(".lesson").inner_text().count("format decides") == 1
     # the PDF's next steps are hidden: the extraction ends here, with Suggest improvements when live
     nexts = page.locator("#suggest button b").all_inner_texts()
@@ -529,9 +533,9 @@ def test_session8_offers_its_apps_first(base_url, browser):
     page.goto(base_url + "?via=replay&planpace=1&stage=s8&country=Kenya")
     started(page)
     titles = page.locator("#suggest button b").all_inner_texts()
-    assert titles[:3] == ["Paragraphs out of a UN document", "Verbatim finder for General Comments", "A research wiki on neurotechnology and justice"], titles
+    assert titles[:3] == ["Paragraphs out of a PDF", "Verbatim finder for General Comments", "A research wiki on neurotechnology and justice"], titles
     assert "Check an AI briefing" not in titles
-    send(page, "Paragraphs out of a UN document", "html_doc", 1)
+    send(page, "Paragraphs out of a PDF", "pdf_text", 1)
     send(page, "Verbatim finder", "gc", 2)
     send(page, "A research wiki", "wiki", 3)
     send(page, "Check an AI briefing", "hrc", 4)
@@ -575,8 +579,8 @@ def test_open_a_file_code_view_and_dark_mode(base_url, browser):
     csv = Path(dl.value.path()).read_text(encoding="utf-8-sig")
     assert csv.startswith("id,symbol,doc_url") and csv.count("\r\nfa") + 1 > 0
     assert dl.value.suggested_filename == "un-recommendations-kenya.csv"
-    # the UN document is the HTML OHCHR publishes; it opens in the browser
-    assert page.locator("#shelf .fcard[data-key=html_doc] .ficon").inner_text() == "HTML"
+    # the UN document is the PDF; it opens in the browser
+    assert page.locator("#shelf .fcard[data-key=pdf_text] .ficon").inner_text() == "PDF"
     send(page, DASHBOARD, "uhri", 1)
     page.click("#viewCode")
     assert page.is_visible("#codeView") and "<!doctype html>" in page.inner_text("#codeText").lower()
@@ -1004,8 +1008,8 @@ def test_a_gallery_app_comes_into_the_studio(base_url, browser):
     built(page, 1)
     assert "from=" not in page.url
     assert page.get_attribute("#sessionSwitch [data-session=S8]", "aria-selected") == "true"
-    assert "From the gallery: Paragraphs out of a UN document" in page.inner_text("#log")
-    app_frame(page).get_by_text(re.compile(r"141")).first.wait_for(timeout=20000)
+    assert "From the gallery: Paragraphs out of a PDF" in page.inner_text("#log")
+    app_frame(page).get_by_text(re.compile(r"paragraphs? flagged|flagged paragraphs?", re.I)).first.wait_for(timeout=20000)
     work = page.evaluate("JSON.parse(localStorage.getItem('ws:work:guest'))")
     assert work["versions"][0]["sent"].startswith("Build this app.") and "```html" in work["versions"][0]["reply"]
     page.goto(base_url + "?via=replay&country=Kenya&from=nobody%2Fnothing")

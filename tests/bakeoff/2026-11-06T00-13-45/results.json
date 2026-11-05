@@ -1,0 +1,37 @@
+[
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "download": true,
+   "text_matches": true
+  },
+  "passed": 7,
+  "total": 7,
+  "errors": [],
+  "network": [],
+  "lines": 1382,
+  "edit": null,
+  "repair": {
+   "error": "Failed to execute 'write' on 'Document': Identifier 'checksTotal' has already been declared",
+   "seconds": 4.0,
+   "cost": 0.018183,
+   "applied": true,
+   "checks_before": 4
+  },
+  "seconds": 113.1,
+  "first_token": 1.9,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 20020,
+  "completion_tokens": 12715,
+  "cost": 0.03199075,
+  "provider": "Mistral"
+ }
+]
