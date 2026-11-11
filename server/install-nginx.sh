@@ -76,23 +76,49 @@ import re, sys
 src, dst = sys.argv[1], sys.argv[2]
 block = """$BLOCK"""
 lines = open(src).read().splitlines(keepends=True)
-code = lambda l: l.split('#', 1)[0]          # brace counting must ignore comments
+
+# Each line as nginx reads it: no comment, and nothing inside quotes, so a quoted regex such as
+# "^/x/[0-9]{4}$" or a "#" inside a header value does not count as a brace or a comment. Quotes may
+# run over a line break, so the scan carries its state from line to line.
+def plain_lines():
+    out, quote, esc = [], None, False
+    for l in lines:
+        kept = []
+        for ch in l:
+            if esc:
+                esc = False
+            elif ch == '\\\\':
+                esc = True
+            elif quote:
+                if ch == quote:
+                    quote = None
+            elif ch in "\"'":
+                quote = ch
+            elif ch == '#':
+                break
+            else:
+                kept.append(ch)
+        out.append("".join(kept))
+    return out
+
+plain = plain_lines()
+code = lambda i: plain[i]
 
 def closing(start):
     depth = 0
     for i in range(start, len(lines)):
-        c = code(lines[i])
+        c = code(i)
         depth += c.count('{') - c.count('}')
         if depth == 0 and i > start:
             return i
-    sys.exit("a server block is not closed")
+    sys.exit(f"the server block that opens at line {start + 1} is not closed (as this script counts braces)")
 
 # the first server block whose OWN lines say 'listen 443' (not one that merely precedes it)
 start = end = None
 for i, l in enumerate(lines):
-    if re.match(r'\s*server\s*\{', code(l)):
+    if re.match(r'\s*server\s*\{', code(i)):
         j = closing(i)
-        if re.search(r'listen\s+443', "".join(code(x) for x in lines[i:j])):
+        if re.search(r'listen\s+443', "".join(code(x) for x in range(i, j))):
             start, end = i, j
             break
 if start is None:

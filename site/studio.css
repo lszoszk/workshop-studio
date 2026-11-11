@@ -612,3 +612,6 @@ body.basic .adv { display: none !important; }
 .msg.lenses button { display: block; width: 100%; text-align: left; margin-top: 6px; padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); cursor: pointer; }
 .msg.lenses button:hover { border-color: var(--accent); }
 .msg.lenses button span { display: block; font-size: 12px; color: var(--muted); }
+.mi:disabled { opacity: .45; cursor: default; }
+/* one toolbar row on a 1280 px laptop: the app's name gives way first */
+@media (max-width: 1400px) { .versions .vcur .vapp { max-width: 120px; } .versions .vcur .vof { display: none; } }

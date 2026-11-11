@@ -334,6 +334,7 @@ def test_participant_path(base_url, browser, tmp_path):
 
     # Save as file: one file that runs offline from disk
     with page.expect_download() as dl:
+        page.click("#keepBtn")
         page.click("#downloadBtn")
     path = tmp_path / dl.value.suggested_filename
     dl.value.save_as(path)
@@ -710,6 +711,7 @@ def test_the_wall_shows_what_participants_sent(base_url, browser, fake_api):
     page.goto(base_url + f"?advanced=1&api={api}&planpace=1#s=TEST22")
     started(page)
     send(page, DASHBOARD, "uhri", 1)
+    page.click("#keepBtn")
     page.click("#wallBtn")
     page.wait_for_function("() => /Sent to the wall/.test(document.getElementById('log').innerText)")
     # a second participant's app, given two files in the chat

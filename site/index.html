@@ -83,12 +83,18 @@
         <button type="button" role="tab" id="viewApp" aria-selected="true">App</button>
         <button type="button" role="tab" id="viewCode" aria-selected="false">Code</button>
       </div>
-      <button class="tool adv" id="tabBtn" title="Open the app in a new tab, full screen. It follows the studio: a new version appears there too.">New tab ↗</button>
+      <button class="tool" id="tabBtn" title="Open the app in a new tab, full screen. It follows the studio: a new version appears there too.">New tab ↗</button>
       <span class="linkoff" id="linkOffPill" hidden>Model link cut</span>
       <div class="tools">
         <button class="tool" id="filesBtn" title="The files you can drag into the chat">Your files</button>
-        <button class="tool" id="downloadBtn" title="Save the app as one file that opens offline">Save as file</button>
-        <button class="tool adv" id="wallBtn" title="Show your app on the room's screen" hidden>Send to wall</button>
+        <div class="menu">
+          <button class="tool" id="keepBtn" aria-haspopup="menu" aria-expanded="false">Save &amp; share<span class="caret" aria-hidden="true"></span></button>
+          <div class="menu-panel" id="keepPanel" role="menu" hidden>
+            <button class="mi" role="menuitem" id="downloadBtn"><b>Save as file</b><span>The app and its data in one file; it opens with a double-click, even offline</span></button>
+            <button class="mi adv" role="menuitem" id="wallBtn" hidden><b>Send to wall</b><span>Show your app on the room's screen</span></button>
+            <button class="mi" role="menuitem" id="kitMenuBtn"><b>Take-home kit</b><span>Every workshop request, the data and your apps, in one file for your own chatbot</span></button>
+          </div>
+        </div>
         <div class="menu">
           <button class="tool look" id="lookBtn" aria-haspopup="menu" aria-expanded="false">Look inside <span class="count" id="traceCount">0</span><span class="caret" aria-hidden="true"></span></button>
           <div class="menu-panel" id="lookPanel" role="menu" hidden>

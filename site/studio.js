@@ -1394,15 +1394,17 @@
 
   /* ---------- the Look inside menu ---------- */
 
+  // the toolbar's two menus (Look inside, Save & share): one open at a time
   function closeMenu() {
-    $('lookPanel').hidden = true;
-    $('lookBtn').setAttribute('aria-expanded', 'false');
+    document.querySelectorAll('.menu-panel').forEach((p) => { p.hidden = true; });
+    document.querySelectorAll('.menu > button[aria-haspopup]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
   }
 
-  function toggleMenu() {
-    const open = $('lookPanel').hidden;
-    $('lookPanel').hidden = !open;
-    $('lookBtn').setAttribute('aria-expanded', String(open));
+  function toggleMenu(btn = $('lookBtn'), panel = $('lookPanel')) {
+    const open = panel.hidden;
+    closeMenu();
+    panel.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
   }
 
   /* ---------- download and wall ---------- */
@@ -2926,6 +2928,7 @@
   };
   document.querySelectorAll('#sessionSwitch button').forEach((b) => { b.onclick = () => setSession(b.dataset.session); });
   $('lookBtn').onclick = (e) => { e.stopPropagation(); toggleMenu(); };
+  $('keepBtn').onclick = (e) => { e.stopPropagation(); toggleMenu($('keepBtn'), $('keepPanel')); };
   document.addEventListener('click', (e) => { if (!e.target.closest('.menu')) closeMenu(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeMenu(); $('drawer').hidden = true; } });
   $('layersBtn').onclick = toggleLayers;
@@ -2933,8 +2936,9 @@
   $('ask3Btn').onclick = () => ask3('count');
   $('linkBtn').onclick = toggleLink;
   $('traceBtn').onclick = () => { openDrawer(TRACE_TITLE); renderTrace(); };
-  $('downloadBtn').onclick = download;
-  $('wallBtn').onclick = sendToWall;
+  $('downloadBtn').onclick = () => { closeMenu(); download(); };
+  $('wallBtn').onclick = () => { closeMenu(); sendToWall(); };
+  $('kitMenuBtn').onclick = (e) => { downloadKit(e.currentTarget.querySelector('b')).then(closeMenu); };
   $('drawerClose').onclick = () => { $('drawer').hidden = true; };
 
   boot().catch((e) => {
