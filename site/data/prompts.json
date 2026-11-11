@@ -557,7 +557,14 @@
       "prompt": "Build a tool that turns the ten PDFs into a small wiki. List the documents with a tick box each, all ticked, and a button \"Read with the model\". The button sends the ticked documents to the model one at a time, each with its page numbers marked, and shows the progress. For each document the model names up to six key ideas (for instance \"mental privacy\"), and for each idea one sentence it quotes word for word from the document, with the page. Send the names found so far with each document, so that the model reuses a name for the same idea. The code then checks every quotation against the document's text (ignoring case, punctuation and spacing): a quotation that is not there is marked ✗ and left out of the wiki. The wiki has one page per document and one per idea; an idea's page lists the documents that discuss it, each with its checked quotation and page, and links to the ideas that appear in the same documents. Clicking a page number opens the PDF at that page. Show how many quotations the model gave and how many the code confirmed, and say on screen which parts come from the model and which from the code.",
       "lesson": "This is the work a wiki needs: a model reads and proposes, the code checks every quotation against the source, and only what passes goes in. Each ✗ is a place where the model put words in a document's mouth.",
       "live_only": true,
-      "bakeoff": false
+      "bakeoff": true,
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "button_matches": "(?i)read with the model",
+        "source_matches": "studio\\.ask"
+      }
     },
     {
       "id": "v3-wiki-graph",

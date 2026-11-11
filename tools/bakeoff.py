@@ -41,6 +41,7 @@ MODELS = {
     "glm-cn": ("z-ai/glm-5.3", "z-ai", "GLM-5.3 · China · Z.AI"),
     # Claude through Anthropic's own API (ANTHROPIC_API_KEY in ~/.env), for measurements only; capped by ANTHROPIC_CAP
     "claude-api": ("claude-sonnet-5-5", "anthropic", "Claude Sonnet 5.5 · USA · Anthropic API"),
+    "haiku": ("claude-haiku-5-5", "anthropic", "Claude Haiku 5.5 · USA · Anthropic API"),
     "glm-eu": ("z-ai/glm-5.3", "mistral/nvfp4/eu", "GLM-5.3 · China · Mistral (EU)"),
     # candidates for the China slot (DeepSeek's own service refuses zero data retention)
     "kimi": ("moonshotai/kimi-k3.1-pro", "moonshotai", "Kimi K3.1 Pro · China · Moonshot AI"),
@@ -111,7 +112,10 @@ WHOLE_FILE = "Your edits did not match the current code exactly. Reply with the 
 # the measurements on the Anthropic API stop at this many dollars, counted in a local ledger (Łukasz, 4.11.2026);
 # the workspace of the key has its own spend limit in the Console as well
 ANTHROPIC_CAP = 15.0
-ANTHROPIC_PRICE = (2.0, 10.0)   # claude-sonnet-5-5, $ per million input / output tokens
+# Haiku's builds, a few cents each, have a cap of their own in the same ledger (12.11.2026), so the Sonnet cap above stays as set
+CAPS = {"claude-haiku-5-5": 1.0}
+# $ per million input / output tokens (Haiku 5.5: prompts up to 100K tokens, which the workshop's are)
+ANTHROPIC_PRICES = {"claude-sonnet-5-5": (2.0, 10.0), "claude-haiku-5-5": (0.10, 0.50)}
 LEDGER = ROOT / "tools" / "out" / "anthropic_spend.jsonl"
 
 
@@ -122,20 +126,23 @@ def anthropic_key():
     raise SystemExit("ANTHROPIC_API_KEY missing in ~/.env")
 
 
-def anthropic_spent():
+def anthropic_spent(model=None):
+    """Spent so far: on one model with a cap of its own, else on all the others."""
     if not LEDGER.exists():
         return 0.0
-    return sum(json.loads(l)["cost"] for l in LEDGER.read_text().splitlines() if l.strip())
+    rows = [json.loads(l) for l in LEDGER.read_text().splitlines() if l.strip()]
+    mine = (lambda r: r["model"] == model) if model in CAPS else (lambda r: r["model"] not in CAPS)
+    return sum(r["cost"] for r in rows if mine(r))
 
 
 async def generate_anthropic(model_id, messages):
     """The same request the studio would send, straight to Anthropic: the system message apart, adaptive thinking
     shown as a summary (so the time to the first thought can be measured), effort from --reasoning (default high)."""
     import anthropic
-    spent = anthropic_spent()
-    if spent >= ANTHROPIC_CAP:
-        return {"error": f"the Anthropic ledger is at ${spent:.2f}, at or over the ${ANTHROPIC_CAP:.0f} cap", "seconds": 0}
     mid = MODELS[model_id][0]
+    spent, cap = anthropic_spent(mid), CAPS.get(mid, ANTHROPIC_CAP)
+    if spent >= cap:
+        return {"error": f"the Anthropic ledger is at ${spent:.2f} for {mid}, at or over its ${cap:g} cap", "seconds": 0}
     system = "\n\n".join(m["content"] for m in messages if m["role"] == "system")
     convo = [dict(m) for m in messages if m["role"] != "system"]
     # prompt caching, as on the server: the instructions and the conversation up to the last answer
@@ -164,8 +171,8 @@ async def generate_anthropic(model_id, messages):
         return {"error": f"{type(e).__name__}: {str(e)[:300]}", "seconds": round(time.monotonic() - t0, 1)}
     u = final.usage
     write, read = int(getattr(u, "cache_creation_input_tokens", 0) or 0), int(getattr(u, "cache_read_input_tokens", 0) or 0)
-    cost = (u.input_tokens * ANTHROPIC_PRICE[0] + write * ANTHROPIC_PRICE[0] * 1.25 + read * ANTHROPIC_PRICE[0] * 0.1
-            + u.output_tokens * ANTHROPIC_PRICE[1]) / 1e6
+    pin, pout = ANTHROPIC_PRICES[mid]
+    cost = (u.input_tokens * pin + write * pin * 1.25 + read * pin * 0.1 + u.output_tokens * pout) / 1e6
     LEDGER.parent.mkdir(parents=True, exist_ok=True)
     with open(LEDGER, "a", encoding="utf-8") as f:
         f.write(json.dumps({"time": datetime.now().isoformat(timespec="seconds"), "model": mid, "cost": round(cost, 5),

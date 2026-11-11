@@ -1,0 +1,32 @@
+[
+ {
+  "model": "haiku",
+  "label": "Claude Haiku 5.5 · USA · Anthropic API",
+  "prompt": "s7-1-dashboard",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "chart": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "controls_min": true,
+   "links_to": true
+  },
+  "passed": 8,
+  "total": 8,
+  "errors": [],
+  "network": [],
+  "lines": 743,
+  "edit": null,
+  "repair": null,
+  "seconds": 152.1,
+  "first_token": 93.9,
+  "first_thought": 1.7,
+  "reasoning_chars": 13930,
+  "prompt_tokens": 33996,
+  "completion_tokens": 39129,
+  "cost": 0.02041,
+  "provider": "anthropic"
+ }
+]
