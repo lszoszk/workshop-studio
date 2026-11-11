@@ -258,7 +258,6 @@
     {
       "id": "s8-5-wiki",
       "session": "S8",
-      "venice": "V3",
       "minute": 70,
       "dataset": "wiki",
       "builds_on": null,
@@ -278,7 +277,6 @@
     {
       "id": "s8-6-wiki-map",
       "session": "S8",
-      "venice": "V3",
       "minute": 75,
       "dataset": "wiki",
       "builds_on": "s8-5-wiki",
@@ -336,6 +334,25 @@
         "table_min_rows": 1
       },
       "venice": "V2"
+    },
+    {
+      "id": "s8-3c-alignment",
+      "session": "venice",
+      "venice": "V2",
+      "minute": null,
+      "dataset": "hrc",
+      "builds_on": "s8-3-voting",
+      "title": "Where every State stands",
+      "blurb": "Place every State by how often it votes with each of your two States: the alignment map",
+      "prompt": "Add a tab \"Map\". Place every State on a square chart by how often it votes the same way as the two States I picked: across, its agreement with the first State; up, its agreement with the second (from 0 to 100%, counted on the votes where both took part, with an abstention as a choice of its own). Colour each dot by the State's UN regional group, with a legend, and draw the diagonal where agreement with both is the same. Hovering a dot shows the State, both shares and the number of shared votes; leave out States with fewer than ten shared votes and say how many. Use the same choice of resolutions, amendments or both as the rest of the app. Under the chart, one line on what this map leaves out: texts adopted without a vote.",
+      "lesson": "The map places States by a rule you can say in one sentence. Two dots close together vote alike on these texts; that is not the same as being allies, and texts adopted without a vote are not on the map at all.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "chart": true
+      },
+      "bakeoff": false
     },
     {
       "id": "s8-3b-blocs",
@@ -527,6 +544,34 @@
         "text_matches": "(?i)type"
       },
       "hidden": true
+    },
+    {
+      "id": "v3-wiki-pdfs",
+      "session": "venice",
+      "venice": "V3",
+      "minute": null,
+      "dataset": "pdfs",
+      "builds_on": null,
+      "title": "From ten PDFs to a wiki",
+      "blurb": "The model reads the PDFs you pick; the code checks every quotation and links the pages",
+      "prompt": "Build a tool that turns the ten PDFs into a small wiki. List the documents with a tick box each, all ticked, and a button \"Read with the model\". The button sends the ticked documents to the model one at a time, each with its page numbers marked, and shows the progress. For each document the model names up to six key ideas (for instance \"mental privacy\"), and for each idea one sentence it quotes word for word from the document, with the page. Send the names found so far with each document, so that the model reuses a name for the same idea. The code then checks every quotation against the document's text (ignoring case, punctuation and spacing): a quotation that is not there is marked ✗ and left out of the wiki. The wiki has one page per document and one per idea; an idea's page lists the documents that discuss it, each with its checked quotation and page, and links to the ideas that appear in the same documents. Clicking a page number opens the PDF at that page. Show how many quotations the model gave and how many the code confirmed, and say on screen which parts come from the model and which from the code.",
+      "lesson": "This is the work a wiki needs: a model reads and proposes, the code checks every quotation against the source, and only what passes goes in. Each ✗ is a place where the model put words in a document's mouth.",
+      "live_only": true,
+      "bakeoff": false
+    },
+    {
+      "id": "v3-wiki-graph",
+      "session": "venice",
+      "venice": "V3",
+      "minute": null,
+      "dataset": "pdfs",
+      "builds_on": "v3-wiki-pdfs",
+      "title": "The wiki as a network",
+      "blurb": "Documents and ideas as dots, the checked quotations as lines",
+      "prompt": "Add a tab \"Network\" that draws the wiki as a graph: one dot per document and one per idea, and a line from a document to each idea it discusses (only checked quotations count). Make an idea's dot bigger the more documents discuss it. Lay the graph out the same way every time, with no random start. Hovering a dot shows its name; clicking it opens its wiki page. Under the graph, one line: the ideas that appear in the most documents, and any document that shares no idea with the others. Keep everything else as it is.",
+      "lesson": "The graph shows which ideas hold the documents together. Every line stands on a quotation the code found in the PDF; an idea with one line is one document's idea, not yet the field's.",
+      "live_only": true,
+      "bakeoff": false
     },
     {
       "id": "v3-own-idea",

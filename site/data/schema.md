@@ -63,6 +63,7 @@ Fields:
 `yes`/`no`/`abstain` are the official totals. Counting `votes` gives the roll call,
 which differs from the totals for a few records (gaps in the source): show both
 rather than silently picking one.
+`groups` maps the same ISO3 codes to the State's UN regional group ("African States", "Asia-Pacific States", "Eastern European States", "Latin American and Caribbean States", "Western European and other States").
 
 Fields:
 - `id` (str): e.g. "35529"
@@ -162,6 +163,44 @@ its pages exactly as the converter of `pdf_text` produced them, nothing cleaned,
 same fields as in `pdf_text` (`paragraphs`, `footnotes`, `adopted`, `first_words`), from the UN Human Rights
 Database; `footnotes` is null where the database records none. The documents differ in layout: a rule written
 on one may break on another. The first is E/C.12/GC/27, the same document as `pdf_text`.
+
+## `WORKSHOP_DATA.hrc_all`: every Human Rights Council text, 2006 onwards
+
+`{title, count, countries: {ISO3: name}, groups: {ISO3: regional group}, vote_codes: {Y,N,A}, records: [...]}`.
+One record = one text the Council acted on: `kind` is "resolution", "decision" or "amendment".
+`adoption` says how: "without a vote" (1,982 records), "recorded vote" (1,063 records), "withdrawn" (247 records), "not considered" (32 records).
+Only a recorded vote has the official totals `yes`/`no`/`abstain` (null otherwise) and `votes` (ISO3 to
+"Y", "N" or "A"; empty otherwise): agreement between States can be counted only on recorded votes,
+while a share of texts adopted without a vote is counted on all records.
+
+Fields:
+- `id` (str): e.g. "35639"
+- `symbol` (str): e.g. "A/HRC/RES/63/14"
+- `kind` (str): e.g. "resolution"
+- `title` (str): e.g. "Human rights and Indigenous Peoples"
+- `date` (str): e.g. "2026-10-06"
+- `year` (int): e.g. 2026
+- `session` (str): e.g. "63rd session"
+- `agenda_item` (str): e.g. "Item 3"
+- `main_sponsors` (list): e.g. "Russian Federation", "Egypt", "China", "Cuba"
+- `adoption` (str): e.g. "without a vote"
+- `yes` (NoneType): e.g. null
+- `no` (NoneType): e.g. null
+- `abstain` (NoneType): e.g. null
+- `doc_url` (str): e.g. "http://undocs.org/A/HRC/RES/63/14"
+- `record_url` (str): e.g. "https://searchlibrary.ohchr.org/record/35639"
+- `votes` (object): e.g. {}
+
+## `WORKSHOP_DATA.pdfs`: ten documents on neurotechnology and justice (PDF), to build a wiki from
+
+`{title, source, count, records: [{id, symbol, kind, author, title, short_title, published, year, url, pdf, pages, passages: [...]}]}`.
+One record = one document. Each of its `passages` is `{id, page, page_label, paragraph, section, text}`: the
+verbatim text of one paragraph, the PDF page it starts on (`page`), the page number printed there (`page_label`,
+the one to cite), the paragraph number where the document numbers them (a string, or null) and the heading
+above it (or null).
+Documents: A/81/351 (UN report, 2026: Secretary-General's report on human rights in the administration of justice, 60 passages, about 5,800 words); UNODC-INTERPOL-2025 (UN agency paper, 2025: UNODC–INTERPOL background paper on neurotechnology and criminal justice, 40 passages, about 2,900 words); FuturesLab-2026 (Civil-society submission, 2026: Futures Lab submission to the Secretary-General's report, 35 passages, about 2,900 words); Szoszkiewicz-Yuste-2025 (Journal article, 2025: Mental privacy (EMBO Reports), 22 passages, about 2,500 words); Prainsack-et-al-2022 (Journal article, 2022: Data solidarity (The Lancet Digital Health), 8 passages, about 700 words); CCPR/C/21/Rev.1/Add.4 (General Comment, 1993: GC22: the right to freedom of thought, conscience and religion (art. 18), 11 passages, about 1,700 words); CCPR/C/GC/32 (General Comment, 2007: GC32: article 14: right to equality before courts and tribunals and to a fair trial, 65 passages, about 8,000 words); CCPR/C/GC/34 (General Comment, 2011: GC34: article 19: freedoms of opinion and expression, 52 passages, about 5,200 words); A/HRC/57/61 (UN report, 2024: Advisory Committee report on neurotechnology and human rights, 100 passages, about 8,800 words); HRCAC-Guidelines-2026 (UN draft guidelines, 2026: Advisory Committee draft guidelines on neurotechnology, 128 passages, about 8,800 words).
+`studio.openSource(id, page, quote)` opens that document's PDF at that page next to the app and marks `quote` on it.
+Send a model one document per request: all ten together are too long for one.
 
 ## Rules for every app
 

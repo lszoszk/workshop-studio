@@ -1203,7 +1203,7 @@
   },
   "hrc": {
    "file": "hrc.json",
-   "count": 382
+   "count": 388
   },
   "pdf_text": {
    "file": "pdf_text.json",
@@ -1227,6 +1227,14 @@
   },
   "pdf_ten": {
    "file": "pdf_ten.json",
+   "count": 10
+  },
+  "hrc_all": {
+   "file": "hrc_all.json",
+   "count": 3324
+  },
+  "pdfs": {
+   "file": "pdfs.json",
    "count": 10
   }
  }

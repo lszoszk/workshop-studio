@@ -308,6 +308,8 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 .tk-com { color: #6f8396; font-style: italic; }
 .tk-kw { color: #ffb86b; }
 .tk-num { color: #f5d67b; }
+/* a JSON file in the drawer, as a code editor shows it */
+.json-view { margin: 0 0 12px; padding: 12px 14px; max-height: 68vh; overflow: auto; border-radius: 10px; background: var(--code-bg); color: var(--code-ink); font: 12.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 .building, .apperror {
   position: absolute; left: 50%; transform: translateX(-50%); z-index: 5; border-radius: 999px;

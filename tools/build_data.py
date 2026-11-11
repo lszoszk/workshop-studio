@@ -554,13 +554,62 @@ def gc_passages(path, recs):
     return out, missed
 
 
+# Venice (Global Campus, 12.11.2026): the library without its 88-page report, with the Advisory Committee's draft
+# guidelines instead (published by OHCHR for comments until 30.11.2026; circulated as a Word file, printed to PDF)
+PDFS_LEAVE_OUT = {"AHRC-2025"}
+GUIDELINES = {"id": "HRCAC-Guidelines-2026", "symbol": None, "kind": "UN draft guidelines",
+              "author": "Human Rights Council Advisory Committee",
+              "title": "Recommended Guidelines for Applying the Existing Human Rights Framework to Neurotechnologies "
+                       "(draft prepared by Vassilis P. Tzevelekos, Rapporteur of the drafting group)",
+              "short_title": "Advisory Committee draft guidelines on neurotechnology",
+              "published": "2026-11", "year": 2026,
+              "url": "https://www.ohchr.org/en/calls-for-input/2026/call-comments-draft-recommended-guidelines-applying-existing-human-rights",
+              "pdf_src": SOURCES / "HRCAC_Guidelines_Draft_2026.pdf"}
+
+
+def pdfs(lib):
+    """Ten documents to build a wiki from (Venice): the library's, but the longest, and the draft guidelines.
+    The guidelines' PDF goes to site/files/ next to the others."""
+    d = GUIDELINES
+    name = d["id"] + ".pdf"
+    (ROOT / "site/files" / name).write_bytes(d["pdf_src"].read_bytes())
+    ps = pdf_passages(d["pdf_src"], True)
+    # the draft numbers its two opening paragraphs and its guidelines each from 1, so the extraction runs the first
+    # two guidelines into the second opening paragraph: they are split off here (all on PDF page 1), and the opening
+    # paragraphs, cited by page, lose their numbers
+    i = next(i for i, x in enumerate(ps) if " General Framework 1. " in x["text"])
+    head, rest = ps[i]["text"].split(" General Framework 1. ", 1)
+    g1, g2 = rest.split(" 2. ", 1)
+    ps[i]["text"] = head
+    ps[i + 1:i + 1] = [dict(ps[i], paragraph="1", section="Part A", text=g1), dict(ps[i], paragraph="2", section="Part A", text=g2)]
+    for x in ps[:i + 1]:
+        x.update(paragraph=None, section="Introduction")
+    for i, x in enumerate(ps, 1):
+        x["page_label"] = str(x["page"])
+        x["id"] = f"{d['id']}#{i}"
+    meta = {k: v for k, v in d.items() if k != "pdf_src"}
+    meta.update(pdf="files/" + name, pages=_page_count(d["pdf_src"]),
+                passages=[{k: x[k] for k in ("id", "page", "page_label", "paragraph", "section", "text")} for x in ps])
+    docs = [{k: v for k, v in r.items() if k != "status"} for r in lib["records"] if r["id"] not in PDFS_LEAVE_OUT] + [meta]
+    print(f"  {d['id']}: {len(ps)} passages")
+    return {
+        "dataset": "pdfs",
+        "title": "Ten documents on neurotechnology and justice, as PDFs, passage by passage, with pages",
+        "source": "The documents' own PDFs: the research library without the Australian Human Rights Commission's report, "
+                  "and the Human Rights Council Advisory Committee's draft guidelines (OHCHR call for comments, 2026)",
+        "built": date.today().isoformat(),
+        "count": len(docs),
+        "records": docs,
+    }
+
+
 def library(gc):
     """Ten documents on neurotechnology in the administration of justice, as PDFs plus their text
     passage by passage, each passage with the PDF page it starts on (to open) and the page number
     printed there (to cite). The PDFs are copied to site/files/."""
     files = ROOT / "site/files"
     files.mkdir(exist_ok=True)
-    keep = {PDF_DOC["symbol"].replace("/", "_") + ".pdf"}
+    keep = {PDF_DOC["symbol"].replace("/", "_") + ".pdf", GUIDELINES["id"] + ".pdf"}   # the guidelines: pdfs()
     docs = []
     for d in LIBRARY:
         meta = {k: v for k, v in d.items() if k not in ("pdf_src", "numbered", "skip", "drop_heads", "offset", "label", "compress", "gc_symbol")}
@@ -658,6 +707,63 @@ def split_outside_parens(s):
     return [p for p in parts if p]
 
 
+UN_GROUPS = {"AFRICAN": "African States", "ASIA_PACIFIC": "Asia-Pacific States", "EEG": "Eastern European States",
+             "GRULAC": "Latin American and Caribbean States", "WEOG": "Western European and other States"}
+
+
+def un_groups():
+    """Each State's UN regional group (ISO3 → name), as the HRC Voting dashboard keeps it."""
+    t = (VOTING.parent.parent / "dashboard/data.js").read_text(encoding="utf-8")
+    return {iso: UN_GROUPS[g] for iso, g in re.findall(r'"iso3":"([A-Z]{3})","name":"[^"]*","group":"([A-Z_]+)"', t) if g in UN_GROUPS}
+
+
+def hrc_all():
+    """Every text the Human Rights Council acted on, 2006 onwards: how it was adopted, and the roll call where
+    there was a recorded vote."""
+    how = {"RECORDED": "recorded vote", "ADOPTED WITHOUT VOTE": "without a vote", "WITHDRAWN": "withdrawn", "NOT CONSIDERED": "not considered"}
+    res = [r for r in csv.DictReader(open(VOTING / "resolutions.csv", encoding="utf-8")) if r["body"] == "Human Rights Council"]
+    recorded = {r["record_id"] for r in res if r["vote_type"] == "RECORDED"}
+    votes, names = {}, {}
+    for v in csv.DictReader(open(VOTING / "votes_long.csv", encoding="utf-8")):
+        if v["record_id"] in recorded and v["vote"] in ("Y", "N", "A"):
+            votes.setdefault(v["record_id"], {})[v["iso3"]] = v["vote"]
+            names[v["iso3"]] = v["country"].title()
+    out = []
+    for r in res:
+        rec = r["record_id"] in recorded
+        out.append({
+            "id": r["record_id"],
+            "symbol": r["symbol"],
+            "kind": "amendment" if re.search(r":\s*amendment\s*/?\s*$", r["title"]) else "decision" if "/DEC/" in r["symbol"] else "resolution",
+            "title": re.sub(r"\s*:\s*(resolution|amendment|decision)\s*/?\s*$", "", r["title"]).strip(" :/"),
+            "date": r["date"],
+            "year": int(r["year"]),
+            "session": r["statement"].replace("adopted by the Human Rights Council at its ", ""),
+            "agenda_item": agenda(r["agenda_item_no"]),
+            "main_sponsors": split_outside_parens(r["main_sponsors"]),
+            "adoption": how.get(r["vote_type"], r["vote_type"].lower()),
+            "yes": int(r["yes"] or 0) if rec else None, "no": int(r["no"] or 0) if rec else None,
+            "abstain": int(r["abstain"] or 0) if rec else None,
+            "doc_url": r["url_resolution"],
+            "record_url": r["record_url"],
+            "votes": votes.get(r["record_id"], {}),
+        })
+    out.sort(key=lambda x: x["date"], reverse=True)
+    groups = un_groups()
+    return {
+        "dataset": "hrc_all",
+        "title": f"Every Human Rights Council text, {min(x['year'] for x in out)}–{max(x['year'] for x in out)}: how it was adopted, and the roll call where there was a vote",
+        "source": "OHCHR voting records (searchlibrary.ohchr.org), compiled by Ł. Szoszkiewicz",
+        "source_url": "https://huggingface.co/datasets/lszoszk/hrc-voting",
+        "built": date.today().isoformat(),
+        "count": len(out),
+        "countries": dict(sorted(names.items())),
+        "groups": {k: groups[k] for k in sorted(names) if k in groups},
+        "vote_codes": {"Y": "yes", "N": "no", "A": "abstain"},
+        "records": out,
+    }
+
+
 def hrc_votes():
     res = [r for r in csv.DictReader(open(VOTING / "resolutions.csv", encoding="utf-8"))
            if r["body"] == "Human Rights Council" and r["vote_type"] == "RECORDED" and int(r["year"]) >= HRC_FROM_YEAR]
@@ -693,6 +799,7 @@ def hrc_votes():
         "built": date.today().isoformat(),
         "count": len(out),
         "countries": dict(sorted(names.items())),
+        "groups": {k: g for k, g in un_groups().items() if k in names},
         "vote_codes": {"Y": "yes", "N": "no", "A": "abstain"},
         "records": out,
     }
@@ -719,6 +826,38 @@ def describe(obj, keep=3):
         else:
             fields.append(f"- `{k}` ({type(v).__name__}): e.g. {json.dumps(v, ensure_ascii=False)[:90]}")
     return fields
+
+
+def hrc_groups_line():
+    return ("`groups` maps the same ISO3 codes to the State's UN regional group (" +
+            ", ".join(f'"{g}"' for g in UN_GROUPS.values()) + ").")
+
+
+def hrc_all_schema(p):
+    kinds = Counter(r["adoption"] for r in p["records"])
+    return ["## `WORKSHOP_DATA.hrc_all`: every Human Rights Council text, 2006 onwards", "",
+            "`{title, count, countries: {ISO3: name}, groups: {ISO3: regional group}, vote_codes: {Y,N,A}, records: [...]}`.",
+            "One record = one text the Council acted on: `kind` is \"resolution\", \"decision\" or \"amendment\".",
+            "`adoption` says how: " + ", ".join(f'\"{k}\" ({v:,} records)' for k, v in kinds.most_common()) + ".",
+            "Only a recorded vote has the official totals `yes`/`no`/`abstain` (null otherwise) and `votes` (ISO3 to",
+            "\"Y\", \"N\" or \"A\"; empty otherwise): agreement between States can be counted only on recorded votes,",
+            "while a share of texts adopted without a vote is counted on all records.", "",
+            "Fields:", *describe(p), ""]
+
+
+def pdfs_schema(p):
+    docs = p["records"]
+    words = lambda d: round(sum(len(x["text"].split()) for x in d["passages"]), -2)
+    return ["## `WORKSHOP_DATA.pdfs`: ten documents on neurotechnology and justice (PDF), to build a wiki from", "",
+            "`{title, source, count, records: [{id, symbol, kind, author, title, short_title, published, year, url, pdf, pages, passages: [...]}]}`.",
+            "One record = one document. Each of its `passages` is `{id, page, page_label, paragraph, section, text}`: the",
+            "verbatim text of one paragraph, the PDF page it starts on (`page`), the page number printed there (`page_label`,",
+            "the one to cite), the paragraph number where the document numbers them (a string, or null) and the heading",
+            "above it (or null).",
+            "Documents: " + "; ".join(f"{d['id']} ({d['kind']}, {d['year']}: {d['short_title']}, {len(d['passages'])} passages, "
+                                      f"about {words(d):,} words)" for d in docs) + ".",
+            "`studio.openSource(id, page, quote)` opens that document's PDF at that page next to the app and marks `quote` on it.",
+            "Send a model one document per request: all ten together are too long for one.", ""]
 
 
 def schema(packs):
@@ -776,11 +915,16 @@ def schema(packs):
             "`yes`/`no`/`abstain` are the official totals. Counting `votes` gives the roll call,",
             "which differs from the totals for a few records (gaps in the source): show both",
             "rather than silently picking one.",
+            hrc_groups_line(),
             "",
             "Fields:",
             *describe(packs["hrc"]),
             "",
         ]
+    if "hrc_all" in packs:
+        lines += hrc_all_schema(packs["hrc_all"])
+    if "pdfs" in packs:
+        lines += pdfs_schema(packs["pdfs"])
     if "library" in packs:
         lib = packs["library"]["records"]
         lines += [
@@ -907,6 +1051,14 @@ def samples(packs):
             for d in (rec[0], next(r for r in rec if r["kind"] == "Journal article")):
                 d = dict(d); d["passages"] = d["passages"][:2]
                 pick.append(d)
+        if k == "hrc_all":   # a text adopted without a vote, a recorded vote, an amendment
+            pick = [next(r for r in rec if r["adoption"] == "without a vote"), next(r for r in rec if r["adoption"] == "recorded vote"),
+                    next(r for r in rec if r["kind"] == "amendment")]
+        if k == "pdfs":   # the draft guidelines and a journal article, two passages each
+            pick = []
+            for d in (rec[-1], next(r for r in rec if r["kind"] == "Journal article")):
+                d = dict(d); d["passages"] = d["passages"][:2]
+                pick.append(d)
         if k in ("pdf_text", "pdf_text_2"):   # one page is enough to see the format; the whole document would go with every request
             pick = [{"page": 1, "text": rec[0]["text"][:1200] + "\n[… rest of the page omitted in this sample]"}]
         out[k] = pick
@@ -921,6 +1073,8 @@ def main():
     ap.add_argument("--pdf-only", action="store_true", help="rebuild pdf_text.json, library.json and wiki.json only; reuse the other files")
     ap.add_argument("--html-only", action="store_true", help="build html_doc.json and add it to index.json, schema.md and samples.json")
     ap.add_argument("--ten-only", action="store_true", help="build pdf_ten.json and add it to index.json, schema.md and samples.json")
+    ap.add_argument("--venice-only", action="store_true", help="rebuild hrc.json (with regional groups), build hrc_all.json and pdfs.json, "
+                    "and add them to index.json, schema.md and samples.json")
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     if a.ten_only:
@@ -939,6 +1093,29 @@ def main():
         samples["pdf_ten"] = [one]
         (OUT / "samples.json").write_text(json.dumps(samples, ensure_ascii=False, indent=1), encoding="utf-8")
         print("  pdf_ten.json, index.json, schema.md, samples.json")
+        return
+    if a.venice_only:
+        index = json.loads((OUT / "index.json").read_text())
+        h, ha = hrc_votes(), hrc_all()
+        pd = pdfs(json.loads((OUT / "library.json").read_text()))
+        for k, x in (("hrc", h), ("hrc_all", ha), ("pdfs", pd)):
+            write(k + ".json", x)
+            index["datasets"][k] = {"file": k + ".json", "count": x["count"]}
+        (OUT / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8")
+        sc = (OUT / "schema.md").read_text()
+        if hrc_groups_line() not in sc:
+            sc = sc.replace("rather than silently picking one.\n", "rather than silently picking one.\n" + hrc_groups_line() + "\n", 1)
+        for key, sec in (("hrc_all", hrc_all_schema(ha)), ("pdfs", pdfs_schema(pd))):
+            sc = re.sub(r"## `WORKSHOP_DATA\." + key + r"`.*?(?=\n## )", "", sc, flags=re.S)   # a rebuild replaces its section
+            sc = sc.replace("## Rules for every app", "\n".join(sec) + "\n## Rules for every app", 1)
+        (OUT / "schema.md").write_text(re.sub(r"\n{3,}", "\n\n", sc), encoding="utf-8")
+        smp = json.loads((OUT / "samples.json").read_text())
+        rec = ha["records"]
+        smp["hrc_all"] = [next(r for r in rec if r["adoption"] == "without a vote"), next(r for r in rec if r["adoption"] == "recorded vote"),
+                          next(r for r in rec if r["kind"] == "amendment")]
+        smp["pdfs"] = [dict(d, passages=d["passages"][:2]) for d in (pd["records"][-1], next(r for r in pd["records"] if r["kind"] == "Journal article"))]
+        (OUT / "samples.json").write_text(json.dumps(smp, ensure_ascii=False, indent=1), encoding="utf-8")
+        print("  hrc.json, hrc_all.json, pdfs.json, index.json, schema.md, samples.json")
         return
     if a.html_only:
         index = json.loads((OUT / "index.json").read_text())
@@ -1029,6 +1206,13 @@ def main():
     packs["wiki"] = wiki()
     write("wiki.json", packs["wiki"])
     index["datasets"]["wiki"] = {"file": "wiki.json", "count": packs["wiki"]["count"]}
+    print("Venice: every Council text, the ten PDFs …")
+    packs["hrc_all"] = hrc_all()
+    write("hrc_all.json", packs["hrc_all"])
+    index["datasets"]["hrc_all"] = {"file": "hrc_all.json", "count": packs["hrc_all"]["count"]}
+    packs["pdfs"] = pdfs(packs["library"])
+    write("pdfs.json", packs["pdfs"])
+    index["datasets"]["pdfs"] = {"file": "pdfs.json", "count": packs["pdfs"]["count"]}
 
     if "uhri" not in packs:
         old = json.loads((OUT / "index.json").read_text())

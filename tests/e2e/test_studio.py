@@ -365,7 +365,7 @@ def test_what_is_shown_grows_with_progress(base_url, browser):
     page.goto(base_url + "?via=replay&planpace=1&country=Kenya")
     started(page)
     assert not page.is_visible("#toolbar")
-    assert page.is_visible("#composer") and page.locator("#shelf .fcard[data-key]").count() == len(json.loads((SITE / "config.json").read_text())["files"])
+    assert page.is_visible("#composer") and page.locator("#shelf .fcard[data-key]").count() == len([f for f in json.loads((SITE / "config.json").read_text())["files"] if "venice" not in f])
     assert page.locator("#suggest button").count() <= 3
     send(page, DASHBOARD, "uhri", 1)
     assert page.is_visible("#toolbar") and not page.is_visible("#shelf")
@@ -1439,7 +1439,7 @@ def test_the_venice_course_has_three_sessions(base_url, browser):
     assert page.locator("#suggest button b").all_inner_texts() == ["How two States vote at the Human Rights Council"]
     assert not page.is_visible("#shelf .add-own")
     page.get_by_role("tab", name="Session 3").click()
-    assert page.locator("#suggest button b").all_inner_texts() == [DASHBOARD, WIKI]   # "Your own idea" needs a live model
+    assert page.locator("#suggest button b").all_inner_texts() == [DASHBOARD]   # the wiki and "Your own idea" need a live model
     assert page.is_visible("#shelf .add-own")                                    # own files without Advanced
     send(page, DASHBOARD, "uhri", 1)
     assert "Check a quotation" in page.inner_text("#suggest")
@@ -1463,10 +1463,18 @@ def test_venice_shows_only_what_its_sessions_use(base_url, browser, tmp_path):
     assert not page.is_visible("#advBtn")
     assert shelf() == ["gc"] and not page.is_visible("#countryChip")
     assert "your country is" not in page.inner_text("#log")
+    # the General Comments as published in JSON: the first records, laid out as a code editor shows them
+    corpus = '[' + ','.join(json.dumps({"id": f"p{i}", "n": i, "text": "A paragraph with \"quotes\".", "year": 2020}) for i in range(30)) + ']'
+    page.route("**/generalcomments/corpus.json", lambda r: r.fulfill(status=206, body=corpus[:900], headers={"Content-Range": f"bytes 0-899/{len(corpus)}", "Access-Control-Allow-Origin": "*", "Access-Control-Expose-Headers": "Content-Range"}))
+    page.click("#shelf .fcard[data-key=gc] a[data-json]")
+    page.wait_for_selector("#drawerBody .json-view .tk-attr")
+    assert "The first" in page.inner_text("#drawerBody") and page.locator("#drawerBody .json-view").inner_text().count('"id"') >= 5
+    page.click("#drawerClose")
     page.get_by_role("tab", name="Session 2").click()
-    assert shelf() == ["hrc"] and not page.is_visible("#countryChip")
+    assert shelf() == ["hrc", "hrc_all"] and not page.is_visible("#countryChip")
+    assert "Hugging Face" in page.inner_text("#shelf .fcard[data-key=hrc_all]")
     page.get_by_role("tab", name="Session 3").click()
-    assert shelf() == ["uhri", "wiki", "library"] and page.is_visible("#countryChip")
+    assert shelf() == ["uhri", "pdfs"] and page.is_visible("#countryChip")
     send(page, DASHBOARD, "uhri", 1)
     assert page.get_attribute("#planBrief", "hidden") is not None
     page.click("#lookBtn")
@@ -1480,10 +1488,10 @@ def test_venice_shows_only_what_its_sessions_use(base_url, browser, tmp_path):
     k = ctx.new_page()
     k.goto(kit.as_uri())
     reqs = k.locator(".req").all_inner_texts()
-    assert len(reqs) == 8 and any("Who votes with this State" in r for r in reqs) and any(WIKI in r for r in reqs)
+    assert len(reqs) == 8 and any("Who votes with this State" in r for r in reqs) and any("Where every State stands" in r for r in reqs)
     assert not any("PDF" in r for r in reqs)
     data = k.text_content("#datalist")   # in a folded section
-    assert "WORKSHOP_DATA.hrc" in data and "WORKSHOP_DATA.wiki" in data and "pdf_t" not in data
+    assert "WORKSHOP_DATA.hrc" in data and "wiki" not in data and "pdf_t" not in data
     ctx.close()
 
 
@@ -1575,4 +1583,25 @@ def test_each_session_is_a_conversation_of_its_own(base_url, browser):
     page.reload()
     started(page)
     assert page.locator("#versions [data-v]").count() == 1   # still there after a reload
+    ctx.close()
+
+
+def test_venice_session2_adds_the_alignment_map(base_url, browser):
+    """Session 2 in recorded mode: the two-State comparison, then "Where every State stands" offered first, built on
+    it as a map of every State by its agreement with the two (dots coloured by regional group)."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + "?course=venice&via=replay&planpace=1&country=Kenya&reset=1")
+    started(page)
+    page.get_by_role("tab", name="Session 2").click()
+    send(page, "How two States vote at the Human Rights Council", "hrc", 1)
+    assert page.locator("#suggest button b").all_inner_texts()[:2] == ["Where every State stands", "Who votes with this State"]
+    send(page, "Where every State stands", None, 2)
+    app = app_frame(page)
+    app.get_by_role("tab", name=re.compile("map", re.I)).click()
+    app.locator("svg circle").nth(40).wait_for(state="attached", timeout=10000)
+    assert "African States" in app.locator("body").inner_text() and "adopted without a vote" in app.locator("body").inner_text()
+    assert not errors, errors
     ctx.close()

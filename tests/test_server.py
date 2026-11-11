@@ -276,7 +276,10 @@ def test_inapp_and_question_purposes(env):
     assert (inapp["temperature"], inapp["max_tokens"]) == (0.2, 8000)
     assert [m["role"] for m in question["messages"]] == ["user"]          # no system message, no data
     assert (question["temperature"], question["max_tokens"]) == (0.8, 4000)
-    assert question["reasoning"] == {"effort": "low"} and "reasoning" not in inapp
+    assert question["reasoning"] == {"effort": "low"} and "reasoning" not in inapp   # "fast" does not reason
+    # an app's own request to a reasoning model (a whole document to read in the wiki step) thinks briefly too
+    env.client.post("/studio-api/chat", json=body(model="glm-eu", purpose="inapp"))
+    assert env.fake.requests[-1]["reasoning"] == {"effort": "low"}
 
 
 def test_missing_data_pack_gives_a_placeholder(tmp_path):

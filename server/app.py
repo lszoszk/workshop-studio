@@ -353,8 +353,8 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
             payload["reasoning"] = {"effort": m.edit_reasoning}   # a change to an app already built
         elif purpose == "build" and m.reasoning:
             payload["reasoning"] = {"effort": m.reasoning}
-        elif purpose == "question" and m.reasoning:   # a quick question: think briefly (GLM-5.3 otherwise thinks past its budget)
-            payload["reasoning"] = {"effort": "low"}
+        elif purpose in ("question", "inapp") and m.reasoning:   # a quick question, or an app's own request (a whole document
+            payload["reasoning"] = {"effort": "low"}                # to read): think briefly, or GLM-5.3 thinks past its budget
         req = client.build_request("POST", f"{OPENROUTER}/chat/completions", json=payload, headers=headers())
         try:
             r = await client.send(req, stream=True)

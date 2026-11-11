@@ -50,9 +50,11 @@
   // Venice: the two models of the course (GLM in the EU by default, Claude second); Geneva: every model
   const COURSE_MODELS = { venice: ['glm-eu', 'claude'] };
   const modelAllowed = (id) => !COURSE_MODELS[S.course] || COURSE_MODELS[S.course].includes(id);
-  // the files a Venice session works on, from its requests; Geneva keeps the whole shelf
+  // the files a Venice session works on: those of its requests and those marked for it in config.json ("venice");
+  // Geneva keeps the whole shelf but the Venice-only files
   const sessionFiles = () => S.course !== 'venice' ? null
-    : new Set(S.prompts.filter((p) => sessionOf(p) === S.session && p.dataset).flatMap((p) => [p.dataset, ...(fileMeta(p.dataset).also || [])]));
+    : new Set([...S.prompts.filter((p) => sessionOf(p) === S.session && p.dataset).flatMap((p) => [p.dataset, ...(fileMeta(p.dataset).also || [])]),
+      ...S.config.files.filter((f) => (f.venice || []).includes(S.session)).map((f) => f.key)]);
   // the country picker: in a session whose requests read the recommendations, or for an app on the stage that reads them
   const countryUsed = () => S.prompts.some((p) => sessionOf(p) === S.session && p.dataset === 'uhri' &&
       (S.advanced || p.level !== 'advanced' || S.course === 'venice')) ||
@@ -1096,8 +1098,8 @@
   async function openSource(id, page, quote) {
     page = Math.max(1, Number(page) || 1);
     const file = pdfOf(id);
-    const lib = await dataParsed('library').catch(() => null);
-    const doc = lib && lib.records.find((d) => d.id === id || d.symbol === id);
+    const libs = await Promise.all(['library', 'pdfs'].map((k) => dataParsed(k).catch(() => null)));
+    const doc = libs.flatMap((l) => (l ? l.records : [])).find((d) => d.id === id || d.symbol === id);
     const printed = doc && (doc.passages.find((x) => x.page === page) || {}).page_label;
     openDrawer(doc ? `${doc.short_title}, ${printed && printed !== String(page) ? `p. ${printed} (PDF page ${page})` : `page ${page}`}` : `${id}, page ${page}`);
     $('drawer').classList.add('wide');
@@ -1443,11 +1445,10 @@
       ['Session 2', 's7-4-extract', true], ['Session 2', 's7-4b-run-ten', false], ['Session 2', 's7-4c-show-broken', false],
       ['Session 2', 's8-1-verbatim', true], ['Session 2', 's8-5-wiki', true]],
     venice: [['Session 1', 's8-1-verbatim', true], ['Session 1', 's8-1b-gc-quote-check', false],
-      ['Session 2', 's8-3-voting', true], ['Session 2', 's8-3b-blocs', false],
-      ['Session 3', 's7-1-dashboard', true], ['Session 3', 's7-3-quote-check', false], ['Session 3', 's7-1b-ask-data', false],
-      ['Session 3', 's8-5-wiki', true]],
+      ['Session 2', 's8-3-voting', true], ['Session 2', 's8-3c-alignment', false], ['Session 2', 's8-3b-blocs', false],
+      ['Session 3', 's7-1-dashboard', true], ['Session 3', 's7-3-quote-check', false], ['Session 3', 's7-1b-ask-data', false]],
   };
-  const KIT_DATA = { geneva: ['uhri', 'gc', 'pdf_text', 'pdf_ten', 'wiki', 'library'], venice: ['uhri', 'gc', 'hrc', 'wiki', 'library'] };
+  const KIT_DATA = { geneva: ['uhri', 'gc', 'pdf_text', 'pdf_ten', 'wiki', 'library'], venice: ['uhri', 'gc', 'hrc'] };
   const slugOf = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'app';
 
   async function downloadKit(btn) {
@@ -2544,7 +2545,8 @@
 
   function fileMetaLine(key) {
     const d = S.index.datasets[key];
-    if (key === 'library') return `${fmt(d.count)} PDFs · passage by passage, with pages`;
+    if (key === 'library' || key === 'pdfs') return `${fmt(d.count)} PDFs · passage by passage, with pages`;
+    if (key === 'hrc_all') return `${fmt(d.count)} texts · opens in Excel`;
     if (key === 'wiki') return `${fmt(d.count)} pages · every quotation verified`;
     if (key === 'uhri') return `${fmt(S.countryCount)} records · opens in Excel`;
     if (key === 'gc') return `${fmt(d.count)} paragraphs · opens in Excel`;
@@ -2563,12 +2565,12 @@
   function renderShelf(box = $('shelf')) {
     const own = Object.values(S.own).sort((a, b) => a.key.localeCompare(b.key, 'en', { numeric: true }));
     const keep = sessionFiles();   // Venice: only the files of this session's requests
-    box.innerHTML = S.config.files.filter((f) => !keep || keep.has(f.key)).map((f) => `
+    box.innerHTML = S.config.files.filter((f) => (keep ? keep.has(f.key) : !f.venice)).map((f) => `
       <div class="fcard" draggable="true" data-key="${f.key}">
         <div class="fcard-top"><i class="ficon ${f.kind}">${f.kind.toUpperCase()}</i><h3>${esc(fileLabel(f.key))}</h3></div>
         <p>${esc(f.blurb.replace(/\{country\}/g, S.country))}</p>
         <div class="meta">${esc(fileMetaLine(f.key))}</div>
-        ${f.from ? `<p class="from">Also published as data: ${f.from.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${l.icon ? `<span class="from-icon" aria-hidden="true">${esc(l.icon)}</span>` : ''}${esc(l.label)}</a>`).join(' · ')}</p>` : ''}
+        ${f.from ? `<p class="from">Also published as data: ${f.from.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener"${/\.json$/.test(l.url) ? ` data-json="${esc(l.url)}"` : ''}>${l.icon ? `<span class="from-icon" aria-hidden="true">${esc(l.icon)}</span>` : ''}${esc(l.label)}</a>`).join(' · ')}</p>` : ''}
         <div class="row"><button type="button" class="ghost" data-act="open">Open</button><button type="button" class="ghost" data-act="add">Add to chat</button></div>
       </div>`).join('') + own.map((e) => `
       <div class="fcard own adv" draggable="true" data-key="${e.key}">
@@ -2585,6 +2587,7 @@
         <div class="row"><button type="button" class="ghost" data-act="pick">Choose a file</button></div>
       </div>`;
     box.querySelector('.add-own [data-act=pick]').onclick = pickOwnFile;
+    box.querySelectorAll('a[data-json]').forEach((a) => { a.onclick = (e) => { e.preventDefault(); showJson(a.dataset.json, a.textContent); }; });
     box.querySelectorAll('.fcard[data-key]').forEach((c) => {
       const key = c.dataset.key;
       c.addEventListener('dragstart', (e) => {
@@ -2687,6 +2690,57 @@
     renderShelfState(needed);
   }
 
+  // a JSON file as a code editor shows it: indented and coloured, its first records only (the public file is
+  // megabytes on one line); a range request fetches only the start of it
+  async function showJson(url, label) {
+    openDrawer(label);
+    $('drawer').classList.add('wide');
+    $('drawerBody').innerHTML = '<p>Loading the first records…</p>';
+    try {
+      const r = await fetch(url, { headers: { Range: 'bytes=0-60000' } });
+      const text = await r.text();
+      const total = Number((r.headers.get('content-range') || '').split('/')[1]) || text.length;
+      const recs = firstRecords(text, 10);
+      if (!recs.length) throw new Error('no records');
+      track('json_view', { file: url.split('/').pop() });
+      $('drawerBody').innerHTML = `<p>The first ${recs.length} records of ${total > text.length ? `a ${(total / 1e6).toFixed(1)} MB file` : 'the file'}, ` +
+        `laid out the way a code editor shows them: one record per paragraph, one field per line. In the file itself all of it stands on one line.</p>` +
+        `<pre class="json-view">${jsonHtml(recs)}</pre>` +
+        `<p><a href="${esc(url)}" target="_blank" rel="noopener">Open the whole file as it is</a></p>`;
+    } catch (e) {
+      $('drawerBody').innerHTML = `<p>The file could not be shown here. <a href="${esc(url)}" target="_blank" rel="noopener">Open it in a new tab</a>.</p>`;
+    }
+  }
+
+  // the complete records at the start of a JSON array, from a text that may stop in the middle of one
+  function firstRecords(text, n) {
+    const out = [];
+    let depth = 0, start = -1, inStr = false, escaped = false;
+    for (let i = 0; i < text.length && out.length < n; i++) {
+      const c = text[i];
+      if (inStr) {
+        if (escaped) escaped = false; else if (c === '\\') escaped = true; else if (c === '"') inStr = false;
+      } else if (c === '"') inStr = true;
+      else if (c === '[' || c === '{') { if (c === '{' && depth === 1) start = i; depth++; }
+      else if (c === ']' || c === '}') {
+        depth--;
+        if (c === '}' && depth === 1 && start >= 0) { out.push(JSON.parse(text.slice(start, i + 1))); start = -1; }
+      }
+    }
+    return out;
+  }
+
+  function jsonHtml(v) {
+    const src = JSON.stringify(v, null, 2), re = /("(?:\\.|[^"\\])*")(\s*:)?|\b(true|false|null)\b|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g;
+    let out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      out += m[1] ? `<span class="tk-${m[2] ? 'attr' : 'str'}">${esc(m[1])}</span>${m[2] || ''}` : `<span class="tk-${m[3] ? 'kw' : 'num'}">${esc(m[0])}</span>`;
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+
   async function openFile(key) {
     if (S.own[key]) return openOwn(key);
     const f = fileMeta(key);
@@ -2733,7 +2787,7 @@
     };
     let cols = Object.keys(d.records[0]);
     let row = (r) => cols.map((c) => r[c]);
-    if (key === 'hrc') {
+    if (key === 'hrc' || key === 'hrc_all') {
       const word = { Y: 'yes', N: 'no', A: 'abstained' };
       cols = cols.filter((c) => c !== 'votes').concat('votes');
       row = (r) => cols.map((c) => (c === 'votes' ? Object.entries(r.votes || {}).map(([k, v]) => `${d.countries[k] || k}: ${word[v] || v}`) : r[c]));
