@@ -70,6 +70,10 @@ a { color: var(--accent); }
 
 /* the mark: three bars in the colours of the three layers (model, script, AI) */
 .logo { display: block; height: 28px; width: auto; flex: none; }
+/* the logo's prompt, as in a terminal: the cursor blinks (not for those who asked their system for less motion) */
+.logo .cursor { animation: cursor-blink 1.06s steps(1, end) infinite; }
+@keyframes cursor-blink { 50% { fill-opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .logo .cursor { animation: none; } }
 
 /* top bar */
 .top {
@@ -223,7 +227,6 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 .vmenu button[aria-checked=true] b { color: var(--accent); }
 .vmenu button span { font-size: 13px; }
 .vmenu button i { grid-column: 2; font-size: 11px; font-style: normal; color: var(--faint); }
-.linkoff { font-size: 13px; padding: 3px 10px; border-radius: 999px; background: var(--err-bg); color: var(--danger); font-weight: 600; white-space: nowrap; }
 .tools { display: flex; gap: 8px; margin-left: auto; align-items: center; flex: none; }
 .tool { border: 1px solid var(--line); background: var(--surface); border-radius: 9px; padding: 6px 12px; font-size: 14px; cursor: pointer; white-space: nowrap; color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
 .tool:hover { border-color: var(--accent); }
@@ -306,7 +309,7 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 .tk-kw { color: #ffb86b; }
 .tk-num { color: #f5d67b; }
 
-.building, .offline-banner, .legend, .apperror {
+.building, .apperror {
   position: absolute; left: 50%; transform: translateX(-50%); z-index: 5; border-radius: 999px;
   padding: 7px 16px; font-size: 14px; box-shadow: 0 4px 18px rgba(16, 30, 54, .14);
 }
@@ -335,13 +338,6 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 }
 .mind.code .mind-text { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #9fc4e8; }
 .mind-note { margin: 0 auto; max-width: 980px; width: 100%; font-size: 14px; color: #8aa0b5; border-top: 1px solid #1f2d3d; padding-top: 12px; }
-.offline-banner { top: 14px; background: var(--err-bg); color: var(--danger); white-space: nowrap; }
-.legend { bottom: 14px; background: var(--surface); display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; border: 1px solid var(--line); border-radius: 12px; width: max-content; max-width: 92%; }
-.legend span { display: flex; align-items: center; gap: 6px; }
-.sw { width: 14px; height: 14px; border-radius: 3px; display: inline-block; flex: none; }
-.sw.model { background: rgba(245, 166, 35, .45); outline: 1px dashed var(--model); }
-.sw.script { background: rgba(46, 160, 67, .35); outline: 1px solid var(--script); }
-.sw.ai { background: rgba(137, 87, 229, .4); outline: 1px solid var(--ai); }
 .apperror { bottom: 14px; background: var(--err-bg); color: var(--danger); display: flex; gap: 12px; align-items: center; max-width: 90%; border-radius: 12px; }
 .apperror details { font-size: 13px; }
 .apperror summary { cursor: pointer; }

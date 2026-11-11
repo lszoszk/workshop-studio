@@ -33,7 +33,7 @@
     talk: [],            // answers in words (no app): kept in the conversation, never a version
     draft: new Set(),    // files dragged into the message being written
     draftImages: [],     // screenshots pasted or dropped into it: [{media_type, data, url, w, h, kb}]
-    trace: [], linkOn: true, layersOn: false,
+    trace: [],
     busy: false, ctrl: null, dataText: {}, dataParsed: {},
     planMode: true,      // the four workshop apps plan first (the pill above the message box)
     planning: null,      // the plan being made or waiting to be built
@@ -192,9 +192,8 @@
       if (!r || !p) throw new Error('not in the gallery');
       const html = await getText(`gallery/apps/${model}/${promptId}.html`);
       const name = (g.models[model] || {}).name || model;
-      S.session = sessionOf(p) || COURSES[S.course][0];
-      localSet('ws:session', S.session);
-      renderSession();
+      const to = sessionOf(p) || COURSES[S.course][0];
+      if (to !== S.session) loadSession(to);
       const v = {
         n: S.versions.length + 1, parent: null, user: `From the gallery: ${p.title}`, files: p.dataset ? [p.dataset] : [],
         sent: g.prompts.find((x) => x.id === promptId).prompt, model, label: `${name} · from the gallery`, seconds: null, cost: null,
@@ -568,9 +567,9 @@
 
   const currentVersion = () => (S.current ? S.versions[S.current - 1] : null);
 
-  function chainOf(v) {
+  function chainOf(v, versions = S.versions) {
     const out = [];
-    for (let x = v; x; x = x.parent ? S.versions[x.parent - 1] : null) out.unshift(x);
+    for (let x = v; x; x = x.parent ? versions[x.parent - 1] : null) out.unshift(x);
     return out;
   }
 
@@ -653,10 +652,6 @@
   // `plan` is set when the message is a plan on its way to being built
   function submitBuild(text, plan) {
     if (!S.ready || S.busy || !text.trim()) return;
-    if (!S.linkOn) {
-      note('The model link is cut, so the model cannot answer. Open <b>Look inside</b> and restore the link.');
-      return;
-    }
     if (!plan && S.planning && S.planning.changing) return revisePlan(S.planning, text);
     const p = S.prompts.find((q) => q.id === S.pendingPromptId);
     if (p && p.dataset && !new Set([...attachedBefore(), ...S.draft]).has(p.dataset)) {
@@ -1049,6 +1044,11 @@
         back.srcdoc = PreviewDoc.forFrame(doc);
       });
     },
+    // a session without an app yet: no frame on the stage
+    clear() {
+      const run = () => this.frames.forEach((f) => { f.classList.add('back'); f.removeAttribute('srcdoc'); });
+      this.queue = (this.queue || Promise.resolve()).then(run, run);
+    },
     win() { return this.frames[this.front].contentWindow; },
     // the frame on the stage, or the one loading to take its place (an app that fails as it opens fails there)
     owns(w) { return w === this.win() || (this.loading && w === this.loading.contentWindow); },
@@ -1078,7 +1078,6 @@
     else if (fromTab) return;   // a tab shows its own errors and PDFs
     else if (m.type === 'studio:open-source') openSource(m.symbol, m.page, m.quote);
     else if (m.type === 'studio:error') showAppError(m);
-    else if (m.type === 'studio:ready' && S.layersOn) sendLayers();
   });
 
   function openTab() {
@@ -1112,7 +1111,6 @@
   let asking = 0;
   async function handleAsk(win, m) {
     const reply = (x) => win.postMessage(Object.assign({ type: 'studio:answer', id: m.id }, x), '*');
-    if (!S.linkOn) return reply({ error: 'The studio has cut the link to the model. The rest of your app keeps working; only this AI step needs a model.' });
     while (asking >= 2) await new Promise((r) => setTimeout(r, 150));
     asking++;
     const content = m.prompt + (m.json ? '\n\nReply with JSON only.' : '');
@@ -1203,21 +1201,7 @@
     };
   }
 
-  /* ---------- Layers, Run x3, Ask x3, model link ---------- */
-
-  function sendLayers() {
-    const v = currentVersion();
-    if (!v) return;
-    Preview.win().postMessage({ type: 'studio:layers', on: S.layersOn, source: S.layersOn ? v.html : '' }, '*');
-  }
-
-  function toggleLayers() {
-    S.layersOn = !S.layersOn;
-    $('layersBtn').setAttribute('aria-pressed', S.layersOn);
-    closeMenu();
-    $('legend').hidden = !S.layersOn;
-    sendLayers();
-  }
+  /* ---------- Run x3, Ask x3 ---------- */
 
   const Run3 = {
     frame: null, waiting: null,
@@ -1319,7 +1303,6 @@
       <p id="askNote"></p>`;
     body.querySelectorAll('.seg button').forEach((b) => { b.onclick = () => { if (b.dataset.kind !== kind) ask3(b.dataset.kind); }; });
     truth(q.truth).then((t) => { if (run === askRun) $('truth').textContent = t; });
-    if (!S.linkOn) { $('askNote').textContent = 'The model link is cut, so only the script can answer.'; return; }
     let ok = 0;
     await Promise.all([1, 2, 3].map(async (i) => {
       const span = $('ans' + i).querySelector('span');
@@ -1336,15 +1319,6 @@
     if (run !== askRun || !ok) return;   // another question was picked meanwhile
     $('askNote').innerHTML = trap ? esc(q.note)
       : ok >= 2 ? 'Several answers, often several different numbers, all sounding sure. The script gives one answer, and you can check how it got it. <b>Use the model to write the code; let the code answer.</b>' : '';
-  }
-
-  function toggleLink() {
-    S.linkOn = !S.linkOn;
-    $('linkBtn').setAttribute('aria-pressed', S.linkOn);
-    $('linkBtn').querySelector('b').textContent = S.linkOn ? 'Cut the model link' : 'Restore the model link';
-    $('offlineBanner').hidden = S.linkOn;
-    closeMenu();
-    renderTools();
   }
 
   /* ---------- trace: what left this laptop ---------- */
@@ -1470,9 +1444,10 @@
       ['Session 2', 's8-1-verbatim', true], ['Session 2', 's8-5-wiki', true]],
     venice: [['Session 1', 's8-1-verbatim', true], ['Session 1', 's8-1b-gc-quote-check', false],
       ['Session 2', 's8-3-voting', true], ['Session 2', 's8-3b-blocs', false],
-      ['Session 3', 's7-1-dashboard', true], ['Session 3', 's7-3-quote-check', false], ['Session 3', 's7-1b-ask-data', false]],
+      ['Session 3', 's7-1-dashboard', true], ['Session 3', 's7-3-quote-check', false], ['Session 3', 's7-1b-ask-data', false],
+      ['Session 3', 's8-5-wiki', true]],
   };
-  const KIT_DATA = { geneva: ['uhri', 'gc', 'pdf_text', 'pdf_ten', 'wiki', 'library'], venice: ['uhri', 'gc', 'hrc'] };
+  const KIT_DATA = { geneva: ['uhri', 'gc', 'pdf_text', 'pdf_ten', 'wiki', 'library'], venice: ['uhri', 'gc', 'hrc', 'wiki', 'library'] };
   const slugOf = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'app';
 
   async function downloadKit(btn) {
@@ -1495,9 +1470,15 @@
       }
       // the participant's apps: the latest version of each (no other version builds on it), the newest six; their code
       // here, their data the kit's (with any of the participant's own files they read)
-      const leaves = S.versions.filter((v) => !S.versions.some((w) => w.parent === v.n)).slice(-6);
-      const apps = leaves.map((v) => ({ title: titleOf(v.html), note: `version ${v.n}, by ${v.label}`, html: v.html }));
-      const own = [...new Set(leaves.flatMap((v) => chainOf(v).flatMap((x) => x.files || [])).filter((k) => S.own[k]))];
+      // (every session's: the current one here, the others from this browser's storage)
+      const work = COURSES[S.course].map((s, i) => {
+        let vs = S.versions;
+        if (s !== S.session) try { vs = (JSON.parse(localGet(storeKey(s)) || 'null') || {}).versions || []; } catch (e) { vs = []; }
+        return vs.filter((v) => !vs.some((w) => w.parent === v.n)).map((v) => ({ v, vs, n: i + 1 }));
+      });
+      const leaves = work.flat().sort((a, b) => (a.v.created || 0) - (b.v.created || 0)).slice(-6);
+      const apps = leaves.map(({ v, n }) => ({ title: titleOf(v.html), note: `Session ${n}, version ${v.n}, by ${v.label}`, html: v.html }));
+      const own = [...new Set(leaves.flatMap(({ v, vs }) => chainOf(v, vs).flatMap((x) => x.files || [])).filter((k) => S.own[k]))];
       const datasets = {};
       for (const k of [...KIT_DATA[S.course], ...own]) datasets[k] = await dataParsed(k);
       const html = Kit.page(await getText('kit/kit.html'), { chart: S.chart, runtime: S.runtime, datasets, meta: { country: S.country, built }, steps, apps });
@@ -2407,15 +2388,11 @@
   function renderTools() {
     const has = S.versions.length > 0;
     const s8 = S.session !== 'S7';   // the second Geneva session and every Venice one: Ask directly
-    const v = currentVersion();
     $('toolbar').hidden = !has;
     $('ask3Btn').hidden = !s8 || !S.route || S.route.type === 'replay';
-    // cutting the link changes something only for an app that asks a model itself (and a cut link can always be restored)
-    $('linkBtn').hidden = S.linkOn && !(v && /\bstudio\.ask\b/.test(v.html || ''));
     $('countryChip').hidden = !countryUsed();
     $('wallBtn').hidden = !(S.route && S.route.type === 'server');
-    $('linkOffPill').hidden = S.linkOn;
-    $('traceCount').hidden = !S.trace.length;
+    $('traceSoFar').hidden = !S.trace.length;   // the count sits on the item it counts, not on the menu (it read as a to-do)
     ['downloadBtn', 'wallBtn', 'lookBtn'].forEach((id) => { $(id).disabled = !has; });
   }
 
@@ -2426,16 +2403,34 @@
 
   function setSession(s) {
     if (s === S.session || S.busy) return;
+    track('session', { to: s });
+    loadSession(s);
+    const n = COURSES[S.course].indexOf(s) + 1;
+    note(`<b>Session ${n}.</b> ` + (S.versions.length || S.talk.length ? 'Your conversation in this session, as you left it.'
+      : 'A new conversation, with its own suggestions below. What you built in another session stays there.') +
+      (s === 'S8' ? ' <b>Look inside</b> now also lets you ask the model directly.' : ''));
+  }
+
+  // each session is a conversation of its own: its chat, its apps and its record of what left this laptop; the
+  // others wait in this browser under their own keys
+  function loadSession(s) {
+    save();
     S.session = s;
     localSet('ws:session', s);
-    track('session', { to: s });
+    Object.assign(S, { versions: [], current: null, talk: [], trace: [], planning: null, pendingPromptId: null, pendingText: '', freshNext: false, draftImages: [] });
+    S.draft.clear();
+    restore();
+    $('input').value = '';
+    fitInput();
+    $('planView').hidden = true;
+    $('appError').hidden = true;
+    $('drawer').hidden = true;
+    setView('app');
+    if (!S.versions.length) { Preview.clear(); $('empty').hidden = false; }
     renderSession();
-    renderTools();
-    renderSuggest();
-    renderShelf();
-    if (!S.versions.length) return;
-    const n = COURSES[S.course].indexOf(s) + 1;
-    note(`<b>Session ${n}.</b> New suggestions below.` + (s === 'S8' ? ' <b>Look inside</b> now also lets you ask the model directly.' : ''));
+    renderAttach();
+    renderNeeds();
+    renderAll();
   }
 
   // Hick's law for versions: one button names the app and the version on the stage, arrows step to the next or the
@@ -2896,7 +2891,8 @@
 
   function localGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function localSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } }
-  const storeKey = () => `ws:work:${S.seatCode || 'guest'}`;   // one workspace per seat; the country is a separate choice
+  // one conversation per seat and session (each session starts a clean chat); the country is a separate choice
+  const storeKey = (session = S.session) => `ws:work:${S.seatCode || 'guest'}:${S.course}:${session}`;
 
   function save() {
     // the full text sent with each request is not kept: it would fill the browser's storage
@@ -2915,6 +2911,9 @@
 
   function restore() {
     try {
+      // the one conversation of the studio before 11.11.2026 goes to the session opened first
+      const legacy = `ws:work:${S.seatCode || 'guest'}`;
+      if (!localGet(storeKey()) && localGet(legacy)) { localSet(storeKey(), localGet(legacy)); localStorage.removeItem(legacy); }
       const d = JSON.parse(localGet(storeKey()) || 'null');
       if (d && Array.isArray(d.versions)) { S.versions = d.versions; S.current = d.current; }
       if (d && Array.isArray(d.talk)) S.talk = d.talk;
@@ -2997,10 +2996,8 @@
   $('keepBtn').onclick = (e) => { e.stopPropagation(); toggleMenu($('keepBtn'), $('keepPanel')); };
   document.addEventListener('click', (e) => { if (!e.target.closest('.menu')) closeMenu(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeMenu(); $('drawer').hidden = true; } });
-  $('layersBtn').onclick = toggleLayers;
   $('run3Btn').onclick = run3;
   $('ask3Btn').onclick = () => ask3('count');
-  $('linkBtn').onclick = toggleLink;
   $('traceBtn').onclick = () => { openDrawer(TRACE_TITLE); renderTrace(); };
   $('downloadBtn').onclick = () => { closeMenu(); download(); };
   $('wallBtn').onclick = () => { closeMenu(); sendToWall(); };

@@ -4,8 +4,8 @@
 
 Serves site/ on a free port, drives headless Chrome through a participant's path:
 build the first request from its card (in plan mode: the recorded planning session, its
-questions, the plan on the stage, Build), Layers, Run x3, Trace, saving the app and opening
-it offline from disk, a reload; then Session 8 with the model link cut; then what a
+questions, the plan on the stage, Build), Run x3, Trace, saving the app and opening
+it offline from disk, a reload; then what a
 participant is shown at each step (Hick's law), recorded mode refusing free requests,
 the phone hand-off page and the absence of technical jargon. A fake server stands in
 for a live model to test what recorded mode cannot: switching country, asking the
@@ -281,6 +281,7 @@ def tool(name):
 
 
 DASHBOARD = "Your country's recommendations dashboard"
+WIKI = "A research wiki on neurotechnology and justice"
 PACK = json.loads((SITE / "data/planning/s7-1-dashboard.json").read_text())
 
 
@@ -312,19 +313,6 @@ def test_participant_path(base_url, browser, tmp_path):
     frame.locator("body").get_by_text("Kenya").first.wait_for(timeout=20000)
     assert "2264" in frame.locator("body").inner_text().replace(",", "")
     assert page.locator(".lesson").count() == 1
-
-    # Layers: an overlay marks what the model wrote and what the code computed, the legend shows;
-    # the country and the record count come from the data, the tab names from the model's code
-    look(page, "layersBtn")
-    page.wait_for_timeout(800)
-    assert page.is_visible("#legend")
-    marks = lambda cls: [t for t in frame.locator(f"#studio-layers .{cls}").evaluate_all("(b) => b.map((d) => d.dataset.t || '')") if t]
-    computed, written = marks("script"), marks("model")
-    assert "Kenya" in computed and any("2,264" in t for t in computed), computed[:20]
-    assert any(re.search(r"overview", t, re.I) for t in written), written[:20]
-    assert not any("Kenya" in t or "2,264" in t for t in written), written[:20]
-    look(page, "layersBtn")
-    assert frame.locator("#studio-layers").count() == 0
 
     # Run x3: three identical checksums
     look(page, "run3Btn")
@@ -370,34 +358,6 @@ def test_participant_path(base_url, browser, tmp_path):
     ctx.close()
 
 
-def test_session8_model_link_off_blocks_inapp_ai(base_url, browser):
-    """Session 8 adds the model link; with it cut, studio.ask fails inside the recorded
-    'A model inside the tool' app while the rest keeps working, and nothing can be built."""
-    if not (SITE / "replay/mistral/s8-2-ai-inside.md").exists():
-        pytest.skip("no recording for s8-2-ai-inside yet (run tools/bakeoff.py and copy to site/replay)")
-    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
-    page = ctx.new_page()
-    page.goto(base_url + "?advanced=1&via=replay&planpace=1&country=Kenya")
-    started(page)
-    send(page, DASHBOARD, "uhri", 1)
-    assert page.locator("#suggest button", has_text="A model inside the tool").count() == 0   # a Session 8 step
-    page.get_by_role("tab", name="Session 2").click()
-    send(page, "A model inside the tool", None, 2)   # the country file is already in the chat
-    look(page, "linkBtn")
-    assert page.is_visible("#offlineBanner") and page.is_visible("#linkOffPill")
-    frame = app_frame(page)
-    frame.get_by_role("button", name=re.compile("suggest", re.I)).first.click()
-    page.wait_for_timeout(2500)
-    assert re.search(r"cut the link|model", frame.locator("body").inner_text(), re.I)
-    assert page.inner_text("#traceCount") == "2"  # the two builds; the AI call never left
-    # a build with the link cut is refused, and the request is not lost
-    page.fill("#input", "Make the chart blue.")
-    page.click("#sendBtn")
-    assert "link is cut" in page.locator(".msg.note").last.inner_text()
-    assert page.input_value("#input") == "Make the chart blue."
-    ctx.close()
-
-
 def test_what_is_shown_grows_with_progress(base_url, browser):
     """Hick's law: one card and no tools before the first app; tools after it."""
     ctx = browser.new_context(viewport={"width": 1280, "height": 720})
@@ -411,8 +371,8 @@ def test_what_is_shown_grows_with_progress(base_url, browser):
     assert page.is_visible("#toolbar") and not page.is_visible("#shelf")
     assert page.locator("#suggest button").count() <= 3
     page.click("#lookBtn")
-    assert page.is_visible("#layersBtn") and page.is_visible("#run3Btn") and page.is_visible("#traceBtn")
-    assert not page.is_visible("#ask3Btn") and not page.is_visible("#linkBtn")   # Session 8 tools
+    assert page.is_visible("#run3Btn") and page.is_visible("#traceBtn") and not page.is_visible("#ask3Btn")   # Ask directly: Session 2
+    assert page.locator("#layersBtn, #linkBtn").count() == 0 and page.locator("#lookBtn .count").count() == 0
     page.keyboard.press("Escape")
     # the toolbar fits on one row at 1280 px
     assert page.evaluate("() => document.getElementById('toolbar').getBoundingClientRect().height") < 60
@@ -523,15 +483,21 @@ def test_live_country_switch_and_asking_directly(base_url, browser, fake_api):
     assert page.locator("#versions [data-v]").count() == 1
     assert "(Attached:" in calls[-1]["messages"][0]["content"]   # the file named earlier is still in the conversation
 
-    # Session 8: asking the model directly, a number, then a paragraph that does not exist
+    # Session 8: a new conversation (the country file goes in again); asking the model directly, a number, then a
+    # paragraph that does not exist
     page.get_by_role("tab", name="Session 2").click()
+    assert page.locator("#versions [data-v]").count() == 0 and page.locator(".msg.assistant").count() == 0
+    add_file(page, "uhri")
+    page.fill("#input", "Build a counter")
+    page.click("#sendBtn")
+    built(page, 1)
     look(page, "ask3Btn")
     page.wait_for_function("() => document.getElementById('truth').textContent.includes('records in total')")
     page.get_by_role("tab", name="A quotation").click()
     page.wait_for_function("() => document.getElementById('askNote').textContent.includes('no paragraph 97')", timeout=15000)
     assert "There is no paragraph 97: E/C.12/GC/27 has 90 numbered paragraphs" in page.inner_text("#truth")
     assert sum(1 for c in calls if c["purpose"] == "question" and "paragraph 97" in c["messages"][-1]["content"]) == 3
-    assert page.inner_text("#traceCount") == "8"   # one build, one chat, three counts, three quotations
+    assert page.inner_text("#traceCount") == "7"   # this session's: one build, three counts, three quotations
     page.click("#drawerClose")
 
     # the app in a tab of its own: still sandboxed, and its model requests still go through the studio
@@ -543,7 +509,7 @@ def test_live_country_switch_and_asking_directly(base_url, browser, fake_api):
     tab.frame_locator("#frame").get_by_text("Kenya 2264").wait_for(timeout=10000)
     answer = tab.frames[1].evaluate("() => studio.ask('Say hello')")
     assert "2,000" in answer
-    assert page.inner_text("#traceCount") == "9"
+    assert page.inner_text("#traceCount") == "8"
     assert not errors, errors
     ctx.close()
 
@@ -1036,7 +1002,7 @@ def test_a_gallery_app_comes_into_the_studio(base_url, browser):
     assert page.get_attribute("#sessionSwitch [data-session=S8]", "aria-selected") == "true"
     assert "From the gallery: Paragraphs out of a PDF" in page.inner_text("#log")
     app_frame(page).get_by_text(re.compile(r"paragraphs? flagged|flagged paragraphs?", re.I)).first.wait_for(timeout=20000)
-    work = page.evaluate("JSON.parse(localStorage.getItem('ws:work:guest'))")
+    work = page.evaluate("JSON.parse(localStorage.getItem('ws:work:guest:geneva:S8'))")   # the conversation of its session
     assert work["versions"][0]["sent"].startswith("Build this app.") and "```html" in work["versions"][0]["reply"]
     page.goto(base_url + "?via=replay&country=Kenya&from=nobody%2Fnothing")
     started(page)
@@ -1473,7 +1439,7 @@ def test_the_venice_course_has_three_sessions(base_url, browser):
     assert page.locator("#suggest button b").all_inner_texts() == ["How two States vote at the Human Rights Council"]
     assert not page.is_visible("#shelf .add-own")
     page.get_by_role("tab", name="Session 3").click()
-    assert page.locator("#suggest button b").all_inner_texts() == [DASHBOARD]   # "Your own idea" needs a live model
+    assert page.locator("#suggest button b").all_inner_texts() == [DASHBOARD, WIKI]   # "Your own idea" needs a live model
     assert page.is_visible("#shelf .add-own")                                    # own files without Advanced
     send(page, DASHBOARD, "uhri", 1)
     assert "Check a quotation" in page.inner_text("#suggest")
@@ -1485,8 +1451,8 @@ def test_the_venice_course_has_three_sessions(base_url, browser):
 
 def test_venice_shows_only_what_its_sessions_use(base_url, browser, tmp_path):
     """The Venice course without Geneva's leftovers: each session's shelf holds only its own file, the country picker
-    shows only where the recommendations are used, two models, no Advanced, no Facilitator's brief, no Cut the model
-    link for an app without a model inside, its own header line, and a take-home kit with the Venice requests."""
+    shows only where the recommendations are used, two models, no Advanced, no Facilitator's brief, its own
+    header line, and a take-home kit with the Venice requests."""
     ctx = browser.new_context(viewport={"width": 1600, "height": 900}, accept_downloads=True)
     page = ctx.new_page()
     page.goto(base_url + "?course=venice&via=replay&planpace=1&country=Kenya&reset=1")
@@ -1500,11 +1466,11 @@ def test_venice_shows_only_what_its_sessions_use(base_url, browser, tmp_path):
     page.get_by_role("tab", name="Session 2").click()
     assert shelf() == ["hrc"] and not page.is_visible("#countryChip")
     page.get_by_role("tab", name="Session 3").click()
-    assert shelf() == ["uhri"] and page.is_visible("#countryChip")
+    assert shelf() == ["uhri", "wiki", "library"] and page.is_visible("#countryChip")
     send(page, DASHBOARD, "uhri", 1)
     assert page.get_attribute("#planBrief", "hidden") is not None
     page.click("#lookBtn")
-    assert not page.is_visible("#linkBtn") and page.is_visible("#traceBtn")
+    assert page.is_visible("#traceBtn")
     page.keyboard.press("Escape")
     page.click("#takeHomeBtn")
     with page.expect_download(timeout=60000) as dl:
@@ -1514,10 +1480,10 @@ def test_venice_shows_only_what_its_sessions_use(base_url, browser, tmp_path):
     k = ctx.new_page()
     k.goto(kit.as_uri())
     reqs = k.locator(".req").all_inner_texts()
-    assert len(reqs) == 7 and any("Who votes with this State" in r for r in reqs)
-    assert not any("PDF" in r or "wiki" in r.lower() for r in reqs)
+    assert len(reqs) == 8 and any("Who votes with this State" in r for r in reqs) and any(WIKI in r for r in reqs)
+    assert not any("PDF" in r for r in reqs)
     data = k.text_content("#datalist")   # in a folded section
-    assert "WORKSHOP_DATA.hrc" in data and "pdf" not in data.lower() and "wiki" not in data.lower()
+    assert "WORKSHOP_DATA.hrc" in data and "WORKSHOP_DATA.wiki" in data and "pdf_t" not in data
     ctx.close()
 
 
@@ -1587,4 +1553,26 @@ def test_a_button_in_a_form_works_in_the_app(base_url, browser, fake_api):
     app.locator("#go2").click()   # submits: the app may reload, too fast to read its line, but it stays on the stage
     page.wait_for_timeout(500)
     app.locator("#go").wait_for(timeout=5000)
+    ctx.close()
+
+
+def test_each_session_is_a_conversation_of_its_own(base_url, browser):
+    """Switching sessions opens a clean chat and an empty stage; the other session's apps wait there and come
+    back with it. Start over clears every session."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + "?course=venice&via=replay&planpace=1&country=Kenya&reset=1")
+    started(page)
+    page.get_by_role("tab", name="Session 3").click()
+    send(page, DASHBOARD, "uhri", 1)
+    page.get_by_role("tab", name="Session 1").click()
+    assert page.locator("#versions [data-v]").count() == 0 and page.locator(".msg.assistant").count() == 0
+    assert page.is_visible("#shelf") and not page.is_visible("#toolbar")
+    assert "A new conversation" in page.locator(".msg.note").last.inner_text()
+    page.get_by_role("tab", name="Session 3").click()
+    assert page.locator("#versions [data-v]").count() == 1 and page.locator(".msg.assistant").count() >= 1
+    app_frame(page).locator("body").get_by_text("Kenya").first.wait_for(timeout=20000)
+    page.reload()
+    started(page)
+    assert page.locator("#versions [data-v]").count() == 1   # still there after a reload
     ctx.close()

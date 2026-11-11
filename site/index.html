@@ -8,12 +8,12 @@
 <meta name="robots" content="noindex, nofollow">
 <script src="gate.js"></script>
 <script>try { const t = localStorage.getItem('ws:theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
-<link rel="stylesheet" href="studio.css?v=2026-11-12c"></head>
+<link rel="stylesheet" href="studio.css?v=2026-11-12d"></head>
 <body>
 <!-- a phone that scanned the badge's QR code gets this instead of the studio -->
 <div class="handoff" id="handoff" hidden>
   <div class="handoff-card">
-    <svg class="logo" viewBox="0 0 98 40" role="img" aria-label="Garage Research"><rect width="98" height="40" rx="8" fill="#141414"/><text x="12" y="28.5" fill="#fff" font-family="'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="23" letter-spacing="-0.5">GR</text><text x="55" y="28.5" fill="#5bd45b" font-family="ui-monospace, Menlo, Consolas, monospace" font-weight="700" font-size="23">&gt;_</text></svg>
+    <svg class="logo" viewBox="0 0 98 40" role="img" aria-label="Garage Research"><rect width="98" height="40" rx="8" fill="#141414"/><text x="12" y="28.5" fill="#fff" font-family="'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="23" letter-spacing="-0.5">GR</text><text x="55" y="28.5" fill="#5bd45b" font-family="ui-monospace, Menlo, Consolas, monospace" font-weight="700" font-size="23"><tspan class="prompt">&gt;</tspan><tspan class="cursor">_</tspan></text></svg>
     <h1>Open the studio on your laptop</h1>
     <p>The studio needs a bigger screen. Your seat code:</p>
     <div class="handoff-code" id="handoffCode">—</div>
@@ -27,7 +27,7 @@
 
 <header class="top">
   <div class="brand" id="brand">
-    <svg class="logo" viewBox="0 0 98 40" role="img" aria-label="Garage Research"><rect width="98" height="40" rx="8" fill="#141414"/><text x="12" y="28.5" fill="#fff" font-family="'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="23" letter-spacing="-0.5">GR</text><text x="55" y="28.5" fill="#5bd45b" font-family="ui-monospace, Menlo, Consolas, monospace" font-weight="700" font-size="23">&gt;_</text></svg>
+    <svg class="logo" viewBox="0 0 98 40" role="img" aria-label="Garage Research"><rect width="98" height="40" rx="8" fill="#141414"/><text x="12" y="28.5" fill="#fff" font-family="'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="23" letter-spacing="-0.5">GR</text><text x="55" y="28.5" fill="#5bd45b" font-family="ui-monospace, Menlo, Consolas, monospace" font-weight="700" font-size="23"><tspan class="prompt">&gt;</tspan><tspan class="cursor">_</tspan></text></svg>
     <div>
       <div class="name">Garage Research</div>
       <div class="event" id="event"></div>
@@ -84,7 +84,6 @@
         <button type="button" role="tab" id="viewCode" aria-selected="false">Code</button>
       </div>
       <button class="tool" id="tabBtn" title="Open the app in a new tab, full screen. It follows the studio: a new version appears there too.">New tab ↗</button>
-      <span class="linkoff" id="linkOffPill" hidden>Model link cut</span>
       <div class="tools">
         <button class="tool" id="filesBtn" title="The files you can drag into the chat">Your files</button>
         <div class="menu">
@@ -96,13 +95,11 @@
           </div>
         </div>
         <div class="menu">
-          <button class="tool look" id="lookBtn" aria-haspopup="menu" aria-expanded="false">Look inside <span class="count" id="traceCount">0</span><span class="caret" aria-hidden="true"></span></button>
+          <button class="tool look" id="lookBtn" aria-haspopup="menu" aria-expanded="false">Look inside<span class="caret" aria-hidden="true"></span></button>
           <div class="menu-panel" id="lookPanel" role="menu" hidden>
-            <button class="mi" role="menuitem" id="layersBtn" aria-pressed="false"><b>Layers</b><span>Colour what the model wrote and what the code computes</span></button>
             <button class="mi" role="menuitem" id="run3Btn"><b>Run it three times</b><span>Does the app give the same numbers every time?</span></button>
             <button class="mi" role="menuitem" id="ask3Btn" hidden><b>Ask the model directly</b><span>The same question, three times, without the data</span></button>
-            <button class="mi" role="menuitem" id="linkBtn" aria-pressed="true" hidden><b>Cut the model link</b><span>See what still works without a model</span></button>
-            <button class="mi" role="menuitem" id="traceBtn"><b>What left this laptop</b><span>Every request sent to a model, and what stayed here</span></button>
+            <button class="mi" role="menuitem" id="traceBtn"><b>What left this laptop</b><span>Every request sent to a model<span id="traceSoFar" hidden> (<span id="traceCount">0</span> so far)</span>, and what stayed here</span></button>
           </div>
         </div>
       </div>
@@ -135,12 +132,6 @@
         <div class="mind-head"><span class="pulse"></span><span id="mindTitle"></span><span class="mind-where" id="mindWhere"></span><span class="mind-time" id="mindTime"></span></div>
         <div class="mind-text" id="mindText"></div>
         <p class="mind-note" id="mindNote"></p>
-      </div>
-      <div class="offline-banner" id="offlineBanner" hidden>Model link cut. The app and its data keep working; only calls to a model fail.</div>
-      <div class="legend" id="legend" hidden>
-        <span><i class="sw model"></i>Written once by the model</span>
-        <span><i class="sw script"></i>Computed by the code from the data, the same every time</span>
-        <span><i class="sw ai"></i>Produced by a model while the app runs</span>
       </div>
       <div class="apperror" id="appError" hidden></div>
       <aside class="drawer" id="drawer" hidden>
@@ -189,11 +180,11 @@
   </form>
 </dialog>
 
-<script src="preview-doc.js?v=2026-11-12c"></script>
-<script src="pdf-view.js?v=2026-11-12c"></script>
-<script src="tour.js?v=2026-11-12c"></script>
-<script src="own-files.js?v=2026-11-12c"></script>
-<script src="kit.js?v=2026-11-12c"></script>
-<script src="studio.js?v=2026-11-12c"></script>
+<script src="preview-doc.js?v=2026-11-12d"></script>
+<script src="pdf-view.js?v=2026-11-12d"></script>
+<script src="tour.js?v=2026-11-12d"></script>
+<script src="own-files.js?v=2026-11-12d"></script>
+<script src="kit.js?v=2026-11-12d"></script>
+<script src="studio.js?v=2026-11-12d"></script>
 </body>
 </html>

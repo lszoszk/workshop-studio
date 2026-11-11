@@ -27,21 +27,6 @@
       "venice": "V3"
     },
     {
-      "id": "v3-own-idea",
-      "session": "S8",
-      "venice": "V3",
-      "level": "advanced",
-      "minute": null,
-      "dataset": null,
-      "builds_on": null,
-      "title": "Your own idea",
-      "blurb": "Describe a tool you need: the model asks you three questions first, then builds it",
-      "prompt": "I have an idea for a tool for my own work. Before you build anything, ask me three short questions, numbered, about what I want to find out, which file it should use (from Your files, or one I add) and who will read the result. Stop after the questions. When I have answered, build the tool on the file I attached, and say on screen what it can and cannot answer.\n\nMy idea: ",
-      "lesson": "Asking the questions first is a method of its own: the model learns what you need before it writes anything, and you notice what you had not decided yet.",
-      "live_only": true,
-      "bakeoff": false
-    },
-    {
       "id": "s7-3-quote-check",
       "session": "S7",
       "minute": 50,
@@ -273,6 +258,7 @@
     {
       "id": "s8-5-wiki",
       "session": "S8",
+      "venice": "V3",
       "minute": 70,
       "dataset": "wiki",
       "builds_on": null,
@@ -292,6 +278,7 @@
     {
       "id": "s8-6-wiki-map",
       "session": "S8",
+      "venice": "V3",
       "minute": 75,
       "dataset": "wiki",
       "builds_on": "s8-5-wiki",
@@ -540,6 +527,21 @@
         "text_matches": "(?i)type"
       },
       "hidden": true
+    },
+    {
+      "id": "v3-own-idea",
+      "session": "S8",
+      "venice": "V3",
+      "level": "advanced",
+      "minute": null,
+      "dataset": null,
+      "builds_on": null,
+      "title": "Your own idea",
+      "blurb": "Describe a tool you need: the model asks you three questions first, then builds it",
+      "prompt": "I have an idea for a tool for my own work. Before you build anything, ask me three short questions, numbered, about what I want to find out, which file it should use (from Your files, or one I add) and who will read the result. Stop after the questions. When I have answered, build the tool on the file I attached, and say on screen what it can and cannot answer.\n\nMy idea: ",
+      "lesson": "Asking the questions first is a method of its own: the model learns what you need before it writes anything, and you notice what you had not decided yet.",
+      "live_only": true,
+      "bakeoff": false
     }
   ]
 }
