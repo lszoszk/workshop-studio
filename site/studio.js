@@ -144,6 +144,11 @@
     setCountry(params.get('country') || localGet('ws:country') || (S.seat && S.seat.country) || config.default_country);
 
     (await OwnFiles.load()).forEach((e) => { S.own[e.key] = e; });   // before restore(): an app may read one
+    const fresh = params.has('reset');
+    if (fresh) {   // ?reset=1: a clean start in this browser, for a facilitator's laptop or a second run
+      clearWork();
+      history.replaceState(null, '', location.pathname + location.search.replace(/[?&]reset(=[^&]*)?/, '').replace(/^&/, '?') + location.hash);
+    }
     restore();
     S.ready = true;
     $('sendBtn').disabled = false;
@@ -2774,6 +2779,9 @@
       <div class="prompt-box"><textarea id="tfPrompt" readonly></textarea></div>
       <div class="row"><button type="button" class="primary" id="tfCopy">Copy the prompt</button></div>
       <p class="caution">These assistants send the files they read to the company that runs the model. That is fine for public code like this; never point them at confidential documents.</p>
+      <h4>Start over</h4>
+      <p>Clear your apps and your conversation in this browser, to begin again from the first request. Your seat code, your settings and your own files stay. Save an app as a file first if you want to keep it.</p>
+      <div class="row"><button type="button" class="ghost" id="startOverBtn">Start over</button></div>
       <h4>What this studio records</h4>
       <p class="caution">To improve the workshop, the studio records what you do: which steps you pick, which model answers, how long it takes and what fails. It never records your messages, your files, your apps or anything from the data. Add <code>?notrack=1</code> to the address to switch it off in this browser.</p>
       <p>${esc(a.name)} · ${link(a.url, 'website')} · ${link(a.orcid, 'ORCID')} · ${link(a.github, 'GitHub')}</p>`;
@@ -2788,6 +2796,13 @@
     fill();
     $('tfRepo').onchange = fill;
     $('kitBtn').onclick = (e) => downloadKit(e.currentTarget);
+    $('startOverBtn').onclick = () => {
+      if (!confirm('Clear your apps and your conversation in this browser? This cannot be undone.')) return;
+      track('reset', {});
+      Track.flush(true);
+      clearWork();
+      location.reload();
+    };
     $('tfCopy').onclick = async () => {
       try { await navigator.clipboard.writeText($('tfPrompt').value); $('tfCopy').textContent = 'Copied'; } catch (e) { $('tfPrompt').select(); }
     };
@@ -2862,6 +2877,15 @@
     // the full text sent with each request is not kept: it would fill the browser's storage
     const trace = S.trace.map((t) => Object.assign({}, t, { request: '', at: t.at.toISOString() }));
     localSet(storeKey(), JSON.stringify({ versions: S.versions, current: S.current, talk: S.talk, trace }));
+  }
+
+  // the apps, the conversation and the trace in this browser, for every seat; the seat code, the settings and the
+  // participant's own files stay
+  function clearWork() {
+    try {
+      Object.keys(localStorage).filter((k) => k.startsWith('ws:work:')).forEach((k) => localStorage.removeItem(k));
+    } catch (e) { /* private mode */ }
+    Object.assign(S, { versions: [], current: null, talk: [], trace: [] });
   }
 
   function restore() {

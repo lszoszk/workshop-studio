@@ -1472,3 +1472,26 @@ def test_the_venice_course_has_three_sessions(base_url, browser):
     started(page)
     assert page.locator("#sessionSwitch button").count() == 2
     ctx.close()
+
+
+def test_start_over_clears_the_work_and_keeps_the_settings(base_url, browser):
+    """About → Start over, and ?reset=1: the apps and the conversation in this browser go; the course, the
+    settings and the seat stay."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + "?course=venice&via=replay&planpace=1&country=Kenya")
+    started(page)
+    page.get_by_role("tab", name="Session 3").click()
+    send(page, DASHBOARD, "uhri", 1)
+    page.goto(base_url + "?via=replay&planpace=1&country=Kenya&reset=1")
+    started(page)
+    assert page.locator("#versions [data-v]").count() == 0 and "reset" not in page.url
+    assert page.locator("#sessionSwitch button").count() == 3                 # still the Venice course
+    send(page, DASHBOARD, "uhri", 1)
+    page.click("#takeHomeBtn")
+    page.once("dialog", lambda d: d.accept())
+    page.click("#startOverBtn")
+    page.wait_for_load_state()
+    started(page)
+    assert page.locator("#versions [data-v]").count() == 0
+    ctx.close()
