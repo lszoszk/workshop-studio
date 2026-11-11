@@ -565,6 +565,8 @@
       "venice": "V3",
       "minute": null,
       "dataset": "pdfs",
+      "model": "claude",
+      "model_note": "adding a drawn graph to a large app is a change GLM-5.3 left half done in a test (the tab without the graph)",
       "builds_on": "v3-wiki-pdfs",
       "title": "The wiki as a network",
       "blurb": "Documents and ideas as dots, the checked quotations as lines",
