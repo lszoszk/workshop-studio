@@ -3,7 +3,7 @@
   "title": "Garage Research",
   "event": "AI for Human Rights Professionals · Geneva Human Rights Hub · ITU, 4 December 2026",
   "default_country": "Kenya",
-  "default_model": "mistral",
+  "default_model": "glm-eu",
   "routes": [
     {
       "id": "vm",
@@ -39,7 +39,8 @@
       "host_note": "the developer's own service, in the EU",
       "openrouter": "mistralai/mistral-large-2512",
       "provider": "mistral/eu",
-      "price": "$0.55 in / $1.65 out per million tokens"
+      "price": "$0.55 in / $1.65 out per million tokens",
+      "vision": true
     },
     "claude": {
       "host_region": "the US",
@@ -53,7 +54,8 @@
       "provider": "amazon-bedrock/us-east-1",
       "price": "$2 in / $10 out per million tokens",
       "reasoning": "medium",
-      "zdr": false
+      "zdr": false,
+      "vision": true
     },
     "glm-eu": {
       "host_region": "the EU",
@@ -138,7 +140,7 @@
      "blurb": "Every recommendation and observation addressed to {country} in the Universal Human Rights Index, with its themes and SDGs"},
     {"key": "gc", "kind": "csv", "label": "General Comments, paragraph by paragraph",
      "blurb": "The General Comments and General Recommendations of the UN treaty bodies, already split into numbered paragraphs: the work a PDF converter makes hard",
-     "from": [{"label": "UN Human Rights Database API (JSON)", "url": "https://lszoszk.github.io/generalcomments/corpus.json"}, {"label": "Hugging Face", "url": "https://huggingface.co/datasets/lszoszk/treaty-bodies-general-comments"}]},
+     "from": [{"label": "UN Human Rights Database API (JSON)", "url": "https://lszoszk.github.io/generalcomments/corpus.json"}, {"label": "Hugging Face", "icon": "🤗", "url": "https://huggingface.co/datasets/lszoszk/treaty-bodies-general-comments"}]},
     {"key": "hrc", "kind": "csv", "label": "Human Rights Council votes",
      "blurb": "Every recorded vote since 2021, with how each member State voted"},
     {"key": "wiki", "kind": "wiki", "label": "Research wiki: neurotechnology and justice", "also": ["library"],
@@ -146,7 +148,9 @@
     {"key": "library", "kind": "lib", "label": "Library: neurotechnology and justice (10 PDFs)",
      "blurb": "The Secretary-General's 2026 report, a UNODC–INTERPOL paper, a civil-society submission, a national human rights institution's report, two journal articles, three General Comments, and a 2024 Advisory Committee report not yet in the wiki. Attached, your app gets every passage with its page"},
     {"key": "pdf_text", "kind": "pdf", "label": "CESCR General comment No. 27 (PDF)", "pdf": "files/E_C.12_GC_27.pdf",
-     "blurb": "A UN document as a PDF. Attached, your app gets its text page by page, as a PDF converter extracts it"}
+     "blurb": "A UN document as a PDF. Attached, your app gets its text page by page, as a PDF converter extracts it"},
+    {"key": "pdf_ten", "kind": "pdfs", "label": "Ten General Comments (PDF)",
+     "blurb": "Ten General Comments of six treaty bodies, 2007 to 2025, GC 27 among them. Attached, your app gets each one's text page by page, from the same converter, with what the UN Human Rights Database records for it"}
   ],
   "trap": {
     "ask": "Quote paragraph 97 of General comment No. 27 (2025) of the UN Committee on Economic, Social and Cultural Rights, and give the document symbol.",

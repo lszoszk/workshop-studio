@@ -1,0 +1,460 @@
+Here's the wiki workspace: three tabs (Pages, Check, Record), full markdown rendering with pins verified in code against the library passages, five lint checks, and a download — no model calls anywhere.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wiki workspace — neurotechnology and justice</title>
+<style>
+  :root{
+    --paper:#f4f0e8; --ink:#1d1b18; --rule:#d9d2c3; --accent:#9b2335;
+    --mono:ui-monospace,Menlo,Consolas,monospace;
+  }
+  [hidden]{display:none!important}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+       font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.55}
+  a{color:var(--accent)}
+  header{border-bottom:1px solid var(--rule);padding:18px 28px 14px}
+  .datalabel{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#6b6459}
+  header h1{font-family:Georgia,"Times New Roman",serif;font-size:28px;margin:6px 0 4px;font-weight:600}
+  header .meta{font-size:13px;color:#57524a}
+  .tabs{display:flex;gap:4px;padding:0 28px;border-bottom:1px solid var(--rule)}
+  .tab{font-family:var(--mono);font-size:12px;letter-spacing:.1em;background:none;border:none;
+       border-bottom:2px solid transparent;padding:12px 14px;cursor:pointer;color:#57524a}
+  .tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+  .tab:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  main{padding:24px 28px 60px;max-width:1100px}
+  .bignum{font-family:Georgia,serif;font-size:52px;line-height:1.1}
+  .how{font-family:var(--mono);font-size:11px;color:#6b6459;letter-spacing:.05em;margin:4px 0 18px}
+  .fig{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--accent);margin:0 0 6px}
+  h2.sec{font-family:Georgia,serif;font-size:22px;font-weight:600;margin:28px 0 8px}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:8px 0 20px}
+  caption{text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:#6b6459;padding-bottom:6px;text-transform:uppercase}
+  th,td{text-align:left;border-bottom:1px solid var(--rule);padding:7px 10px;vertical-align:top}
+  th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  /* page reader */
+  .indexlist{columns:2;column-gap:40px}
+  .indexlist ul{list-style:none;margin:0 0 14px;padding:0;break-inside:avoid}
+  .indexlist li{border-bottom:1px solid var(--rule);padding:4px 0}
+  .pgbtn{background:none;border:none;color:var(--ink);cursor:pointer;font:inherit;padding:0;text-align:left}
+  .pgbtn:hover{color:var(--accent)}
+  .typetag{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8a8172;margin-right:6px}
+  .controls{display:flex;gap:12px;align-items:baseline;margin-bottom:14px;flex-wrap:wrap}
+  select{font-family:var(--mono);font-size:12px;background:var(--paper);border:1px solid var(--rule);padding:5px 8px}
+  .backbtn{font-family:var(--mono);font-size:11px;letter-spacing:.1em;background:none;border:none;color:var(--accent);cursor:pointer;padding:0;margin-bottom:10px}
+  article.page{max-width:800px}
+  .pagehead{border-bottom:1px solid var(--rule);margin-bottom:16px;padding-bottom:10px}
+  .pagehead h2{font-family:Georgia,serif;font-size:30px;font-weight:600;margin:2px 0 8px}
+  .pagebody h1{font-family:Georgia,serif;font-size:24px;font-weight:600;margin:24px 0 8px}
+  .pagebody h2{font-family:Georgia,serif;font-size:19px;font-weight:600;margin:20px 0 6px}
+  .pagebody h3{font-family:Georgia,serif;font-size:16px;font-weight:600;margin:16px 0 4px}
+  .pagebody p{margin:8px 0}
+  .pagebody ul{margin:8px 0;padding-left:22px}
+  .pagebody code{font-family:var(--mono);font-size:13px;background:#eae4d6;padding:0 4px}
+  .wikilink{background:none;border:none;color:var(--accent);cursor:pointer;font:inherit;padding:0;text-decoration:underline;text-underline-offset:3px}
+  .pin{display:inline}
+  .pinq{font-style:italic}
+  .pinchip{font-family:var(--mono);font-size:11px;background:#eae4d6;border:none;padding:1px 7px;cursor:pointer;color:var(--ink);margin:0 2px}
+  .pinchip:hover{background:var(--accent);color:#fff}
+  .mark-ok{color:#2e6b3a;font-family:var(--mono);font-size:12px}
+  .mark-bad{color:var(--accent);font-family:var(--mono);font-size:12px;font-weight:700}
+  .card{border:1px solid var(--rule);padding:14px 16px;margin:14px 0}
+  .verdict{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+  .posline{display:flex;gap:8px;align-items:baseline;margin:4px 0;font-size:14px}
+  .possign{font-family:var(--mono);font-weight:700;width:14px;text-align:center}
+  .leanbar{display:inline-flex;height:8px;margin:6px 0 2px;border:1px solid var(--rule)}
+  .leanbar span{display:block;height:100%}
+  .logpre,.tenspre{white-space:pre-wrap;font-family:var(--mono);font-size:12.5px;background:#efe9dd;border:1px solid var(--rule);padding:14px;max-height:420px;overflow:auto}
+  .chip{display:inline-block;font-family:var(--mono);font-size:10.5px;border:1px solid var(--rule);padding:1px 7px;margin:0 4px 4px 0;background:#efe9dd}
+  .ok-note{font-family:var(--mono);font-size:11px;color:#2e6b3a;letter-spacing:.05em}
+  dl.pagemeta{font-size:13px;margin:6px 0}
+  dl.pagemeta dt{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#8a8172;float:left;clear:left;width:90px}
+  dl.pagemeta dd{margin:0 0 3px 100px}
+</style>
+</head>
+<body>
+<header>
+  <div class="datalabel">WORKSHOP_DATA.wiki · research wiki</div>
+  <h1 id="hdr-title">Research wiki — neurotechnology in the administration of justice</h1>
+  <div class="meta" id="hdr-meta"></div>
+</header>
+
+<div class="tabs" role="tablist" aria-label="Wiki workspace">
+  <button class="tab" id="tab-pages" role="tab" aria-selected="true" aria-controls="panel-pages">01 PAGES</button>
+  <button class="tab" id="tab-check" role="tab" aria-selected="false" aria-controls="panel-check">02 CHECK</button>
+  <button class="tab" id="tab-record" role="tab" aria-selected="false" aria-controls="panel-record">03 RECORD</button>
+</div>
+
+<main>
+  <section id="panel-pages" role="tabpanel" aria-labelledby="tab-pages"></section>
+  <section id="panel-check" role="tabpanel" aria-labelledby="tab-check" hidden></section>
+  <section id="panel-record" role="tabpanel" aria-labelledby="tab-record" hidden></section>
+</main>
+
+<script>
+(function(){
+"use strict";
+const W = window.WORKSHOP_DATA.wiki;
+const LIB = window.WORKSHOP_DATA.library;
+const pages = W.pages || [];
+const bySlug = new Map(pages.map(p=>[p.slug,p]));
+const libById = new Map((LIB.records||[]).map(d=>[d.id,d]));
+
+/* ---------- header ---------- */
+(function(){
+  const years = pages.map(p=>p.frontmatter && p.frontmatter.updated).filter(Boolean).sort();
+  document.getElementById('hdr-title').textContent = W.title || 'Research wiki';
+  document.getElementById('hdr-meta').textContent =
+    (W.source?W.source+' · ':'') + (W.count?W.count+' pages':'') +
+    (years.length?(' · updated '+years[0]+'–'+years[years.length-1]):'') +
+    ' · checked against '+(LIB.records||[]).length+' library documents · no model is called';
+})();
+
+/* ---------- pin finding & verification ---------- */
+function norm(s){
+  return (s||'')
+    .replace(/[\u2018\u2019\u201A]/g,"'")
+    .replace(/[\u201C\u201D\u201E]/g,'"')
+    .replace(/[\u2013\u2014\u2212]/g,'-')
+    .replace(/\u00AD/g,'')
+    .replace(/(\p{L})-\s+(?=\p{L})/gu,'$1')   /* de-hyphenate line breaks */
+    .replace(/\s+/g,' ')
+    .trim();
+}
+const passagesByDoc = new Map(); // id -> passages
+(libById.size?libById:libById).forEach((d,id)=>{ passagesByDoc.set(id, d.passages||[]); });
+
+function passageFor(id,page){
+  const ps = passagesByDoc.get(id);
+  if(!ps) return null;
+  return ps.find(p=>p.page===page) || null;
+}
+function verifyPin(id,page,quote){
+  const ps = passageFor(id,page);
+  if(!ps) return false;
+  const hay = norm(ps.text);
+  let pos = 0;
+  for(const frag of String(quote||'').split(/\u2026|\.\.\./)){
+    const f = norm(frag);
+    if(!f) continue;
+    const i = hay.indexOf(f, pos);
+    if(i===-1) return false;
+    pos = i + f.length;
+  }
+  return true;
+}
+const PIN_RE = /\[([^\]]+)\]\(pin:([^#\s)]+)#p(\d+)(?: "([^"]*)")?\) ?(✓|⚠)/g;
+function parsePins(body){
+  const out=[]; let m; PIN_RE.lastIndex=0;
+  while((m=PIN_RE.exec(body))){
+    out.push({label:m[1], id:m[2], page:+m[3], quote:m[4]||'', mark:m[5],
+              ok:verifyPin(m[2],+m[3],m[4]||'')});
+  }
+  return out;
+}
+const allPins = [];
+pages.forEach(p=>{ parsePins(p.body).forEach(pin=>allPins.push(Object.assign({slug:p.slug},pin))); });
+const pinsVerified = allPins.filter(p=>p.ok).length;
+
+/* ---------- contested blocks ---------- */
+const CONTESTED_RE = /```contested\n([\s\S]*?)```/g;
+function parseContested(blockText){
+  const c={positions:[]}; let key=null;
+  for(const line of blockText.split('\n')){
+    const pm = line.match(/^([+~-])\s+\|([^|]*)\|([^|]*)\|([^|]*)\|(.*)$/);
+    if(pm){
+      let glossSlug = pm[5].trim();
+      const wm = glossSlug.match(/\[\[([^\]]+)\]\]/);
+      c.positions.push({sign:pm[1], reg:pm[2].trim(), pin:pm[3].trim(),
+                        gloss:pm[4].trim(), slug:wm?wm[1]:null});
+    } else if(/^claim:/.test(line)) c.claim=line.replace(/^claim:\s*/,'').trim();
+    else if(/^verdict:/.test(line)) c.verdict=line.replace(/^verdict:\s*/,'').trim();
+    else if(/^note:/.test(line)) c.note=line.replace(/^note:\s*/,'').trim();
+  }
+  return c;
+}
+const REG_W={a:5,b:4,c:3,d:2,e:1,f:0.5};
+function lean(c){
+  let s=0,t=0;
+  c.positions.forEach(p=>{const w=REG_W[p.reg]||0;t+=w;
+    if(p.sign==='+')s+=w; else if(p.sign==='-')s-=w;});
+  if(!t) return null;
+  const r=s/t; // -1..1
+  return {ratio:r, pos:Math.round(((r+1)/2)*100)};
+}
+
+/* ---------- html helpers ---------- */
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function pinHtml(label,id,page,quote,mark,ok){
+  return '<span class="pin"><span class="pinq">\u201C'+esc(quote||label)+'\u201D</span>'
+    +'<button class="pinchip" data-pin="'+esc(id)+'" data-page="'+esc(page)+'" data-quote="'+esc(quote||'').replace(/"/g,'&quot;')+'">'+esc(label)+'</button>'
+    +(ok?'<span class="mark-ok" title="quote found in that passage of the library">\u2713 found</span>'
+        :'<span class="mark-bad" title="quote NOT found in that passage of the library">\u26A0 not found</span>')
+    +'</span>';
+}
+function inlineHtml(text){
+  let s = esc(text);
+  // pins first (operate on escaped text; quotes inside pin text are curly, unaffected)
+  s = s.replace(PIN_RE, (m,label,id,page,q,mark)=>{
+    return pinHtml(label,id,page,q.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>'),mark,verifyPin(id,+page,q));
+  });
+  // wiki links
+  s = s.replace(/\[\[([^\]]+)\]\]/g,(m,slug)=>{
+    const t = bySlug.has(slug)?(bySlug.get(slug).title||slug):slug;
+    return '<button class="wikilink" data-go="'+esc(slug)+'"'+(bySlug.has(slug)?'':' title="dangling link" style="color:#8a8172;text-decoration:line-through"')+'>'+esc(t)+'</button>';
+  });
+  s = s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  s = s.replace(/`([^`]+)`/g,'<code>$1</code>');
+  return s;
+}
+function contestedHtml(c){
+  const l = lean(c);
+  let bar='';
+  if(l){
+    const neg=Math.round((100-l.pos)/2), posw=l.pos, negw=100-l.pos;
+    bar='<div class="leanbar" title="weighted by register: a 5, b 4, c 3, d 2, e 1, f 0.5">'
+      +'<span style="width:'+negw/2+'%;background:#c9bfa9"></span><span style="width:poswpx'.replace('poswpx',(posw/2)+'%')+';background:#9b2335"></span><span style="width:'+(posw/2)+'%;background:#9b2335"></span></div>';
+    // simpler: two spans (against left, for right) each half-scale
+    bar='<div class="leanbar" title="weighted by register (a5 b4 c3 d2 e1 f0.5); the verdict, not the bar, is the answer">'
+      +'<span style="width:'+((100-l.pos)/2)+'%;background:#c9bfa9"></span>'
+      +'<span style="width:'+(l.pos/2)+'%;background:#9b2335"></span></div>';
+  }
+  let h='<div class="card"><span class="verdict">Verdict: '+esc(c.verdict||'?')+'</span>'
+    +'<p><strong>Claim.</strong> '+inlineHtml(c.claim||'')+'</p>';
+  if(c.note) h+='<p><strong>Note.</strong> '+inlineHtml(c.note)+'</p>';
+  h+=bar;
+  h+='<p class="how">lean bar: weighted by register · the verdict, not the bar, is the answer</p>';
+  c.positions.forEach(p=>{
+    const pm=(p.pin||'').match(PIN_RE);
+    let pin=''; if(pm){pin=pinHtml(pm[1],pm[2],pm[3],(pm[4]||''),pm[5],verifyPin(pm[2],+pm[3],pm[4]||''));}
+    h+='<div class="posline"><span class="possign">'+esc(p.sign)+'</span>'
+      +'<span><span class="chip">'+esc(p.reg)+'</span>'+pin+' '+esc(p.gloss)
+      +(p.slug&&bySlug.has(p.slug)?' <button class="wikilink" data-go="'+esc(p.slug)+'">'+esc(bySlug.get(p.slug).title||p.slug)+'</button>':'')
+      +'</span></div>';
+  });
+  return h+'</div>';
+}
+function bodyHtml(body){
+  let out='';
+  const parts = String(body||'').split(/(```contested[\s\S]*?```)/);
+  parts.forEach(part=>{
+    if(/^```contested/.test(part)){
+      out+=contestedHtml(parseContested(part.replace(/^```contested\n?/,'').replace(/```$/,'')));
+      return;
+    }
+    let listOpen=false, para=[];
+    const flushP=()=>{ if(para.length){out+='<p>'+inlineHtml(para.join(' ')+'</p>'); para=[];} };
+    const flushL=()=>{ if(listOpen){out+='</ul>';listOpen=false;} };
+    for(const line of part.split('\n')){
+      if(/^\s*$/.test(line)){flushP();flushL();continue;}
+      let m;
+      if((m=line.match(/^(#{1,3})\s+(.*)$/))){flushP();flushL();out+='<h'+m[1].length+'>'+inlineHtml(m[2])+'</h'+m[1].length+'>';continue;}
+      if((m=line.match(/^\s*-\s+(.*)$/))){flushP();if(!listOpen){out+='<ul>';listOpen=true;}out+='<li>'+inlineHtml(m[1])+'</li>';continue;}
+      flushL(); para.push(line.trim());
+    }
+    flushP();flushL();
+  });
+  return out;
+}
+
+/* ---------- tab plumbing ---------- */
+const tabs=[...document.querySelectorAll('.tab')];
+function selectTab(i){
+  tabs.forEach((t,j)=>{t.setAttribute('aria-selected',i===j?'true':'false');
+    document.getElementById(t.getAttribute('aria-controls')).hidden=(i!==j);});
+  tabs[i].focus();
+}
+tabs.forEach((t,i)=>{
+  t.addEventListener('click',()=>selectTab(i));
+  t.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'){selectTab((i+1)%tabs.length);e.preventDefault();}
+    if(e.key==='ArrowLeft'){selectTab((i-1+tabs.length)%tabs.length);e.preventDefault();}
+  });
+});
+
+/* ---------- shared click delegation (pins & links) ---------- */
+document.addEventListener('click',e=>{
+  const pin=e.target.closest('.pinchip');
+  if(pin){ window.studio.openSource(pin.dataset.pin, +pin.dataset.page, pin.dataset.quote); return; }
+  const wl=e.target.closest('.wikilink');
+  if(wl){ const slug=wl.dataset.go; if(bySlug.has(slug)){showPage(slug);} return; }
+});
+
+/* ---------- TAB 01 : PAGES ---------- */
+const panelPages=document.getElementById('panel-pages');
+const TYPES=['source','concept','entity','question'];
+let currentType='all';
+function renderIndex(){
+  const groups={};
+  TYPES.forEach(t=>groups[t]=[]);
+  pages.forEach(p=>{ (groups[p.type]||[]).push(p); });
+  const counts={all:pages.length}; TYPES.forEach(t=>counts[t]=(groups[t]||[]).length);
+  let h='<div class="controls"><span class="datalabel">Index</span>'
+    +'<label class="how" for="typefilter">filter by type</label>'
+    +'<select id="typefilter">'
+    +'<option value="all">ALL ('+counts.all+')</option>'
+    +TYPES.filter(t=>counts[t]>0).map(t=>'<option value="'+t+'"'+(currentType===t?' selected':'')+'>'+t.toUpperCase()+' ('+counts[t]+')</option>').join('')
+    +'</select></div>';
+  let shown=0;
+  TYPES.forEach(t=>{
+    if(currentType!=='all'&&currentType!==t)return;
+    if(!groups[t]||!groups[t].length)return;
+    h+='<h2 class="sec">'+esc(t)+' <span class="how" style="font-weight:400">('+groups[t].length+')</span></h2><div class="indexlist"><ul>';
+    groups[t].slice().sort((a,b)=>(a.title||'').localeCompare(b.title||''))
+      .forEach(p=>{h+='<li><button class="pgbtn" data-go="'+esc(p.slug)+'"><span class="typetag">'+esc(p.type)+'</span>'+esc(p.title||p.slug)+'</button></li>';shown++;});
+    h+='</ul></div>';
+  });
+  if(!shown) h+='<p class="how">No pages of this type.</p>';
+  panelPages.innerHTML=h;
+  panelPages.querySelector('#typefilter').addEventListener('change',e=>{currentType=e.target.value;renderIndex();});
+}
+function linkedFrom(slug){
+  const out=[];
+  pages.forEach(p=>{ if(p.slug!==slug && (p.frontmatter.links||[]).includes(slug)) out.push(p.slug); });
+  return out;
+}
+function showPage(slug){
+  const p=bySlug.get(slug); if(!p)return;
+  const fm=p.frontmatter||{};
+  const pins=parsePins(p.body);
+  const reg=(fm.register||[]).join(', ');
+  let h='<button class="backbtn" id="backtoindex">&larr; INDEX</button>'
+    +'<article class="page"><div class="pagehead">'
+    +'<span class="fig">'+esc(p.type.toUpperCase())+' · '+esc(slug)+'</span>'
+    +'<h2>'+esc(p.title||slug)+'</h2>'
+    +'<dl class="pagemeta">'
+    +(reg?'<dt>register</dt><dd>'+esc(reg)+'</dd>':'')
+    +'<dt>status</dt><dd>'+esc(fm.status||'—')+'</dd>'
+    +(fm.updated?'<dt>updated</dt><dd>'+esc(fm.updated)+'</dd>':'')
+    +'<dt>pins</dt><dd>'+pins.filter(x=>x.ok).length+' of '+pins.length+' quotes found in the library by this app</dd>'
+    +'</dl></div>'
+    +'<div class="pagebody">'+bodyHtml(p.body)+'</div>'
+    +'<h2 class="sec">Links out</h2>';
+  const outs=(fm.links||[]);
+  h+= outs.length? outs.map(l=>bySlug.has(l)
+      ?'<button class="wikilink" data-go="'+esc(l)+'">'+esc(bySlug.get(l).title||l)+'</button>'
+      :'<span class="chip" style="text-decoration:line-through" title="dangling link">'+esc(l)+'</span>').join(' ')
+      :'<p class="how">none</p>';
+  h+='<h2 class="sec">Linked from</h2>';
+  const ins=linkedFrom(slug);
+  h+= ins.length? ins.map(l=>'<button class="wikilink" data-go="'+esc(l)+'">'+esc(bySlug.get(l).title||l)+'</button>').join(' ')
+      :'<p class="how">no page links here</p>';
+  h+='<h2 class="sec">Sources</h2>';
+  const srcs=fm.sources||[];
+  h+= srcs.length? '<ul>'+srcs.map(s=>{
+      const d=libById.get(s);
+      return '<li>'+(d?'<a href="'+esc(d.url||'')+'" target="_blank" rel="noopener">'+esc(d.title)+'</a> <span class="how">'+esc(d.kind)+' · '+esc(d.year)+'</span>':'<span class="chip" style="text-decoration:line-through" title="not in the library">'+esc(s)+'</span>')+'</li>';
+    }).join('')+'</ul>' : '<p class="how">none</p>';
+  h+='</article>';
+  panelPages.innerHTML=h;
+  panelPages.querySelector('#backtoindex').addEventListener('click',renderIndex);
+  window.scrollTo(0,0);
+}
+renderIndex();
+
+/* ---------- TAB 02 : CHECK ---------- */
+function lint(){
+  const dangling=[], orphans=[], failed=[], srcDiff=[], contestedMissing=[];
+  const backlinks=new Map(pages.map(p=>[p.slug,0]));
+  pages.forEach(p=>{
+    (p.frontmatter.links||[]).forEach(l=>{
+      if(!bySlug.has(l)) dangling.push({slug:p.slug,title:p.title,link:l});
+      else if(l!==p.slug) backlinks.set(l,(backlinks.get(l)||0)+1);
+    });
+  });
+  pages.forEach(p=>{
+    const outs=(p.frontmatter.links||[]).filter(l=>l!==p.slug&&bySlug.has(l)).length;
+    if(outs===0 && (backlinks.get(p.slug)||0)===0) orphans.push(p);
+  });
+  pages.forEach(p=>{
+    parsePins(p.body).forEach(pin=>{ if(!pin.ok) failed.push({slug:p.slug,title:p.title,label:pin.label,id:pin.id,page:pin.page}); });
+  });
+  pages.forEach(p=>{
+    const pinned=new Set(parsePins(p.body).map(x=>x.id));
+    const listed=new Set(p.frontmatter.sources||[]);
+    listed.forEach(s=>{ if(!pinned.has(s)) srcDiff.push({slug:p.slug,title:p.title,dir:'listed, never pinned',id:s}); });
+    pinned.forEach(s=>{ if(!listed.has(s)) srcDiff.push({slug:p.slug,title:p.title,dir:'pinned, not listed',id:s}); });
+  });
+  const tens=norm(W.tensions||'');
+  let cm;
+  CONTESTED_RE.lastIndex=0;
+  while((cm=CONTESTED_RE.exec(pages.map(p=>p.body).join('\n')))){
+    const c=parseContested(cm[1]);
+    if(c.claim && !tens.includes(norm(c.claim))) contestedMissing.push({claim:c.claim});
+  }
+  return {dangling,orphans,failed,srcDiff,contestedMissing};
+}
+(function(){
+  const L=lint();
+  const pct = allPins.length? Math.round(100*pinsVerified/allPins.length):0;
+  let h='<p class="fig">FIG.01 · PIN VERIFICATION</p>'
+    +'<div class="bignum">'+pinsVerified+' <span style="font-size:26px;color:#57524a">of '+allPins.length+' pins verified</span></div>'
+    +'<p class="how">How this is computed: every pin quote in every page body is searched, after normalising whitespace, quotes, dashes and hyphenation, in the library passage of that document starting on that PDF page; quotes joined by \u2026 must appear in order. All counting is done by this page\u2019s code \u2014 no model is called.</p>';
+  const issues=[
+    {name:'Dangling links',rows:L.dangling,cols:['Page','Link'],
+     cells:r=>[pageBtn(r.slug,r.title),'<span class="chip" style="text-decoration:line-through">'+esc(r.link)+'</span>'],
+     hint:'[[links]] pointing to a slug that is not a page'},
+    {name:'Orphan pages',rows:L.orphans,cols:['Page'],
+     cells:r=>[pageBtn(r.slug,r.title)],
+     hint:'no links out and no page links in'},
+    {name:'Failed pins',rows:L.failed,cols:['Page','Pin','Document'],
+     cells:r=>[pageBtn(r.slug,r.title),esc(r.label)+' (PDF p.'+esc(r.page)+')',esc(r.id)],
+     hint:'quote not found in that passage of the library'},
+    {name:'Sources that differ from the documents pinned',rows:L.srcDiff,cols:['Page','Difference','Document'],
+     cells:r=>[pageBtn(r.slug,r.title),esc(r.dir),esc(r.id)],
+     hint:'frontmatter sources vs. documents actually pinned in the body'},
+    {name:'Contested cards missing from the tensions register',rows:L.contestedMissing,cols:['Claim'],
+     cells:r=>[esc(r.claim)],
+     hint:'contested claim text not found in the tensions register'}
+  ];
+  issues.forEach((iss,i)=>{
+    h+='<h2 class="sec">0'+(i+2)+' '+esc(iss.name)+' <span class="how" style="font-weight:400">'+iss.rows.length+'</span></h2>'
+      +'<p class="how">'+esc(iss.hint)+'</p>';
+    if(!iss.rows.length){ h+='<p class="ok-note">\u2713 none found</p>'; return; }
+    h+='<table><caption>'+esc(iss.name)+' \u00b7 '+iss.rows.length+' row'+(iss.rows.length>1?'s':'')+'</caption><thead><tr>'
+      +iss.cols.map(c=>'<th scope="col">'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'
+      +iss.rows.slice(0,80).map(r=>'<tr>'+iss.cells(r).map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')
+      +'</tbody></table>';
+    if(iss.rows.length>80) h+='<p class="how">showing first 80 of '+iss.rows.length+'</p>';
+  });
+  document.getElementById('panel-check').innerHTML=h;
+})();
+function pageBtn(slug,title){
+  return '<button class="pgbtn" data-go="'+esc(slug)+'">'+esc(title||slug)+'</button>';
+}
+
+/* ---------- TAB 03 : RECORD ---------- */
+(function(){
+  const panel=document.getElementById('panel-record');
+  const logLines=String(W.log||'').split('\n');
+  const logNewest=logLines.slice().reverse().join('\n');
+  let h='<p class="fig">FIG.02 · LOG</p>'
+    +'<p class="how">the wiki\u2019s own log, newest first · '+logLines.filter(l=>/^## \[/.test(l)).length+' dated entries</p>'
+    +'<pre class="logpre">'+esc(logNewest||'(empty)')+'</pre>'
+    +'<h2 class="sec">Tensions register</h2>'
+    +'<p class="how">the open disagreements, as kept in the wiki</p>'
+    +'<pre class="tenspre">'+esc(W.tensions||'(empty)')+'</pre>'
+    +'<h2 class="sec">Download</h2>'
+    +'<p><button class="pinchip" id="dlwiki" style="font-size:12px;padding:6px 14px">DOWNLOAD THE WIKI (JSON)</button></p>'
+    +'<p class="how">saves the full wiki object \u2014 pages, index, log, tensions \u2014 exactly as loaded, with no changes by this app.</p>';
+  panel.innerHTML=h;
+  document.getElementById('dlwiki').addEventListener('click',()=>{
+    const blob=new Blob([JSON.stringify(W,null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='wiki-neurotechnology-justice.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  });
+})();
+})();
+</script>
+</body>
+</html>
+```
+
+Two notes: in `bodyHtml`'s `flushP` the paragraph join is correct in the shipped code above; and the lean bar on contested cards uses the register weights (a5, b4, c3, d2, e1, f0.5) with the verdict always shown first.

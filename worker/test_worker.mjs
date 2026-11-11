@@ -43,7 +43,7 @@ const msg = { seat: "abcdef", model: "mistral", purpose: "build", messages: [{ r
 
 // health and seat
 let r = await call("/health");
-assert.deepEqual(r.json(), { ok: true, version: "2026-11-01", route: "worker", default_model: "mistral",
+assert.deepEqual(r.json(), { ok: true, version: "2026-11-01", route: "worker", default_model: "glm-eu",
   models: ["mistral", "claude", "glm-cn", "glm-eu", "fast"], accepting: true, balance_usd: 40, key_configured: true });
 assert.equal(r.headers.get("access-control-allow-origin"), "https://lszoszk.github.io");
 assert.equal((await call("/health", "GET", null, "http://localhost:8766")).headers.get("access-control-allow-origin"), "http://localhost:8766");
@@ -145,4 +145,14 @@ replies.push([402, { error: { code: 402, message: "Insufficient credits" } }]);
 r = await call("/chat", "POST", { ...msg, seat: "VWXYZ3", model: "claude" });
 assert.equal(r.status, 200);
 assert.deepEqual(sent.slice(before).map((q) => q.model), ["anthropic/claude-sonnet-5.5", "mistralai/mistral-large-2512"]);
+// a screenshot: as a data URL after the text; refused for a model that cannot read it
+const PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+const pic = [{ role: "user", content: "Why?", images: [{ media_type: "image/png", data: PNG }] }];
+assert.equal((await call("/chat", "POST", { ...msg, seat: "VWXYZ3", messages: pic })).status, 200);
+assert.deepEqual(sent.at(-1).messages.at(-1).content, [{ type: "text", text: "Why?" },
+  { type: "image_url", image_url: { url: "data:image/png;base64," + PNG } }]);
+r = await call("/chat", "POST", { ...msg, seat: "VWXYZ3", model: "glm-cn", messages: pic });
+assert.equal(r.status, 400); assert.equal(r.json().code, "no_vision");
+r = await call("/chat", "POST", { ...msg, seat: "VWXYZ3", messages: [{ ...pic[0], images: [{ media_type: "image/png", data: "no!" }] }] });
+assert.equal(r.json().code, "bad_images");
 console.log("worker: all checks passed");

@@ -1,0 +1,1289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>Paragraphs from PDF text</title>
+<style>
+:root {
+  --paper: #f4f0e8;
+  --ink: #1d1b18;
+  --rule: #d9d2c3;
+  --red: #9b2335;
+  --green: #2e6b49;
+  --mono: ui-monospace, Menlo, Consolas, monospace;
+}
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  background-color: var(--paper);
+  accent-color: var(--red);
+}
+[hidden] { display: none !important; }
+header, .rail, main, footer {
+  border-color: var(--rule);
+  border-style: solid;
+}
+header {
+  border-width: 0 0 1px 0;
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--paper);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+header .label {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  opacity: 0.7;
+}
+header h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.2rem;
+  font-weight: normal;
+}
+header .meta {
+  font-size: 0.8rem;
+  text-align: right;
+}
+header .meta a {
+  color: var(--ink);
+  text-decoration: none;
+}
+header .meta a:hover { text-decoration: underline; }
+header .status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: 1rem;
+}
+header .status::before {
+  content: "";
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+}
+header .status.pass::before { background-color: var(--green); }
+header .status.fail::before { background-color: var(--red); }
+.rail {
+  border-width: 0 1px 0 0;
+  width: 22rem;
+  padding: 1rem;
+  background-color: var(--paper);
+  position: sticky;
+  top: 3.2rem;
+  height: calc(100vh - 3.2rem);
+  overflow-y: auto;
+}
+.rail h2 {
+  margin: 0 0 0.5rem 0;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.7;
+}
+.rail .card {
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  padding: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.rail .card h3 {
+  margin: 0 0 0.25rem 0;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  opacity: 0.7;
+}
+.rail .card p {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+.rail .card p + p { margin-top: 0.5rem; }
+.rail .card p .bar {
+  display: inline-block;
+  width: 100%;
+  height: 0.2rem;
+  background-color: var(--red);
+  margin-top: 0.2rem;
+}
+.rail .card p.short .bar { background-color: var(--red); }
+.rail .card p.ok .bar { background-color: var(--green); }
+.rail .card p .count {
+  font-size: 0.6rem;
+  vertical-align: super;
+  opacity: 0.7;
+}
+.rail .card .flagged {
+  color: var(--red);
+}
+.rail .checks {
+  margin-top: 1.5rem;
+}
+.rail .checks h3 {
+  margin: 0 0 0.5rem 0;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.7;
+}
+.rail .checks .count {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+  color: var(--red);
+}
+.rail .checks .count.pass { color: var(--green); }
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--rule);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tabs li {
+  margin: 0;
+  padding: 0;
+}
+.tabs button {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: none;
+  background: none;
+  padding: 0.75rem 1rem;
+  margin: 0;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--ink);
+  opacity: 0.7;
+}
+.tabs button[aria-selected="true"] {
+  opacity: 1;
+  border-bottom-color: var(--red);
+  font-weight: bold;
+}
+.tabs button:focus {
+  outline: 2px solid var(--red);
+  outline-offset: -2px;
+}
+main {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+.tabpanel { padding-top: 1rem; }
+.tabpanel[hidden] { display: none; }
+h2 {
+  margin: 0 0 1rem 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+  font-weight: normal;
+}
+h3 {
+  margin: 1.5rem 0 0.75rem 0;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.7;
+}
+h3 button {
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+h3 button::after {
+  content: "▼";
+  font-size: 0.6rem;
+  transition: transform 0.2s;
+}
+h3 button[aria-expanded="true"]::after { transform: rotate(-180deg); }
+h3 button:focus { outline: 2px solid var(--red); }
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+.tile {
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  padding: 1rem;
+}
+.tile h4 {
+  margin: 0 0 0.5rem 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.5rem;
+  font-weight: normal;
+  line-height: 1.1;
+}
+.tile .subtitle {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  opacity: 0.7;
+}
+.tile .mismatch {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+.tile .mismatch ul {
+  margin: 0.25rem 0 0 0;
+  padding-left: 1rem;
+}
+.tile .flagged { color: var(--red); }
+.downloads {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.downloads button {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid var(--rule);
+  background: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  color: var(--ink);
+}
+.downloads button:focus { outline: 2px solid var(--red); }
+.downloads button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+table caption {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.1rem;
+  text-align: left;
+  margin-bottom: 0.5rem;
+}
+table .fig {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  opacity: 0.7;
+}
+th, td {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+}
+th { font-weight: bold; }
+th[scope="col"] { font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.05em; }
+td { vertical-align: top; }
+td.num { text-align: right; font-family: Georgia, "Times New Roman", serif; }
+tr button {
+  font-family: inherit;
+  font-size: inherit;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+tr button::after {
+  content: "▶";
+  font-size: 0.6rem;
+  transition: transform 0.2s;
+}
+tr button[aria-expanded="true"]::after { transform: rotate(90deg); }
+tr button:focus { outline: 2px solid var(--red); }
+tr[aria-expanded="true"] { background-color: color-mix(in srgb, var(--red) 5%, transparent); }
+tr[aria-expanded="true"] td { border-bottom: none; }
+tr[aria-expanded="true"] + tr td {
+  border-top: none;
+  padding-top: 0;
+}
+tr[aria-expanded="true"] + tr td[colspan] {
+  padding: 0 0.5rem 1rem 0.5rem;
+}
+.paragraph {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin: 0;
+}
+.paragraph .suspect {
+  background-color: color-mix(in srgb, var(--red) 10%, transparent);
+  padding: 0 0.1rem;
+  border-radius: 0.1rem;
+}
+.paragraph .page-break::before {
+  content: "↵";
+  color: var(--ink);
+  opacity: 0.5;
+  margin-right: 0.2rem;
+}
+.paragraph-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+.paragraph-toggle button {
+  border: 1px solid var(--rule);
+  background: none;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  border-radius: 0.2rem;
+  color: var(--ink);
+}
+.paragraph-toggle button:focus { outline: 2px solid var(--red); }
+.paragraph-toggle button.active {
+  background-color: var(--ink);
+  color: var(--paper);
+}
+.citation {
+  margin-top: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+.citation button {
+  font-family: inherit;
+  font-size: inherit;
+  border: 1px solid var(--rule);
+  background: none;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  border-radius: 0.2rem;
+  color: var(--ink);
+}
+.citation button:focus { outline: 2px solid var(--red); }
+.citation .copied {
+  margin-left: 0.5rem;
+  color: var(--green);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.citation .copied.show { opacity: 1; }
+.checks {
+  border-top: 1px solid var(--rule);
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+.checks ul {
+  margin: 0.5rem 0 0 0;
+  padding-left: 1rem;
+}
+.checks li {
+  margin-bottom: 0.25rem;
+}
+.checks li.pass { color: var(--green); }
+.checks li.fail { color: var(--red); }
+.checks li a {
+  color: inherit;
+  text-decoration: none;
+}
+.checks li a:hover { text-decoration: underline; }
+.flagged-table {
+  margin-top: 1rem;
+}
+.flagged-table th, .flagged-table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+.flagged-table th { font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.05em; }
+.flagged-table td { vertical-align: top; }
+.flagged-table td.why { font-size: 0.9rem; }
+footer {
+  border-width: 1px 0 0 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+@media (max-width: 700px) {
+  .rail { display: none; }
+  .tiles { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="label">UN DOCUMENT · PDF TEXT</div>
+    <h1 id="title"></h1>
+  </div>
+  <div class="meta">
+    <a id="doc-url" target="_blank">symbol</a>
+    <span id="meta"></span>
+    <span class="status" id="status"><span id="status-count"></span></span>
+  </div>
+</header>
+
+<div style="display: flex;">
+  <aside class="rail">
+    <h2>DOCUMENT</h2>
+    <div class="card">
+      <h3>Symbol</h3>
+      <p id="symbol-rail"></p>
+      <h3>Short title</h3>
+      <p id="short-title"></p>
+    </div>
+    <div class="card">
+      <h3>Paragraphs found</h3>
+      <p id="paragraphs-found" class="ok"><span id="paragraphs-found-count"></span><span class="bar"></span><span class="count" id="paragraphs-expected-count"></span></p>
+      <h3>Paragraphs flagged</h3>
+      <p id="paragraphs-flagged" class="flagged"><span id="paragraphs-flagged-count"></span></p>
+    </div>
+    <div class="checks">
+      <h3>Checks</h3>
+      <p class="count" id="checks-count"><span id="checks-pass"></span> of <span id="checks-total"></span> pass</p>
+    </div>
+  </aside>
+
+  <main>
+    <ul class="tabs" role="tablist" aria-label="Tabs">
+      <li><button id="tab-result" role="tab" aria-selected="true" aria-controls="panel-result">01 RESULT</button></li>
+      <li><button id="tab-paragraphs" role="tab" aria-selected="false" aria-controls="panel-paragraphs">02 PARAGRAPHS</button></li>
+    </ul>
+
+    <div id="panel-result" class="tabpanel" role="tabpanel" aria-labelledby="tab-result">
+      <div class="tiles">
+        <div class="tile">
+          <h4 id="paragraphs-found-tile"></h4>
+          <div class="subtitle">Paragraphs found</div>
+          <div class="mismatch" id="paragraphs-mismatch"></div>
+        </div>
+        <div class="tile">
+          <h4 id="first-words-tile"></h4>
+          <div class="subtitle">First words match</div>
+          <div class="mismatch" id="first-words-mismatch"></div>
+        </div>
+        <div class="tile">
+          <h4 id="paragraphs-flagged-tile"></h4>
+          <div class="subtitle">Paragraphs flagged</div>
+          <div class="mismatch" id="paragraphs-flagged-mismatch"></div>
+        </div>
+        <div class="tile">
+          <h4>Not separated</h4>
+          <div class="subtitle">Footnotes</div>
+          <div class="mismatch" id="footnotes-mismatch"></div>
+        </div>
+      </div>
+
+      <div class="downloads">
+        <button id="download-json" disabled>Download JSON</button>
+        <button id="download-md" disabled>Download Markdown</button>
+      </div>
+
+      <h3>
+        <button aria-expanded="false" aria-controls="checks-section">Every check (<span id="checks-section-count"></span>)</button>
+      </h3>
+      <div id="checks-section" hidden>
+        <div class="checks" id="checks-list"></div>
+      </div>
+
+      <h3>
+        <button aria-expanded="false" aria-controls="flagged-section">Flagged paragraphs (<span id="flagged-section-count"></span>)</button>
+      </h3>
+      <div id="flagged-section" hidden>
+        <p>This version does not separate footnotes from paragraphs. It shows where footnote text may sit, so you know which paragraphs to check against the PDF.</p>
+        <table class="flagged-table">
+          <thead>
+            <tr>
+              <th scope="col">Paragraph</th>
+              <th scope="col">Page</th>
+              <th scope="col">Suspect lines</th>
+              <th scope="col">Why</th>
+            </tr>
+          </thead>
+          <tbody id="flagged-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="panel-paragraphs" class="tabpanel" role="tabpanel" aria-labelledby="tab-paragraphs" hidden>
+      <h3>
+        <button aria-expanded="false" aria-controls="headings-section">Headings found: <span id="headings-count"></span></button>
+      </h3>
+      <div id="headings-section" hidden>
+        <ul id="headings-list"></ul>
+      </div>
+      <table>
+        <caption id="paragraphs-caption"><span class="fig">TAB.02</span></caption>
+        <thead>
+          <tr>
+            <th scope="col">No.</th>
+            <th scope="col">Section</th>
+            <th scope="col">Page</th>
+            <th scope="col">First line</th>
+            <th scope="col">Check</th>
+          </tr>
+        </thead>
+        <tbody id="paragraphs-table-body"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<footer>
+  <div id="source"></div>
+  <div>Done by this page's code; no model was called and nothing left the browser.</div>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const data = window.WORKSHOP_DATA.pdf_text;
+  const doc = {
+    title: data.title,
+    symbol: data.symbol,
+    doc_url: data.doc_url,
+    source: data.source,
+    pages: data.records,
+    reference: data.reference
+  };
+
+  // Header
+  document.getElementById('title').textContent = doc.title;
+  document.getElementById('doc-url').textContent = doc.symbol;
+  document.getElementById('doc-url').href = doc.doc_url;
+  document.getElementById('meta').textContent = `adopted ${doc.reference.adopted}, ${doc.pages.length} pages`;
+  document.getElementById('symbol-rail').textContent = doc.symbol;
+  document.getElementById('short-title').textContent = doc.title.split(': ')[1] || doc.title;
+  document.getElementById('source').textContent = doc.source;
+
+  // Pipeline
+  const result = runPipeline(doc);
+  const { paragraphs, checks, headings } = result;
+
+  // Left rail
+  document.getElementById('paragraphs-found-count').textContent = paragraphs.length;
+  document.getElementById('paragraphs-expected-count').textContent = doc.reference.paragraphs;
+  document.getElementById('paragraphs-found').className = paragraphs.length === doc.reference.paragraphs ? 'ok' : 'short';
+
+  const flaggedCount = paragraphs.filter(p => p.flagged).length;
+  document.getElementById('paragraphs-flagged-count').textContent = flaggedCount;
+  document.getElementById('paragraphs-flagged').classList.toggle('flagged', flaggedCount > 0);
+
+  const checksPass = checks.filter(c => c.pass).length;
+  document.getElementById('checks-pass').textContent = checksPass;
+  document.getElementById('checks-total').textContent = checks.length;
+  document.getElementById('status-count').textContent = `${checksPass} of ${checks.length} checks pass`;
+  document.getElementById('status').className = checksPass === checks.length ? 'status pass' : 'status fail';
+
+  // Tiles
+  document.getElementById('paragraphs-found-tile').textContent = paragraphs.length;
+  const mismatchPara = document.getElementById('paragraphs-mismatch');
+  if (paragraphs.length !== doc.reference.paragraphs) {
+    mismatchPara.innerHTML = `Expected ${doc.reference.paragraphs}, found ${paragraphs.length}.`;
+  } else {
+    mismatchPara.textContent = '';
+  }
+
+  const firstWordsMatch = paragraphs.filter(p => p.first_words_match).length;
+  document.getElementById('first-words-tile').textContent = `${firstWordsMatch} of ${doc.reference.paragraphs}`;
+  const mismatchFirst = document.getElementById('first-words-mismatch');
+  if (firstWordsMatch < doc.reference.paragraphs) {
+    const mismatches = paragraphs.filter(p => !p.first_words_match).slice(0, 10);
+    let html = '<ul>';
+    mismatches.forEach(p => {
+      html += `<li>para. ${p.paragraph}: found <em>${p.first_words_found}</em> / reference <em>${p.first_words_reference}</em></li>`;
+    });
+    if (mismatches.length < paragraphs.filter(p => !p.first_words_match).length) {
+      html += `<li>and ${paragraphs.filter(p => !p.first_words_match).length - mismatches.length} more</li>`;
+    }
+    html += '</ul>';
+    mismatchFirst.innerHTML = html;
+  } else {
+    mismatchFirst.textContent = '';
+  }
+
+  document.getElementById('paragraphs-flagged-tile').textContent = flaggedCount;
+  const mismatchFlagged = document.getElementById('paragraphs-flagged-mismatch');
+  if (flaggedCount > 0) {
+    const pages = new Set(paragraphs.filter(p => p.flagged).map(p => p.page_start)).size;
+    mismatchFlagged.textContent = `${flaggedCount} paragraphs on ${pages} pages, to check against the PDF.`;
+  } else {
+    mismatchFlagged.textContent = '';
+  }
+
+  document.getElementById('footnotes-mismatch').textContent = `The document has ${doc.reference.footnotes}; this version leaves them in place and flags them.`;
+
+  // Downloads
+  document.getElementById('download-json').disabled = paragraphs.length === 0;
+  document.getElementById('download-md').disabled = paragraphs.length === 0;
+  document.getElementById('download-json').addEventListener('click', () => downloadJSON(paragraphs, doc));
+  document.getElementById('download-md').addEventListener('click', () => downloadMarkdown(paragraphs, doc, headings));
+
+  // Checks
+  const checksList = document.getElementById('checks-list');
+  checks.forEach(check => {
+    const li = document.createElement('li');
+    li.className = check.pass ? 'pass' : 'fail';
+    li.textContent = `${check.label}: `;
+    if (check.pass) {
+      li.textContent += 'pass';
+    } else {
+      const a = document.createElement('a');
+      a.href = `#para-${check.link}`;
+      a.textContent = 'check failed';
+      li.appendChild(a);
+    }
+    checksList.appendChild(li);
+  });
+  document.getElementById('checks-section-count').textContent = checks.length;
+
+  // Flagged paragraphs
+  const flaggedTable = document.getElementById('flagged-table-body');
+  paragraphs.filter(p => p.flagged).forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><a href="#para-${p.paragraph}">${p.paragraph}</a></td>
+      <td>${p.page_start}${p.page_end !== p.page_start ? `–${p.page_end}` : ''}</td>
+      <td>${p.suspect_lines.join(', ')}</td>
+      <td class="why">${p.flagged_reason}</td>
+    `;
+    flaggedTable.appendChild(tr);
+  });
+  document.getElementById('flagged-section-count').textContent = flaggedCount;
+
+  // Headings
+  const headingsList = document.getElementById('headings-list');
+  headings.forEach(h => {
+    const li = document.createElement('li');
+    li.textContent = h.text;
+    headingsList.appendChild(li);
+  });
+  document.getElementById('headings-count').textContent = headings.length;
+
+  // Paragraphs table
+  const tableBody = document.getElementById('paragraphs-table-body');
+  paragraphs.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="num">${p.paragraph}</td>
+      <td>${p.section}</td>
+      <td>${p.page_start}${p.page_end !== p.page_start ? `–${p.page_end}` : ''}</td>
+      <td>${p.text.substring(0, 120).replace(/\s+/g, ' ')}${p.text.length > 120 ? '…' : ''}</td>
+      <td>${p.flagged ? '<span style="color: var(--red)">may contain footnote text</span>' : p.first_words_match ? 'OK' : '<span style="color: var(--red)">first words differ</span>'}</td>
+    `;
+    const button = document.createElement('button');
+    button.setAttribute('aria-expanded', 'false');
+    button.setAttribute('aria-controls', `para-${p.paragraph}-details`);
+    button.addEventListener('click', () => toggleRow(tr, p));
+    tr.prepend(button);
+    tableBody.appendChild(tr);
+
+    const detailTr = document.createElement('tr');
+    detailTr.id = `para-${p.paragraph}-details`;
+    detailTr.hidden = true;
+    detailTr.innerHTML = `
+      <td colspan="5">
+        <div class="paragraph" id="para-${p.paragraph}-text"></div>
+        <div class="paragraph-toggle">
+          <button class="active">Clean text</button>
+          <button>Show the PDF's lines</button>
+        </div>
+        <div class="citation">
+          <span>Citation: <strong>${p.citation}</strong></span>
+          <button>Copy citation</button>
+          <span class="copied">Copied</span>
+        </div>
+      </td>
+    `;
+    tableBody.appendChild(detailTr);
+  });
+  document.getElementById('paragraphs-caption').textContent = `${paragraphs.length} paragraphs found, ${doc.reference.paragraphs} expected.`;
+
+  // Tabs
+  document.getElementById('tab-result').addEventListener('click', () => switchTab('result'));
+  document.getElementById('tab-paragraphs').addEventListener('click', () => switchTab('paragraphs'));
+
+  // Expandable headings
+  document.querySelectorAll('h3 button').forEach(button => {
+    button.addEventListener('click', () => {
+      const expanded = button.getAttribute('aria-expanded') === 'true';
+      button.setAttribute('aria-expanded', !expanded);
+      document.getElementById(button.getAttribute('aria-controls')).hidden = expanded;
+    });
+  });
+});
+
+function switchTab(tab) {
+  document.getElementById('tab-result').setAttribute('aria-selected', tab === 'result');
+  document.getElementById('tab-paragraphs').setAttribute('aria-selected', tab === 'paragraphs');
+  document.getElementById('panel-result').hidden = tab !== 'result';
+  document.getElementById('panel-paragraphs').hidden = tab !== 'paragraphs';
+}
+
+function toggleRow(tr, paragraph) {
+  const expanded = tr.getAttribute('aria-expanded') === 'true';
+  tr.setAttribute('aria-expanded', !expanded);
+  const detailTr = document.getElementById(`para-${paragraph.paragraph}-details`);
+  detailTr.hidden = expanded;
+
+  if (!expanded) {
+    const textEl = document.getElementById(`para-${paragraph.paragraph}-text`);
+    textEl.innerHTML = paragraph.text.split('\n').map(line => {
+      if (paragraph.suspect_lines.includes(line)) {
+        return `<span class="suspect">${line}</span>`;
+      }
+      return line;
+    }).join('\n');
+
+    const toggleButtons = detailTr.querySelectorAll('.paragraph-toggle button');
+    toggleButtons[0].addEventListener('click', () => {
+      toggleButtons[0].classList.add('active');
+      toggleButtons[1].classList.remove('active');
+      textEl.innerHTML = paragraph.text.split('\n').map(line => {
+        if (paragraph.suspect_lines.includes(line)) {
+          return `<span class="suspect">${line}</span>`;
+        }
+        return line;
+      }).join('\n');
+    });
+    toggleButtons[1].addEventListener('click', () => {
+      toggleButtons[0].classList.remove('active');
+      toggleButtons[1].classList.add('active');
+      textEl.innerHTML = paragraph.text_raw.split('\n').map((line, i) => {
+        if (i > 0 && paragraph.text_raw_pages[i] !== paragraph.text_raw_pages[i-1]) {
+          return `<span class="page-break"></span>${line}`;
+        }
+        if (paragraph.suspect_lines.includes(line)) {
+          return `<span class="suspect">${line}</span>`;
+        }
+        return line;
+      }).join('\n');
+    });
+
+    const copyButton = detailTr.querySelector('.citation button');
+    const copied = detailTr.querySelector('.copied');
+    copyButton.addEventListener('click', () => {
+      navigator.clipboard.writeText(paragraph.citation);
+      copied.classList.add('show');
+      setTimeout(() => copied.classList.remove('show'), 2000);
+    });
+  }
+}
+
+function runPipeline(doc) {
+  const checks = [];
+  const paragraphs = [];
+  const headings = [];
+  let currentPart = '';
+  let currentSection = '';
+  let currentHeadingLines = [];
+  let currentParagraph = null;
+  let currentParagraphLines = [];
+  let currentParagraphPages = [];
+  let suspectLines = [];
+  let suspectPages = new Set();
+  let suspectParagraphs = new Set();
+  let numbering = [];
+  let numberingGaps = [];
+  let numberingDuplicates = [];
+  let firstWordsMismatches = [];
+  let headers = [];
+  let footers = [];
+  let pageNumbers = [];
+  let bareNumbersRemoved = [];
+  let unclassifiedLines = [];
+  let totalLines = 0;
+  let totalNonEmptyLines = 0;
+  let totalCoverLines = 0;
+  let totalHeadingLines = 0;
+  let totalParagraphLines = 0;
+  let totalFooterLines = 0;
+  let totalFootnoteLines = 0;
+  let hyphenatedLines = 0;
+
+  // Header and footer rules
+  doc.pages.forEach((page, i) => {
+    const lines = page.text.split('\n');
+    totalLines += lines.length;
+    const nonEmptyLines = lines.filter(line => line.trim() !== '');
+    totalNonEmptyLines += nonEmptyLines.length;
+
+    // Header: first non-empty line
+    const firstLine = nonEmptyLines[0];
+    if (firstLine === doc.symbol) {
+      headers.push({ page: i+1, line: firstLine, pass: true });
+    } else {
+      headers.push({ page: i+1, line: firstLine, pass: false });
+    }
+
+    // Footer: from the end
+    let footerLines = [];
+    let j = nonEmptyLines.length - 1;
+    while (j >= 0) {
+      const line = nonEmptyLines[j];
+      if (/^GE\.\d{2}-\d{5}/.test(line) || /^\d{6} \d{6}$/.test(line) || /^\d{1,3}$/.test(line)) {
+        footerLines.unshift(line);
+        if (/^\d{1,3}$/.test(line) && parseInt(line) === i+1) {
+          pageNumbers.push({ page: i+1, line: line });
+        } else if (/^\d{1,3}$/.test(line)) {
+          bareNumbersRemoved.push({ page: i+1, line: line });
+        }
+        j--;
+      } else {
+        break;
+      }
+    }
+    footers.push({ page: i+1, footerLines });
+    totalFooterLines += footerLines.length;
+
+    // Body: everything else
+    const bodyLines = nonEmptyLines.slice(1, j+1);
+    const bodyPages = bodyLines.map(() => i+1);
+
+    // Classify body lines
+    let inFootnote = false;
+    bodyLines.forEach((line, k) => {
+      totalNonEmptyLines++; // counted again for the body
+      if (/^\d{1,3}\.$/.test(line)) {
+        // Labelled heading (I., A., etc.)
+        inFootnote = false;
+        currentHeadingLines = [line];
+        totalHeadingLines++;
+      } else if (/^[IVX]+$/.test(line) || /^[A-Z]$/.test(line)) {
+        // Labelled heading on its own line
+        inFootnote = false;
+        currentHeadingLines = [line + '.'];
+        totalHeadingLines++;
+      } else if (currentHeadingLines.length > 0) {
+        // Continuation of a labelled heading
+        if (line.trim() === '') {
+          // Blank line after a labelled heading: drop it
+        } else if (/^[a-z(]/.test(line)) {
+          // Lowercase or parenthesis: part of the heading
+          currentHeadingLines.push(line);
+          totalHeadingLines++;
+        } else {
+          // Uppercase: end of heading
+          const headingText = currentHeadingLines.join(' ');
+          headings.push({
+            part: currentHeadingLines[0].match(/^([IVX]+)\.$/) ? currentHeadingLines[0] : currentPart,
+            section: currentHeadingLines[0].match(/^[A-Z]\.$/) ? currentHeadingLines[0] : '',
+            text: headingText,
+            page: i+1
+          });
+          if (currentHeadingLines[0].match(/^([IVX]+)\.$/)) {
+            currentPart = currentHeadingLines[0];
+          }
+          if (currentHeadingLines[0].match(/^[A-Z]\.$/)) {
+            currentSection = headingText;
+          }
+          currentHeadingLines = [];
+        }
+      } else if (/^\d{1,3}\. /.test(line)) {
+        // Paragraph start on the same line
+        inFootnote = false;
+        const num = parseInt(line.match(/^(\d{1,3})\./)[1]);
+        numbering.push(num);
+        if (currentParagraph) {
+          // Save the previous paragraph
+          saveParagraph(currentParagraph, currentParagraphLines, currentParagraphPages, suspectLines, suspectPages, suspectParagraphs, paragraphs, doc);
+        }
+        currentParagraph = { paragraph: num, part: currentPart, section: currentSection };
+        currentParagraphLines = [line];
+        currentParagraphPages = [i+1];
+        suspectLines = [];
+      } else if (/^\d{1,3}\.$/.test(line)) {
+        // Paragraph start on its own line
+        inFootnote = false;
+        const num = parseInt(line.match(/^(\d{1,3})\.$/)[1]);
+        numbering.push(num);
+        if (currentParagraph) {
+          saveParagraph(currentParagraph, currentParagraphLines, currentParagraphPages, suspectLines, suspectPages, suspectParagraphs, paragraphs, doc);
+        }
+        currentParagraph = { paragraph: num, part: currentPart, section: currentSection };
+        currentParagraphLines = [];
+        currentParagraphPages = [i+1];
+        suspectLines = [];
+      } else if (currentParagraph) {
+        // Paragraph line
+        if (line.trim() === '') {
+          // Blank line: drop it
+        } else {
+          currentParagraphLines.push(line);
+          currentParagraphPages.push(i+1);
+          totalParagraphLines++;
+
+          // Suspect line?
+          if (/^\d{1,3}$/.test(line)) {
+            suspectLines.push(line);
+            suspectPages.add(i+1);
+            suspectParagraphs.add(currentParagraph.paragraph);
+          } else if (/^\d{1,3} /.test(line) && /^[A-Z"UN]/.test(line.substring(line.indexOf(' ') + 1))) {
+            suspectLines.push(line);
+            suspectPages.add(i+1);
+            suspectParagraphs.add(currentParagraph.paragraph);
+          } else if (/^\* /.test(line)) {
+            suspectLines.push(line);
+            suspectPages.add(i+1);
+            suspectParagraphs.add(currentParagraph.paragraph);
+          }
+        }
+      } else if (/^\d{1,3}$/.test(line)) {
+        // Footnote start
+        inFootnote = true;
+        totalFootnoteLines++;
+      } else if (inFootnote) {
+        // Footnote line
+        totalFootnoteLines++;
+      } else if (line.trim() !== '') {
+        // Unlabelled heading?
+        const nextLine = k < bodyLines.length - 1 ? bodyLines[k+1] : null;
+        if (nextLine && (/^\d{1,3}\.$/.test(nextLine) || /^\d{1,3}\. /.test(nextLine))) {
+          // Line before a paragraph start: unlabelled heading
+          if (line.length <= 90 && /^[A-Z]/.test(line) && !/[.;:,]\s*$/.test(line)) {
+            const prevLine = k > 0 ? bodyLines[k-1] : null;
+            if (prevLine && prevLine.length <= 90 && /^[A-Z]/.test(prevLine) && !/[.;:,]\s*$/.test(prevLine)) {
+              // Two lines: one heading
+              const headingText = prevLine + ' ' + line;
+              headings.push({
+                part: currentPart,
+                section: '',
+                text: headingText,
+                page: i+1
+              });
+              currentHeadingLines = [];
+              totalHeadingLines += 2;
+            } else {
+              // One line
+              headings.push({
+                part: currentPart,
+                section: '',
+                text: line,
+                page: i+1
+              });
+              totalHeadingLines++;
+            }
+          }
+        } else {
+          // Cover line
+          totalCoverLines++;
+        }
+      }
+    });
+
+    // End of page: check for hyphenated lines
+    for (let k = 0; k < bodyLines.length - 1; k++) {
+      if (bodyLines[k].endsWith('-') && !bodyLines[k].endsWith(' -')) {
+        hyphenatedLines++;
+      }
+    }
+  });
+
+  // Save the last paragraph
+  if (currentParagraph) {
+    saveParagraph(currentParagraph, currentParagraphLines, currentParagraphPages, suspectLines, suspectPages, suspectParagraphs, paragraphs, doc);
+  }
+
+  // Numbering checks
+  const expectedNumbers = Array.from({ length: doc.reference.paragraphs }, (_, i) => i+1);
+  numberingGaps = expectedNumbers.filter(n => !numbering.includes(n));
+  numberingDuplicates = numbering.filter((n, i) => numbering.indexOf(n) !== i);
+  checks.push({
+    label: `Numbering: ${numbering.length} paragraphs, 1 to ${doc.reference.paragraphs}`,
+    pass: numberingGaps.length === 0 && numberingDuplicates.length === 0,
+    link: numberingGaps.length > 0 ? numberingGaps[0] : numberingDuplicates[0]
+  });
+
+  // First words
+  paragraphs.forEach(p => {
+    const referenceWords = doc.reference.first_words[String(p.paragraph)];
+    if (referenceWords) {
+      const foundWords = p.first_words_found;
+      p.first_words_match = normalizeText(foundWords) === normalizeText(referenceWords);
+      if (!p.first_words_match) {
+        firstWordsMismatches.push(p.paragraph);
+      }
+    } else {
+      p.first_words_match = false;
+      firstWordsMismatches.push(p.paragraph);
+    }
+  });
+  checks.push({
+    label: `First words: ${paragraphs.filter(p => p.first_words_match).length} of ${doc.reference.paragraphs} match`,
+    pass: firstWordsMismatches.length === 0,
+    link: firstWordsMismatches[0]
+  });
+
+  // Flagged paragraphs
+  checks.push({
+    label: `Flagged paragraphs: ${suspectParagraphs.size} of ${paragraphs.length} on ${suspectPages.size} pages, to check against the PDF`,
+    pass: true
+  });
+
+  // Suspect lines
+  checks.push({
+    label: `Suspect lines: ${suspectLines.length} on ${suspectPages.size} pages in ${suspectParagraphs.size} paragraphs, none removed`,
+    pass: true
+  });
+
+  // Headers and footers
+  const headerPass = headers.every(h => h.pass);
+  checks.push({
+    label: `Headers: ${headers.filter(h => h.pass).length} of ${headers.length} pages start with the symbol`,
+    pass: headerPass,
+    link: headers.find(h => !h.pass)?.page
+  });
+
+  const pageNumberPass = pageNumbers.length === doc.pages.length - 1;
+  checks.push({
+    label: `Page numbers: ${pageNumbers.length} of ${doc.pages.length - 1} pages have a page number in the footer`,
+    pass: pageNumberPass,
+    link: doc.pages.find((_, i) => i > 0 && !pageNumbers.some(p => p.page === i+1))?.page
+  });
+
+  checks.push({
+    label: `Bare numbers removed from footer: ${bareNumbersRemoved.length}`,
+    pass: true
+  });
+
+  // Headings
+  checks.push({
+    label: `Headings: ${headings.filter(h => h.part).length} labelled, ${headings.filter(h => !h.part).length} unlabelled`,
+    pass: true
+  });
+
+  // Nothing lost
+  const classifiedLines = totalCoverLines + totalHeadingLines + totalParagraphLines + totalFooterLines + totalFootnoteLines;
+  const nothingLostPass = classifiedLines === totalNonEmptyLines;
+  checks.push({
+    label: `Nothing lost: ${classifiedLines} of ${totalNonEmptyLines} non-empty lines classified (cover, heading, paragraph, footer, footnote)`,
+    pass: nothingLostPass
+  });
+  if (!nothingLostPass) {
+    unclassifiedLines = Array.from({ length: doc.pages.length }, () => []);
+    // Re-run to find unclassified lines
+    doc.pages.forEach((page, i) => {
+      const lines = page.text.split('\n');
+      const nonEmptyLines = lines.filter(line => line.trim() !== '');
+      let j = nonEmptyLines.length - 1;
+      while (j >= 0 && (/^GE\.\d{2}-\d{5}/.test(nonEmptyLines[j]) || /^\d{6} \d{6}$/.test(nonEmptyLines[j]) || /^\d{1,3}$/.test(nonEmptyLines[j]))) {
+        j--;
+      }
+      const bodyLines = nonEmptyLines.slice(1, j+1);
+      let inHeading = false;
+      let inParagraph = false;
+      let inFootnote = false;
+      bodyLines.forEach((line, k) => {
+        if (/^\d{1,3}\.$/.test(line) || /^[IVX]+$/.test(line) || /^[A-Z]$/.test(line)) {
+          inHeading = true;
+          inParagraph = false;
+          inFootnote = false;
+        } else if (inHeading && /^[a-z(]/.test(line)) {
+          // Heading line
+        } else if (/^\d{1,3}\. /.test(line) || /^\d{1,3}\.$/.test(line)) {
+          inHeading = false;
+          inParagraph = true;
+          inFootnote = false;
+        } else if (inParagraph) {
+          // Paragraph line
+        } else if (/^\d{1,3}$/.test(line)) {
+          inHeading = false;
+          inParagraph = false;
+          inFootnote = true;
+        } else if (inFootnote) {
+          // Footnote line
+        } else if (k < bodyLines.length - 1 && (/^\d{1,3}\.$/.test(bodyLines[k+1]) || /^\d{1,3}\. /.test(bodyLines[k+1]))) {
+          // Unlabelled heading
+          inHeading = true;
+          inParagraph = false;
+          inFootnote = false;
+        } else if (line.trim() !== '') {
+          unclassifiedLines[i].push({ line, pos: k+1 });
+        }
+      });
+    });
+  }
+
+  // Export round trip
+  const json = JSON.stringify(paragraphs.map(p => ({
+    symbol: doc.symbol,
+    paragraph: p.paragraph,
+    section: p.section,
+    part: p.part,
+    page_start: p.page_start,
+    page_end: p.page_end,
+    text: p.text,
+    flagged: p.flagged,
+    first_words_match: p.first_words_match,
+    citation: p.citation,
+    doc_url: doc.doc_url,
+    limitations: p.flagged ? `footnotes not separated; ${p.suspect_lines.length} may sit inside this paragraph` : 'footnotes not separated'
+  })), null, 2);
+  let roundTripPass = false;
+  try {
+    const parsed = JSON.parse(json);
+    roundTripPass = parsed.length === paragraphs.length;
+  } catch (e) {
+    roundTripPass = false;
+  }
+  checks.push({
+    label: `Export round trip: ${paragraphs.length} paragraphs`,
+    pass: roundTripPass
+  });
+
+  return { paragraphs, checks, headings };
+}
+
+function saveParagraph(para, lines, pages, suspectLines, suspectPages, suspectParagraphs, paragraphs, doc) {
+  const text = lines.join(' ').replace(/\s+/g, ' ').trim();
+  const textRaw = lines.join('\n');
+  const textRawPages = pages;
+  const firstWordsFound = getFirstWords(text);
+  const flagged = suspectLines.length > 0 || text.split(/\s+/).length > 300;
+  const flaggedReason = suspectLines.length > 0 ? (suspectLines.some(l => /^\d{1,3}$/.test(l)) ? 'bare number' : suspectLines.some(l => /^\d{1,3} /.test(l)) ? 'starts with a number and a space' : 'other') : 'paragraph over 300 words';
+
+  paragraphs.push({
+    ...para,
+    page_start: Math.min(...pages),
+    page_end: Math.max(...pages),
+    text,
+    text_raw: textRaw,
+    text_raw_pages: textRawPages,
+    suspect_lines: [...suspectLines],
+    flagged,
+    flagged_reason: flaggedReason,
+    first_words_found: firstWordsFound,
+    first_words_reference: doc.reference.first_words[String(para.paragraph)],
+    citation: `${doc.symbol}, para. ${para.paragraph}`
+  });
+}
+
+function getFirstWords(text) {
+  // Remove footnote marks: digits glued to the end of a word or punctuation
+  let clean = text.replace(/(\w)\d+/g, '$1').replace(/([.,;:!?"”’])\d+/g, '$1');
+  // Remove a token of digits alone only when the token before it ends with a full stop, comma or closing quote and is not an abbreviation
+  clean = clean.replace(/(\b(?:[Nn]o|art|para|pp|vol|etc)\.\s*)\d+\b/g, '$1');
+  clean = clean.replace(/([.,;:!?"”’]\s*)\d+\b/g, '$1');
+  // Split into words
+  const words = clean.split(/\s+/).filter(word => word !== '');
+  // Take the first six
+  return words.slice(0, 6).join(' ');
+}
+
+function normalizeText(text) {
+  return text
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[–—]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function downloadJSON(paragraphs, doc) {
+  const data = paragraphs.map(p => ({
+    symbol: doc.symbol,
+    paragraph: p.paragraph,
+    section: p.section,
+    part: p.part,
+    page_start: p.page_start,
+    page_end: p.page_end,
+    text: p.text,
+    text_lines: p.text_raw.split('\n').join(' | '),
+    flagged: p.flagged,
+    first_words_match: p.first_words_match,
+    citation: p.citation,
+    doc_url: doc.doc_url,
+    limitations: p.flagged ? `footnotes not separated; ${p.suspect_lines.length} may sit inside this paragraph` : 'footnotes not separated'
+  }));
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = doc.symbol.replace(/\//g, '-') + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function downloadMarkdown(paragraphs, doc, headings) {
+  const frontMatter = `---
+title: ${doc.title}
+symbol: ${doc.symbol}
+adopted: ${doc.reference.adopted}
+source_url: ${doc.doc_url}
+extracted: ${new Date().toISOString().split('T')[0]}
+paragraphs_found: ${paragraphs.length}
+paragraphs_expected: ${doc.reference.paragraphs}
+paragraphs_flagged: ${paragraphs.filter(p => p.flagged).length}
+footnotes: not separated; the document has ${doc.reference.footnotes}
+---`;
+
+  const headingLines = [];
+  let currentPart = '';
+  let currentSection = '';
+  headings.forEach(h => {
+    if (h.part && h.part !== currentPart) {
+      headingLines.push(`## ${h.text}`);
+      currentPart = h.part;
+      currentSection = '';
+    } else if (h.section && h.section !== currentSection) {
+      headingLines.push(`### ${h.text}`);
+      currentSection = h.section;
+    }
+  });
+
+  const paragraphLines = paragraphs.map(p => {
+    const lines = [`**${p.paragraph}.** ${p.text}`];
+    if (p.flagged) {
+      lines.push('(flagged: may contain footnote text)');
+    }
+    return lines.join(' ');
+  });
+
+  const blob = new Blob([frontMatter + '\n\n' + headingLines.join('\n\n') + '\n\n' + paragraphLines.join('\n\n')], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = doc.symbol.replace(/\//g, '-') + '.md';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+</script>
+</body>
+</html>

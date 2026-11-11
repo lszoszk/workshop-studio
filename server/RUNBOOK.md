@@ -68,6 +68,8 @@ Admin page: `https://150.254.115.204/studio-api/admin?key=<STUDIO_ADMIN_KEY>`. R
 
 The same actions as JSON: `POST /studio-api/admin` with `{"key", "action": disable|enable|budget|pause|resume|default_model|remove_gallery, "seat", "value"}`.
 
+Activity (`POST /studio-api/events`, from the page): one JSON line per event in `state/events/<day>.jsonl` with the seat, a random id per page visit and ids, codes and numbers only (whitelist in `app.py`: `EVENT_NAMES`, `EVENT_VALUE`). Download a day with `GET /studio-api/admin/events?key=…&day=2026-11-20` and summarise it with `python3 tools/events_report.py <file>`.
+
 CLI inside the container: `docker exec studio-api python seats.py list`, `… create 5 --country Kenya` (spare seats), `… import /state/seats.csv`. After a re-import, the admin page's top-ups are replaced by the file's budget: raise the budget in the file, or top up again.
 
 **Two routes, two sets of books.** Seat spending and the kill switch are kept separately on the VM and in the Worker's KV. If the front falls back to the Worker after a 503 (paused) or a 429 (budget), the seat starts fresh there. When you pause, pause both: use the admin page, then `npx wrangler kv key put --binding STUDIO cfg '{"paused":true}'`.

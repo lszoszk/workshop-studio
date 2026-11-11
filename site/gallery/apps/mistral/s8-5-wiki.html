@@ -618,17 +618,17 @@ main {
     <div class="meta" id="header-meta"></div>
   </div>
   <div class="meta">
-    <div id="session-counters">Changes this session: 0 · Calls to the model: 0 · Passages that left the browser: 0</div>
+    <div id="session-counters" hidden></div>
     <div>This page has no storage: changes live in it until you download them (tab 05)</div>
   </div>
 </header>
 
 <ul class="tablist" role="tablist" aria-label="Tabs">
   <li><button id="tab-01" role="tab" aria-selected="true" aria-controls="panel-01">01 PAGES</button></li>
-  <li><button id="tab-02" role="tab" aria-selected="false" aria-controls="panel-02">02 ASK</button></li>
-  <li><button id="tab-03" role="tab" aria-selected="false" aria-controls="panel-03">03 INGEST</button></li>
-  <li><button id="tab-04" role="tab" aria-selected="false" aria-controls="panel-04">04 CHECK</button></li>
-  <li><button id="tab-05" role="tab" aria-selected="false" aria-controls="panel-05">05 RECORD</button></li>
+  <li hidden><button id="tab-02" role="tab" aria-selected="false" aria-controls="panel-02" hidden>02 ASK</button></li>
+  <li hidden><button id="tab-03" role="tab" aria-selected="false" aria-controls="panel-03" hidden>03 INGEST</button></li>
+  <li><button id="tab-04" role="tab" aria-selected="false" aria-controls="panel-04">02 CHECK</button></li>
+  <li><button id="tab-05" role="tab" aria-selected="false" aria-controls="panel-05">03 RECORD</button></li>
 </ul>
 
 <main>
@@ -708,7 +708,7 @@ main {
       <div id="log-content"></div>
       <div id="tensions-content"></div>
       <div class="method-note">
-        <p>Counting, matching and verification are done by this page's code; each number has its "How this is computed" line. The model is called only when you press Ask, Ingest or a retry button.</p>
+        <p>Counting, matching and verification are done by this page's code; each number has its "How this is computed" line. No model is called.</p>
       </div>
       <div class="meta">
         <p>Data source: <code>WORKSHOP_DATA.wiki</code> with <code>WORKSHOP_DATA.library</code></p>
@@ -719,7 +719,7 @@ main {
 
 <footer class="meta">
   <div style="padding: 1em 1.5em; border-top: 1px solid var(--rule); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8rem;">
-    <span id="wiki-source"></span> · Counting, matching and verification are done by this page's code; the model is called only when you press Ask, Ingest or a retry button.
+    <span id="wiki-source"></span> · Counting, matching and verification are done by this page's code; no model is called.
   </div>
 </footer>
 

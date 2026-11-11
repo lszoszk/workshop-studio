@@ -4,7 +4,7 @@
    Shared by the studio (studio.js) and the gallery viewer (gallery/view.html). */
 window.PreviewDoc = (function () {
   'use strict';
-  const DATASETS = ['uhri', 'gc', 'hrc', 'pdf_text', 'pdf_text_2', 'html_doc', 'library', 'wiki'];
+  const DATASETS = ['uhri', 'gc', 'hrc', 'pdf_text', 'pdf_text_2', 'pdf_ten', 'html_doc', 'library', 'wiki'];
   const CSP = "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; connect-src 'none'; form-action 'none'\">";
 
   const CHART_CDN = /<script\b[^>]*\bsrc=["']https?:\/\/[^"']*\bchart(?:\.js|\.umd|\.min)[^"']*["'][^>]*>\s*<\/script>/gi;
@@ -27,7 +27,9 @@ window.PreviewDoc = (function () {
     // Chart.js comes with the studio; a model that also loads it from a CDN (Mistral Large 3 did in five
     // builds of five, 4.11.2026) would only get a blocked request and an error in the console
     html = html.replace(CHART_CDN, '<!-- Chart.js: the studio\'s own copy, not the internet -->');
-    const attached = /WORKSHOP_DATA/.test(html) ? (files || []).filter((k) => DATASETS.includes(k)) : [];
+    // a participant's own file (own-files.js) is own_<n>; it reaches an app only from its conversation
+    const known = (k) => DATASETS.includes(k) || /^own_\d+$/.test(k);
+    const attached = /WORKSHOP_DATA/.test(html) ? (files || []).filter(known) : [];
     const named = DATASETS.filter((k) => new RegExp('\\b' + k + '\\b').test(html));
     const used = attached.length ? [...new Set([...named, ...attached])] : datasetsUsed(html);
     const parts = await Promise.all(used.map(async (k) => JSON.stringify(k) + ':' + (await dataText(k))));

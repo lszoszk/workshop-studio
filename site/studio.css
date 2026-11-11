@@ -182,11 +182,15 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 .filechip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .filechip button { border: 0; background: none; color: inherit; cursor: pointer; padding: 0 2px; font-size: 15px; line-height: 1; }
 .ficon { flex: none; font: 700 9px/1 system-ui, sans-serif; letter-spacing: .03em; color: #fff; border-radius: 3px; padding: 3px 3px; }
-.ficon.pdf { background: #c0392b; }
+.ficon.pdf, .ficon.pdfs { background: #c0392b; }
 .ficon.html { background: #2c5f8a; }
 .ficon.csv { background: #2e8b57; }
 .ficon.lib { background: #7a3e9d; }
 .ficon.wiki { background: #8a5a00; }
+.ficon.json { background: #5b6b2e; }
+.ficon.xlsx { background: #1d6f42; }
+.ficon.docx { background: #2b579a; }
+.ficon.own { background: var(--faint); font-size: 13px !important; padding: 3px 7px !important; }
 .drop-hint { position: absolute; inset: 6px 10px; border: 2px dashed var(--accent); border-radius: 14px; background: color-mix(in srgb, var(--accent-soft) 92%, transparent); color: var(--accent); font-weight: 700; display: none; place-items: center; z-index: 3; pointer-events: none; }
 .chat.dragging .drop-hint { display: grid; }
 .primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 9px; padding: 8px 18px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
@@ -248,6 +252,14 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 .fcard h3 { margin: 0; font-size: 16px; line-height: 1.3; }
 .fcard p { margin: 0; font-size: 13px; color: var(--muted); flex: 1; }
 .fcard .meta { font-size: 12px; color: var(--faint); }
+.fcard.add-own { border-style: dashed; box-shadow: none; cursor: default; }
+.fcard.add-own:hover { transform: none; }
+.own-samples { display: flex; gap: 6px; align-items: flex-start; font-size: 12px; color: var(--muted); }
+.own-samples input { margin: 1px 0 0; }
+.own-preview { width: 100%; border-collapse: collapse; font-size: 12px; margin: 10px 0; }
+.own-sent { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+.own-preview caption { text-align: left; font-weight: 600; padding-bottom: 6px; }
+.own-preview th, .own-preview td { border-bottom: 1px solid var(--line); padding: 4px 6px; text-align: left; vertical-align: top; }
 .fcard .row { flex-wrap: wrap; }
 .fcard .ghost { font-size: 14px; padding: 5px 10px; }
 .shelf-note { margin: 18px 0 0; font-size: 14px; color: var(--muted); max-width: 720px; }
@@ -503,6 +515,7 @@ body.wall .work { grid-template-columns: 1fr; height: calc(100% - var(--top-h));
 .pdfpage canvas { display: block; width: 100%; height: 100%; }
 .pdfmark { position: absolute; background: rgba(155, 35, 53, .22); border-bottom: 2px solid #9b2335; pointer-events: none; }
 .fcard .from { font-size: 13px; color: var(--muted); }
+.fcard .from .from-icon { margin-right: 3px; }
 .runs3 { width: 100%; border-collapse: collapse; font-size: 14px; }
 .runs3 th { text-align: left; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); padding: 4px 6px; }
 .runs3 td { padding: 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -563,3 +576,27 @@ dialog h2 { font-family: var(--serif); font-weight: 400; }
 .retry-note { margin: 4px 0 8px; font-size: 14px; color: var(--muted); border-left: 3px solid var(--accent); padding-left: 10px; }
 /* the footer: the author on the left, the buttons on the right (the tools moved into About, 4.11.2026) */
 .foot .foot-end { margin-left: auto; }
+
+/* screenshots in a message */
+.filechip.pic img { width: 28px; height: 20px; object-fit: cover; border-radius: 2px; }
+.msg.user .files img.pic { max-width: 160px; max-height: 110px; border: 1px solid var(--line); border-radius: 4px; display: block; }
+
+/* a question about the data: the table the browser computed */
+.qcard { margin-top: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 10px 12px; }
+.qcard .qhead { font: 600 11px/1.3 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .04em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+.qcard table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.qcard caption { text-align: left; font-weight: 600; padding-bottom: 6px; }
+.qcard th, .qcard td { border-bottom: 1px solid var(--line); padding: 3px 6px; text-align: left; vertical-align: top; }
+.qcard td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.qcard .qnote { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+.qcard .qerr { color: var(--warn-ink); margin: 0; }
+.qcard pre { white-space: pre-wrap; font-size: 12px; max-height: 260px; overflow: auto; }
+.qcard .row { margin-top: 6px; }
+
+/* Basic (the default): one path through the exercises; Advanced (footer) shows the rest */
+body.basic .adv { display: none !important; }
+
+/* Suggest improvements: the ways to review, to pick from */
+.msg.lenses button { display: block; width: 100%; text-align: left; margin-top: 6px; padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); cursor: pointer; }
+.msg.lenses button:hover { border-color: var(--accent); }
+.msg.lenses button span { display: block; font-size: 12px; color: var(--muted); }

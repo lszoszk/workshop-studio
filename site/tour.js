@@ -10,7 +10,7 @@ window.Tour = (function () {
         'Building such tools is also a way to learn where the models help and where they fail (the so-called jagged frontier), and to keep that skill after the workshop.',
         'Every app can be adjusted: ask for a change in your own words. The tour takes one minute.'] },
     { at: '#sessionSwitch', title: 'Two sessions',
-      text: 'Session 7 and Session 8 offer different apps. Your facilitator will say when to switch.' },
+      text: 'Session 1 and Session 2 offer different apps. Your facilitator will say when to switch.' },
     { at: '#countryChip', title: 'Your country',
       text: 'Its UN recommendations and observations are your first file. Pick another country to run the same app on its records.' },
     { at: '.model-pick', title: 'Your model',

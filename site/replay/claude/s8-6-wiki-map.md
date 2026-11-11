@@ -1,4 +1,4 @@
-I added tab 06 MAP: a fixed ring of dots, one per page, coloured by type, sized by the pages that link to it, with one line per link. Hover a dot for its title and links in and out; click it to highlight its neighbours and open the page, and the line under the map counts pages and links and lists the orphans. Everything else is unchanged, though six tabs is one more than the usual five.
+I added tab 04 MAP: a fixed ring of dots, one per page, coloured by type, sized by the pages that link to it, with one line per link. Hover a dot for its title and links in and out; click it to highlight its neighbours and open the page, and the line under the map counts pages and links and lists the orphans. Everything else is unchanged.
 
 ```html
 <!doctype html>
@@ -125,10 +125,9 @@ footer{padding:14px 24px;border-top:1px solid var(--rule);font-size:11.5px;color
  </div>
  <div class="hr">
   <p id="strip" class="lab" aria-live="polite"></p>
-  <p class="lab">This page has no storage: changes live in it until you download them (tab 05)</p>
  </div>
 </header>
-<div id="tabs" role="tablist" aria-label="Wiki workspace, six tabs"></div>
+<div id="tabs" role="tablist" aria-label="Wiki workspace, four tabs"></div>
 <main>
  <section id="pan0" class="panel" role="tabpanel" aria-labelledby="tab0">
   <div class="two">
@@ -161,7 +160,7 @@ footer{padding:14px 24px;border-top:1px solid var(--rule);font-size:11.5px;color
  <section id="pan3" class="panel" role="tabpanel" aria-labelledby="tab3" hidden><div id="chkBox" class="narrow"></div></section>
  <section id="pan4" class="panel" role="tabpanel" aria-labelledby="tab4" hidden><div id="recBox" class="narrow"></div></section>
  <section id="pan5" class="panel" role="tabpanel" aria-labelledby="tab5" hidden>
-  <p class="lab">06 · How are the pages linked?</p>
+  <p class="lab">04 · How are the pages linked?</p>
   <div class="mapgrid">
    <div class="mapcol">
     <div class="mapwrap">
@@ -426,13 +425,13 @@ const TN=['PAGES','ASK','INGEST','CHECK','RECORD','MAP'];
 function renderHeader(){
   const c={};P.forEach(p=>{c[p.type]=(c[p.type]||0)+1;});const st=pinStats(),inbox=Object.keys(DOC).filter(k=>DOC[k].status==='inbox').length;
   const parts=['source','concept','entity','question'].map(t=>(c[t]||0)+' '+(c[t]===1?t:PLU[t]));
-  $('#hsub').textContent=P.length+' pages ('+parts.join(', ')+') · '+fmt(st.total)+' pins, '+fmt(st.ok)+' verified by this page · '+LIB.length+' documents, '+inbox+' in the inbox · built '+(WIKI.built||'unknown');
-  $('#strip').textContent='Changes this session: '+S.changes.length+' · Calls to the model: '+S.calls+' · Passages that left the browser: '+S.passages;
+  $('#hsub').textContent=P.length+' pages ('+parts.join(', ')+') · '+fmt(st.total)+' pins, '+fmt(st.ok)+' verified by this page · '+LIB.length+' documents · built '+(WIKI.built||'unknown');
+  $('#strip').textContent='';
 }
 function setRun(i,on){const b=$('#tab'+i+' .run');if(b)b.textContent=on?' · running':'';}
 function showTab(i,focus){
   S.tab=i;
-  $$('#tabs [role=tab]').forEach((b,j)=>{b.setAttribute('aria-selected',i===j);b.tabIndex=i===j?0:-1;});
+  $$('#tabs [role=tab]').forEach(b=>{const j=+b.dataset.i;b.setAttribute('aria-selected',i===j);b.tabIndex=i===j?0:-1;});
   $$('.panel').forEach((x,j)=>{x.hidden=i!==j;});
   if(i===2)renderIngest();if(i===3)renderCheck();if(i===4)renderRecord();if(i===5)renderMap();
   if(focus)$('#tab'+i).focus();
@@ -879,12 +878,12 @@ function fileIng(){
 function renderCheck(){
   const st=pinStats(),L=lint(),need=L.filter(r=>r.items.length).length,CH=checks();
   const links=pages=>pages.length?pages.map(s=>pg(s)?'<a href="#'+encodeURIComponent(s)+'">'+esc(s)+'</a>':esc(s)+' <span class="hint">no page</span>').join(', '):'<span class="hint">none</span>';
-  $('#chkBox').innerHTML='<p class="lab">04 · Can I trust this?</p><p><span class="big">'+fmt(st.ok)+'</span> of '+fmt(st.total)+' pins verified by this page</p><p class="how">How this is computed: each pin\'s quote is searched, fragment by fragment in order, in the passages of its document that start on the pin\'s PDF page, and its label must name that passage. The ✓ written in a page is not trusted.</p>'
+  $('#chkBox').innerHTML='<p class="lab">02 · Can I trust this?</p><p><span class="big">'+fmt(st.ok)+'</span> of '+fmt(st.total)+' pins verified by this page</p><p class="how">How this is computed: each pin\'s quote is searched, fragment by fragment in order, in the passages of its document that start on the pin\'s PDF page, and its label must name that passage. The ✓ written in a page is not trusted.</p>'
    +'<p><span class="big">'+need+'</span> of '+L.length+' lint checks need a look</p>'
    +'<p class="row"><button type="button" class="btn pri" data-act="lint">'+(S.lintPressed?'Re-run':'Lint now')+'</button><span class="hint">reads the wiki again; no model is called</span></p>'
    +'<div class="tw"><table><caption>FIG.01 · Lint checks, run by this page</caption><thead><tr><th scope="col">Check</th><th scope="col" class="num">Result</th><th scope="col">Pages concerned</th></tr></thead><tbody>'
    +L.map(r=>'<tr><th scope="row">'+esc(r.label)+'</th><td class="num '+(r.items.length?'chk':'pass')+'">'+r.items.length+' · '+(r.items.length?'check':'pass')+'</td><td>'+links(r.pages)+'</td></tr>').join('')+'</tbody></table></div>'
-   +'<p class="hint">Not done by code: the schema\'s reading for contradictions between pages needs a person or a model\'s judgment. The open disagreements are in the tensions register on tab 05.</p>'
+   +'<p class="hint">Not done by code: the schema\'s reading for contradictions between pages needs a person or a model\'s judgment. The open disagreements are in the tensions register on tab 03.</p>'
    +'<details class="sec" open><summary>Checks panel: how this page checks itself</summary><ul class="chkl">'+CH.map(c=>'<li><span class="'+(c.ok===true?'pass':c.ok===false?'chk':'na')+'">'+(c.ok===true?'pass':c.ok===false?'check':'not yet')+'</span> · <b>'+esc(c.name)+'.</b> '+esc(c.text)+(c.pages.length?' · '+links(c.pages.slice(0,12)):'')+'</li>').join('')+'</ul></details>';
 }
 
@@ -903,7 +902,7 @@ function renderRecord(){
   const E=logEntries(),ord=E.map((e,i)=>i);if(S.order==='new')ord.reverse();
   const rows=ord.map(i=>'<details class="le"'+(i===ord[0]?' open':'')+'><summary>'+esc(E[i].head)+(i>=S.logBase?' <span class="sess">this session</span>':'')+'</summary><div class="page">'+md(E[i].body)+'</div></details>').join('');
   const ch=changedSlugs();
-  $('#recBox').innerHTML='<p class="lab">05 · What has changed, where do the sources disagree, and how do I take it away?</p><h3>Log</h3><p class="row"><button type="button" role="switch" aria-checked="'+(S.order==='new')+'" data-act="order">Newest first</button><span class="hint">'+E.length+' entries, appended only; the switch flips the order</span></p>'+(rows||'<p class="hint">The log is empty.</p>')
+  $('#recBox').innerHTML='<p class="lab">03 · What has changed, where do the sources disagree, and how do I take it away?</p><h3>Log</h3><p class="row"><button type="button" role="switch" aria-checked="'+(S.order==='new')+'" data-act="order">Newest first</button><span class="hint">'+E.length+' entries, appended only; the switch flips the order</span></p>'+(rows||'<p class="hint">The log is empty.</p>')
    +'<h3>Tensions register</h3><p class="hint">Each entry names the page that holds its contested card.</p>'+(tensEntries().map(tensHtml).join('')||'<p class="hint">No entries.</p>')
    +'<h3>Method</h3><p class="hint">Counting, matching and verification are done by this page\'s code; each number has its "How this is computed" line. Data: '+esc(WIKI.source||'the research wiki')+', built '+esc(WIKI.built||'unknown')+', with the library of '+LIB.length+' documents. The model drafts; the code verifies every quotation; a person decides.</p>'
    +'<p class="row"><button type="button" class="btn pri" data-act="dl-json">Download the wiki</button>'+(ch.length?'<button type="button" class="btn" data-act="dl-md">Download the changed pages (markdown)</button>':'')+'<span class="hint">'+(S.changes.length?S.changes.length+' change(s) live only in this page until you download':'no changes yet')+'</span></p>';
@@ -1070,11 +1069,13 @@ document.addEventListener('change',e=>{
   ASK.pages=ch;ASK.manual=true;$('#pchips').innerHTML=ch.map(s=>'<a class="pgchip" href="#'+encodeURIComponent(s)+'">'+esc(pg(s).title)+'</a>').join('');
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.running){S.stop=true;const t='Stopping after the call in flight returns.';if(S.running==='ask')$('#askProg').textContent=t;else ingSay(t);}});
-$('#tabs').innerHTML=TN.map((n,i)=>'<button type="button" role="tab" id="tab'+i+'" data-i="'+i+'" aria-controls="pan'+i+'" aria-selected="false" tabindex="-1">0'+(i+1)+' '+n+'<span class="run" aria-live="polite"></span></button>').join('');
+const VIS=[0,3,4,5];   // Pages, Check, Record, Map: Ask and Ingest were taken out
+$('#tabs').innerHTML=VIS.map((i,k)=>'<button type="button" role="tab" id="tab'+i+'" data-i="'+i+'" aria-controls="pan'+i+'" aria-selected="false" tabindex="-1">0'+(k+1)+' '+TN[i]+'<span class="run" aria-live="polite"></span></button>').join('');
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('[role=tab]');if(b)showTab(+b.dataset.i);});
 $('#tabs').addEventListener('keydown',e=>{
   let i=S.tab;
-  if(e.key==='ArrowRight')i=(i+1)%TN.length;else if(e.key==='ArrowLeft')i=(i+TN.length-1)%TN.length;else if(e.key==='Home')i=0;else if(e.key==='End')i=TN.length-1;else return;
+  const k=Math.max(0,VIS.indexOf(i));
+  if(e.key==='ArrowRight')i=VIS[(k+1)%VIS.length];else if(e.key==='ArrowLeft')i=VIS[(k+VIS.length-1)%VIS.length];else if(e.key==='Home')i=0;else if(e.key==='End')i=VIS[VIS.length-1];else return;
   e.preventDefault();showTab(i,true);
 });
 $('#flt').addEventListener('input',e=>{S.flt=e.target.value;renderList();});
@@ -1086,7 +1087,7 @@ window.addEventListener('hashchange',onHash);
 
 /* ---------- start ---------- */
 S.logBase=logEntries().length;S.warn0=pinStats().warn;
-$('#foot').textContent=(WIKI.source||'Research wiki')+' · built '+(WIKI.built||'unknown')+' · Counting, matching and verification are done by this page\'s code; the model is called only when you press Ask, Ingest or a retry button.';
+$('#foot').textContent=(WIKI.source||'Research wiki')+' · built '+(WIKI.built||'unknown')+' · Counting, matching and verification are done by this page\'s code; no model is called.';
 renderHeader();askPlan();renderIngest();
 if(location.hash.length>1)onHash();else{showTab(0);renderList();renderPage();}
 $('#tab0').focus();

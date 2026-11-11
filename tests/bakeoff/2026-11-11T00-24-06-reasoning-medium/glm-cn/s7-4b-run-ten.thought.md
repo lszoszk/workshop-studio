@@ -1,0 +1,1 @@
+Rewrite the whole app to run the same pipeline over pdf_ten's 10 records, with a document rail, tab 03, and combined exports. It's a substantial change — output full HTML. Reuse the pipeline code, parametrized per document.

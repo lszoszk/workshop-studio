@@ -1,0 +1,58 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "download": true,
+   "text_matches": true
+  },
+  "passed": 7,
+  "total": 7,
+  "errors": [],
+  "network": [],
+  "lines": 580,
+  "edit": null,
+  "repair": null,
+  "seconds": 177.5,
+  "first_token": 106.3,
+  "first_thought": 1.1,
+  "reasoning_chars": 34099,
+  "prompt_tokens": 19563,
+  "completion_tokens": 18594,
+  "cost": 0.1092018,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-4b-run-ten",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "text_contains": true,
+   "download": true
+  },
+  "passed": 5,
+  "total": 5,
+  "errors": [],
+  "network": [],
+  "lines": 650,
+  "edit": null,
+  "repair": null,
+  "seconds": 71.2,
+  "first_token": 2.4,
+  "first_thought": 1.5,
+  "reasoning_chars": 287,
+  "prompt_tokens": 29558,
+  "completion_tokens": 11569,
+  "cost": 0.070032,
+  "provider": "Z.AI"
+ }
+]

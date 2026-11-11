@@ -62,11 +62,16 @@ APP_FOOTER = APP.replace("</body>", "<footer>Source: UHRI</footer></body>")
 APP_BROKEN = APP.replace("<script>const u", "<script>undefinedHelper();\nconst u")
 EDIT_REPAIR = ("Removed the call to a function that does not exist.\n```edit\n<<<<<<< SEARCH\nundefinedHelper();\n=======\n"
                "\n>>>>>>> REPLACE\n```")
+# an app on the participant's own file (own-files.js)
+APP_OWN = ("Here is your table.\n```html\n<!doctype html><html><head><title>Mine</title></head><body><h1 id=c></h1>"
+           "<script>const d = WORKSHOP_DATA.own_1; document.getElementById('c').textContent = d.count + ' rows, first: ' + d.records[0].Name;"
+           "</script></body></html>\n```")
 PLAN_V2 = ("Here is the revised plan.\n\n```markdown\n## Context\nThe same dashboard, revised.\n\n"
            "## The app, screen by screen\n1. A line chart of the records per year.\n2. The table of records.\n```")
 
 
 FEEDBACK = []   # what the fake server received from the Feedback form
+EVENTS = []     # the activity records it received (POST /events)
 
 
 @pytest.fixture(scope="module")
@@ -115,6 +120,10 @@ def fake_api():
                              "created": "2026-12-04T10:4%d:00" % len(wall), "html": req["html"]})
                 self.head(200, "application/json")
                 return self.wfile.write(json.dumps({"ok": True, "id": gid}).encode())
+            if self.path.endswith("/events"):
+                EVENTS.append(req)
+                self.head(200, "application/json")
+                return self.wfile.write(json.dumps({"ok": True}).encode())
             if self.path.endswith("/feedback"):
                 FEEDBACK.append(req)
                 self.head(200, "application/json")
@@ -140,6 +149,10 @@ def fake_api():
             elif req["purpose"] == "build" and "Reply with the whole revised plan" in last:
                 events.append({"reasoning": "They want a line per year; add it to the screens."})
                 events.append({"delta": PLAN_V2})
+            elif req["purpose"] == "build" and "a query that breaks" in last.lower():
+                events.append({"delta": "I will count them.\n```query\nreturn WORKSHOP_DATA.uhri.records.map((r) => r.nothere.length);\n```"})
+            elif req["purpose"] == "build" and "WORKSHOP_DATA.own_1" in last:
+                events.append({"delta": APP_OWN})
             elif req["purpose"] == "build":
                 events.append({"reasoning": "Plan: read the country and the count from the data."})
                 events.append({"delta": APP})
@@ -236,7 +249,8 @@ def send(page, title, key=None, n=None):
     pick(page, title)
     if key:
         add_file(page, key)
-    planning = page.is_visible("#planModeBtn") and page.get_attribute("#planModeBtn", "aria-pressed") == "true"
+    # in Basic the Plan mode switch is not shown, but planning is on for a workshop app all the same
+    planning = page.get_attribute("#planModeBtn", "hidden") is None and page.get_attribute("#planModeBtn", "aria-pressed") == "true"
     page.click("#sendBtn")
     if planning:
         plan_through(page)
@@ -272,7 +286,7 @@ def test_participant_path(base_url, browser, tmp_path):
     # plan mode: the short problem in the box, the planning session, the plan, then the build
     pick(page, DASHBOARD)
     assert page.input_value("#input") == PACK["problem"].replace("{country}", "Kenya")
-    assert page.is_visible("#planModeBtn") and page.get_attribute("#planModeBtn", "aria-pressed") == "true"
+    assert page.get_attribute("#planModeBtn", "hidden") is None and page.get_attribute("#planModeBtn", "aria-pressed") == "true"   # on; its switch is in Advanced
     add_file(page, "uhri")
     page.click("#sendBtn")
     page.wait_for_selector(".msg.ask:not(.answered)", timeout=30000)
@@ -353,11 +367,11 @@ def test_session8_model_link_off_blocks_inapp_ai(base_url, browser):
         pytest.skip("no recording for s8-2-ai-inside yet (run tools/bakeoff.py and copy to site/replay)")
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
-    page.goto(base_url + "?via=replay&planpace=1&country=Kenya")
+    page.goto(base_url + "?advanced=1&via=replay&planpace=1&country=Kenya")
     started(page)
     send(page, DASHBOARD, "uhri", 1)
     assert page.locator("#suggest button", has_text="A model inside the tool").count() == 0   # a Session 8 step
-    page.get_by_role("tab", name="Session 8").click()
+    page.get_by_role("tab", name="Session 2").click()
     send(page, "A model inside the tool", None, 2)   # the country file is already in the chat
     look(page, "linkBtn")
     assert page.is_visible("#offlineBanner") and page.is_visible("#linkOffPill")
@@ -381,7 +395,7 @@ def test_what_is_shown_grows_with_progress(base_url, browser):
     page.goto(base_url + "?via=replay&planpace=1&country=Kenya")
     started(page)
     assert not page.is_visible("#toolbar")
-    assert page.is_visible("#composer") and page.locator("#shelf .fcard").count() == len(json.loads((SITE / "config.json").read_text())["files"])
+    assert page.is_visible("#composer") and page.locator("#shelf .fcard[data-key]").count() == len(json.loads((SITE / "config.json").read_text())["files"])
     assert page.locator("#suggest button").count() <= 3
     send(page, DASHBOARD, "uhri", 1)
     assert page.is_visible("#toolbar") and not page.is_visible("#shelf")
@@ -447,6 +461,7 @@ def test_extraction_from_pdf(base_url, browser):
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.goto(base_url + "?via=replay&planpace=1&stage=s8&country=Kenya")   # the extraction is in Session 8
     started(page)
+    page.select_option("#modelSelect", "mistral")                       # someone who picked another model
     send(page, "Paragraphs out of a PDF", "pdf_text", 1)
     assert page.locator("#modelSelect").input_value() == "claude"
     assert "This exercise runs on Claude Sonnet 5.5" in page.inner_text("#log")
@@ -470,7 +485,7 @@ def test_live_country_switch_and_asking_directly(base_url, browser, fake_api):
     page = ctx.new_page()
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
-    page.goto(base_url + f"?api={api}&planpace=1#s=TEST22")
+    page.goto(base_url + f"?advanced=1&api={api}&planpace=1#s=TEST22")
     started(page)
     assert page.input_value("#countrySelect") == "Colombia"   # the seat's country
     assert "Live" in page.inner_text("#routeBadge") and "7.50" in page.inner_text("#budget")
@@ -499,7 +514,7 @@ def test_live_country_switch_and_asking_directly(base_url, browser, fake_api):
     assert "(Attached:" in calls[-1]["messages"][0]["content"]   # the file named earlier is still in the conversation
 
     # Session 8: asking the model directly, a number, then a paragraph that does not exist
-    page.get_by_role("tab", name="Session 8").click()
+    page.get_by_role("tab", name="Session 2").click()
     look(page, "ask3Btn")
     page.wait_for_function("() => document.getElementById('truth').textContent.includes('records in total')")
     page.get_by_role("tab", name="A quotation").click()
@@ -530,7 +545,7 @@ def test_session8_offers_its_apps_first(base_url, browser):
     page = ctx.new_page()
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
-    page.goto(base_url + "?via=replay&planpace=1&stage=s8&country=Kenya")
+    page.goto(base_url + "?advanced=1&via=replay&planpace=1&stage=s8&country=Kenya")
     started(page)
     titles = page.locator("#suggest button b").all_inner_texts()
     assert titles[:3] == ["Paragraphs out of a PDF", "Verbatim finder for General Comments", "A research wiki on neurotechnology and justice"], titles
@@ -662,7 +677,7 @@ def test_the_wiki_links_every_paragraph_to_its_pdf_page(base_url, browser):
         pytest.skip("no recording for s8-5-wiki yet")
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
-    page.goto(base_url + "?via=replay&planpace=1&stage=s8&country=Kenya")
+    page.goto(base_url + "?advanced=1&via=replay&planpace=1&stage=s8&country=Kenya")
     started(page)
     send(page, "A research wiki", "wiki", 1)
     frame = app_frame(page)
@@ -692,7 +707,7 @@ def test_the_wall_shows_what_participants_sent(base_url, browser, fake_api):
     page = ctx.new_page()
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
-    page.goto(base_url + f"?api={api}&planpace=1#s=TEST22")
+    page.goto(base_url + f"?advanced=1&api={api}&planpace=1#s=TEST22")
     started(page)
     send(page, DASHBOARD, "uhri", 1)
     page.click("#wallBtn")
@@ -791,7 +806,7 @@ def test_plan_mode_in_recorded_mode(base_url, browser):
     page = ctx.new_page()
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
-    page.goto(base_url + "?via=replay&planpace=6&country=Kenya")
+    page.goto(base_url + "?advanced=1&via=replay&planpace=6&country=Kenya")
     started(page)
     pick(page, DASHBOARD)
     page.click("#planModeBtn")
@@ -811,7 +826,7 @@ def test_plan_mode_in_recorded_mode(base_url, browser):
     ctx = browser.new_context(viewport={"width": 1366, "height": 800})
     page = ctx.new_page()
     page.on("pageerror", lambda e: errors.append(str(e)))
-    page.goto(base_url + "?via=replay&planpace=1&country=Kenya")
+    page.goto(base_url + "?advanced=1&via=replay&planpace=1&country=Kenya")
     started(page)
     pick(page, DASHBOARD)
     add_file(page, "uhri")
@@ -886,7 +901,7 @@ def test_a_plan_is_changed_live_and_built(base_url, browser, fake_api):
     assert len(calls) == n + 1 and calls[-1]["purpose"] == "build" and len(calls[-1]["messages"]) == 1
     asked = calls[-1]["messages"][0]["content"]
     assert compose(PACK, {}, "Colombia").split("\n\n", 1)[1] in asked and "Change the plan: add a line chart" in asked
-    assert "changed live by Mistral Large 3" in page.text_content("#planKicker")
+    assert "changed live by GLM-5.3 (run in the EU)" in page.text_content("#planKicker")
     assert "A line chart of the records per year." in page.inner_text("#planDoc") and "revised plan" not in page.inner_text("#planDoc")
     assert page.locator(".plan-msg .thought").last.inner_text().startswith("Thought")
     assert page.locator(".approve button.primary[disabled]").count() == 1   # v1's Build is retired
@@ -1054,7 +1069,7 @@ def test_an_app_that_fails_as_it_opens_is_repaired_once(base_url, browser, fake_
     api, calls = fake_api
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
-    page.goto(base_url + f"?api={api}&planpace=1#s=TEST22")
+    page.goto(base_url + f"?advanced=1&api={api}&planpace=1#s=TEST22")
     started(page)
     send(page, DASHBOARD, "uhri", 1)
     app_frame(page).get_by_text("Colombia 2150").wait_for(timeout=10000)
@@ -1065,4 +1080,340 @@ def test_an_app_that_fails_as_it_opens_is_repaired_once(base_url, browser, fake_
     assert "sends it back to the model to fix, once" in page.locator(".msg.note").last.inner_text()
     app_frame(page).get_by_text("Colombia 2150").wait_for(timeout=10000)
     assert page.is_hidden("#appError")
+    ctx.close()
+
+
+# ---------- the participant's own files ----------
+
+W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+
+
+def own_fixtures(tmp):
+    """One small file of each kind the studio reads, written the way Excel and Word write them (zip of XML)."""
+    import zipfile
+    (tmp / "mine.csv").write_bytes('\ufeffName;Count;Code\n"Smith; J.";12;007\nŁódź;3;\n'.encode("utf-8"))
+    (tmp / "mine.json").write_text('[{"a": 1, "b": "x"}, {"a": 2, "b": null}]')
+    with zipfile.ZipFile(tmp / "mine.xlsx", "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("xl/workbook.xml", '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+                   'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'
+                   '<sheet name="Recs" sheetId="1" r:id="rId1"/><sheet name="Notes" sheetId="2" r:id="rId2"/></sheets></workbook>')
+        z.writestr("xl/_rels/workbook.xml.rels", '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                   '<Relationship Id="rId1" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Target="/xl/worksheets/sheet2.xml"/></Relationships>')
+        z.writestr("xl/sharedStrings.xml", '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+                   '<si><t>Country</t></si><si><t>Date</t></si><si><t>Kenya</t></si><si><r><t>Ma</t></r><r><t>li</t></r></si></sst>')
+        z.writestr("xl/styles.xml", '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+                   '<cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="14"/></cellXfs></styleSheet>')
+        z.writestr("xl/worksheets/sheet1.xml", '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'
+                   '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1" t="inlineStr"><is><t>Votes</t></is></c></row>'
+                   '<row r="2"><c r="A2" t="s"><v>2</v></c><c r="B2" s="1"><v>46000</v></c><c r="C2"><v>12</v></c></row>'
+                   '<row r="4"><c r="A4" t="s"><v>3</v></c><c r="C4"><v>7.5</v></c></row></sheetData></worksheet>')
+        z.writestr("xl/worksheets/sheet2.xml", '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'
+                   '<row r="1"><c r="A1" t="inlineStr"><is><t>Note</t></is></c></row>'
+                   '<row r="2"><c r="A2" t="b"><v>1</v></c></row></sheetData></worksheet>')
+    with zipfile.ZipFile(tmp / "mine.docx", "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("word/document.xml", f'<w:document {W}><w:body>'
+                   '<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>I. Introduction</w:t></w:r></w:p>'
+                   '<w:p><w:r><w:t xml:space="preserve">1. A clean environment</w:t></w:r><w:r><w:footnoteReference w:id="2"/></w:r>'
+                   '<w:r><w:t xml:space="preserve"> matters.</w:t></w:r></w:p><w:p></w:p>'
+                   '<w:tbl><w:tr><w:tc><w:p><w:r><w:t>Cell text</w:t></w:r></w:p></w:tc></w:tr></w:tbl>'
+                   '<w:p><w:del><w:r><w:delText>gone </w:delText></w:r></w:del><w:r><w:t>2. Second</w:t></w:r></w:p></w:body></w:document>')
+        z.writestr("word/footnotes.xml", f'<w:footnotes {W}><w:footnote w:type="separator" w:id="-1"><w:p><w:r><w:t>---</w:t></w:r></w:p></w:footnote>'
+                   '<w:footnote w:id="2"><w:p><w:r><w:t>See E/C.12/GC/27.</w:t></w:r></w:p></w:footnote></w:footnotes>')
+    (tmp / "old.xls").write_bytes(b"\xd0\xcf\x11\xe0")
+    return [tmp / n for n in ("mine.csv", "mine.json", "mine.xlsx", "mine.docx", "old.xls")]
+
+
+def test_own_files_are_read_in_the_browser(base_url, browser, tmp_path):
+    """CSV, JSON, Excel and Word files from the participant's computer land on the shelf, read in the browser
+    and kept there; an old .xls is refused with what to do; the model's note has values only when asked."""
+    import datetime
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + "?advanced=1&via=replay&country=Kenya")
+    started(page)
+    with page.expect_file_chooser() as fc:
+        page.click("#shelf .add-own [data-act=pick]")
+    fc.value.set_files([str(p) for p in own_fixtures(tmp_path)])
+    page.wait_for_function("() => document.querySelectorAll('#shelf .fcard.own').length === 4", timeout=20000)
+    assert "old Excel format" in page.inner_text("#log")
+    files = {e["name"]: e for e in page.evaluate("OwnFiles.load()")}
+    assert [files[n]["key"] for n in ("mine.csv", "mine.json", "mine.xlsx", "mine.docx")] == ["own_1", "own_2", "own_3", "own_4"]
+    csv = json.loads(files["mine.csv"]["text"])
+    assert csv["fields"] == ["Name", "Count", "Code"] and csv["records"] == [
+        {"Name": "Smith; J.", "Count": 12, "Code": "007"}, {"Name": "Łódź", "Count": 3, "Code": None}]
+    assert json.loads(files["mine.json"]["text"]) == {"dataset": "own_2", "title": "mine.json",
+        "source": "Added by the participant from their own computer; kept in this browser", "count": 2, "records": [{"a": 1, "b": "x"}, {"a": 2, "b": None}]}
+    xl = json.loads(files["mine.xlsx"]["text"])
+    day = (datetime.date(1899, 12, 30) + datetime.timedelta(days=46000)).isoformat()
+    assert xl["records"] == [{"Country": "Kenya", "Date": day, "Votes": 12}, {"Country": "Mali", "Date": None, "Votes": 7.5}], xl["records"]
+    assert xl["sheet"] == "Recs" and xl["sheets"]["Notes"] == [{"Note": True}]
+    doc = json.loads(files["mine.docx"]["text"])
+    assert [(r["style"], r["heading"], r["text"], r["in_table"], r["footnotes"]) for r in doc["records"]] == [
+        ("Heading1", True, "I. Introduction", False, []), ("Normal", False, "1. A clean environment matters.", False, [2]),
+        ("Normal", False, "Cell text", True, []), ("Normal", False, "2. Second", False, [])]
+    assert doc["footnotes"] == [{"id": 2, "text": "See E/C.12/GC/27."}]
+    # what the model gets: the fields and types, values only when the box is ticked
+    note = page.evaluate("(e) => OwnFiles.describe(e, e.name)", files["mine.csv"])
+    assert "WORKSHOP_DATA.own_1" in note and "`Name` (text)" in note and "`Count` (number)" in note and "No values were sent" in note
+    assert "Smith" not in note and "Łódź" not in note
+    page.check("#shelf .fcard[data-key=own_1] [data-act=samples]")
+    page.wait_for_function("async () => (await OwnFiles.load()).find((e) => e.key === 'own_1').samples")
+    note = page.evaluate("async () => { const e = (await OwnFiles.load()).find((x) => x.key === 'own_1'); return OwnFiles.describe(e, e.name); }")
+    assert "Smith; J." in note and "chose to send" in note
+    # the drawer shows what is inside and exactly what would be sent
+    page.click("#shelf .fcard[data-key=own_3] [data-act=open]")
+    assert "Kenya" in page.inner_text("#drawerBody") and "2 sheets" in page.inner_text("#drawerBody")
+    page.click("#drawerClose")
+    # kept in this browser: still there after a reload
+    page.reload()
+    started(page)
+    assert page.locator("#shelf .fcard.own").count() == 4
+    page.once("dialog", lambda d: d.accept())
+    page.click("#shelf .fcard[data-key=own_2] [data-act=remove]")
+    page.wait_for_function("() => document.querySelectorAll('#shelf .fcard.own').length === 3")
+    assert not errors, errors
+    ctx.close()
+
+
+def test_an_app_on_your_own_file(base_url, browser, fake_api, tmp_path):
+    """Dropped into the chat, a file from the computer goes onto the shelf and into the message; the app reads
+    all of it; the model got the field names, not the values; What left this laptop says so."""
+    api, calls = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + f"?advanced=1&api={api}&planpace=1#s=TEST22")
+    started(page)
+    path = own_fixtures(tmp_path)[0]
+    # a drop from the computer onto the chat column, as the browser delivers it
+    page.evaluate("""async ({ name, b64 }) => {
+      const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const dt = new DataTransfer();
+      dt.items.add(new File([bytes], name, { type: 'text/csv' }));
+      document.querySelector('.chat').dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+    }""", {"name": path.name, "b64": __import__("base64").b64encode(path.read_bytes()).decode()})
+    page.wait_for_selector("#attach .filechip", timeout=20000)
+    assert "mine.csv" in page.inner_text("#attach")
+    n = len(calls)
+    page.fill("#input", "Build a table of my file")
+    page.click("#sendBtn")
+    built(page, 1)
+    app_frame(page).get_by_text("2 rows, first: Smith; J.").wait_for(timeout=20000)
+    sent = calls[n]["messages"][-1]["content"]
+    assert "WORKSHOP_DATA.own_1" in sent and "`Name` (text)" in sent and "Smith" not in sent, sent
+    look(page, "traceBtn")
+    trace = page.inner_text("#drawerBody")
+    assert 'Your spreadsheet "mine.csv": its name, its field names and their types, no values' in trace, trace
+    assert 'All 2 records of "mine.csv" stay in this browser' in trace
+    assert not errors, errors
+    ctx.close()
+
+
+def test_a_screenshot_goes_with_the_message(base_url, browser, fake_api):
+    """A picture pasted into the box shows as a chip, goes to the model with the message (scaled, whole), and the
+    trace says so; with a model that cannot read pictures (GLM), that one message goes to Claude."""
+    api, calls = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + f"?api={api}&planpace=1#s=TEST22")
+    started(page)
+    paste = """async () => {
+      const c = document.createElement('canvas'); c.width = 2400; c.height = 1200;
+      const g = c.getContext('2d'); g.fillStyle = '#9b2335'; g.fillRect(0, 0, 2400, 1200);
+      const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
+      const dt = new DataTransfer(); dt.items.add(new File([blob], 'shot.png', { type: 'image/png' }));
+      document.getElementById('input').dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+    }"""
+    page.select_option("#modelSelect", "glm-cn")
+    page.evaluate(paste)
+    page.wait_for_selector("#attach .filechip.pic")
+    assert "Picture 1568×784" in page.inner_text("#attach")          # scaled to 1568 on the long side
+    assert "cannot read pictures" in page.inner_text("#log")
+    n = len(calls)
+    page.fill("#input", "What is wrong here?")
+    page.click("#sendBtn")                                               # GLM cannot read it: this message goes to Claude
+    page.wait_for_function(f"() => document.querySelectorAll('.msg.user img.pic').length === 1", timeout=20000)
+    page.wait_for_function("() => document.getElementById('building').hidden", timeout=30000)
+    last = calls[n]["messages"][-1]
+    assert calls[n]["model"] == "claude" and page.input_value("#modelSelect") == "glm-cn"   # the menu stays as chosen
+    assert last["content"].startswith("What is wrong here?") and last["images"][0]["media_type"] == "image/png"
+    assert len(last["images"][0]["data"]) > 100
+    look(page, "traceBtn")
+    assert "Your picture (1568×784): the whole image, with everything on it" in page.inner_text("#drawerBody")
+    assert not errors, errors
+    ctx.close()
+
+
+def test_the_extraction_runs_on_ten_documents(base_url, browser):
+    """Recorded: the PDF app, then the same rules on ten General Comments (where they hold, where they break),
+    then the panel with the lines that broke them and the Copy for the model button; Fix needs a live model."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + "?via=replay&planpace=1&stage=s8&country=Kenya")
+    started(page)
+    send(page, "Paragraphs out of a PDF", "pdf_text", 1)
+    send(page, "Run it on ten General Comments", "pdf_ten", 2)
+    frame = app_frame(page)
+    frame.get_by_role("tab", name=re.compile("03", re.I)).click()
+    body = frame.locator("body")
+    body.get_by_text("CEDAW/C/GC/35").first.wait_for(timeout=20000)
+    text = body.inner_text()
+    assert all(s in text for s in ("E/C.12/GC/24", "CRC/C/GC/25", "CAT/C/GC/4")), text[:400]
+    assert "hypothesis" in page.locator(".lesson").last.inner_text()       # each answer brings its own lesson
+    send(page, "Show what broke the rules", None, 3)
+    frame = app_frame(page)
+    frame.get_by_role("tab", name=re.compile("03", re.I)).click()
+    frame.get_by_role("button", name=re.compile("copy for the model", re.I)).wait_for(timeout=20000)
+    assert "CCPR/C/GC/32" in frame.locator("body").inner_text()
+    assert not errors, errors
+    ctx.close()
+
+
+def test_a_question_about_the_data_is_answered_by_a_query(base_url, browser, fake_api):
+    """Recorded: after the dashboard, a question about the data comes back as a query; the browser runs it on all
+    the records and shows the table and the code, and the trace says the numbers stayed here. Live: a query that
+    fails says so, with no table."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + "?via=replay&planpace=1&country=Kenya")
+    started(page)
+    send(page, DASHBOARD, "uhri", 1)
+    pick(page, "Ask your data a question")
+    page.click("#sendBtn")
+    page.wait_for_selector(".qcard table", timeout=30000)
+    card = page.locator(".qcard").last
+    assert "Total" in card.inner_text() and "nothing was sent to a model" in card.inner_text()
+    assert "WORKSHOP_DATA.uhri" in card.locator("pre").text_content()   # closed until opened
+    assert page.locator("#versions button").count() == 1                     # an answer, not a new version of the app
+    look(page, "traceBtn")
+    assert "never saw the numbers" in page.inner_text("#drawerBody")
+    page.click("#drawerClose")
+    page.reload()                                                            # the table is computed again after a reload
+    started(page)
+    page.wait_for_selector(".qcard table", timeout=30000)
+    assert not errors, errors
+    ctx.close()
+
+    api, _ = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + f"?api={api}&planpace=1#s=TEST22")
+    started(page)
+    add_file(page, "uhri")
+    page.fill("#input", "Count with a query that breaks")
+    page.click("#sendBtn")
+    page.wait_for_selector(".qcard .qerr", timeout=30000)
+    assert "The query failed" in page.inner_text(".qcard")
+    ctx.close()
+
+
+def test_activity_is_recorded_without_content(base_url, browser, fake_api):
+    """The page records what was done (a build, its model and seconds, a tool opened) for calibration, and sends it
+    when the page is hidden; no message text, no code and no data go with it."""
+    api, _ = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + f"?api={api}&planpace=1#s=TEST22")
+    started(page)
+    n = len(EVENTS)
+    add_file(page, "uhri")
+    page.fill("#input", "Build a counter of my secret words")
+    page.click("#sendBtn")
+    built(page, 1)
+    look(page, "traceBtn")
+    page.goto("about:blank")                                            # hidden: the queue goes out with sendBeacon
+    page.wait_for_function("() => true")
+    import time
+    for _ in range(50):
+        if len(EVENTS) > n:
+            break
+        time.sleep(0.1)
+    evs = [e for batch in EVENTS[n:] for e in batch["events"]]
+    names = [e["t"] for e in evs]
+    assert "open" in names and "build" in names and "look" in names, names
+    b = next(e for e in evs if e["t"] == "build")
+    assert b["kind"] == "app" and b["files"] == 1 and isinstance(b["s"], int)
+    assert "secret" not in json.dumps(EVENTS[n:])
+    assert EVENTS[n]["seat"] == "TEST22" and re.fullmatch(r"[0-9a-f]{16}", EVENTS[n]["sid"])
+    ctx.close()
+
+
+def test_the_take_home_kit_works_offline(base_url, browser, tmp_path):
+    """About → Download the take-home kit: one HTML file with every workshop request ready for any chatbot, the data
+    and the participant's apps. Opened from disk, it runs an app of the participant's, an answer pasted from a
+    chatbot and a query, with no network; the template on its own says where to get a kit."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900}, accept_downloads=True)
+    page = ctx.new_page()
+    page.goto(base_url + "?via=replay&planpace=1&country=Kenya")
+    started(page)
+    send(page, DASHBOARD, "uhri", 1)
+    page.click("#takeHomeBtn")
+    with page.expect_download(timeout=60000) as dl:
+        page.click("#kitBtn")
+    kit = tmp_path / dl.value.suggested_filename
+    dl.value.save_as(kit)
+    assert kit.name == "garage-research-kit-kenya.html"
+
+    p = ctx.new_page()
+    net = []
+    p.on("request", lambda r: net.append(r.url) if r.url.startswith("http") else None)
+    p.goto(kit.as_uri())
+    assert p.locator(".req").count() == 8 and "KENYA" in p.inner_text("#kicker").upper()   # the label is in capitals
+    first, follow = p.locator(".req textarea").nth(0).input_value(), p.locator(".req textarea").nth(4).input_value()
+    assert "Build this app" in first and "WORKSHOP_DATA.uhri" in first and "studio.ask(" not in first and "```edit" not in first
+    assert "WORKSHOP_DATA.pdf_ten" in follow and "You are helping a participant" not in follow   # same conversation, new data only
+    p.click("[data-app='0']")                                             # the participant's own app, on the kit's data
+    p.frame_locator(".stage iframe").locator("body").get_by_text(re.compile("Kenya")).first.wait_for(timeout=20000)
+    p.fill("#answer", (SITE / "replay/claude/s7-1-dashboard.md").read_text())
+    p.click("#run")
+    p.frame_locator(".stage iframe").locator("body").get_by_text(re.compile("2,264")).first.wait_for(timeout=20000)
+    assert p.is_enabled("#save")
+    p.fill("#answer", (SITE / "replay/claude/s7-1b-ask-data.md").read_text())
+    p.click("#run")
+    p.wait_for_selector(".qbox table", timeout=20000)
+    assert "Total" in p.inner_text(".qbox")
+    assert not net, net                                                   # nothing went to the internet
+    p.goto((SITE / "kit/kit.html").as_uri())                              # the template, opened by mistake
+    assert p.is_visible("#template") and "Download the take-home kit" in p.inner_text("#template")
+    ctx.close()
+
+
+def test_basic_shows_one_path_and_advanced_the_rest(base_url, browser, fake_api):
+    """Basic (the default): Session 1 offers the dashboard or the Council votes, Session 2 the PDF, the Verbatim
+    finder and the wiki; no own files, no Plan mode switch. Advanced (footer) shows the rest, and is remembered.
+    Suggest improvements offers five ways to review an app, each filling the box."""
+    api, _ = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + f"?api={api}&planpace=1#s=TEST22")
+    started(page)
+    assert page.locator("#suggest button b").all_inner_texts()[:2] == [DASHBOARD, "How two States vote at the Human Rights Council"]
+    assert not page.is_visible("#shelf .add-own") and page.inner_text("#advBtn") == "Advanced: off"
+    page.get_by_role("tab", name="Session 2").click()
+    assert page.locator("#suggest button b").all_inner_texts()[:3] == ["Paragraphs out of a PDF", "Verbatim finder for General Comments", "A research wiki on neurotechnology and justice"]
+    page.click("#advBtn")
+    assert page.is_visible("#shelf .add-own") and "Check an AI briefing" not in page.inner_text("#suggest")   # three at a time before an app
+    page.reload()
+    started(page)
+    assert page.inner_text("#advBtn") == "Advanced: on"
+    page.click("#advBtn")
+    page.get_by_role("tab", name="Session 1").click()
+    add_file(page, "uhri")
+    page.fill("#input", "Build a counter")
+    page.click("#sendBtn")
+    built(page, 1)
+    page.locator("#suggest button", has_text="Suggest improvements").click()
+    page.wait_for_selector(".msg.lenses button")
+    assert page.locator(".msg.lenses button").count() == 5
+    page.locator(".msg.lenses button", has_text="Pre-mortem").click()
+    assert "pre-mortem" in page.input_value("#input").lower()
     ctx.close()

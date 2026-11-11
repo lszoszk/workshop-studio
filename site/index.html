@@ -8,7 +8,7 @@
 <meta name="robots" content="noindex, nofollow">
 <script src="gate.js"></script>
 <script>try { const t = localStorage.getItem('ws:theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
-<link rel="stylesheet" href="studio.css?v=2026-11-06a"></head>
+<link rel="stylesheet" href="studio.css?v=2026-11-11a"></head>
 <body>
 <!-- a phone that scanned the badge's QR code gets this instead of the studio -->
 <div class="handoff" id="handoff" hidden>
@@ -34,8 +34,8 @@
     </div>
   </div>
   <div class="session" id="sessionSwitch" role="tablist" aria-label="Session">
-    <button type="button" role="tab" data-session="S7" aria-label="Session 7"><span class="sl">Session </span><span class="ss">S</span>7</button>
-    <button type="button" role="tab" data-session="S8" aria-label="Session 8"><span class="sl">Session </span><span class="ss">S</span>8</button>
+    <button type="button" role="tab" data-session="S7" aria-label="Session 1"><span class="sl">Session </span><span class="ss">S</span>1</button>
+    <button type="button" role="tab" data-session="S8" aria-label="Session 2"><span class="sl">Session </span><span class="ss">S</span>2</button>
   </div>
   <div class="top-mid">
     <label class="chip country" id="countryChip" title="Your country: its UN recommendations and observations are the first file on your shelf. Pick another country to run the same app on its records.">
@@ -64,11 +64,11 @@
       <div class="continuing" id="continuing" hidden></div>
       <div class="needs" id="needs" hidden></div>
       <div class="attach" id="attach" hidden></div>
-      <button type="button" class="planmode" id="planModeBtn" aria-pressed="true" hidden title="Plan mode: the model looks at your data, asks you a few questions and writes a plan; you build from the plan">Plan mode</button>
+      <button type="button" class="planmode adv" id="planModeBtn" aria-pressed="true" hidden title="Plan mode: the model looks at your data, asks you a few questions and writes a plan; you build from the plan">Plan mode</button>
       <textarea id="input" rows="1" placeholder="Ask anything, or describe a tool you want"></textarea>
       <div class="composer-row">
         <button type="button" class="ghost small" id="addFileBtn" title="Your files: drag one into the chat, or pick it here">+ File</button>
-        <span class="hint" title="Enter sends your message; Shift+Enter starts a new line">Enter sends · Shift+Enter: new line</span>
+        <span class="hint" title="Enter sends your message; Shift+Enter starts a new line; paste a screenshot to show what you mean">Enter sends · Shift+Enter: new line · paste a screenshot</span>
         <button type="button" class="ghost" id="stopBtn" hidden>Stop</button>
         <button type="submit" class="primary send" id="sendBtn" disabled>Send</button>
       </div>
@@ -83,12 +83,12 @@
         <button type="button" role="tab" id="viewApp" aria-selected="true">App</button>
         <button type="button" role="tab" id="viewCode" aria-selected="false">Code</button>
       </div>
-      <button class="tool" id="tabBtn" title="Open the app in a new tab, full screen. It follows the studio: a new version appears there too.">New tab ↗</button>
+      <button class="tool adv" id="tabBtn" title="Open the app in a new tab, full screen. It follows the studio: a new version appears there too.">New tab ↗</button>
       <span class="linkoff" id="linkOffPill" hidden>Model link cut</span>
       <div class="tools">
         <button class="tool" id="filesBtn" title="The files you can drag into the chat">Your files</button>
         <button class="tool" id="downloadBtn" title="Save the app as one file that opens offline">Save as file</button>
-        <button class="tool" id="wallBtn" title="Show your app on the room's screen" hidden>Send to wall</button>
+        <button class="tool adv" id="wallBtn" title="Show your app on the room's screen" hidden>Send to wall</button>
         <div class="menu">
           <button class="tool look" id="lookBtn" aria-haspopup="menu" aria-expanded="false">Look inside <span class="count" id="traceCount">0</span><span class="caret" aria-hidden="true"></span></button>
           <div class="menu-panel" id="lookPanel" role="menu" hidden>
@@ -151,6 +151,7 @@
     <button type="button" class="linkish" id="feedbackBtn">Feedback</button>
     <button type="button" class="linkish" id="tourBtn">Tour</button>
     <button type="button" class="linkish" id="takeHomeBtn">About</button>
+    <button type="button" class="linkish" id="advBtn" aria-pressed="false" title="Show more requests and tools: your own files, the wiki, Suggest improvements, Plan mode on or off, New tab, Send to wall">Advanced: off</button>
     <button type="button" class="linkish" id="themeBtn" aria-pressed="false">Dark mode</button>
   </span>
 </footer>
@@ -182,9 +183,11 @@
   </form>
 </dialog>
 
-<script src="preview-doc.js?v=2026-11-06a"></script>
-<script src="pdf-view.js?v=2026-11-06a"></script>
-<script src="tour.js?v=2026-11-06a"></script>
-<script src="studio.js?v=2026-11-06a"></script>
+<script src="preview-doc.js?v=2026-11-11a"></script>
+<script src="pdf-view.js?v=2026-11-11a"></script>
+<script src="tour.js?v=2026-11-11a"></script>
+<script src="own-files.js?v=2026-11-11a"></script>
+<script src="kit.js?v=2026-11-11a"></script>
+<script src="studio.js?v=2026-11-11a"></script>
 </body>
 </html>

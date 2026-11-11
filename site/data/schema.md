@@ -152,6 +152,15 @@ the document has), `footnotes` (how many footnotes the document has, in its PDF 
 `adopted`, and `first_words` (`{"1": "A clean, healthy and sustainable environment", …}`: the first six words
 of each numbered paragraph).
 
+## `WORKSHOP_DATA.pdf_ten`: ten UN documents as raw text from their PDFs
+
+`{title, source, built, count, records: [{symbol, committee, year, title, doc_url, count, pages: [{page, text}], reference: {...}}]}`.
+`records` are 10 General Comments of six treaty bodies, one record per document: `pages` holds
+its pages exactly as the converter of `pdf_text` produced them, nothing cleaned, and `reference` has the
+same fields as in `pdf_text` (`paragraphs`, `footnotes`, `adopted`, `first_words`), from the UN Human Rights
+Database; `footnotes` is null where the database records none. The documents differ in layout: a rule written
+on one may break on another. The first is E/C.12/GC/27, the same document as `pdf_text`.
+
 ## Rules for every app
 
 - Always show where a number comes from: n of records, the filter applied, and a link

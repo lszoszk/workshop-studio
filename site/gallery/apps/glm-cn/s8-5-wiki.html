@@ -101,10 +101,10 @@ footer{border-top:1px solid var(--rule);padding:.7rem 1.4rem;font:11px var(--mon
 
 <div role="tablist" aria-label="Wiki tabs" id="tabs">
   <button role="tab" id="tab-1" aria-selected="true" aria-controls="p1">01 PAGES</button>
-  <button role="tab" id="tab-2" aria-selected="false" aria-controls="p2">02 ASK</button>
-  <button role="tab" id="tab-3" aria-selected="false" aria-controls="p3">03 INGEST</button>
-  <button role="tab" id="tab-4" aria-selected="false" aria-controls="p4">04 CHECK</button>
-  <button role="tab" id="tab-5" aria-selected="false" aria-controls="p5">05 RECORD</button>
+  <button role="tab" id="tab-2" aria-selected="false" aria-controls="p2" hidden>02 ASK</button>
+  <button role="tab" id="tab-3" aria-selected="false" aria-controls="p3" hidden>03 INGEST</button>
+  <button role="tab" id="tab-4" aria-selected="false" aria-controls="p4">02 CHECK</button>
+  <button role="tab" id="tab-5" aria-selected="false" aria-controls="p5">03 RECORD</button>
 </div>
 
 <main>
@@ -257,10 +257,10 @@ function updateHeader(){
   const t=totals();
   document.getElementById("hd-dataline").textContent =
     P.length+" pages ("+(t.byType.source||0)+" sources, "+(t.byType.concept||0)+" concepts, "+(t.byType.entity||0)+" entities, "+(t.byType.question||0)+" questions) · "
-    +t.pins+" pins, "+t.ver+" verified by this page · "+D.length+" documents, "+t.inbox+" in the inbox · built "+W.built;
+    +t.pins+" pins, "+t.ver+" verified by this page · "+D.length+" documents · built "+W.built;
   document.getElementById("hd-session").textContent =
-    "Changes this session: "+S.changes+" · Calls to the model: "+S.calls+" · Passages that left the browser: "+S.passages;
-  document.getElementById("ft").textContent = W.source+" · built "+W.built+" · Counting, matching and verification are done by this page's code; the model is called only when you press Ask, Ingest or a retry button.";
+    "";
+  document.getElementById("ft").textContent = W.source+" · built "+W.built+" · Counting, matching and verification are done by this page's code; no model is called.";
   document.getElementById("rec-src").textContent = "Data source: "+W.source+" · "+P.length+" pages · "+D.length+" library documents.";
 }
 
@@ -375,8 +375,9 @@ function setTab(n){
 }
 tabs.forEach((t,i)=>{t.addEventListener("click",()=>setTab(i+1));
   t.addEventListener("keydown",e=>{
-    if(e.key==="ArrowRight"){tabs[(i+1)%5].focus();tabs[(i+1)%5].click();}
-    if(e.key==="ArrowLeft"){tabs[(i+4)%5].focus();tabs[(i+4)%5].click();}
+    const vis=tabs.filter(x=>!x.hidden),k=vis.indexOf(t);   // Ask and Ingest were taken out
+    if(e.key==="ArrowRight"){vis[(k+1)%vis.length].focus();vis[(k+1)%vis.length].click();}
+    if(e.key==="ArrowLeft"){vis[(k+vis.length-1)%vis.length].focus();vis[(k+vis.length-1)%vis.length].click();}
   });});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")S.stop=true;});
 

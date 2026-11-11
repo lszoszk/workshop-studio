@@ -45,7 +45,7 @@ BLOCK=$(cat <<'NGINX'
     proxy_connect_timeout 3s;            # a dead container fails fast, so the front fails over fast
     proxy_read_timeout 300s;             # a long answer streams for minutes
     proxy_send_timeout 300s;
-    client_max_body_size 1m;             # conversation with earlier page versions; gallery pages ≤ 300 kB
+    client_max_body_size 8m;             # conversation with earlier page versions and up to three screenshots; gallery pages ≤ 300 kB
     gzip off;
     access_log off;
     add_header X-Robots-Tag "noindex, nofollow" always;

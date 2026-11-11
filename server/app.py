@@ -44,7 +44,7 @@ import anthropic
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
 
 import models
 from seats import Seats, normalise
@@ -59,8 +59,20 @@ GALLERY_PER_SEAT = 20
 FEEDBACK_MAX_CHARS = 3000
 FEEDBACK_MAX_ITEMS = 2000
 MAX_BODY_BYTES = 1_000_000
+MAX_CHAT_BYTES = 8_000_000   # a conversation plus up to three screenshots (nginx: client_max_body_size 8m)
+# activity events (POST /studio-api/events): the names the front sends; see track() in site/studio.js
+EVENT_NAMES = {"open", "session", "pick", "plan_open", "plan_build", "build", "build_fail", "app_error", "repair",
+               "query", "look", "gallery_in", "own_file", "own_samples", "picture", "model", "save", "wall", "kit",
+               "advanced"}
+EVENT_FIELD = re.compile(r"[a-z_]{1,20}")
+EVENT_VALUE = re.compile(r"[A-Za-z0-9_.:/+\-]{0,60}")   # ids and codes: no spaces, so no sentence fits
+MAX_EVENTS_PER_POST = 100
+EVENTS_PER_SESSION_DAY = 3000
 MAX_MESSAGES = 40
 MAX_CHARS = 300_000          # whole conversation; earlier versions of the page travel back with it
+MAX_IMAGES = 3               # a participant's screenshots, on the last message only
+MAX_IMAGE_CHARS = 2_000_000  # base64 of one image (about 1.5 MB); the studio sends them scaled down
+IMAGE_TYPES = ("image/png", "image/jpeg", "image/webp", "image/gif")
 KEEPALIVE_S = 10             # a silent upstream gets an SSE comment, so nginx and the browser stay awake
 BUSY = "in_flight_budget_exhausted"   # OpenRouter 402 reason: transient, "retry after in-flight requests settle"
 # purpose → (temperature, max_tokens); a question's budget holds a reasoning model's thinking (GLM-5.3 thinks
@@ -177,9 +189,9 @@ def log_event(**fields) -> None:
     log.info(json.dumps(fields, ensure_ascii=False))
 
 
-async def read_json(request: Request) -> dict:
+async def read_json(request: Request, limit: int = MAX_BODY_BYTES) -> dict:
     raw = await request.body()
-    if len(raw) > MAX_BODY_BYTES:
+    if len(raw) > limit:
         raise Refusal(413, "The request is too large", "too_large")
     try:
         d = json.loads(raw or b"{}")
@@ -202,7 +214,34 @@ def clean_messages(raw) -> list[dict]:
         raise Refusal(400, "Write a message first", "no_message")
     if sum(len(m["content"]) for m in msgs) > MAX_CHARS:
         raise Refusal(400, "This conversation is too long. Start a new thread with an improved prompt", "too_long")
+    # screenshots: on the message being sent only, never on an earlier one; their bytes are never logged
+    if any(m.get("images") for m in raw[:-1]):
+        raise Refusal(400, "Only the last message may carry images", "bad_images")
+    images = raw[-1].get("images") or []
+    if images:
+        if not isinstance(images, list) or len(images) > MAX_IMAGES or not all(
+                isinstance(i, dict) and i.get("media_type") in IMAGE_TYPES and isinstance(i.get("data"), str)
+                and 0 < len(i["data"]) <= MAX_IMAGE_CHARS and re.fullmatch(r"[A-Za-z0-9+/=]+", i["data"]) for i in images):
+            raise Refusal(400, f"Up to {MAX_IMAGES} images (PNG, JPEG, WebP or GIF, about 1.5 MB each) can go with a message", "bad_images")
+        msgs[-1]["images"] = [{"media_type": i["media_type"], "data": i["data"]} for i in images]
     return msgs
+
+
+def with_images(messages: list, api: str) -> list:
+    """The messages as the upstream API takes them: a message with images becomes a list of content parts
+    (Anthropic: the images first, then the text; OpenRouter: the text, then each image as a data URL)."""
+    out = []
+    for m in messages:
+        imgs = m.get("images")
+        if not imgs:
+            out.append({"role": m["role"], "content": m["content"]})
+        elif api == "anthropic":
+            out.append({"role": m["role"], "content": [{"type": "image", "source": {"type": "base64", "media_type": i["media_type"],
+                        "data": i["data"]}} for i in imgs] + [{"type": "text", "text": m["content"]}]})
+        else:
+            out.append({"role": m["role"], "content": [{"type": "text", "text": m["content"]}] + [{"type": "image_url",
+                        "image_url": {"url": f"data:{i['media_type']};base64,{i['data']}"}} for i in imgs]})
+    return out
 
 
 SCRIPT_SRC = re.compile(r"<script\b[^>]*?\ssrc\s*=", re.I)
@@ -285,7 +324,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
             else (m.reasoning or "high")
         # prompt caching: the studio's instructions, and the conversation up to the last answer (in edit mode the
         # whole app), are the same prefix on the next request; reading them back costs a tenth of the input price
-        msgs = [dict(x) for x in messages]
+        msgs = with_images(messages, "anthropic")
         last_answer = max((i for i, x in enumerate(msgs) if x["role"] == "assistant"), default=None)
         if last_answer is not None:
             msgs[last_answer]["content"] = [{"type": "text", "text": msgs[last_answer]["content"], "cache_control": {"type": "ephemeral"}}]
@@ -309,7 +348,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         system = systems[purpose]
         payload = {"model": m.id, "stream": True, "usage": {"include": True}, "temperature": temperature,
                    "max_tokens": max_tokens, "provider": models.provider_block(m),
-                   "messages": ([{"role": "system", "content": system}] if system else []) + messages}
+                   "messages": ([{"role": "system", "content": system}] if system else []) + with_images(messages, "openrouter")}
         if purpose == "build" and is_change(messages) and m.edit_reasoning:
             payload["reasoning"] = {"effort": m.edit_reasoning}   # a change to an app already built
         elif purpose == "build" and m.reasoning:
@@ -421,7 +460,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
     @app.post("/studio-api/chat")
     async def chat(request: Request):
         try:
-            d = await read_json(request)
+            d = await read_json(request, MAX_CHAT_BYTES)
             seat = seat_or_refuse(d.get("seat"))
             purpose = d.get("purpose") or "build"
             if purpose not in PURPOSES:
@@ -430,6 +469,8 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
             if not m:
                 raise Refusal(400, "This model is not on the menu", "model")
             messages = clean_messages(d.get("messages"))
+            if messages[-1].get("images") and not m.vision:
+                raise Refusal(400, f"{m.label} cannot read images. Switch to a model that can, or send the message without them", "no_vision")
             if seat["spent"] >= seat["budget"]:
                 raise Refusal(429, "This seat has used its budget", "seat_budget")
             if seats.spent_today() >= cfg.daily_budget:
@@ -444,7 +485,8 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         t0 = time.monotonic()
         used, (resp, err) = m, await open_with_retry(m, messages, purpose)
         first_error = err
-        if resp is None and m.fallback and err != BUSY:    # a busy account is busy for every model: no fallback
+        # a busy account is busy for every model; a fallback that cannot read the images would answer without them
+        if resp is None and m.fallback and err != BUSY and (models.MODELS[m.fallback].vision or not messages[-1].get("images")):
             used = models.MODELS[m.fallback]
             resp, err = await open_with_retry(used, messages, purpose)
         if resp is None:
@@ -528,6 +570,53 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
             except (OSError, ValueError):
                 continue
         return sorted(items, key=lambda i: i["created"], reverse=True)
+
+    # ── activity, to calibrate the studio before the workshop: what was done, how long it took and what failed;
+    # never a message, a file, an app or a value from the data. Names and fields are a whitelist; a string is an id
+    # or a code (60 characters at most, no free text), so a stray value cannot carry a sentence. One file a day. ──
+    events_dir = cfg.state_dir / "events"
+    events_dir.mkdir(parents=True, exist_ok=True)
+    events_today = {"day": "", "n": {}}
+
+    def clean_event(e) -> dict | None:
+        if not isinstance(e, dict) or e.get("t") not in EVENT_NAMES:
+            return None
+        out = {"t": e["t"], "ms": int(e["ms"]) if isinstance(e.get("ms"), (int, float)) and 0 <= e["ms"] < 1e9 else None}
+        for k, v in list(e.items())[:16]:
+            if k in ("t", "ms") or not EVENT_FIELD.fullmatch(str(k)):
+                continue
+            if v is None or isinstance(v, bool):
+                out[k] = v
+            elif isinstance(v, (int, float)) and abs(v) < 1e9:
+                out[k] = round(v, 3)
+            elif isinstance(v, str) and EVENT_VALUE.fullmatch(v):
+                out[k] = v
+        return out
+
+    @app.post("/studio-api/events")
+    async def events_post(request: Request):
+        try:
+            d = await read_json(request)
+            sid = str(d.get("sid") or "")
+            if not re.fullmatch(r"[0-9a-f]{8,16}", sid) or not isinstance(d.get("events"), list):
+                raise Refusal(400, "events must come with a session id", "bad_events")
+        except Refusal as e:
+            return refuse(e)
+        seat = seats.get(d.get("seat")) if d.get("seat") else None   # a recorded-mode visitor has no seat
+        day = dt.date.today().isoformat()
+        if events_today["day"] != day:
+            events_today.update(day=day, n={})
+        room = EVENTS_PER_SESSION_DAY - events_today["n"].get(sid, 0)
+        kept = [x for x in (clean_event(e) for e in d["events"][:MAX_EVENTS_PER_POST]) if x][:max(0, room)]
+        if kept:
+            events_today["n"][sid] = events_today["n"].get(sid, 0) + len(kept)
+            at = dt.datetime.now().isoformat(timespec="seconds")
+            head = {"at": at, "seat": seat["code"] if seat else None, "sid": sid,
+                    "v": str(d.get("v") or "")[:20] if EVENT_VALUE.fullmatch(str(d.get("v") or "")) else None}
+            with (events_dir / f"{day}.jsonl").open("a", encoding="utf-8") as fh:
+                for x in kept:
+                    fh.write(json.dumps({**head, **x}, ensure_ascii=False) + "\n")
+        return {"ok": True, "kept": len(kept)}
 
     @app.post("/studio-api/feedback")
     async def feedback_post(request: Request):
@@ -642,6 +731,16 @@ td,th{{border-bottom:1px solid #ddd;padding:4px 8px;text-align:left}}form{{displ
 <table><tr><th>Seat</th><th>Label</th><th>Country</th><th>Spent / budget</th><th>Req</th><th>Err</th><th>Last request</th>
 <th>Last error</th><th></th></tr>{rows}</table><h2>Feedback ({len(s["feedback"])})</h2><ul>{fb}</ul><h2>Wall</h2><ul>{wall}</ul>"""
         return HTMLResponse(body, headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
+
+    @app.get("/studio-api/admin/events")
+    async def admin_events(key: str = "", day: str = ""):
+        """The activity of one day (default today) as JSON lines, for tools/events_report.py."""
+        if not admin_ok(key):
+            return refuse(Refusal(403, "Wrong admin key", "admin"))
+        day = day if re.fullmatch(r"\d{4}-\d{2}-\d{2}", day) else dt.date.today().isoformat()
+        p = events_dir / f"{day}.jsonl"
+        return Response(p.read_text(encoding="utf-8") if p.exists() else "", media_type="application/x-ndjson",
+                        headers={"Cache-Control": "no-store"})
 
     @app.get("/studio-api/admin")
     async def admin_get(key: str = "", format: str = "html"):

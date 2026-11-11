@@ -32,12 +32,47 @@
     versions: [], current: null, freshNext: false, pendingPromptId: null, pendingText: '',
     talk: [],            // answers in words (no app): kept in the conversation, never a version
     draft: new Set(),    // files dragged into the message being written
+    draftImages: [],     // screenshots pasted or dropped into it: [{media_type, data, url, w, h, kb}]
     trace: [], linkOn: true, layersOn: false,
     busy: false, ctrl: null, dataText: {}, dataParsed: {},
     planMode: true,      // the four workshop apps plan first (the pill above the message box)
     planning: null,      // the plan being made or waiting to be built
     packs: {},           // planning packages by request id; null where there is none
+    own: {},             // the participant's own files (own-files.js), by key: kept in this browser
+    advanced: false,     // Basic shows one path through the exercises; Advanced (footer) shows the rest
   };
+
+  // Activity, to calibrate the studio before the workshop (server/app.py, POST /studio-api/events): what was done,
+  // how long it took and what failed, as ids and codes; never a message, a file, an app or a value from the data.
+  // Sent to the studio's server every 20 s and when the page is hidden; not from a test page (?via=, localhost
+  // without ?api=), and never with ?notrack=1, which is remembered.
+  const Track = {
+    q: [], t0: performance.now(),
+    sid: (() => { try { return crypto.getRandomValues(new Uint32Array(2)).reduce((s, n) => s + n.toString(16).padStart(8, '0'), ''); } catch (e) { return 'ffffffff'; } })(),
+    off: params.has('notrack') || localGet('ws:notrack') === '1' || params.has('via') ||
+      (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && !params.has('api')),
+    base() {
+      if (S.route && S.route.type === 'server') return S.route.base;
+      const vm = S.config && S.config.routes.find((r) => r.id === 'vm');
+      return params.get('api') || (vm && vm.base);
+    },
+    add(t, f = {}) {
+      if (this.off) return;
+      this.q.push(Object.assign({ t, ms: Math.round(performance.now() - this.t0) }, f));
+      if (this.q.length >= 50) this.flush();
+    },
+    flush(leaving) {
+      const base = this.base();
+      if (this.off || !this.q.length || !base) return;
+      const body = JSON.stringify({ seat: S.seatCode, sid: this.sid, v: (document.querySelector('script[src^="studio.js"]') || { src: '' }).src.split('v=')[1] || '', events: this.q.splice(0, 100) });
+      if (leaving && navigator.sendBeacon) navigator.sendBeacon(base + '/events', new Blob([body], { type: 'text/plain' }));
+      else fetch(base + '/events', { method: 'POST', body, keepalive: true, headers: { 'Content-Type': 'text/plain' } }).catch(() => {});
+    },
+  };
+  const track = (t, f) => Track.add(t, f);
+  if (params.has('notrack')) localSet('ws:notrack', '1');
+  setInterval(() => Track.flush(), 20000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') Track.flush(true); });
   const FIX = 'The app shows this error:';
 
   /* ---------- loading ---------- */
@@ -85,6 +120,7 @@
 
     S.model = localGet('ws:model') || config.default_model;
     renderModelMenu();
+    setAdvanced(params.get('advanced') === '1' || (params.get('advanced') !== '0' && localGet('ws:advanced') === '1'));
 
     setRoute(await pickRoute());
     if (S.route.type === 'server') await ensureSeat();
@@ -92,11 +128,14 @@
     renderCountryMenu();
     setCountry(params.get('country') || localGet('ws:country') || (S.seat && S.seat.country) || config.default_country);
 
+    (await OwnFiles.load()).forEach((e) => { S.own[e.key] = e; });   // before restore(): an app may read one
     restore();
     S.ready = true;
     $('sendBtn').disabled = false;
     renderFooter();
     renderAll();
+    track('open', { route: S.route.type, session: S.session, model: S.model, seat: !!S.seatCode, apps: S.versions.length,
+      w: innerWidth, ua: /Firefox/.test(navigator.userAgent) ? 'firefox' : /Edg\//.test(navigator.userAgent) ? 'edge' : /Chrome/.test(navigator.userAgent) ? 'chrome' : /Safari/.test(navigator.userAgent) ? 'safari' : 'other' });
     if (params.get('from')) await fromGallery(params.get('from'));
     else Tour.startOnce();   // the first visit in this browser
     if (!S.versions.length && !S.talk.length) {
@@ -110,6 +149,7 @@
   async function fromGallery(id) {
     history.replaceState(null, '', location.pathname + location.search.replace(/[?&]from=[^&]*/, '').replace(/^&/, '?'));
     const [model, promptId] = id.split('/');
+    track('gallery_in', { model, prompt: promptId });
     try {
       if (!/^[\w-]+\/[\w-]+$/.test(id)) throw new Error('not a gallery app');
       const g = await getJSON('gallery/gallery.json');
@@ -320,7 +360,8 @@
         headers: { Authorization: 'Bearer ' + S.key, 'Content-Type': 'application/json', 'X-Title': 'Garage Research' },
         body: JSON.stringify({
           model: m.openrouter,
-          messages: (sys ? [{ role: 'system', content: sys }] : []).concat(o.messages),
+          messages: (sys ? [{ role: 'system', content: sys }] : []).concat(o.messages.map((x) => (x.images ? { role: x.role, content: [{ type: 'text', text: x.content },
+            ...x.images.map((i) => ({ type: 'image_url', image_url: { url: `data:${i.media_type};base64,${i.data}` } }))] } : x))),
           stream: true,
           temperature: { build: 0.3, inapp: 0.2, question: 0.8 }[o.purpose],
           max_tokens: { build: 64000, inapp: 8000, question: 4000 }[o.purpose],
@@ -519,11 +560,17 @@
 
   /* ---------- files: dragged from the shelf into the chat ---------- */
 
-  const fileMeta = (key) => S.config.files.find((f) => f.key === key);
+  const fileMeta = (key) => S.config.files.find((f) => f.key === key) || ownMeta(key);
   const fileLabel = (key) => fileMeta(key).label.replace(/\{country\}/g, S.country);
-  // what the model gets for a file: its name and where the app finds it, never its contents
-  const attachLine = (key) => `(Attached: ${fileLabel(key)} → WORKSHOP_DATA.${key}` +
-    (fileMeta(key).also || []).map((k) => `, with WORKSHOP_DATA.${k}`).join('') + ')';
+  // what the model gets for a file: its name and where the app finds it, never its contents; for the
+  // participant's own file also its fields, and its first records only if they ticked the box
+  const attachLine = (key) => S.own[key] ? OwnFiles.describe(S.own[key], fileLabel(key)) :
+    `(Attached: ${fileLabel(key)} → WORKSHOP_DATA.${key}` + (fileMeta(key).also || []).map((k) => `, with WORKSHOP_DATA.${k}`).join('') + ')';
+  // a file removed from the shelf still has a name in the conversations that used it
+  const ownMeta = (key) => {
+    const e = S.own[key];
+    return { key, kind: e ? e.kind : 'csv', own: true, label: e ? e.name : 'a file you removed', blurb: '' };
+  };
   const attachedBefore = () => new Set([...S.versions, ...S.talk, ...(S.planning ? [S.planning] : [])].flatMap((t) => t.files || []));
 
   function addFile(key) {
@@ -542,9 +589,12 @@
 
   function renderAttach() {
     const box = $('attach');
-    box.hidden = !S.draft.size;
-    box.innerHTML = [...S.draft].map((k) => chipHtml(k, true)).join('');
-    box.querySelectorAll('button').forEach((b) => { b.onclick = () => { S.draft.delete(b.dataset.key); renderAttach(); renderNeeds(); renderShelfState(); }; });
+    box.hidden = !S.draft.size && !S.draftImages.length;
+    box.innerHTML = [...S.draft].map((k) => chipHtml(k, true)).join('') + S.draftImages.map((im, i) =>
+      `<span class="filechip pic"><img src="${im.url}" alt=""><span>Picture ${im.w}×${im.h}</span>` +
+      `<button type="button" data-img="${i}" aria-label="Remove the picture">×</button></span>`).join('');
+    box.querySelectorAll('button[data-key]').forEach((b) => { b.onclick = () => { S.draft.delete(b.dataset.key); renderAttach(); renderNeeds(); renderShelfState(); }; });
+    box.querySelectorAll('button[data-img]').forEach((b) => { b.onclick = () => { S.draftImages.splice(Number(b.dataset.img), 1); renderAttach(); }; });
   }
 
   // a workshop request names the file it needs; until that file is in the chat, the box says so
@@ -593,16 +643,53 @@
         'Pick a suggestion, or ask a facilitator for a seat code to chat freely.');
       return;
     }
+    // a model that cannot read pictures (GLM) hands this one message to one that can, Claude first
+    const reader = S.draftImages.length && !S.config.models[S.model].vision ? (S.config.models.claude && S.config.models.claude.vision ? 'claude'
+      : Object.keys(S.config.models).find((k) => S.config.models[k].vision)) : null;
+    if (reader) note(`This message goes to <b>${esc(S.config.models[reader].label)}</b> (${esc(whereOf(reader))}): <b>${esc(S.config.models[S.model].label)}</b> cannot read pictures. Your next message goes back to ${esc(S.config.models[S.model].label)}.`);
     if (plan) {
       const files = [...new Set([...plan.files, ...S.draft])];
       S.draft.clear();
-      renderAttach();
       if ($('input').value === CHANGE) { $('input').value = ''; fitInput(); }
-      build(text, files);
+      build(text, files, { images: takeImages(), model: reader || undefined });
       return true;
     }
-    build(text, takeDraft());
+    const images = takeImages();
+    build(text, takeDraft(), { images, model: reader || undefined });
     return true;
+  }
+
+  function takeImages() {
+    const images = S.draftImages;
+    S.draftImages = [];
+    renderAttach();
+    return images;
+  }
+
+  // a screenshot, scaled to at most 1568 pixels on its long side (what the models read in full), as PNG, or as
+  // JPEG when the PNG would be over 1.2 MB; it goes to the model whole, so the trace says so
+  async function imagePart(blob) {
+    const bmp = await createImageBitmap(blob);
+    const k = Math.min(1, 1568 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * k);
+    c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    let out = await new Promise((r) => c.toBlob(r, 'image/png'));
+    if (out.size > 1200000) out = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.85));
+    const url = await new Promise((r) => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(out); });
+    return { media_type: out.type, data: url.split(',')[1], url, w: c.width, h: c.height, kb: Math.round(out.size / 1024) };
+  }
+
+  async function addImages(list) {
+    for (const f of [...list]) {
+      if (S.draftImages.length >= 3) { note('Up to three pictures can go with one message.'); break; }
+      try { S.draftImages.push(await imagePart(f)); track('picture', { kb: S.draftImages[S.draftImages.length - 1].kb }); } catch (e) { note(`The studio could not read the picture "${esc(f.name || 'pasted')}".`); }
+    }
+    renderAttach();
+    if (S.route.type === 'replay') note('Pictures go to a live model, so they need a seat code. Recorded answers cannot see them.');
+    else if (S.draftImages.length && !S.config.models[S.model].vision) note(`<b>${esc(S.config.models[S.model].label)}</b> cannot read pictures, so the message with it will go to <b>${esc((S.config.models.claude || {}).label || 'a model that can')}</b>.`);
+    $('input').focus();
   }
 
   // the files and words in the box go into a message: the box is emptied
@@ -629,6 +716,7 @@
 
   async function build(userText, files = [], opts = {}) {
     if (S.busy || !userText.trim()) return;
+    const model = opts.model || S.model;   // a message with a picture may go to another model than the menu's
     const parent = S.freshNext ? null : currentVersion();
     const promptId = S.pendingPromptId;
     const plan = S.planning && S.planning.building ? S.planning : null;
@@ -641,7 +729,10 @@
     const asTyped = userText + files.map((k) => '\n\n' + attachLine(k)).join('');
     const sent = asTyped + shelfBlock(hits);
     const messages = buildMessages(parent, sent);
+    const images = opts.images || [];   // only this message carries them; later requests send the words alone
+    if (images.length) messages[messages.length - 1].images = images.map(({ media_type, data }) => ({ media_type, data }));
     const giveBack = () => {  // after a failure the message and its files go back in the box
+      S.draftImages = images;
       if (plan) { plan.building = false; showPlan(plan); return; }   // a plan stays on the stage, ready to build again
       const fresh = !parent && S.versions.length > 0;
       openComposer(userText);
@@ -651,7 +742,7 @@
       renderContinuing();
     };
     setView('app');
-    addUser(userText, files);
+    addUser(userText, files, images);
     const view = addAssistantLive();
     if (hits.length) view.step(shelfStep(hits));
     const t0 = performance.now();
@@ -659,7 +750,7 @@
     S.ctrl = new AbortController();
     try {
       let { text, usage } = await chat({
-        purpose: 'build', model: S.model, messages, promptId, signal: S.ctrl.signal,
+        purpose: 'build', model, messages, promptId, signal: S.ctrl.signal,
         onThought: (all) => view.think(all),
         onDelta: (all) => {
           view.update(all);
@@ -680,10 +771,10 @@
           html = r.html;
           edit = { edits: edits.length, lines: r.lines };
         } else {
-          addTrace({ purpose: 'build', usage, messages, userText: asTyped, parent, files, shelf: hits });
+          addTrace({ purpose: 'build', usage, messages, userText: asTyped, parent, files, shelf: hits, images });
           view.retry(`The changes did not fit your app's code (at "${r.failed}"). Asking the model for the whole app instead; this takes longer.`);
-          asked = [...messages, { role: 'assistant', content: text }, { role: 'user', content: WHOLE_FILE }];
-          const again = await chat({ purpose: 'build', model: S.model, messages: asked, promptId, signal: S.ctrl.signal,
+          asked = [...messages.map(({ images: _, ...m }) => m), { role: 'assistant', content: text }, { role: 'user', content: WHOLE_FILE }];
+          const again = await chat({ purpose: 'build', model, messages: asked, promptId, signal: S.ctrl.signal,
             onThought: (all) => view.think(all), onDelta: (all) => view.update(all) });
           usage = { ...again.usage, cost: (usage.cost || 0) + (again.usage.cost || 0), seconds: (usage.seconds || 0) + (again.usage.seconds || 0) };
           text = again.text;
@@ -692,24 +783,45 @@
       }
       if (usage.model_label) view.who(usage.model_label);
       const seconds = usage.seconds || (performance.now() - t0) / 1000;
-      addTrace({ purpose: 'build', usage, messages: asked, userText: asTyped, parent, files, shelf: hits });
+      addTrace({ purpose: 'build', usage, messages: asked, userText: asTyped, parent, files, shelf: hits, images: asked === messages ? images : [] });
       if (usage.budget_left != null) setBudget(usage.budget_left);
-      const base = { user: userText, sent, files, model: usage.model || S.model, label: usage.model_label || S.config.models[S.model].label,
+      // what the activity record keeps of a build: never its words or code
+      const buildFacts = (kind) => ({ kind, prompt: promptId, model: usage.model || model, asked: model, fell: usage.fallback_from || null,
+        s: Math.round(seconds), cost: usage.cost != null ? Number(usage.cost) : null, rec: !!usage.recorded, plan: !!plan,
+        files: files.length, own: files.filter((k) => S.own[k]).length, images: images.length, parent: parent ? parent.n : null });
+      const base = { user: userText, sent, files, model: usage.model || model, label: usage.model_label || S.config.models[model].label,
         seconds, cost: usage.cost, recorded: !!usage.recorded, promptId, created: Date.now(), ...view.thinking(),
         ...(hits.length ? { shelf: hits.map((h) => h.page.id) } : {}) };
       if (!html) {
         if (!text.trim()) {
+          track('build_fail', { prompt: promptId, model: base.model, code: 'empty' });
           view.fail('', 'The model sent back nothing. Your message is back in the box: send it again.');
           giveBack();
           return;
         }
+        // a question about the data came back as a query: the browser runs it on all the data, the model never sees the result
+        if (extractQuery(text)) {
+          track('build', buildFacts('query'));
+          const t = Object.assign(base, { reply: text.trim(), after: S.current, query: true });
+          S.talk.push(t);
+          if (S.trace.length) S.trace[S.trace.length - 1].kept.unshift('The result of the query: your browser computed it on all the data; the model wrote the code and never saw the numbers.');
+          view.answer(t);
+          const p = S.prompts.find((q) => q.id === promptId);
+          if (p && p.lesson) view.lesson(p.lesson);
+          save();
+          if (plan) plan.building = false;
+          if (sketched && S.current) await showVersion(currentVersion());
+          return;
+        }
         // a workshop app that came back as one sentence: the model stopped before the code (Mistral, now and then)
         if (promptId && text.trim().length < 600) {
+          track('build_fail', { prompt: promptId, model: base.model, code: 'no_code' });
           view.fail('', 'The model stopped before writing the code; it happens now and then. Your request is back in the box: send it again.');
           giveBack();
           return;
         }
         // an answer in words: part of the conversation, not a new version of the app
+        track('build', buildFacts('talk'));
         const t = Object.assign(base, { reply: text.trim(), after: S.current });
         S.talk.push(t);
         view.answer(t);
@@ -726,6 +838,7 @@
       });
       S.versions.push(v);
       S.current = v.n;
+      track('build', Object.assign(buildFacts('app'), { v: v.n, lines: html.split('\n').length, edit: !!edit, whole: asked !== messages, auto: !!opts.auto }));
       if (plan) retirePlanning(`Built as v${v.n}.`);
       view.done(v);
       const p = S.prompts.find((q) => q.id === promptId);
@@ -737,6 +850,7 @@
       S.autoFix = S.route.type !== 'replay' && !opts.auto ? { n: v.n, t: performance.now() } : null;
       await showVersion(v);
     } catch (e) {
+      track('build_fail', { prompt: promptId, model, code: e.name === 'AbortError' ? 'stopped' : String(e.status || (e.failover ? 'no_route' : 'error')) });
       view.fail('', friendly(e));
       giveBack();
     } finally {
@@ -747,6 +861,7 @@
 
   const REPAIR_WINDOW_MS = 8000;   // an app that fails on load fails in the first seconds; later errors come from a click
   function autoRepair(m) {
+    track('repair', { v: S.current });
     note(`The app showed an error as it opened (<i>${esc(String(m.message || '').slice(0, 120))}</i>). The studio sends it back to the model to fix, once; the fix usually takes a few seconds.`);
     build(`${FIX} "${m.message}"${m.line ? ' at line ' + m.line : ''}. Please fix it and keep everything else the same.`, [], { auto: true });
   }
@@ -761,19 +876,101 @@
     renderTools();
   }
 
+  /* ---------- questions about the data: a query the browser runs ---------- */
+
+  // the model answers a question about the data with the body of a function (system_prompt.md, "Questions about
+  // the data"); it runs here, on all the data, in a frame with no network, like an app, and only the table is shown
+  const QUERY = /```query[ \t]*\n([\s\S]*?)```/;
+  const extractQuery = (text) => { const m = QUERY.exec(text || ''); return m ? m[1].trim() : ''; };
+  const withoutQuery = (text) => text.replace(QUERY, '').trim();
+  const QUERY_TIMEOUT_MS = 15000;
+
+  async function runQuery(code, files) {
+    const id = 'q' + Math.random().toString(36).slice(2);
+    const known = (k) => k === 'uhri' || (S.index.datasets[k]) || k.startsWith('own_');
+    const parts = await Promise.all(files.filter(known).map(async (k) => JSON.stringify(k) + ':' + (await dataText(k))));
+    const doc = PreviewDoc.inject('<!doctype html><html><head></head><body></body></html>', PreviewDoc.CSP +
+      '<script>window.WORKSHOP_DATA={' + parts.join(',') + '};</script>' +
+      '<script>(function () { let out; try { const r = (function () {\n' + PreviewDoc.escapeScript(code) + '\n})();' +
+      ' out = { ok: true, r: JSON.parse(JSON.stringify(r === undefined ? null : r)) }; } catch (e) { out = { ok: false, error: String((e && e.message) || e) }; }' +
+      ` parent.postMessage({ type: 'studio:query', id: ${JSON.stringify(id)}, out: out }, '*'); })();</script>`);
+    const f = document.createElement('iframe');
+    f.setAttribute('sandbox', 'allow-scripts');
+    f.hidden = true;
+    f.title = 'A query on your data';
+    return new Promise((resolve) => {
+      const done = (out) => { clearTimeout(timer); window.removeEventListener('message', on); f.remove(); resolve(out); };
+      const on = (e) => { if (e.source === f.contentWindow && e.data && e.data.type === 'studio:query' && e.data.id === id) done(e.data.out); };
+      const timer = setTimeout(() => done({ ok: false, error: `it ran for more than ${QUERY_TIMEOUT_MS / 1000} seconds` }), QUERY_TIMEOUT_MS);
+      window.addEventListener('message', on);
+      f.srcdoc = doc;
+      document.body.append(f);
+    });
+  }
+
+  function queryCard(t) {
+    const code = extractQuery(t.reply);
+    const card = document.createElement('div');
+    card.className = 'qcard';
+    card.innerHTML = '<div class="qhead">Computed in your browser, on all the data</div><div class="qbody">Running the query…</div>' +
+      '<details><summary>The code the model wrote</summary><pre></pre></details>' +
+      '<div class="row"><button type="button" class="ghost" data-act="again">Run again</button><button type="button" class="ghost" data-act="csv" hidden>Copy as CSV</button></div>';
+    card.querySelector('pre').textContent = code;
+    const files = [...new Set([...S.versions, ...S.talk].filter((x) => x.created <= t.created).flatMap((x) => x.files || []))];
+    const body = card.querySelector('.qbody'), csv = card.querySelector('[data-act=csv]');
+    const run = async () => {
+      body.textContent = 'Running the query…';
+      const t0 = performance.now();
+      const out = await runQuery(code, files);
+      const secs = ((performance.now() - t0) / 1000).toFixed(1);
+      track('query', { ok: !!out.ok, rows: out.ok && out.r && Array.isArray(out.r.rows) ? out.r.rows.length : null, s: Number(secs),
+        kind: out.ok ? null : (/^\w*Error\b/.exec(out.error || '') || ['other'])[0], prompt: t.promptId || null });
+      if (!out.ok) {
+        body.innerHTML = `<p class="qerr">The query failed: ${esc(out.error)}. Tell the model what went wrong, or ask again in other words.</p>`;
+        csv.hidden = true;
+        return;
+      }
+      const r = out.r || {};
+      if (!Array.isArray(r.rows) || !Array.isArray(r.columns)) {
+        body.innerHTML = `<p>${esc(typeof r === 'object' ? JSON.stringify(r) : String(r))}</p><p class="qnote">${secs} s</p>`;
+        csv.hidden = true;
+        return;
+      }
+      const cell = (v) => esc(v == null ? '' : typeof v === 'number' ? fmt(v) : String(v));
+      body.innerHTML = `<table><caption>${esc(r.title || 'Result')}</caption><thead><tr>${r.columns.map((c) => `<th scope="col">${esc(c)}</th>`).join('')}</tr></thead>` +
+        `<tbody>${r.rows.slice(0, 200).map((row) => `<tr>${(Array.isArray(row) ? row : [row]).map((v) => `<td${typeof v === 'number' ? ' class="num"' : ''}>${cell(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>` +
+        `<p class="qnote">${esc(r.note || '')}${r.note ? ' · ' : ''}${fmt(r.rows.length)} rows · ${secs} s · nothing was sent to a model</p>`;
+      csv.hidden = false;
+      csv.onclick = async () => {
+        const q = (v) => { const s = v == null ? '' : String(v); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+        const text = [r.columns, ...r.rows].map((row) => (Array.isArray(row) ? row : [row]).map(q).join(',')).join('\r\n');
+        try { await navigator.clipboard.writeText(text); csv.textContent = 'Copied'; } catch (e) { csv.textContent = 'Could not copy'; }
+        setTimeout(() => { csv.textContent = 'Copy as CSV'; }, 2000);
+      };
+    };
+    card.querySelector('[data-act=again]').onclick = run;
+    run();
+    return card;
+  }
+
   /* ---------- preview ---------- */
 
   function fileFor(k) {
     return k === 'uhri' ? S.countryFile : S.index.datasets[k].file;
   }
 
+  // the participant's own file is already in this browser; one that was removed gives an app no records
+  const ownText = (k) => (S.own[k] ? S.own[k].text : JSON.stringify({ dataset: k, removed: true, count: 0, records: [] }));
+
   async function dataText(k) {
+    if (k.startsWith('own_')) return PreviewDoc.escapeScript(ownText(k));
     const f = fileFor(k);
     if (!S.dataText[f]) S.dataText[f] = PreviewDoc.escapeScript(await getText('data/' + f));
     return S.dataText[f];
   }
 
   async function dataParsed(k) {
+    if (k.startsWith('own_')) return JSON.parse(ownText(k));
     const f = fileFor(k);
     if (!S.dataParsed[f]) S.dataParsed[f] = JSON.parse(await getText('data/' + f));
     return S.dataParsed[f];
@@ -935,6 +1132,9 @@
   function showAppError(m) {
     S.lastAppError = String(m.message || '').slice(0, 200);
     const a = S.autoFix;
+    // the kind of error only (TypeError, SyntaxError…): its message may quote the data
+    track('app_error', { kind: (/^\w*Error\b/.exec(String(m.message || '').replace(/^Uncaught\s+/, '')) || ['other'])[0], v: S.current,
+      first: !!(a && a.n === S.current && performance.now() - a.t < REPAIR_WINDOW_MS) });
     if (a && a.n === S.current && performance.now() - a.t < REPAIR_WINDOW_MS) {
       S.autoFix = null;
       if (S.busy) S.pendingRepair = m;   // the build that showed the app has not finished yet
@@ -1115,7 +1315,7 @@
 
   /* ---------- trace: what left this laptop ---------- */
 
-  function addTrace({ purpose, usage, messages, userText, parent, files = [], shelf = [], plan = null }) {
+  function addTrace({ purpose, usage, messages, userText, parent, files = [], shelf = [], plan = null, images = [] }) {
     const sys = purpose === 'build' ? buildSystem() : (S.config.direct_system[purpose] || '');
     const ids = (userText.match(UUID) || []).length;
     const sent = [], kept = [];
@@ -1123,7 +1323,16 @@
       sent.push(`Your message (${fmt(userText.length)} characters)`);
       if (plan) sent.push(`The plan you asked to change (v${plan.version}, about ${fmt(words(planText(plan.plan)))} words)`);
       if (shelf.length) sent.push(`${shelf.length === 1 ? 'An excerpt' : fmt(shelf.length) + ' excerpts'} from the workshop reference shelf, found by a search on your message: ${shelf.map((h) => h.page.title).join('; ')}`);
-      if (files.length) sent.push(`The name of each file you added (${files.map(fileLabel).join('; ')}): not its contents`);
+      if (images.length) sent.push(`Your ${images.length === 1 ? 'picture' : images.length + ' pictures'} (${images.map((im) => `${im.w}×${im.h}`).join(', ')}): ` +
+        'the whole image, with everything on it');
+      const shelfFiles = files.filter((k) => !S.own[k]);
+      if (shelfFiles.length) sent.push(`The name of each file you added (${shelfFiles.map(fileLabel).join('; ')}): not its contents`);
+      files.filter((k) => S.own[k]).forEach((k) => {
+        const e = S.own[k];
+        sent.push(`Your ${OwnFiles.NOUN[e.kind]} "${e.name}": its name, its field names and their types` +
+          (e.samples ? `, and its first ${Math.min(OwnFiles.SAMPLES, e.shape.count)} records, as you chose` : ', no values'));
+        kept.push(`All ${fmt(e.shape.count)} records of "${e.name}" stay in this browser, where your app reads them.`);
+      });
       sent.push(`The studio's instructions, a description of the data and a few sample records per dataset (about ${fmt(words(sys))} words, added ${S.route.type === 'server' ? 'by the server' : 'by the studio'})`);
       if (parent) sent.push(`The code of your current app (v${parent.n}, ${fmt(parent.html.split('\n').length)} lines) and a short summary of earlier steps`);
       kept.push(`All ${fmt(S.countryCount)} records addressed to ${S.country}, the General Comments, the Council votes and the PDFs: they stay in this browser, where your app reads them.`);
@@ -1140,7 +1349,7 @@
       host: usage.host, zdr: usage.zdr !== false, recorded: !!usage.recorded,
       tin: usage.prompt_tokens, tout: usage.completion_tokens, cost: usage.cost, seconds: usage.seconds,
       request: (sys ? `[system, ${S.route.type === 'server' ? 'added by the server' : 'added by the studio'}]\n${sys}\n\n` : '') +
-        messages.map((m) => `[${m.role}]\n${m.content}`).join('\n\n'),
+        messages.map((m) => `[${m.role}]\n${m.content}` + (m.images ? `\n[${m.images.length} picture(s) attached, sent whole]` : '')).join('\n\n'),
     });
     $('traceCount').textContent = S.trace.length;
     save();
@@ -1206,6 +1415,7 @@
   async function download() {
     const v = currentVersion();
     if (!v) return;
+    track('save', { prompt: v.promptId || null, v: v.n });
     const blob = new Blob([await fullDoc(v)], { type: 'text/html' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1215,9 +1425,60 @@
     note(`Saved <b>${esc(a.download)}</b>. It holds the app and the data it needs, so it opens with a double-click, even offline. AI buttons inside it only work in the studio.`);
   }
 
+  // the take-home kit (site/kit.js, site/kit/kit.html): one file with the workshop requests for any chatbot, a place to
+  // run the app a chatbot writes, the data, and the participant's apps
+  const KIT_STEPS = [['Session 1', 's7-1-dashboard', true], ['Session 1', 's7-3-quote-check', false], ['Session 1', 's7-1b-ask-data', false],
+    ['Session 2', 's7-4-extract', true], ['Session 2', 's7-4b-run-ten', false], ['Session 2', 's7-4c-show-broken', false],
+    ['Session 2', 's8-1-verbatim', true], ['Session 2', 's8-5-wiki', true]];
+  const KIT_DATA = ['uhri', 'gc', 'pdf_text', 'pdf_ten', 'wiki', 'library'];
+  const slugOf = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'app';
+
+  async function downloadKit(btn) {
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Building the kit…';
+    try {
+      const built = new Date().toISOString().slice(0, 10), sys = Kit.system(S.sysmd), steps = [];
+      let had = [];
+      for (const [session, id, first] of KIT_STEPS) {
+        const p = S.prompts.find((q) => q.id === id);
+        if (!p) continue;
+        const keys = p.dataset ? [p.dataset, ...(fileMeta(p.dataset).also || [])] : [];
+        const req = p.planning ? PLAN_HEAD + '\n\n' + planText(composePlan(await getJSON('data/' + p.planning), {})) : promptText(p);
+        const fresh = first ? keys : keys.filter((k) => !had.includes(k));   // a follow-up describes only data the conversation lacks
+        const text = [first ? sys : '', fresh.length ? Kit.data(S.schema, S.samples, fresh) : '',
+          '# The request\n\n' + req + (p.dataset ? '\n\n' + attachLine(p.dataset) : '')].filter(Boolean).join('\n\n---\n\n');
+        had = first ? keys : [...new Set([...had, ...keys])];
+        steps.push({ session, first, title: p.title, blurb: p.blurb, text });
+      }
+      // the participant's apps: the latest version of each (no other version builds on it), the newest six; their code
+      // here, their data the kit's (with any of the participant's own files they read)
+      const leaves = S.versions.filter((v) => !S.versions.some((w) => w.parent === v.n)).slice(-6);
+      const apps = leaves.map((v) => ({ title: titleOf(v.html), note: `version ${v.n}, by ${v.label}`, html: v.html }));
+      const own = [...new Set(leaves.flatMap((v) => chainOf(v).flatMap((x) => x.files || [])).filter((k) => S.own[k]))];
+      const datasets = {};
+      for (const k of [...KIT_DATA, ...own]) datasets[k] = await dataParsed(k);
+      const html = Kit.page(await getText('kit/kit.html'), { chart: S.chart, runtime: S.runtime, datasets, meta: { country: S.country, built }, steps, apps });
+      const blob = new Blob([html], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `garage-research-kit-${slugOf(S.country)}.html`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      track('kit', { mb: Math.round(blob.size / 1e5) / 10, apps: apps.length });
+      note(`Saved <b>${esc(a.download)}</b> (${(blob.size / 1e6).toFixed(0)} MB). Open it with a double-click: the workshop requests to paste into your own chatbot or LM Arena, a place to paste its answer and run the app on the data, offline, and your apps from today.`);
+    } catch (e) {
+      note(`The kit could not be built (${esc(e.message || String(e))}).`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = label;
+    }
+  }
+
   async function sendToWall() {
     const v = currentVersion();
     if (!v || S.route.type !== 'server') return;
+    track('wall', { prompt: v.promptId || null });
     try {
       const res = await fetch(S.route.base + '/gallery', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1233,10 +1494,11 @@
 
   /* ---------- chat column ---------- */
 
-  function addUser(text, files = []) {
+  function addUser(text, files = [], images = []) {
     const d = document.createElement('div');
     d.className = 'msg user';
-    if (files.length) d.innerHTML = `<div class="files">${files.map((k) => chipHtml(k)).join('')}</div>`;
+    if (files.length || images.length) d.innerHTML = `<div class="files">${files.map((k) => chipHtml(k)).join('')}` +
+      `${images.map((im) => `<img class="pic" src="${im.url}" alt="Your picture, ${im.w}×${im.h}">`).join('')}</div>`;
     d.append(document.createTextNode(text));
     $('log').append(d);
     // a long request shows its first lines; a click shows all of it
@@ -1354,8 +1616,9 @@
         stop();
         if (thought) { th.hidden = false; th.open = false; thLabel.textContent = thoughtEnd != null ? `Thought for ${thoughtEnd.toFixed(0)} s` : 'Thought'; }
         sum.className = 'summary answer-md';
-        sum.innerHTML = md(t.reply);
+        sum.innerHTML = md(t.query ? withoutQuery(t.reply) : t.reply);
         d.querySelector('.code').remove();
+        if (t.query) sum.after(queryCard(t));
         scrollLog();
       },
       lesson(text) { d.append(lessonEl(text)); },
@@ -1455,7 +1718,8 @@
         if (p && p.lesson) d.append(lessonEl(p.lesson));
       } else {
         d.querySelector('.summary').className = 'summary answer-md';
-        d.querySelector('.summary').innerHTML = md(t.reply);
+        d.querySelector('.summary').innerHTML = md(t.query ? withoutQuery(t.reply) : t.reply);
+        if (t.query) d.querySelector('.summary').after(queryCard(t));
       }
       $('log').append(d);
     });
@@ -1466,6 +1730,8 @@
   // a suggestion fills the message box, as in any chatbot: read it, change it if you like, send it.
   // The four workshop apps fill it with a short problem, in plan mode.
   function useSuggestion(p, fresh) {
+    track('pick', { prompt: p.id, plan: plannable(p) && S.planMode });
+    if (p.id === 'any-improve') return showLenses();
     preferModel(p);
     if (plannable(p)) return openPlanning(p, fresh);
     openComposer(promptText(p));
@@ -1475,10 +1741,23 @@
     renderContinuing();
   }
 
+  // "Suggest improvements": five ways to review an app (prompts.json, "lens"), each a method with a name, so that
+  // participants meet more than one way of asking for a review; a pick fills the box, as any suggestion does
+  function showLenses() {
+    const d = document.createElement('div');
+    d.className = 'msg note lenses';
+    d.innerHTML = '<b>Pick a way to review your app.</b> Each asks the model for five improvements in its own way; you choose one to build.' +
+      S.prompts.filter((p) => p.lens).map((p) => `<button type="button" data-lens="${p.id}"><b>${esc(p.title)}</b><span>${esc(p.blurb)}</span></button>`).join('');
+    d.querySelectorAll('[data-lens]').forEach((b) => { b.onclick = () => useSuggestion(S.prompts.find((p) => p.id === b.dataset.lens)); });
+    $('log').append(d);
+    scrollLog();
+  }
+
   // an exercise may name the model it runs on best (prompts.json "model", "model_note"); the participant can switch back
   function preferModel(p) {
     const m = p.model && S.config.models[p.model];
     if (!m || S.model === p.model) return;
+    track('model', { from: S.model, to: p.model, by: 'exercise' });
     S.model = p.model;
     localSet('ws:model', S.model);
     $('modelSelect').value = S.model;
@@ -1654,6 +1933,7 @@
 
   // Send in plan mode: the recorded session plays, then the plan waits on the stage for Build
   async function startPlanning(p, text, files) {
+    track('plan_open', { prompt: p.id });
     const pack = await loadPack(p);
     retirePlanning('Replaced by a new plan.');
     const pl = S.planning = { p, pack, files, fresh: S.freshNext, answers: {}, version: 1, plan: '', history: [], cards: [] };
@@ -1828,6 +2108,7 @@
   function buildFromPlan(pl) {
     if (S.planning !== pl || S.busy) return;
     const h = pl.history[pl.history.length - 1];
+    track('plan_build', { prompt: pl.p.id, changed: pl.pack.questions.filter((q) => pl.answers[q.id] !== defaultOf(q)).length, plan_v: h.version });
     if (S.route.type === 'replay' && (h.version > 1 || pl.pack.questions.some((q) => pl.answers[q.id] !== defaultOf(q)))) {
       note('Recorded mode can build only the plan with the recommended answers: that is the plan the recorded app was built from. ' +
         'Your plan stays on the right to read. To build it, ask a facilitator for a seat code, or start this app again and keep the recommended answers.');
@@ -2043,11 +2324,12 @@
     const used = new Set(chainOf(v).map((x) => x.promptId));
     const built = new Set(S.versions.map((x) => x.promptId));
     const live = S.route && S.route.type !== 'replay';
-    const mine = (p) => p.session === S.session && !p.hidden && p.id !== S.pendingPromptId && !(S.planning && S.planning.p.id === p.id);
+    const mine = (p) => p.session === S.session && !p.hidden && p.id !== S.pendingPromptId && !(S.planning && S.planning.p.id === p.id) && (S.advanced || p.level !== 'advanced');
     // Hick's law: a few suggestions at a time, never the whole list
     // a next step continues this app; it may bring a file of its own (a second document to add)
-    const next = v ? S.prompts.filter((p) => mine(p) && p.builds_on && p.builds_on !== 'any' && !used.has(p.id) && used.has(p.builds_on)).slice(0, 2) : [];
-    if (v && live) next.push(...S.prompts.filter((p) => p.builds_on === 'any' && p.id !== S.pendingPromptId));   // "Suggest improvements"
+    // a step with no recorded answer (prompts.json "live_only") is offered only when a model is on the line
+    const next = v ? S.prompts.filter((p) => mine(p) && p.builds_on && p.builds_on !== 'any' && !used.has(p.id) && used.has(p.builds_on) && (live || !p.live_only)).slice(0, 2) : [];
+    if (v && live) next.push(...S.prompts.filter((p) => p.builds_on === 'any' && !p.lens && p.id !== S.pendingPromptId && (S.advanced || p.level !== 'advanced')));   // "Suggest improvements"
     // Hick's law: Session 8 keeps its three apps in view (PDF, Verbatim finder, wiki); Session 7 has one
     const starters = S.prompts.filter((p) => mine(p) && !p.builds_on && !built.has(p.id)).slice(0, !v || S.session === 'S8' ? 3 : 1);
     const group = (label, list, fresh) => {
@@ -2100,13 +2382,14 @@
     if (s === S.session || S.busy) return;
     S.session = s;
     localSet('ws:session', s);
+    track('session', { to: s });
     renderSession();
     renderTools();
     renderSuggest();
     if (!S.versions.length) return;
     note(s === 'S8'
-      ? '<b>Session 8.</b> New suggestions below. <b>Look inside</b> now also lets you ask the model directly and cut the model link.'
-      : '<b>Session 7.</b> The suggestions below are from the first session.');
+      ? '<b>Session 2.</b> New suggestions below. <b>Look inside</b> now also lets you ask the model directly and cut the model link.'
+      : '<b>Session 1.</b> The suggestions below are from the first session.');
   }
 
   function renderVersions() {
@@ -2131,6 +2414,20 @@
     });
     box.scrollLeft = box.scrollWidth;
     renderTools();
+  }
+
+  function setAdvanced(on, said) {
+    S.advanced = on;
+    localSet('ws:advanced', on ? '1' : '0');
+    document.body.classList.toggle('basic', !on);
+    $('advBtn').textContent = on ? 'Advanced: on' : 'Advanced: off';
+    $('advBtn').setAttribute('aria-pressed', String(on));
+    if (S.ready) { renderSuggest(); renderShelf(); }
+    if (said) {
+      track('advanced', { on });
+      note(on ? '<b>Advanced</b> is on: more requests in the suggestions, your own files on the shelf, Plan mode on or off, <b>New tab</b> and <b>Send to wall</b>.'
+        : '<b>Advanced</b> is off: one path through the exercises.');
+    }
   }
 
   function renderModelMenu() {
@@ -2170,20 +2467,42 @@
     if (key === 'uhri') return `${fmt(S.countryCount)} records · opens in Excel`;
     if (key === 'gc') return `${fmt(d.count)} paragraphs · opens in Excel`;
     if (key === 'hrc') return `${fmt(d.count)} recorded votes · opens in Excel`;
+    if (key === 'pdf_ten') return `${fmt(d.count)} documents · their PDFs open on the UN's site`;
+    if (S.own[key]) {
+      const s = S.own[key].shape;
+      const kb = S.own[key].size / 1024;
+      return `${fmt(s.count)} ${S.own[key].kind === 'docx' ? 'paragraphs' : 'records'} · ${fmt(s.fields.length)} fields · ${kb < 1 ? 'under 1' : fmt(Math.round(kb))} KB`;
+    }
     return `${fmt(d.count)} pages · opens in your browser`;
   }
 
-  // the shelf lives on the empty stage before the first app, and in the Your files drawer after it
+  // the shelf lives on the empty stage before the first app, and in the Your files drawer after it;
+  // the participant's own files follow the workshop's, then the card that adds one
   function renderShelf(box = $('shelf')) {
+    const own = Object.values(S.own).sort((a, b) => a.key.localeCompare(b.key, 'en', { numeric: true }));
     box.innerHTML = S.config.files.map((f) => `
       <div class="fcard" draggable="true" data-key="${f.key}">
         <div class="fcard-top"><i class="ficon ${f.kind}">${f.kind.toUpperCase()}</i><h3>${esc(fileLabel(f.key))}</h3></div>
         <p>${esc(f.blurb.replace(/\{country\}/g, S.country))}</p>
         <div class="meta">${esc(fileMetaLine(f.key))}</div>
-        ${f.from ? `<p class="from">Also published as data: ${f.from.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join(' · ')}</p>` : ''}
+        ${f.from ? `<p class="from">Also published as data: ${f.from.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${l.icon ? `<span class="from-icon" aria-hidden="true">${esc(l.icon)}</span>` : ''}${esc(l.label)}</a>`).join(' · ')}</p>` : ''}
         <div class="row"><button type="button" class="ghost" data-act="open">Open</button><button type="button" class="ghost" data-act="add">Add to chat</button></div>
-      </div>`).join('');
-    box.querySelectorAll('.fcard').forEach((c) => {
+      </div>`).join('') + own.map((e) => `
+      <div class="fcard own adv" draggable="true" data-key="${e.key}">
+        <div class="fcard-top"><i class="ficon ${e.kind}">${e.kind.toUpperCase()}</i><h3>${esc(e.name)}</h3></div>
+        <p>Your own file, kept in this browser. Your app gets all of it; the model gets its field names and their types.</p>
+        <div class="meta">${esc(fileMetaLine(e.key))}</div>
+        <label class="own-samples"><input type="checkbox" data-act="samples"${e.samples ? ' checked' : ''}> Also send its first ${OwnFiles.SAMPLES} records to the model</label>
+        <div class="row"><button type="button" class="ghost" data-act="open">Open</button><button type="button" class="ghost" data-act="add">Add to chat</button><button type="button" class="ghost" data-act="remove">Remove</button></div>
+      </div>`).join('') + `
+      <div class="fcard add-own adv">
+        <div class="fcard-top"><i class="ficon own">+</i><h3>Your own file</h3></div>
+        <p>A spreadsheet, an Excel workbook, a data file or a Word document from your computer. It stays in this browser: the model sees only its field names, unless you choose to send a few records.</p>
+        <div class="meta">.csv · .xlsx · .json · .docx · up to 10 MB · or drop it here</div>
+        <div class="row"><button type="button" class="ghost" data-act="pick">Choose a file</button></div>
+      </div>`;
+    box.querySelector('.add-own [data-act=pick]').onclick = pickOwnFile;
+    box.querySelectorAll('.fcard[data-key]').forEach((c) => {
       const key = c.dataset.key;
       c.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/x-studio-file', key);
@@ -2192,8 +2511,78 @@
       });
       c.querySelector('[data-act=open]').onclick = () => openFile(key);
       c.querySelector('[data-act=add]').onclick = () => addFile(key);
+      if (!S.own[key]) return;
+      c.querySelector('[data-act=samples]').onchange = (e) => { S.own[key].samples = e.target.checked; OwnFiles.put(S.own[key]); track('own_samples', { on: e.target.checked }); };
+      c.querySelector('[data-act=remove]').onclick = () => removeOwn(key);
     });
     renderShelfState();
+  }
+
+  /* ---------- the participant's own files (own-files.js) ---------- */
+
+  function pickOwnFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = '.csv,.tsv,.txt,.json,.xlsx,.docx';
+    input.id = 'ownFileInput';
+    input.hidden = true;
+    input.onchange = () => { addOwnFiles(input.files, false); input.remove(); };
+    document.body.append(input);
+    input.click();
+  }
+
+  // a key is never used twice, even after its file was removed: older apps keep pointing at the file they read
+  function nextOwnKey() {
+    const used = [...Object.keys(S.own), ...S.versions.flatMap((v) => v.files || []), ...S.talk.flatMap((x) => x.files || [])];
+    return 'own_' + (Math.max(0, ...used.map((k) => (/^own_(\d+)$/.exec(k) || [0, 0])[1]).map(Number)) + 1);
+  }
+
+  async function addOwnFiles(list, attach) {
+    const added = [];
+    for (const file of [...list]) {
+      try {
+        const e = await OwnFiles.read(file, nextOwnKey());
+        S.own[e.key] = e;
+        await OwnFiles.put(e);
+        added.push(e);
+        track('own_file', { kind: e.kind, kb: Math.round(e.size / 1024), records: e.shape.count });
+        if (attach) addFile(e.key);
+      } catch (err) {
+        note(esc(err.message || String(err)));
+      }
+    }
+    if (added.length) {
+      note(added.map((e) => `<b>${esc(e.name)}</b> (${esc(fileMetaLine(e.key))})`).join(', ') + ` ${added.length > 1 ? 'are' : 'is'} on your shelf, ` +
+        `kept in this browser. In the chat, the model gets the field names and their types, not the values; tick the box on a file's card to send its first ${OwnFiles.SAMPLES} records too.`);
+    }
+    renderShelf();
+    if ($('drawerShelf')) renderShelf($('drawerShelf'));
+  }
+
+  function removeOwn(key) {
+    const e = S.own[key];
+    if (!e || !confirm(`Remove "${e.name}" from this browser? An app built on it will show no records.`)) return;
+    delete S.own[key];
+    OwnFiles.remove(key);
+    S.draft.delete(key);
+    renderAttach();
+    renderShelf();
+    if ($('drawerShelf')) renderShelf($('drawerShelf'));
+  }
+
+  // what is inside, and exactly what the model would get
+  function openOwn(key) {
+    const e = S.own[key], d = JSON.parse(e.text), s = e.shape;
+    const list = (s.path ? d[s.path] : d) || [];
+    const cols = s.fields.slice(0, 8).map((f) => f.name);
+    const cell = (v) => esc(v == null ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v)).slice(0, 90));
+    openDrawer(e.name);
+    $('drawerBody').innerHTML = `<p>Your ${esc(OwnFiles.NOUN[e.kind])}, read here in your browser: ${esc(fileMetaLine(key))}.${e.note ? ' ' + esc(e.note) : ''}</p>` +
+      (cols.length ? `<table class="own-preview"><caption>The first ${Math.min(10, list.length)} records${s.fields.length > 8 ? `, the first 8 of ${s.fields.length} fields` : ''}</caption>` +
+        `<thead><tr>${cols.map((c) => `<th scope="col">${esc(c)}</th>`).join('')}</tr></thead>` +
+        `<tbody>${list.slice(0, 10).map((r) => `<tr>${cols.map((c) => `<td>${cell(r && r[c])}</td>`).join('')}</tr>`).join('')}</tbody></table>` : '') +
+      `<details><summary>What the model gets when you add it to the chat</summary><pre class="own-sent">${esc(OwnFiles.describe(e, e.name))}</pre></details>`;
   }
 
   // which files are already in the chat, and which one the current request still needs
@@ -2216,9 +2605,18 @@
   }
 
   async function openFile(key) {
+    if (S.own[key]) return openOwn(key);
     const f = fileMeta(key);
     if (f.kind === 'pdf') { window.open(f.pdf, '_blank', 'noopener'); return; }
     if (f.kind === 'html') { window.open(f.page, '_blank', 'noopener'); return; }
+    if (f.kind === 'pdfs') {
+      const ten = await dataParsed(key);
+      openDrawer(fileLabel(key));
+      $('drawerBody').innerHTML = `<p>${ten.records.length} documents, each as the converter extracted it from its PDF. Drag the file into the chat to run your app on all of them.</p>` +
+        ten.records.map((d) => `<div class="tool-card"><h4>${esc(d.symbol)}</h4><p>${esc(d.title)} · ${esc(d.committee)} · ${esc(d.year)} · ${fmt(d.count)} pages, ` +
+          `${fmt(d.reference.paragraphs)} paragraphs</p><div class="row"><a class="ghost" href="${esc(d.doc_url)}" target="_blank" rel="noopener">Open the PDF</a></div></div>`).join('');
+      return;
+    }
     if (f.kind === 'wiki') {
       const w = await dataParsed(key);
       openDrawer(fileLabel(key));
@@ -2308,12 +2706,17 @@
       ${a.tools.map((t) => `<div class="tool-card"><h4><a href="${t.url}" target="_blank" rel="noopener">${esc(t.name)}</a></h4>
         <p>${esc(t.blurb)}${t.with ? ` With ${esc(t.with)}.` : ''}</p>
         <div class="row"><a href="${t.url}" target="_blank" rel="noopener">Open the tool</a> · <a href="${t.repo}" target="_blank" rel="noopener">Source code</a></div></div>`).join('')}
+      <h4>The take-home kit</h4>
+      <p>One file for when the studio is not the place to work: every workshop request, ready to paste into your own chatbot (Claude, ChatGPT, Gemini, Copilot) or LM Arena; a place to paste its answer and run the app on the workshop data for ${esc(S.country)}, with no internet; and your own apps from today.</p>
+      <div class="row"><button type="button" class="primary" id="kitBtn">Download the take-home kit</button></div>
       <h4>Take the method home</h4>
       <p>Point an AI coding assistant (Claude Code, Codex, Antigravity, Cursor) at one of these public repositories. Ask for a review first, then make one change at a time and check it.</p>
       <label>Repository <select id="tfRepo">${a.tools.map((t) => `<option value="${t.repo}">${esc(t.name)}</option>`).join('')}</select></label>
       <div class="prompt-box"><textarea id="tfPrompt" readonly></textarea></div>
       <div class="row"><button type="button" class="primary" id="tfCopy">Copy the prompt</button></div>
       <p class="caution">These assistants send the files they read to the company that runs the model. That is fine for public code like this; never point them at confidential documents.</p>
+      <h4>What this studio records</h4>
+      <p class="caution">To improve the workshop, the studio records what you do: which steps you pick, which model answers, how long it takes and what fails. It never records your messages, your files, your apps or anything from the data. Add <code>?notrack=1</code> to the address to switch it off in this browser.</p>
       <p>${esc(a.name)} · ${link(a.url, 'website')} · ${link(a.orcid, 'ORCID')} · ${link(a.github, 'GitHub')}</p>`;
     const fill = () => {
       $('tfPrompt').value = `You are reviewing an open-source research tool for human rights work: ${$('tfRepo').value}
@@ -2325,6 +2728,7 @@
     };
     fill();
     $('tfRepo').onchange = fill;
+    $('kitBtn').onclick = (e) => downloadKit(e.currentTarget);
     $('tfCopy').onclick = async () => {
       try { await navigator.clipboard.writeText($('tfPrompt').value); $('tfCopy').textContent = 'Copied'; } catch (e) { $('tfPrompt').select(); }
     };
@@ -2422,21 +2826,39 @@
   $('input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); submitBuild($('input').value); }
   });
+  // a screenshot pasted into the box goes with the message
+  $('input').addEventListener('paste', (e) => {
+    const pics = [...((e.clipboardData && e.clipboardData.items) || [])].filter((i) => i.kind === 'file' && i.type.startsWith('image/')).map((i) => i.getAsFile());
+    if (pics.length) { e.preventDefault(); addImages(pics); }
+  });
   $('input').addEventListener('input', () => {
     fitInput();
     if (!$('input').value.trim()) { S.pendingPromptId = null; S.pendingText = ''; S.freshNext = false; renderContinuing(); renderNeeds(); renderSuggest(); }
   });
+  $('lookPanel').addEventListener('click', (e) => { const b = e.target.closest('button[id]'); if (b) track('look', { item: b.id }); });
   // a file from the shelf, dropped anywhere on the chat column
   const chatCol = document.querySelector('.chat');
   const isFile = (e) => [...(e.dataTransfer && e.dataTransfer.types || [])].includes('text/x-studio-file');
-  chatCol.addEventListener('dragover', (e) => { if (isFile(e)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; chatCol.classList.add('dragging'); } });
+  const isOwn = (e) => [...(e.dataTransfer && e.dataTransfer.types || [])].includes('Files');   // from the computer
+  chatCol.addEventListener('dragover', (e) => { if (isFile(e) || isOwn(e)) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; chatCol.classList.add('dragging'); } });
   chatCol.addEventListener('dragleave', (e) => { if (!chatCol.contains(e.relatedTarget)) chatCol.classList.remove('dragging'); });
   chatCol.addEventListener('drop', (e) => {
     chatCol.classList.remove('dragging');
+    if (isOwn(e)) { e.preventDefault(); e.stopPropagation(); return dropped(e.dataTransfer.files, true); }
     if (!isFile(e)) return;
     e.preventDefault();   // not as text into the box
     addFile(e.dataTransfer.getData('text/x-studio-file'));
   });
+  // a file from the computer dropped anywhere else goes onto the shelf, and the browser does not open it instead
+  document.addEventListener('dragover', (e) => { if (isOwn(e)) e.preventDefault(); });
+  document.addEventListener('drop', (e) => { if (isOwn(e)) { e.preventDefault(); dropped(e.dataTransfer.files, false); } });
+  // pictures go with the message being written; other files onto the shelf
+  function dropped(list, attach) {
+    const all = [...list], pics = all.filter((f) => f.type.startsWith('image/'));
+    if (pics.length) addImages(pics);
+    if (pics.length < all.length && !S.advanced) note('Your own files are part of <b>Advanced</b> (in the footer). Turn it on, then add the file again.');
+    else if (pics.length < all.length) addOwnFiles(all.filter((f) => !f.type.startsWith('image/')), attach);
+  }
   document.addEventListener('dragend', () => chatCol.classList.remove('dragging'));
   // before the first app the shelf is on the stage already: point at it
   $('addFileBtn').onclick = () => {
@@ -2452,9 +2874,11 @@
   $('tourBtn').onclick = () => Tour.start();
   $('feedbackBtn').onclick = openFeedback;
   $('themeBtn').onclick = toggleTheme;
+  $('advBtn').onclick = () => setAdvanced(!S.advanced, true);
   $('stopBtn').onclick = () => S.ctrl && S.ctrl.abort();
   $('countrySelect').onchange = (e) => changeCountry(e.target.value);
   $('modelSelect').onchange = (e) => {
+    track('model', { from: S.model, to: e.target.value, by: 'user' });
     S.model = e.target.value;
     localSet('ws:model', S.model);
     renderBadge();

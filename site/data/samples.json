@@ -559,5 +559,30 @@
   {
    "html": "<body>\n    <table>\n      <tr>\n        <td> <img src=\"\" /></td>\n        <td>\n          <p style=\"font-size:1.4em;\">United Nations</p>\n        </td>\n        <td>\n          <p>\n            <span style=\"font-size:2em;\">E</span>/C.12/GC/27</p>\n        </td>\n      </tr>\n      <tr>\n        <td> </td>\n        <td>\n          <p style=\"font-weight:bold;font-size:2em;\">Economic and Social Council</p>\n        </td>\n        <td>\n          <p>Distr.: General</p>\n          <p>6 November 2025</p>\n          <p>Original: English</p>\n        </td>\n      </tr>\n    </table>\n    <div class=\"content\">\n      <p style=\"font-weight:bold;font-size:1.2em;\">Committee on Economic, Social and Cultural Rights</p>\n      <h2 style=\"font-weight:bold;\">General comment No. 27 (2025) on economic, social and cultural rights andthe environmental dimension of sustainable development *</h2>\n      <h2>I.Introduction</h2>\n      <p>1.A clean, healthy and sustainable environment is an essential precondition for the enjoyment of economic, social and cultural rights. Nature is indispensable to human existence and well-being, as it not only supports life but also underpins ecological processes, including air and water quality, soil fertility, climate stability, pollination, and the mitigation of natural hazards. However, the accelerating and interconnected environmental challenges of our time, such as climate change, biodiversity loss and pollution, pose a serious threat to the ability of present and future generations to e\n<!-- … the rest of the document omitted in this sample -->"
   }
+ ],
+ "pdf_ten": [
+  {
+   "symbol": "CCPR/C/GC/32",
+   "committee": "CCPR",
+   "year": 2007,
+   "title": "GC32: article 14: right to equality before courts and tribunals and to a fair trial",
+   "doc_url": "https://docs.un.org/en/CCPR/C/GC/32",
+   "count": 18,
+   "pages": [
+    {
+     "page": 1,
+     "text": "CCPR\n\nUNITED\nNATIONS\n\nInternational covenant\non civil and\npolitical rights\n\nDistr.\nGENERAL\nCCPR/C/GC/32\n23 August 2007\nOriginal: ENGLISH\n\nHUMAN RIGHTS COMMITTEE\nNinetieth session\nGeneva, 9 to 27 July 2007\nGeneral Comment No. 32\nArticle 14: Right to equality before courts and tribunals and to a fair trial\n\nI. GENERAL REMARKS\n1.\n\nThis general comment replaces general comment No. 13 (twenty-first session).\n\n2.\nThe right to equality before the courts and tribunals and to a fair trial is a key element\nof human rights protection and serves as a procedural means to safeguard the rule of law. Article\n14 of the Covenant aims at ensuring the proper administration of justice, and to this end\nguarantees a series of specific rights.\n3.\nArticle 14 is of a particularly complex nature, combining various g\n[… rest of the page and the other pages omitted]"
+    }
+   ],
+   "reference": {
+    "paragraphs": 65,
+    "footnotes": 128,
+    "adopted": "23 August 2007",
+    "first_words": {
+     "1": "This general comment replaces general comment",
+     "2": "The right to equality before the"
+    }
+   }
+  }
  ]
 }

@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Garage Research · take-home kit</title>
+<!-- The take-home kit, one file (built by the studio: About → Download the take-home kit, site/kit.js): the workshop
+     requests to paste into any chatbot, a place to paste its answer and run the app on the workshop data, which is
+     inside this file, and the participant's own apps. No network, no model: everything stays on this computer. -->
+<style>
+:root { --bg: #f4f0e8; --ink: #1d1b18; --muted: #5d574f; --rule: #d9d2c3; --red: #9b2335; --surface: #fffdf8; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { padding: 12px 20px; border-bottom: 1px solid var(--rule); }
+header h1 { margin: 2px 0 0; font: 400 22px Georgia, "Times New Roman", serif; }
+.lab { font: 11px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+main { display: grid; grid-template-columns: minmax(300px, 420px) 1fr; height: calc(100vh - 70px); }
+aside { padding: 12px 18px 30px; border-right: 1px solid var(--rule); overflow: auto; }
+details { border-bottom: 1px solid var(--rule); padding: 8px 0; }
+summary { cursor: pointer; font: 600 13px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .04em; text-transform: uppercase; }
+textarea { width: 100%; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--rule); border-radius: 6px; padding: 8px; background: var(--surface); }
+#answer { height: 26vh; }
+.req textarea { height: 54px; }
+button { font: inherit; border: 1px solid var(--ink); background: var(--ink); color: #fff; border-radius: 6px; padding: 5px 12px; cursor: pointer; }
+button.ghost { background: transparent; color: var(--ink); }
+button:disabled { opacity: .4; cursor: default; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
+.note { font-size: 13px; color: var(--muted); margin: 4px 0; }
+.caution { background: #fff4dd; border-left: 3px solid #7d4a00; padding: 6px 10px; font-size: 13px; }
+.err { color: var(--red); font-size: 13px; }
+.req { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; margin: 8px 0; }
+.req h3 { margin: 2px 0; font: 400 17px Georgia, "Times New Roman", serif; }
+ol { padding-left: 20px; margin: 6px 0; } ol li { margin: 4px 0; font-size: 14px; }
+ul.data { padding-left: 18px; font-size: 13px; margin: 4px 0; }
+section.stage { position: relative; background: #fff; }
+iframe { border: 0; width: 100%; height: 100%; background: #fff; }
+.empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); padding: 30px; text-align: center; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+caption { text-align: left; font-weight: 600; padding: 4px 0; }
+th, td { border-bottom: 1px solid var(--rule); padding: 3px 6px; text-align: left; }
+.qbox { padding: 20px; overflow: auto; height: 100%; }
+pre.code { white-space: pre-wrap; font-size: 12px; background: var(--surface); border: 1px solid var(--rule); padding: 8px; }
+a { color: var(--red); }
+@media (max-width: 800px) { main { grid-template-columns: 1fr; height: auto; } section.stage { height: 80vh; } }
+</style>
+</head>
+<body>
+<header><div class="lab" id="kicker">Garage Research · take-home kit</div><h1>Build the workshop's apps without the studio</h1></header>
+<p id="template" class="caution" hidden style="margin:20px">This page is only the template of the kit, with no data inside. Download your kit from the studio: <b>About</b> in its footer → <b>Download the take-home kit</b>.</p>
+<main id="app">
+<aside>
+  <ol>
+    <li><b>Copy a request</b> below and paste it into a chatbot: your own (Claude, ChatGPT, Gemini, Copilot), or <a href="https://lmarena.ai" target="_blank" rel="noopener">LM Arena</a> (free, no account: <i>Direct chat</i>, then pick a model).</li>
+    <li>When the answer is complete, <b>copy all of it</b> (the chatbot's copy button) and <b>paste it here</b>, under 2. The app runs on the right, on the workshop data in this file.</li>
+    <li><b>Save as one file</b> keeps the app with its data: it opens with a double-click, also with no internet.</li>
+  </ol>
+  <p class="caution">Your own chatbot at work is the best place: you keep using it after the workshop, the conversations stay in your account, and the studio's budget is left to others. Some personal plans train on your conversations unless you switch it off. On LM Arena, what you type may be shared for research: paste only these requests and public material.</p>
+
+  <details open><summary>1 · The requests</summary><div id="reqs"></div></details>
+
+  <details open><summary>2 · Paste the answer and run it</summary>
+    <textarea id="answer" spellcheck="false" placeholder="Paste the chatbot's whole answer here…"></textarea>
+    <div class="row"><button id="run">Run the app</button><button id="paste" class="ghost">Paste from clipboard</button><button id="save" class="ghost" disabled>Save as one file</button></div>
+    <p id="msg" class="note" aria-live="polite"></p>
+    <div id="errors" class="err" aria-live="polite"></div>
+    <p class="note">An error in red, or a change you want: tell the chatbot in the same conversation ("The app shows this error: … Please send the whole file again.") and paste the new answer here.</p>
+  </details>
+
+  <details id="appsBox" hidden open><summary>Your apps from the studio</summary><div id="apps"></div></details>
+
+  <details><summary>What runs here</summary>
+    <p class="note">The workshop data is inside this file:</p><ul class="data" id="datalist"></ul>
+    <p class="note">An app runs in a sealed frame: it cannot reach the internet, and nothing you do here leaves this computer. AI buttons inside an app only work in the studio.</p>
+  </details>
+</aside>
+<section class="stage"><div class="empty" id="empty">The app appears here.</div></section>
+</main>
+<script id="chart-src">/*@CHART@*/</script>
+<script id="runtime-src" type="text/plain">/*@RUNTIME@*/</script>
+<script>/*@DATA@*/</script>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const DATA = window.KIT_DATA, META = window.KIT_META || {}, STEPS = window.KIT_STEPS || [], APPS = window.KIT_APPS || [];
+  if (!DATA) { $('template').hidden = false; $('app').hidden = true; return; }
+  const CHART = $('chart-src').textContent, RUNTIME = $('runtime-src').textContent;
+  const CSP = "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; connect-src 'none'; form-action 'none'\">";
+  const CHART_CDN = /<script\b[^>]*\bsrc=["']https?:\/\/[^"']*\bchart(?:\.js|\.umd|\.min)[^"']*["'][^>]*>\s*<\/script>/gi;
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const escScript = (s) => s.replace(/<\//g, '<\\/');
+  const inject = (html, head) => { const m = html.match(/<head[^>]*>/i) || html.match(/<html[^>]*>/i); return m ? html.slice(0, m.index + m[0].length) + head + html.slice(m.index + m[0].length) : head + html; };
+  let doc = '', frame = null;
+
+  $('kicker').textContent = 'Garage Research · take-home kit' + (META.country ? ' · ' + META.country : '') + (META.built ? ' · ' + META.built : '');
+  $('datalist').innerHTML = Object.keys(DATA).map((k) => `<li><code>WORKSHOP_DATA.${esc(k)}</code>: ${esc(DATA[k].title || k)}${DATA[k].count != null ? ` (${Number(DATA[k].count).toLocaleString('en')})` : ''}</li>`).join('');
+
+  // the requests, by session; a follow-up goes into the same conversation as the request before it
+  let session = '';
+  $('reqs').innerHTML = STEPS.map((s, i) => (s.session !== session ? `<p class="lab">${esc(session = s.session)}</p>` : '') +
+    `<div class="req"><div class="lab">${s.first ? 'a new conversation' : 'the same conversation'}</div><h3>${esc(s.title)}</h3>` +
+    `<p class="note">${esc(s.blurb || '')}</p><textarea id="r${i}" readonly>${esc(s.text)}</textarea>` +
+    `<div class="row"><button type="button" data-copy="r${i}">Copy the request</button><span class="note">${Math.round(s.text.length / 1000)}k characters</span></div></div>`).join('');
+  document.querySelectorAll('[data-copy]').forEach((b) => {
+    b.onclick = async () => {
+      const t = $(b.dataset.copy);
+      try { await navigator.clipboard.writeText(t.value); } catch (e) { t.select(); document.execCommand('copy'); }
+      b.textContent = 'Copied';
+      setTimeout(() => { b.textContent = 'Copy the request'; }, 2000);
+    };
+  });
+
+  // the participant's apps: their code is here, their data is the kit's
+  if (APPS.length) {
+    $('appsBox').hidden = false;
+    $('apps').innerHTML = APPS.map((a, i) => `<div class="row"><button type="button" class="ghost" data-app="${i}">Open</button><span>${esc(a.title)} <span class="note">${esc(a.note)}</span></span></div>`).join('');
+    document.querySelectorAll('[data-app]').forEach((b) => { b.onclick = () => runHtml(APPS[+b.dataset.app].html, 'Your app from the studio, on the data in this file.'); });
+  }
+
+  function extract(text) {
+    const m = /```html\s*([\s\S]*?<\/html>)\s*```/i.exec(text) || /```html\s*([\s\S]*?)```/i.exec(text) || /(<!doctype html[\s\S]*<\/html>)/i.exec(text);
+    return m ? m[1].trim() : '';
+  }
+  const query = (text) => { const m = /```query[ \t]*\n([\s\S]*?)```/.exec(text); return m ? m[1].trim() : ''; };
+  // the datasets the app names; with none named, all of them
+  function used(html) {
+    const named = Object.keys(DATA).filter((k) => new RegExp('\\b' + k + '\\b').test(html));
+    return named.length ? named : Object.keys(DATA);
+  }
+  const dataScript = (keys) => '<script>window.WORKSHOP_DATA={' + keys.map((k) => JSON.stringify(k) + ':' + escScript(JSON.stringify(DATA[k]))).join(',') + '};<\/script>';
+  function build(html) {
+    html = html.replace(CHART_CDN, '<!-- Chart.js: the kit\'s own copy -->');
+    return inject(html, CSP + '<script>' + escScript(CHART) + '<\/script>' + dataScript(used(html)) + '<script>' + RUNTIME + '<\/script>');
+  }
+  function show(content) {
+    const stage = document.querySelector('.stage');
+    if (frame) frame.remove();
+    frame = null;
+    $('empty').hidden = true;
+    stage.querySelectorAll('.qbox').forEach((x) => x.remove());
+    if (typeof content === 'string') {
+      frame = document.createElement('iframe');
+      frame.setAttribute('sandbox', 'allow-scripts allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox');
+      frame.title = 'Your app';
+      frame.srcdoc = content;
+      stage.append(frame);
+    } else stage.append(content);
+  }
+  function runHtml(html, msg) {
+    $('errors').innerHTML = '';
+    doc = build(html);
+    show(doc);
+    $('save').disabled = false;
+    $('msg').textContent = msg;
+  }
+  // the app's runtime talks to its parent as it does in the studio: here AI steps are refused, and a source opens on the web
+  window.addEventListener('message', (e) => {
+    if (!frame || e.source !== frame.contentWindow) return;
+    const m = e.data || {};
+    if (m.type === 'studio:ask') frame.contentWindow.postMessage({ type: 'studio:answer', id: m.id, error: 'AI steps only work inside Garage Research; this kit runs without a model.' }, '*');
+    else if (m.type === 'studio:open-source') {
+      const d = ((DATA.library && DATA.library.records) || []).find((x) => x.id === m.symbol || x.symbol === m.symbol);
+      window.open(d && d.url ? d.url : 'https://docs.un.org/en/' + m.symbol, '_blank', 'noopener');
+    } else if (m.type === 'studio:error') {
+      $('errors').insertAdjacentHTML('beforeend', `<p>The app shows this error: ${esc(m.message)}${m.line ? ' (line ' + m.line + ')' : ''}</p>`);
+    }
+  });
+
+  function runQuery(code) {
+    const box = document.createElement('div');
+    box.className = 'qbox';
+    box.innerHTML = '<p class="note">Running the query on all the data, here on this computer…</p>';
+    show(box);
+    const id = 'q' + Math.random().toString(36).slice(2);
+    const f = document.createElement('iframe');
+    f.setAttribute('sandbox', 'allow-scripts');
+    f.hidden = true;
+    f.srcdoc = inject('<!doctype html><html><head></head><body></body></html>', CSP + dataScript(used(code)) +
+      '<script>(function(){let out;try{const r=(function(){\n' + escScript(code) + '\n})();out={ok:true,r:JSON.parse(JSON.stringify(r===undefined?null:r))};}' +
+      'catch(e){out={ok:false,error:String((e&&e.message)||e)};}parent.postMessage({type:"kit:query",id:' + JSON.stringify(id) + ',out:out},"*");})();<\/script>');
+    const on = (e) => {
+      if (e.source !== f.contentWindow || !e.data || e.data.id !== id) return;
+      window.removeEventListener('message', on);
+      f.remove();
+      const out = e.data.out, r = out.r || {};
+      if (!out.ok) { box.innerHTML = `<p class="err">The query failed: ${esc(out.error)}</p>`; return; }
+      box.innerHTML = Array.isArray(r.rows) && Array.isArray(r.columns)
+        ? `<table><caption>${esc(r.title || 'Result')}</caption><thead><tr>${r.columns.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>` +
+          r.rows.slice(0, 200).map((row) => `<tr>${(Array.isArray(row) ? row : [row]).map((v) => `<td>${esc(v)}</td>`).join('')}</tr>`).join('') +
+          `</tbody></table><p class="note">${esc(r.note || '')}</p>`
+        : `<p>${esc(typeof r === 'object' ? JSON.stringify(r) : r)}</p>`;
+      box.insertAdjacentHTML('beforeend', `<details><summary>The code the chatbot wrote</summary><pre class="code">${esc(code)}</pre></details>`);
+    };
+    window.addEventListener('message', on);
+    document.body.append(f);
+  }
+
+  $('run').onclick = () => {
+    const text = $('answer').value, html = extract(text), q = query(text);
+    if (html) runHtml(html, 'Running. If it looks wrong, ask your chatbot for a change and paste the new whole file.');
+    else if (q) { $('save').disabled = true; runQuery(q); $('msg').textContent = 'A question about the data: the table is computed here, from every record.'; }
+    else $('msg').textContent = 'There is no app in this text: paste the answer with its code block (it starts with ```html or <!doctype html>).';
+  };
+  $('paste').onclick = async () => {
+    try { $('answer').value = await navigator.clipboard.readText(); $('run').click(); } catch (e) { $('msg').textContent = 'The browser did not allow it: click in the box and press Ctrl+V (Cmd+V on a Mac).'; }
+  };
+  $('save').onclick = () => {
+    if (!doc) return;
+    const title = ((/<title>([^<]*)<\/title>/i.exec(doc) || [])[1] || 'app').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'app';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([doc], { type: 'text/html' }));
+    a.download = title + '.html';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+})();
+</script>
+</body>
+</html>

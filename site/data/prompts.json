@@ -44,6 +44,18 @@
       "lesson": "A checker that compares words is deterministic: the same text, the same verdict, every time. It can say that a quotation is not in the data; it cannot say whether the sentence around it is a fair reading of the recommendation. That stays with you."
     },
     {
+      "id": "s7-1b-ask-data",
+      "session": "S7",
+      "minute": 40,
+      "dataset": "uhri",
+      "builds_on": "s7-1-dashboard",
+      "title": "Ask your data a question",
+      "blurb": "A question the dashboard does not answer: the model writes a query, your browser runs it on every record",
+      "prompt": "Which mechanisms made the recommendations to {country} that mention torture or ill-treatment, and in which years? Answer from the data, not from memory.",
+      "lesson": "The model wrote the query; your browser ran it on every record, and the numbers never left this laptop: the model never saw them. Open the code under the table: it shows what \"mention torture\" meant, and a different choice of words gives different numbers.",
+      "bakeoff": false
+    },
+    {
       "id": "s7-3-check-ten",
       "session": "S7",
       "minute": 50,
@@ -81,7 +93,8 @@
         "table_min_rows": 5,
         "source_matches": "\\(|match|RegExp|/\\\\\\(",
         "text_matches": "(?i)no (state|recommending)|without|unmatched|not identified"
-      }
+      },
+      "level": "advanced"
     },
     {
       "id": "s7-4-extract",
@@ -108,6 +121,45 @@
       },
       "model": "claude",
       "model_note": "on this PDF, Mistral and GLM broke more often in our tests (5 November), and Claude built a working app every time"
+    },
+    {
+      "id": "s7-4b-run-ten",
+      "session": "S8",
+      "minute": 22,
+      "dataset": "pdf_ten",
+      "builds_on": "s7-4-extract",
+      "title": "Run it on ten General Comments",
+      "blurb": "The same rules, unchanged, on ten documents of six committees: where do they hold?",
+      "prompt": "Run this app on the ten General Comments I attached, `WORKSHOP_DATA.pdf_ten` (its first document is the one you already have). Use exactly the same pipeline and checks on every document, with no rule changed. In the left rail, a list of the ten documents instead of the one card: each with its symbol, the paragraphs found next to the number in its reference, and its checks passed; clicking one selects it, and tabs 01 and 02 show the selected document. Add a tab 03 All documents: one row per document, in the order of the data, with symbol (linked to its doc_url), committee, year, paragraphs found and expected, first words matching, paragraphs flagged and checks passed; a cell that fails its check is red, and clicking a row selects the document. On that tab, a download of all ten documents' paragraphs as one JSON file (every record with its symbol) and as one Markdown file, a heading per document.",
+      "lesson": "A pipeline that works on one document is a hypothesis about the next. Run it unchanged on ten, let its own checks show where it breaks, and fix the rule, not the result.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "text_contains": [
+          "CEDAW/C/GC/35",
+          "CRC/C/GC/25"
+        ],
+        "download": true
+      }
+    },
+    {
+      "id": "s7-4c-show-broken",
+      "session": "S8",
+      "minute": 32,
+      "dataset": null,
+      "builds_on": "s7-4b-run-ten",
+      "title": "Show what broke the rules",
+      "blurb": "Find the lines a failing document trips on, then hand them to the model to fix the rule",
+      "prompt": "On tab 03, under the table, show the first document whose checks fail: for each check that failed, the lines the rules tripped on, each with its page. Change no rule. Add a button \"Copy for the model\" that copies, as plain text, this request followed by those lines: \"Here are the lines that broke the rules for <symbol>. Change the rule so that this document passes and every document that passed before still passes, and add the change to a list of rule changes on tab 03, with the documents it fixed.\" After a change, the panel moves on to the next document that fails.",
+      "lesson": "The model cannot see your data, so it should not guess a rule. The app shows the lines; you pass them on with Copy for the model; the model writes a rule you can read, run again on every document and undo. Do it two or three times, and read each change: a rule that reads the document better is a fix; a rule that loosens a check until it passes is not.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "button_matches": "(?i)copy for the model"
+      },
+      "bakeoff": false
     },
     {
       "id": "s7-5-second-document",
@@ -186,21 +238,16 @@
       "dataset": "wiki",
       "builds_on": null,
       "title": "A research wiki on neurotechnology and justice",
-      "blurb": "A workspace for a wiki kept by language models: read, ask, add a new source, check every quotation",
-      "prompt": "Build a workspace for our research wiki on neurotechnology in the administration of justice, one question per tab. Tab 01 Pages: the pages (sources, concepts, entities, questions) with the index; follow [[links]] between pages and show which pages link back; show every pin as a citation that opens the PDF at its page with `studio.openSource(id, page, quote)` (the studio marks the quote on the page), and check its quotation against the library, marking it verified or not. Tab 02 Ask: the model reads the index, picks the pages and answers with pins, and I can file a good answer as a question page. Tab 03 Ingest: ingest the waiting source A/HRC/57/61; the model drafts its source page and the changes to the pages it touches, the code checks every quotation, and I approve each change. Tab 04 Check: lint for dangling links, orphan pages and unverified pins. Tab 05 Record: the log, the open disagreements, and a download of the wiki.",
-      "planning": "planning/s8-5-wiki.json",
-      "lesson": "A wiki keeps what an institution knows. The model writes and files the pages; the code checks every quotation against the source; a person approves each change. A Secretary-General's report, a submission and an article carry different weight, and the wiki shows which is which.",
+      "blurb": "A workspace to read the wiki and check every quotation against its source",
+      "prompt": "Build a workspace for reading and checking our research wiki on neurotechnology in the administration of justice, one question per tab. Tab 01 Pages: the pages (sources, concepts, entities, questions) listed by type with a filter, and the index before a page is chosen; a page shows its type, register and status, its body rendered (headings, lists, [[links]] to other pages, contested blocks as cards with the verdict first), and under it Links out, Linked from and Sources. Show every pin where it stands in the sentence: the quote in quotation marks, then a chip with its label that opens the PDF at its page with `studio.openSource(id, page, quote)` (the studio marks the quote on the page), and a mark saying whether the code found the quote in that passage of the library (a quote with \"…\" is several fragments, each found in order). Tab 02 Check: one big number of pins verified by the code, and a lint table: dangling links, orphan pages, pins that fail, sources that differ from the documents pinned, contested cards missing from the tensions register, each with the pages concerned. Tab 03 Record: the log, newest first, the tensions register, and a download of the wiki. No model is called anywhere in this app: every number is counted by its code.",
+      "lesson": "A wiki keeps what an institution knows. Models wrote the pages; the code checks every quotation against its source, and one click opens the page it comes from. A Secretary-General's report, a submission and an article carry different weight, and the wiki shows which is which.",
       "checks": {
         "no_console_errors": true,
         "no_network": true,
         "uses_workshop_data": true,
         "source_matches": "openSource",
-        "calls_studio_ask": true,
         "controls_min": 1,
-        "ask_steps": [
-          "^Ingest",
-          "^Start"
-        ]
+        "text_matches": "(?i)verified"
       }
     },
     {
@@ -220,7 +267,8 @@
         "button_matches": "(?i)map",
         "source_matches": "createElementNS|<svg",
         "text_matches": "(?i)orphan|no (other )?page links"
-      }
+      },
+      "level": "advanced"
     },
     {
       "id": "s8-2-ai-inside",
@@ -240,12 +288,13 @@
         "batches_max": 25,
         "text_matches": "(?i)sent to|external|left (the|your)",
         "button_matches": "(?i)run again"
-      }
+      },
+      "level": "advanced"
     },
     {
       "id": "s8-3-voting",
-      "session": "S8",
-      "minute": 75,
+      "session": "S7",
+      "minute": 0,
       "dataset": "hrc",
       "builds_on": null,
       "title": "How two States vote at the Human Rights Council",
@@ -281,7 +330,8 @@
           "51/27"
         ],
         "text_matches": "(?i)cannot be checked|can.t be checked|not (be )?check|not in (this|the) data"
-      }
+      },
+      "level": "advanced"
     },
     {
       "id": "any-improve",
@@ -291,8 +341,73 @@
       "builds_on": "any",
       "bakeoff": false,
       "title": "Suggest improvements",
-      "blurb": "A careful review of your app, as a list to choose from",
-      "prompt": "Review my app as a careful colleague would. List five concrete improvements, numbered, each small enough to make as one change (a column, a chart, a filter, a check, clearer wording): one or two sentences each, saying what you would change and why it matters for how clearly the app explains its numbers, for correctness, for accessibility or for its design. Do not change the code yet: I will tell you which one to make.",
+      "blurb": "Five ways to review your app: pick one, get five improvements, build the one you choose",
+      "prompt": "Review my app and list five improvements I can choose from.",
+      "lesson": null
+    },
+    {
+      "id": "improve-first-user",
+      "session": "any",
+      "minute": null,
+      "dataset": null,
+      "builds_on": "any",
+      "bakeoff": false,
+      "lens": true,
+      "title": "As a first-time user",
+      "blurb": "Usability: Nielsen's ten heuristics, with a severity for each problem",
+      "prompt": "Review my app as a usability evaluator who has never seen it, using Jakob Nielsen's ten usability heuristics (visibility of what is going on, match with the user's words, user control, consistency, error prevention, recognition rather than recall, flexibility, minimalist design, help with errors, help and documentation). Picture a diplomat or a lawyer at a national human rights institution opening it for the first time. List the five most severe problems, numbered and ordered by severity, each in this form: the heuristic it breaks; where in the app it happens; its severity from 0 (not a problem) to 4 (stops the work), with half a sentence on why; and one fix small enough to make as one change. Do not write code yet: I will tell you which fix to make.",
+      "lesson": null
+    },
+    {
+      "id": "improve-trust",
+      "session": "any",
+      "minute": null,
+      "dataset": null,
+      "builds_on": "any",
+      "bakeoff": false,
+      "lens": true,
+      "title": "Can I trust the numbers?",
+      "blurb": "A data-quality audit: accuracy, completeness, consistency, timeliness",
+      "prompt": "Review my app as a data-quality auditor before a report goes out. Use four dimensions of data quality: accuracy (is each number computed correctly from the records), completeness (what the data or the filters leave out, and whether the app says so), consistency (do the same counts agree across tabs, charts and tables) and timeliness (does the app say how old the data is). List five improvements, numbered, each naming its dimension, saying what a reader could get wrong today and proposing one change that makes it visible or checkable in the app itself: a check, a count shown next to a total, a warning, a note on what is left out. Order them by how much they would mislead a reader. Do not write code yet: I will tell you which one to make.",
+      "lesson": null
+    },
+    {
+      "id": "improve-premortem",
+      "session": "any",
+      "minute": null,
+      "dataset": null,
+      "builds_on": "any",
+      "bakeoff": false,
+      "lens": true,
+      "title": "Pre-mortem",
+      "blurb": "Imagine it already went wrong: Gary Klein's pre-mortem",
+      "prompt": "Run a pre-mortem on my app, the method of the psychologist Gary Klein. Imagine it is six months from now: someone in a ministry or a national human rights institution relied on this app, and it misled them or let them down in front of others. Write the five most likely stories of how that happened, one or two sentences each, as concrete as you can (which number, which screen, which assumption). Then, for each story, one change small enough to make as one change that would have prevented it or made the problem visible in time. Number them and put the most likely first. Do not write code yet: I will tell you which change to make.",
+      "lesson": null
+    },
+    {
+      "id": "improve-interview",
+      "session": "any",
+      "minute": null,
+      "dataset": null,
+      "builds_on": "any",
+      "bakeoff": false,
+      "lens": true,
+      "title": "Ask me first",
+      "blurb": "Jobs to be done: the model interviews you, then suggests",
+      "prompt": "Before you suggest anything, interview me about how I would use this app at work, in the spirit of \"jobs to be done\": what task brings me to it, what I do with what it shows, and what I do today instead. Ask me three short questions, numbered, and stop. When I have answered, list five improvements that serve that task, numbered and ordered by how much time they would save me, each small enough to make as one change, with one sentence on which of my answers it comes from. Do not write code until I choose.",
+      "lesson": null
+    },
+    {
+      "id": "improve-access",
+      "session": "any",
+      "minute": null,
+      "dataset": null,
+      "builds_on": "any",
+      "bakeoff": false,
+      "lens": true,
+      "title": "For every reader",
+      "blurb": "Accessibility: a quick check against WCAG 2.2, level AA",
+      "prompt": "Review my app for accessibility, as a quick check against the Web Content Accessibility Guidelines (WCAG 2.2, level AA), for colleagues who use a keyboard only, a screen reader, a magnifier or a projector at the back of a room: contrast of text and charts, keyboard access and a visible focus, labels on every control, headings and table structure, charts that also say their message in text, and nothing conveyed by colour alone. List the five problems that would stop someone most, numbered, each with the WCAG success criterion it touches, where it is in the app, and one fix small enough to make as one change. Do not write code yet: I will tell you which fix to make.",
       "lesson": null
     },
     {

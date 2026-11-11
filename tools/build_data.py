@@ -59,6 +59,22 @@ PDF_DOC = {"symbol": "E/C.12/GC/27", "doc_id": "e-c-12-gc-27",
 PDF_DOC_2 = {"symbol": "CCPR/C/GC/32", "doc_id": "ccpr-c-gc-32", "pdf": ROOT / "site/files/CCPR_C_GC_32.pdf",
              "title": "Human Rights Committee general comment No. 32 (2007), as a PDF converter extracted it, page by page"}
 
+# ten General Comments for "Run it on ten" (S8): the extraction app's rules, written on GC 27, run unchanged on
+# documents of six committees from 2007 to 2025; PDFs from the UN Official Document System (11 Nov 2026)
+TEN_DIR = ROOT / "tools/out/gc_pdfs"
+PDF_TEN = [
+    ("E/C.12/GC/27", Path.home() / "Desktop/GC_Database/new_gcs_pdf/CESCR_GC27.pdf"),
+    ("CCPR/C/GC/32", ROOT / "site/files/CCPR_C_GC_32.pdf"),
+    ("CCPR/C/GC/34", TEN_DIR / "CCPR_C_GC_34.pdf"),
+    ("CCPR/C/GC/36", TEN_DIR / "CCPR_C_GC_36.pdf"),
+    ("E/C.12/GC/24", TEN_DIR / "E_C_12_GC_24.pdf"),
+    ("E/C.12/GC/25", TEN_DIR / "E_C_12_GC_25.pdf"),
+    ("CRC/C/GC/25", TEN_DIR / "CRC_C_GC_25.pdf"),
+    ("CRPD/C/GC/7", TEN_DIR / "CRPD_C_GC_7.pdf"),
+    ("CAT/C/GC/4", TEN_DIR / "CAT_C_GC_4.pdf"),
+    ("CEDAW/C/GC/35", TEN_DIR / "CEDAW_C_GC_35.pdf"),
+]
+
 # the same document as OHCHR publishes it in HTML (English html link on its Download.aspx page, fetched on
 # 4 Nov 2026): every numbered paragraph is its own <p>, headings are <h2>/<h3>, and the footnotes are gone
 HTML_DOC = {"symbol": "E/C.12/GC/27", "doc_id": "e-c-12-gc-27", "html": ROOT / "site/files/E_C.12_GC_27.html",
@@ -237,6 +253,50 @@ def pdf_text(gc, doc_spec=PDF_DOC, key="pdf_text"):
         "records": [{"page": i + 1, "text": t} for i, t in enumerate(pages)],
         "reference": {"paragraphs": len(paras), "footnotes": notes, "adopted": doc.get("adoptionDate"), "first_words": first},
     }
+
+
+def pdf_ten(gc):
+    """Ten documents in the shape of pdf_text, one record each: its pages as the same converter gives them and
+    its `reference` from the UN Human Rights Database, so the app's checks run on every one of them."""
+    corpus, docs = get_json(UNHRDB + "corpus.json"), get_json(UNHRDB + "documents.json")
+    out = []
+    for symbol, pdf in PDF_TEN:
+        raw = subprocess.run(["pdftotext", str(pdf), "-"], capture_output=True, text=True, check=True).stdout
+        pages = raw.split("\f")
+        while pages and not pages[-1].strip():
+            pages.pop()
+        paras = sorted((r for r in gc["records"] if r["symbol"] == symbol), key=lambda r: int(r["paragraph"]))
+        doc_id = symbol.lower().replace("/", "-").replace(".", "-")
+        doc = next((d for d in docs if d.get("docId") == doc_id), {})
+        out.append({
+            "symbol": symbol, "committee": paras[0]["committee"], "year": paras[0]["year"],
+            "title": paras[0]["short_title"].strip(), "doc_url": "https://docs.un.org/en/" + symbol, "count": len(pages),
+            "pages": [{"page": i + 1, "text": t} for i, t in enumerate(pages)],
+            "reference": {"paragraphs": len(paras),
+                          # the database has no footnotes for some documents (CCPR/C/GC/36): null, not 0
+                          "footnotes": sum(len(p.get("footnotes") or []) for p in corpus if p.get("docId") == doc_id) or None,
+                          "adopted": doc.get("adoptionDate"),
+                          "first_words": {str(r["paragraph"]): " ".join(re.sub(r"^\d+\.\s*", "", r["text"]).split()[:6]) for r in paras}},
+        })
+        print(f"  {symbol}: {len(pages)} pages, {len(paras)} paragraphs, {out[-1]['reference']['footnotes']} footnotes")
+    return {"dataset": "pdf_ten", "title": "Ten General Comments, as a PDF converter extracted them, page by page",
+            "source": "The PDFs from the UN Official Document System, converted with pdftotext (Poppler); nothing cleaned",
+            "built": date.today().isoformat(), "count": len(out), "records": out}
+
+
+def ten_schema(p):
+    first = p["records"][0]
+    return [
+        "## `WORKSHOP_DATA.pdf_ten`: ten UN documents as raw text from their PDFs",
+        "",
+        "`{title, source, built, count, records: [{symbol, committee, year, title, doc_url, count, pages: [{page, text}], reference: {...}}]}`.",
+        f"`records` are {p['count']} General Comments of six treaty bodies, one record per document: `pages` holds",
+        "its pages exactly as the converter of `pdf_text` produced them, nothing cleaned, and `reference` has the",
+        "same fields as in `pdf_text` (`paragraphs`, `footnotes`, `adopted`, `first_words`), from the UN Human Rights",
+        "Database; `footnotes` is null where the database records none. The documents differ in layout: a rule written",
+        f"on one may break on another. The first is {first['symbol']}, the same document as `pdf_text`.",
+        "",
+    ]
 
 
 def html_doc(gc, doc_spec=HTML_DOC, key="html_doc"):
@@ -858,8 +918,26 @@ def main():
     ap.add_argument("--skip-uhri", action="store_true")
     ap.add_argument("--pdf-only", action="store_true", help="rebuild pdf_text.json, library.json and wiki.json only; reuse the other files")
     ap.add_argument("--html-only", action="store_true", help="build html_doc.json and add it to index.json, schema.md and samples.json")
+    ap.add_argument("--ten-only", action="store_true", help="build pdf_ten.json and add it to index.json, schema.md and samples.json")
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
+    if a.ten_only:
+        index = json.loads((OUT / "index.json").read_text())
+        p = pdf_ten(json.loads((OUT / "gc.json").read_text()))
+        write("pdf_ten.json", p)
+        index["datasets"]["pdf_ten"] = {"file": "pdf_ten.json", "count": p["count"]}
+        (OUT / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8")
+        schema = (OUT / "schema.md").read_text()
+        if "WORKSHOP_DATA.pdf_ten" not in schema:
+            schema = schema.replace("## Rules for every app", "\n".join(ten_schema(p)) + "\n## Rules for every app", 1)
+            (OUT / "schema.md").write_text(schema, encoding="utf-8")
+        samples = json.loads((OUT / "samples.json").read_text())
+        one = dict(p["records"][1]); one["pages"] = [{"page": 1, "text": one["pages"][0]["text"][:800] + "\n[… rest of the page and the other pages omitted]"}]
+        one["reference"] = dict(one["reference"], first_words={k: v for k, v in list(one["reference"]["first_words"].items())[:2]})
+        samples["pdf_ten"] = [one]
+        (OUT / "samples.json").write_text(json.dumps(samples, ensure_ascii=False, indent=1), encoding="utf-8")
+        print("  pdf_ten.json, index.json, schema.md, samples.json")
+        return
     if a.html_only:
         index = json.loads((OUT / "index.json").read_text())
         h = html_doc(json.loads((OUT / "gc.json").read_text()))

@@ -17,6 +17,46 @@ Written on 4 November 2026, before the rehearsal of about 20 November. Nothing h
 
 Two consequences follow. First, the default model (Mistral) gives a broken first dashboard about half the time, and the dashboard is the first thing all 30 people build: if half the room keeps the default, seven or eight people start with a broken app. Second, the 15-minute slot "Modify, in their own words" holds at most two changes per person, and only if nothing breaks.
 
+## Fifth pass, 11 November: five new participants, from no AI at all to code
+
+Run on paper again after the changes of 5 to 11 November: S8 on the PDF and on Claude, *Run it on ten General Comments*, *Show what broke the rules* with *Copy for the model*, *Ask your data a question*, the participant's own files and screenshots, and a wiki without *Ask* and *Ingest*. No model was called; the times are the bake-off's (Claude through Anthropic's API at medium effort for builds and low for changes, Mistral Large 3, GLM-5.3 at medium). The five are new, chosen by how much they use AI (1: never; 5: writes code).
+
+| | Who | AI literacy | Expects | Laptop and tools |
+|---|---|---|---|---|
+| **Olena** | Minister-counsellor at a Permanent Mission | 1: has not used a chatbot herself; her staff do | to understand what this is and whether it is safe, without typing much | mission laptop, Edge; slow at drag and drop |
+| **Ravi** | Complaints officer at a national human rights institution | 2: free ChatGPT for emails; believes what it says | a quick tool for the complaints his office receives | own laptop; brings an Excel export of complaints |
+| **Ingrid** | Human rights adviser in a foreign ministry | 3: Copilot every day, the only tool her ministry allows | something she can redo at home in Copilot | ministry laptop; Copilot (enterprise) |
+| **Kwame** | Researcher at an NGO | 4: Claude Pro, writes long prompts, pastes screenshots | to push the tools and take them home | own MacBook; Claude Pro; tries LM Arena when things are slow |
+| **Sofía** | Data analyst in a treaty body secretariat | 5: Python, knows the UN Human Rights Database | to see where it breaks and whether the checks are honest | own laptop; reads the code |
+
+**Session 7.**
+- **Olena** follows the projector. The planning cards help her: four clicks, the recommended answers. The 2.5-minute planning log and 3 to 4 minutes of building lose her at about minute 5; the facilitator's talk over the thinking keeps her. With Mistral by default her dashboard has a one-in-two chance of an error, and she will not press *Improve it in the studio* on her own. *Check a quotation* is the moment she understands the point (✓ / ≈ / ✗ on a text like the ones her staff write). *Ask your data a question* she skips: typing a question is a step too far without help.
+- **Ravi** builds the dashboard fine. After *Ask your data a question* he drops his complaints export onto the shelf, ticks *send the first 3 records*, and asks about it. The three records are complaints with names: they leave the laptop. The tick box warns him, but nobody stopped him. This is the most serious risk of the morning, and it comes from a feature, not a bug.
+- **Ingrid** builds, checks a quotation and asks: "Can I do this in Copilot?" Today the answer is "yes, with effort". She needs the take-home kit, and she needs it before the break, not after the workshop.
+- **Kwame** turns *Plan mode* off by minute 10 and writes his own requests. He pastes a screenshot of a chart he wants changed (Claude or Mistral; on GLM the studio stops him). He tries *Ask your data a question* three times with harder questions and is impressed that the model "refused to give numbers". He spends most of the $8 seat budget on Claude by 10:30.
+- **Sofía** opens the code under the query table: the regular expression (`torture|ill[\s\-]?treat`) and the note on what it leaves out ("cruel, inhuman or degrading" is not matched). She says it is a good example of judgment hidden in a query, and the session plan can use her: the code is readable, and the definition is the decision.
+
+**Session 8.**
+- **Everyone** is switched to Claude for the PDF with a note. Olena does not notice; Ingrid asks whether Anthropic keeps the document (yes, for a limited time; the document is public, but she wants the rule for her own files).
+- The PDF build on Claude takes 3 to 4 minutes, and every one of six builds worked. *Run it on ten General Comments* takes about 1.5 minutes and gives the best picture of the day: 2 of 10 documents pass every check, and the reasons are on screen in red.
+- *Show what broke the rules* and *Copy for the model*: **Kwame and Sofía** run three rounds (2 → 5 → 6 → 8 of 10 on 11 November). Sofía catches the third change ("let one page lack a page number"), which loosens a check instead of reading the page better. **Ravi** runs one round and stops at "5 of 10", happy. **Olena and Ingrid** watch the projector: the loop needs a seat code and a paste, and two rounds take 5 minutes with explaining.
+- *Verbatim finder*: everyone can search; this is Olena's second good moment. Ingrid asks for the files to take home.
+- The wiki demo, now without *Ask* and *Ingest*, is shorter and calmer: open a page, click a pin, the PDF opens at its page with the quote marked, then the check tab (all pins verified by the page's code). Nobody asks where the model is.
+
+### What works now
+- **The arc holds**: clean data (S7), where clean data comes from and how a script improves on ten documents (S8), generation last. *Run it on ten* turns "the format decides half the work" into something people see.
+- **The model never answers from memory where it matters**: the quotation checker, the query under *Ask your data a question*, the extraction and the wiki checks are all code. Sofía's reading of the query is a ready-made discussion.
+- **Claude for the PDF**: six working builds in six; Mistral's and GLM's failures are on the jagged-frontier slide instead of on 25 screens.
+- **Fallbacks for those who fall behind**: recorded answers, the gallery with *Improve it in the studio*, and *Save as file* (one HTML with its data, opens offline with a double-click).
+
+### What does not work yet, and what to do
+1. **The first S7 build is still the riskiest moment**: Mistral by default gives a broken dashboard half the time. Start S7 from the recorded dashboard (every country works, since the app reads the data), and go live for *Check a quotation*, *Ask your data* and changes. Or make Claude the default for S7 too, with the Anthropic cap raised.
+2. **Too much for literacy 1 and 2**: S7 now has five things to try, S8 has four steps and a loop. Olena and Ravi need one path, said aloud: S7 = dashboard, *Check a quotation*; S8 = PDF, *Run it on ten*, Verbatim finder. Everything else is "if you finish early".
+3. **Own files and *send the first 3 records***: say in the first minutes that no personal data goes into the studio, and consider turning the tick box off for the workshop (field names only).
+4. **The loop needs a seat and a paste**: in recorded mode it ends at the panel. Show the three recorded rounds of 11 November on the projector for those who cannot run them.
+5. **The take-home kit is needed during the workshop**, not after it: for Ingrid (Copilot only), Kwame (Claude Pro, LM Arena) and anyone whose seat budget runs out.
+6. **Budgets**: Kwame-type users spend $5–8 on Claude by the break. Raise the Anthropic cap and the seat budgets, or keep Claude for the PDF only.
+
 ## Note, 6 November: Session 8 is back on the PDF, on Claude
 
 Session 8's extraction runs on the PDF of GC 27 again, with the two-tab layout of the HTML version, and the studio switches to Claude when a participant picks it (`docs/session-plan.md`, 11:23–11:36). On the PDF, Claude built a working app in 6 of 6 builds (3.1–3.8 minutes), GLM in 5 of 9 (7–11 minutes with the repair), Mistral in 3 of 11. The passes below describe the HTML exercise; for the PDF, a participant who switches back to Mistral or GLM is the new risk, and the gallery's Claude app is the back-up.

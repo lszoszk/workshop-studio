@@ -1,0 +1,66 @@
+[
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": false,
+   "text_contains": true,
+   "download": true,
+   "text_matches": true
+  },
+  "passed": 6,
+  "total": 7,
+  "errors": [],
+  "network": [],
+  "lines": 1289,
+  "edit": null,
+  "repair": null,
+  "seconds": 103.9,
+  "first_token": 0.8,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 20728,
+  "completion_tokens": 12022,
+  "cost": 0.0210991,
+  "provider": "Mistral"
+ },
+ {
+  "model": "mistral-l3",
+  "label": "Mistral Large 3 · France · Mistral (EU)",
+  "prompt": "s7-4b-run-ten",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "text_contains": true,
+   "download": true
+  },
+  "passed": 4,
+  "total": 5,
+  "errors": [
+   "results is not defined"
+  ],
+  "network": [],
+  "lines": 1438,
+  "edit": null,
+  "repair": {
+   "error": "results is not defined",
+   "seconds": 8.3,
+   "cost": 0.01068144,
+   "applied": true,
+   "checks_before": 4
+  },
+  "seconds": 121.8,
+  "first_token": 2.1,
+  "first_thought": null,
+  "reasoning_chars": 0,
+  "prompt_tokens": 32977,
+  "completion_tokens": 13400,
+  "cost": 0.03010975,
+  "provider": "Mistral"
+ }
+]

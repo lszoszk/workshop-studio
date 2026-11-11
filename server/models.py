@@ -39,28 +39,31 @@ class Model:
     worker_id: str | None = None   # for api="anthropic": the OpenRouter model and host the Cloudflare Worker uses instead
     worker_host: str | None = None
     edit_reasoning: str | None = None   # effort for a change to an app already built (edit mode): less than a new build
+    vision: bool = False           # reads images (a participant's screenshot); OpenRouter input_modalities, 11.11.2026
 
 
 MODELS: dict[str, Model] = {m.key: m for m in [
     # Large 3, not Large 4: Large 4 thinks for 8-10 minutes on a workshop plan whatever the effort, and on the
     # PDF plan its thinking used up the whole answer budget (bake-off, 4.11.2026); Large 3 answers in 2-5
     Model("mistral", "mistralai/mistral-large-2512", "mistral/eu", "Mistral Large 3", "Mistral", "EU",
-          0.55, 1.65, fallback="glm-eu"),
+          0.55, 1.65, fallback="glm-eu", vision=True),
     # straight to Anthropic since 4.11.2026 (Łukasz's Console credit); its spend on the server stops at
     # STUDIO_ANTHROPIC_CAP, after which requests go to the fallback. No zero data retention on this route.
     # Medium effort: dashboards in 2.4-2.8 min instead of 4.7-5.3 at high, all checks passed (bake-off, 4.11.2026)
     Model("claude", "claude-sonnet-5-5", "anthropic", "Claude Sonnet 5.5", "Anthropic", "US",
           2.0, 10.0, fallback="mistral", reasoning="medium", api="anthropic", zdr=False, edit_reasoning="low",
-          worker_id="anthropic/claude-sonnet-5.5", worker_host="amazon-bedrock/us-east-1"),
+          worker_id="anthropic/claude-sonnet-5.5", worker_host="amazon-bedrock/us-east-1", vision=True),
     Model("glm-cn", "z-ai/glm-5.3", "z-ai", "GLM-5.3 (developer's service)", "Z.AI", "CN",
           1.4, 4.4, fallback="glm-eu", reasoning="medium", edit_reasoning="low"),
     Model("glm-eu", "z-ai/glm-5.3", "mistral/nvfp4/eu", "GLM-5.3 (run in the EU)", "Mistral", "EU",
-          1.54, 4.84, fallback="mistral", reasoning="medium", edit_reasoning="low"),
+          1.54, 4.84, fallback="claude", reasoning="medium", edit_reasoning="low"),   # Claude second (11.11.2026)
     Model("fast", "deepseek/deepseek-v4.1-flash", None, "DeepSeek V4.1 Flash", "any ZDR host", None,
           0.45, 1.8, fallback="mistral"),     # the dearest ZDR endpoint, so an estimate never undercharges
 ]}
 
-DEFAULT = "mistral"
+# GLM-5.3 run in the EU since 11.11.2026 (Łukasz), with Claude second: Mistral's first dashboard broke half the time
+# (GLM's five times of six worked); the PDF exercise switches to Claude itself (prompts.json "model")
+DEFAULT = "glm-eu"
 
 
 def provider_block(m: Model) -> dict:   # OpenRouter's routing block; an api="anthropic" entry has none

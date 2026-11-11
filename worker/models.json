@@ -1,5 +1,5 @@
 {
- "default": "mistral",
+ "default": "glm-eu",
  "models": [
   {
    "key": "mistral",
@@ -11,7 +11,8 @@
    "price_in": 0.55,
    "price_out": 1.65,
    "fallback": "glm-eu",
-   "reasoning": null
+   "reasoning": null,
+   "vision": true
   },
   {
    "key": "claude",
@@ -23,7 +24,8 @@
    "price_in": 2.2,
    "price_out": 11.0,
    "fallback": "mistral",
-   "reasoning": "medium"
+   "reasoning": "medium",
+   "vision": true
   },
   {
    "key": "glm-cn",
@@ -35,7 +37,8 @@
    "price_in": 1.4,
    "price_out": 4.4,
    "fallback": "glm-eu",
-   "reasoning": "medium"
+   "reasoning": "medium",
+   "vision": false
   },
   {
    "key": "glm-eu",
@@ -46,8 +49,9 @@
    "host_region": "EU",
    "price_in": 1.54,
    "price_out": 4.84,
-   "fallback": "mistral",
-   "reasoning": "medium"
+   "fallback": "claude",
+   "reasoning": "medium",
+   "vision": false
   },
   {
    "key": "fast",
@@ -59,7 +63,8 @@
    "price_in": 0.45,
    "price_out": 1.8,
    "fallback": "mistral",
-   "reasoning": null
+   "reasoning": null,
+   "vision": false
   }
  ]
 }

@@ -1224,6 +1224,10 @@
   "html_doc": {
    "file": "html_doc.json",
    "count": 1
+  },
+  "pdf_ten": {
+   "file": "pdf_ten.json",
+   "count": 10
   }
  }
 }

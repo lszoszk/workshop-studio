@@ -27,6 +27,9 @@ const ORIGINS = "https://lszoszk.github.io,http://localhost:8766,http://127.0.0.
 const MAX_BODY_BYTES = 1_000_000;
 const MAX_MESSAGES = 40;
 const MAX_CHARS = 300_000;
+const MAX_IMAGES = 3;               // a participant's screenshots, on the last message only (server/app.py)
+const MAX_IMAGE_CHARS = 2_000_000;
+const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 const KEEPALIVE_MS = 10_000;
 const BUSY = "in_flight_budget_exhausted";   // OpenRouter 402 reason: transient, retry after in-flight requests settle
 // purpose → [temperature, max_tokens]; the same as PURPOSES in server/app.py (a test checks)
@@ -81,8 +84,20 @@ function cleanMessages(raw) {
   if (!last || last.role !== "user" || !last.content.trim()) throw new Refusal(400, "Write a message first", "no_message");
   if (msgs.reduce((n, m) => n + m.content.length, 0) > MAX_CHARS)
     throw new Refusal(400, "This conversation is too long. Start a new thread with an improved prompt", "too_long");
+  if (raw.slice(0, -1).some((m) => m.images && m.images.length)) throw new Refusal(400, "Only the last message may carry images", "bad_images");
+  const images = raw[raw.length - 1].images || [];
+  if (images.length) {
+    if (!Array.isArray(images) || images.length > MAX_IMAGES || !images.every((i) => i && IMAGE_TYPES.includes(i.media_type) &&
+        typeof i.data === "string" && i.data.length > 0 && i.data.length <= MAX_IMAGE_CHARS && /^[A-Za-z0-9+/=]+$/.test(i.data)))
+      throw new Refusal(400, `Up to ${MAX_IMAGES} images (PNG, JPEG, WebP or GIF, about 1.5 MB each) can go with a message`, "bad_images");
+    last.images = images.map((i) => ({ media_type: i.media_type, data: i.data }));
+  }
   return msgs;
 }
+
+// a message with images as OpenRouter takes it: the text, then each image as a data URL
+const withImages = (messages) => messages.map((m) => (m.images ? { role: m.role, content: [{ type: "text", text: m.content },
+  ...m.images.map((i) => ({ type: "image_url", image_url: { url: `data:${i.media_type};base64,${i.data}` } }))] } : { role: m.role, content: m.content }));
 
 function hit(code, limit, windowS) {
   const now = Date.now() / 1000;
@@ -124,7 +139,7 @@ async function openUpstream(env, m, system, messages, purpose) {
   const [temperature, max_tokens] = PURPOSES[purpose];
   const payload = {
     model: m.id, stream: true, usage: { include: true }, temperature, max_tokens, provider: providerBlock(m),
-    messages: [...(system ? [{ role: "system", content: system }] : []), ...messages],
+    messages: [...(system ? [{ role: "system", content: system }] : []), ...withImages(messages)],
   };
   if (purpose === "build" && m.reasoning) payload.reasoning = { effort: m.reasoning };
   else if (purpose === "question" && m.reasoning) payload.reasoning = { effort: "low" };   // a quick question: think briefly
@@ -245,6 +260,8 @@ async function chat(request, env, waitUntil, cors) {
   const m = Object.hasOwn(BY_KEY, key) ? BY_KEY[key] : null;      // hasOwn: "constructor" is not a model
   if (!m) throw new Refusal(400, "This model is not on the menu", "model");
   const messages = cleanMessages(d.messages);
+  if (messages[messages.length - 1].images && !m.vision)
+    throw new Refusal(400, `${m.label} cannot read images. Switch to a model that can, or send the message without them`, "no_vision");
   if (seat.spent >= seat.budget) throw new Refusal(429, "This seat has used its budget", "seat_budget");
   if ((Number(await env.STUDIO.get(`day:${today()}`)) || 0) >= num(env.DAILY_BUDGET, 200))
     throw new Refusal(429, "The studio has reached today's spending limit", "daily_budget");
@@ -256,7 +273,8 @@ async function chat(request, env, waitUntil, cors) {
   let used = m;
   let [resp, err] = await openWithRetry(env, m, system, messages, purpose);
   const firstError = err;
-  if (!resp && m.fallback && err !== BUSY) {     // a busy account is busy for every model: no fallback
+  // a busy account is busy for every model; a fallback that cannot read the images would answer without them
+  if (!resp && m.fallback && err !== BUSY && (BY_KEY[m.fallback].vision || !messages[messages.length - 1].images)) {
     used = BY_KEY[m.fallback];
     [resp, err] = await openWithRetry(env, used, system, messages, purpose);
   }

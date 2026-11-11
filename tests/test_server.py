@@ -362,15 +362,15 @@ def test_in_flight_402_that_persists_is_503_busy_and_logged(env, caplog):
 
 def test_other_402_is_not_retried_but_falls_back(env):
     env.fake.stream(status=402, error={"code": 402, "message": "Insufficient credits"})
-    r = env.client.post("/studio-api/chat", json=body(model="glm-eu"))
+    r = env.client.post("/studio-api/chat", json=body(model="mistral"))
     assert r.status_code == 200
-    assert [q["model"] for q in env.fake.requests] == ["z-ai/glm-5.3", "mistralai/mistral-large-2512"]
+    assert [q["model"] for q in env.fake.requests] == ["mistralai/mistral-large-2512", "z-ai/glm-5.3"]
 
 
 def test_out_of_credit_on_both_models_says_so(env):
     for _ in range(2):
         env.fake.stream(status=402, error={"code": 402, "message": "Insufficient credits"})
-    r = env.client.post("/studio-api/chat", json=body(model="glm-eu"))
+    r = env.client.post("/studio-api/chat", json=body(model="mistral"))
     assert r.status_code == 503 and r.json()["code"] == "credit" and "run out of credit" in r.json()["error"]
     assert env.seats.db.execute("SELECT status FROM usage").fetchone()["status"] == "credit"
 
@@ -466,13 +466,21 @@ def test_client_abort_is_still_charged(env):
 
 def test_fallback_when_the_pinned_host_fails(env):
     env.fake.stream(status=503).stream(chunk("from fallback"), chunk(usage=USAGE))
-    r = env.client.post("/studio-api/chat", json=body(model="glm-eu"))
+    r = env.client.post("/studio-api/chat", json=body(model="mistral"))
     assert r.status_code == 200
-    assert [q["model"] for q in env.fake.requests] == ["z-ai/glm-5.3", "mistralai/mistral-large-2512"]
+    assert [q["model"] for q in env.fake.requests] == ["mistralai/mistral-large-2512", "z-ai/glm-5.3"]
     ev = events(r.text)
     assert ev[0] == ("message", {"delta": "from fallback"})
     u = ev[-2][1]
-    assert u["model"] == "mistral" and u["host"] == "Mistral" and u["fallback_from"] == "glm-eu"
+    assert u["model"] == "glm-eu" and u["fallback_from"] == "mistral"
+
+
+def test_the_default_glm_falls_back_to_claude(env):
+    """Since 11 November GLM run in the EU is the default and Claude is second: a GLM that fails goes to Anthropic."""
+    env.fake.stream(status=503)
+    ev = events(env.client.post("/studio-api/chat", json=body(model="glm-eu")).text)
+    u = next(d for e, d in ev if e == "usage")
+    assert u["model"] == "claude" and u["fallback_from"] == "glm-eu" and env.fake.anthropic_requests
 
 
 def test_both_hosts_failing_is_502_json_and_logged(env, caplog):
@@ -580,7 +588,7 @@ def test_gallery_needs_a_valid_seat(env):
 def test_health(env):
     h = env.client.get("/studio-api/health").json()
     assert {k: h[k] for k in ("ok", "version", "route", "default_model", "models", "accepting")} == {
-        "ok": True, "version": studio.VERSION, "route": "vm", "default_model": "mistral",
+        "ok": True, "version": studio.VERSION, "route": "vm", "default_model": "glm-eu",
         "models": ["mistral", "claude", "glm-cn", "glm-eu", "fast"], "accepting": True}
     assert h["seats"] == {"total": 2, "enabled": 2, "active_10min": 0}
 
@@ -800,3 +808,71 @@ def test_a_change_on_glm_thinks_less(env):
     env.client.post("/studio-api/chat", json=body(model="glm-cn"))
     env.client.post("/studio-api/chat", json=body(model="glm-cn", messages=CHANGE))
     assert [q["reasoning"] for q in env.fake.requests] == [{"effort": "medium"}, {"effort": "low"}]
+
+
+PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+PICTURE = [{"role": "user", "content": "Why is this column empty?", "images": [{"media_type": "image/png", "data": PNG}]}]
+
+
+def test_a_screenshot_goes_to_each_api_in_its_own_shape(env):
+    """A participant's screenshot rides on the last message: OpenRouter gets the text and a data URL, Anthropic the
+    image block before the text; the server never logs it."""
+    assert env.client.post("/studio-api/chat", json=body(messages=PICTURE)).status_code == 200
+    content = env.fake.requests[-1]["messages"][-1]["content"]
+    assert content == [{"type": "text", "text": "Why is this column empty?"},
+                       {"type": "image_url", "image_url": {"url": "data:image/png;base64," + PNG}}]
+    assert env.client.post("/studio-api/chat", json=body(model="claude", messages=PICTURE)).status_code == 200
+    content = env.fake.anthropic_requests[-1]["messages"][-1]["content"]
+    assert content == [{"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": PNG}},
+                       {"type": "text", "text": "Why is this column empty?"}]
+
+
+def test_a_model_that_cannot_read_images_says_so(env, caplog):
+    r = env.client.post("/studio-api/chat", json=body(model="glm-cn", messages=PICTURE))
+    assert r.status_code == 400 and r.json()["code"] == "no_vision" and env.fake.requests == []
+    assert PNG not in caplog.text
+
+
+@pytest.mark.parametrize("images", [
+    [{"media_type": "image/svg+xml", "data": PNG}],                  # not a picture format the models take
+    [{"media_type": "image/png", "data": "not base64!"}],
+    [{"media_type": "image/png", "data": PNG}] * 4,                   # more than three
+])
+def test_bad_images_are_400(env, images):
+    r = env.client.post("/studio-api/chat", json=body(messages=[dict(PICTURE[0], images=images)]))
+    assert r.status_code == 400 and r.json()["code"] == "bad_images"
+
+
+def test_images_only_on_the_last_message(env):
+    msgs = [PICTURE[0], {"role": "assistant", "content": "It is empty because…"}, {"role": "user", "content": "Thanks"}]
+    r = env.client.post("/studio-api/chat", json=body(messages=msgs))
+    assert r.status_code == 400 and r.json()["code"] == "bad_images"
+
+
+def test_no_fallback_to_a_model_that_would_not_see_the_picture(env):
+    """Mistral's fallback is GLM, which cannot read images: with a picture, a failing Mistral is an error, not a
+    silent answer from a model that never saw it."""
+    env.fake.stream(status=500, error={"code": 500, "message": "down"})
+    env.fake.stream(status=500, error={"code": 500, "message": "down"})
+    r = env.client.post("/studio-api/chat", json=body(messages=PICTURE))
+    assert r.status_code == 502
+    assert {q["model"] for q in env.fake.requests} == {"mistralai/mistral-large-2512"}
+
+
+def test_activity_events_keep_codes_and_drop_content(env):
+    """POST /studio-api/events: whitelisted names and fields only; a string must be an id or a code (no spaces, so
+    no sentence); the day's file is for the admin only."""
+    evs = [{"t": "build", "ms": 1200, "prompt": "s7-1-dashboard", "model": "mistral", "s": 182.4, "ok": True},
+           {"t": "build", "ms": 1300, "prompt": "Quote paragraph 97 of my secret memo"},     # free text: the field goes
+           {"t": "keylogger", "ms": 5, "text": "x"},                                          # not a known event
+           {"t": "look", "ms": 9, "item": "traceBtn", "Bad-Field": 1, "message": None}]
+    r = env.client.post("/studio-api/events", content=json.dumps({"seat": "abcdef", "sid": "0123abcd", "v": "2026-11-11a", "events": evs}),
+                        headers={"Content-Type": "text/plain"})   # navigator.sendBeacon sends text/plain
+    assert r.json() == {"ok": True, "kept": 3}
+    lines = [json.loads(x) for x in (env.dir / "state" / "events").glob("*.jsonl").__next__().read_text().splitlines()]
+    assert lines[0]["seat"] == "ABCDEF" and lines[0]["prompt"] == "s7-1-dashboard" and lines[0]["s"] == 182.4
+    assert "prompt" not in lines[1] and lines[2] == {**{k: lines[2][k] for k in ("at", "seat", "sid", "v")}, "t": "look", "ms": 9, "item": "traceBtn", "message": None}
+    assert env.client.post("/studio-api/events", json={"sid": "no", "events": []}).status_code == 400
+    assert env.client.get("/studio-api/admin/events").status_code == 403
+    got = env.client.get("/studio-api/admin/events", params={"key": "admin-test"})
+    assert got.status_code == 200 and got.text.count("\n") == 3

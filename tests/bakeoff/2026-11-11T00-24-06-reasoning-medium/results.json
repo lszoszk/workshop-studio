@@ -1,0 +1,66 @@
+[
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-4-extract",
+  "checks": {
+   "no_console_errors": false,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": false,
+   "text_contains": false,
+   "download": true,
+   "text_matches": false
+  },
+  "passed": 3,
+  "total": 7,
+  "errors": [
+   "Failed to execute 'write' on 'Document': Invalid or unexpected token"
+  ],
+  "network": [],
+  "lines": 555,
+  "edit": null,
+  "repair": {
+   "error": "Failed to execute 'write' on 'Document': Invalid or unexpected token",
+   "seconds": 40.4,
+   "cost": 0.033263,
+   "applied": false,
+   "checks_before": 3
+  },
+  "seconds": 179.6,
+  "first_token": 119.9,
+  "first_thought": 1.1,
+  "reasoning_chars": 45618,
+  "prompt_tokens": 19563,
+  "completion_tokens": 20569,
+  "cost": 0.1178918,
+  "provider": "Z.AI"
+ },
+ {
+  "model": "glm-cn",
+  "label": "GLM-5.3 · China · Z.AI",
+  "prompt": "s7-4b-run-ten",
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "text_contains": true,
+   "download": true
+  },
+  "passed": 5,
+  "total": 5,
+  "errors": [],
+  "network": [],
+  "lines": 625,
+  "edit": null,
+  "repair": null,
+  "seconds": 66.7,
+  "first_token": 2.0,
+  "first_thought": 1.2,
+  "reasoning_chars": 223,
+  "prompt_tokens": 28988,
+  "completion_tokens": 10722,
+  "cost": 0.05500096,
+  "provider": "Z.AI"
+ }
+]
