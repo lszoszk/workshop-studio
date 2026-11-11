@@ -48,7 +48,7 @@ def builds():
                 left_out += 1
                 continue
             days.add(f.parent.name[:10])
-            out.append({"model": FAMILY[r["model"]], "prompt": r["prompt"], "outcome": outcome(r)})
+            out.append({"model": FAMILY[r["model"]], "prompt": r["prompt"], "outcome": outcome(r), "cost": r.get("cost") or 0})
     return out, left_out, sorted(days)
 
 
@@ -62,7 +62,11 @@ def main():
         for label, _, prompts in AXES:
             pool = [b for b in mine if b["prompt"] in prompts]
             axes.append({"worked": sum(1 for b in pool if b["outcome"] == "works"), "builds": len(pool)})
-        models.append({"id": key, "name": name, "origin": origin, "builds": len(mine), **total, "axes": axes})
+        # what a build costs, on the builds with a price (Claude Code's builds of Sonnet have none), and what a working app costs
+        priced = [b for b in mine if b["cost"]]
+        spend = sum(b["cost"] for b in priced)
+        cost = {"per_build": round(spend / len(priced), 2), "per_working": round(spend / sum(1 for b in priced if b["outcome"] == "works"), 2)}
+        models.append({"id": key, "name": name, "origin": origin, "builds": len(mine), **total, "axes": axes, "cost": cost})
     span = [datetime.strptime(d, "%Y-%m-%d") for d in (days[0], days[-1])]
     stats = [(f"{len(bs)}", "builds"), (f"{len({b['prompt'] for b in bs})}", "workshop requests"), ("3", "models"),
              (f"{(span[1] - span[0]).days + 1}", "days of testing")]
@@ -75,13 +79,14 @@ def main():
     gallery.write_text(re.sub(r'(<span id="frontierBuilds">)\d+(</span>)', rf"\g<1>{len(bs)}\g<2>", gallery.read_text(encoding="utf-8")), encoding="utf-8")
     for m in models:
         print(f"{m['name']:<24} {m['builds']:>3} builds: {m['works']} works, {m['partly']} partly, {m['broke']} broke |",
-              " · ".join(f"{a['worked']}/{a['builds']}" for a in m["axes"]))
+              " · ".join(f"{a['worked']}/{a['builds']}" for a in m["axes"]), f"| ${m['cost']['per_build']} a build, ${m['cost']['per_working']} per working app")
     print("->", OUT)
 
 
 # written by hand: read them against the printed numbers before each run
 FINDINGS = [
-    "<b>Claude Sonnet 5.5</b> built a working app nine times in ten; GLM-5.3 and Mistral six and five times in ten.",
+    "<b>Claude Sonnet 5.5</b> built a working app nine times in ten, at about $0.28 per working app; GLM-5.3 six times in ten at $0.14, "
+    "Mistral five times in ten at $0.10.",
     "<b>The frontier is jagged.</b> GLM-5.3 made every small change work (11 of 11) but fewer than half of the PDF tools; "
     "Mistral built every check on recommendations (9 of 9) and a third of the PDF tools.",
     "<b>Live, 11 November:</b> GLM-5.3 built the wiki from ten PDFs twice; asked to add a network, it wrote the tab but not the graph. "
@@ -89,7 +94,8 @@ FINDINGS = [
     "Try a model on your own task before you rely on it.",
 ]
 SOURCE = ("Each axis: the share of an app's builds that passed all of its automatic checks (the app runs without an error, "
-          "uses the workshop data and shows what was asked). All {n} bake-off builds, {span}, with every setting tried "
+          "uses the workshop data and shows what was asked). Cost: what the model service charged for a build, averaged over the builds "
+          "with a price (Sonnet's builds in Claude Code have none), and the same spend divided by the builds that worked. All {n} bake-off builds, {span}, with every setting tried "
           "({left_out} builds where the service failed, not the model, are left out). Claude: Sonnet 5.5, in Claude Code or through "
           "the API; GLM-5.3 at Z.AI or in the EU; Mistral: Large 3 and Large 4. The requests were written and tuned with Claude. "
           "The term: Dell'Acqua et al., ‘Navigating the Jagged Technological Frontier’, <i>Organization Science</i> (2026), "

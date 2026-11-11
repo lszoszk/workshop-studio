@@ -53,6 +53,8 @@
   .bar .broke { background: repeating-linear-gradient(135deg, var(--faint) 0 2px, transparent 2px 5px); }
   .key { display: flex; gap: 14px; margin-top: 6px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .key b { color: var(--ink); font-weight: 600; }
+  .cost { margin-top: 6px; font-size: 13.5px; color: var(--muted); display: flex; gap: 8px; align-items: baseline; font-variant-numeric: tabular-nums; }
+  .cost b { font: 600 15px var(--mono); color: var(--ink); }
   svg.radar { width: 100%; height: auto; display: block; margin-top: 4px; overflow: visible; }
   .ring { fill: none; stroke: var(--rule); stroke-width: 1; }
   .ring.full { stroke: var(--faint); stroke-dasharray: 3 4; }
@@ -76,13 +78,13 @@
   th[scope=col] { font: 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
   td.n { text-align: right; font-variant-numeric: tabular-nums; }
   /* a 720-pixel projector: everything on one screen */
-  @media (max-height: 800px) and (min-width: 981px) {
+  @media (max-height: 920px) and (min-width: 981px) {
     .slide { padding: 18px 40px 10px; gap: 10px; }
     h1 { font-size: 30px; margin-top: 6px; }
     .stats { margin-top: 8px; } .stats b { font-size: 27px; }
     .card { padding: 12px 16px 2px; }
     .who b { font-size: 19px; } .score { margin-top: 4px; } .score .big { font-size: 40px; }
-    .bar { margin-top: 7px; } .key { font-size: 12px; margin-top: 4px; }
+    .bar { margin-top: 7px; } .key { font-size: 12px; margin-top: 4px; } .cost { margin-top: 3px; font-size: 12px; } .cost b { font-size: 13px; }
     svg.radar { max-height: 236px; margin: 2px auto 0; }
     .finds { gap: 6px 28px; } .finds li { font-size: 14px; }
     footer { font-size: 11px; padding-top: 6px; }
@@ -106,7 +108,7 @@
 </div>
 <div class="tip" id="tip" role="tooltip"></div>
 <script>
-const D = {"axes": ["Dashboard on UN data", "Paragraphs out of a PDF", "Verbatim search", "Wiki with checked quotes", "Small changes to an app", "Checks on recommendations"], "short": ["Dashboard", "PDF → paragraphs", "Verbatim search", "Wiki", "Small changes", "Recommendations"], "models": [{"id": "claude", "name": "Claude Sonnet 5.5", "origin": "USA", "builds": 100, "works": 91, "partly": 4, "broke": 5, "axes": [{"worked": 19, "builds": 20}, {"worked": 20, "builds": 21}, {"worked": 8, "builds": 9}, {"worked": 7, "builds": 7}, {"worked": 9, "builds": 12}, {"worked": 14, "builds": 14}]}, {"id": "glm", "name": "GLM-5.3", "origin": "China", "builds": 82, "works": 49, "partly": 8, "broke": 25, "axes": [{"worked": 14, "builds": 20}, {"worked": 12, "builds": 28}, {"worked": 3, "builds": 6}, {"worked": 2, "builds": 5}, {"worked": 11, "builds": 11}, {"worked": 3, "builds": 5}]}, {"id": "mistral", "name": "Mistral Large 3 and 4", "origin": "France", "builds": 113, "works": 61, "partly": 8, "broke": 44, "axes": [{"worked": 16, "builds": 24}, {"worked": 11, "builds": 35}, {"worked": 7, "builds": 13}, {"worked": 3, "builds": 6}, {"worked": 6, "builds": 14}, {"worked": 9, "builds": 9}]}], "stats": [["295", "builds"], ["18", "workshop requests"], ["3", "models"], ["12", "days of testing"]], "findings": ["<b>Claude Sonnet 5.5</b> built a working app nine times in ten; GLM-5.3 and Mistral six and five times in ten.", "<b>The frontier is jagged.</b> GLM-5.3 made every small change work (11 of 11) but fewer than half of the PDF tools; Mistral built every check on recommendations (9 of 9) and a third of the PDF tools.", "<b>Live, 11 November:</b> GLM-5.3 built the wiki from ten PDFs twice; asked to add a network, it wrote the tab but not the graph. Claude added it the first time.", "Try a model on your own task before you rely on it."], "source": "Each axis: the share of an app's builds that passed all of its automatic checks (the app runs without an error, uses the workshop data and shows what was asked). All 295 bake-off builds, 31 October – 11 November 2026, with every setting tried (16 builds where the service failed, not the model, are left out). Claude: Sonnet 5.5, in Claude Code or through the API; GLM-5.3 at Z.AI or in the EU; Mistral: Large 3 and Large 4. The requests were written and tuned with Claude. The term: Dell'Acqua et al., ‘Navigating the Jagged Technological Frontier’, <i>Organization Science</i> (2026), <a href=\"https://doi.org/10.1287/orsc.2025.21838\">doi:10.1287/orsc.2025.21838</a>."};
+const D = {"axes": ["Dashboard on UN data", "Paragraphs out of a PDF", "Verbatim search", "Wiki with checked quotes", "Small changes to an app", "Checks on recommendations"], "short": ["Dashboard", "PDF → paragraphs", "Verbatim search", "Wiki", "Small changes", "Recommendations"], "models": [{"id": "claude", "name": "Claude Sonnet 5.5", "origin": "USA", "builds": 100, "works": 91, "partly": 4, "broke": 5, "axes": [{"worked": 19, "builds": 20}, {"worked": 20, "builds": 21}, {"worked": 8, "builds": 9}, {"worked": 7, "builds": 7}, {"worked": 9, "builds": 12}, {"worked": 14, "builds": 14}], "cost": {"per_build": 0.25, "per_working": 0.28}}, {"id": "glm", "name": "GLM-5.3", "origin": "China", "builds": 82, "works": 49, "partly": 8, "broke": 25, "axes": [{"worked": 14, "builds": 20}, {"worked": 12, "builds": 28}, {"worked": 3, "builds": 6}, {"worked": 2, "builds": 5}, {"worked": 11, "builds": 11}, {"worked": 3, "builds": 5}], "cost": {"per_build": 0.09, "per_working": 0.14}}, {"id": "mistral", "name": "Mistral Large 3 and 4", "origin": "France", "builds": 113, "works": 61, "partly": 8, "broke": 44, "axes": [{"worked": 16, "builds": 24}, {"worked": 11, "builds": 35}, {"worked": 7, "builds": 13}, {"worked": 3, "builds": 6}, {"worked": 6, "builds": 14}, {"worked": 9, "builds": 9}], "cost": {"per_build": 0.05, "per_working": 0.1}}], "stats": [["295", "builds"], ["18", "workshop requests"], ["3", "models"], ["12", "days of testing"]], "findings": ["<b>Claude Sonnet 5.5</b> built a working app nine times in ten, at about $0.28 per working app; GLM-5.3 six times in ten at $0.14, Mistral five times in ten at $0.10.", "<b>The frontier is jagged.</b> GLM-5.3 made every small change work (11 of 11) but fewer than half of the PDF tools; Mistral built every check on recommendations (9 of 9) and a third of the PDF tools.", "<b>Live, 11 November:</b> GLM-5.3 built the wiki from ten PDFs twice; asked to add a network, it wrote the tab but not the graph. Claude added it the first time.", "Try a model on your own task before you rely on it."], "source": "Each axis: the share of an app's builds that passed all of its automatic checks (the app runs without an error, uses the workshop data and shows what was asked). Cost: what the model service charged for a build, averaged over the builds with a price (Sonnet's builds in Claude Code have none), and the same spend divided by the builds that worked. All 295 bake-off builds, 31 October – 11 November 2026, with every setting tried (16 builds where the service failed, not the model, are left out). Claude: Sonnet 5.5, in Claude Code or through the API; GLM-5.3 at Z.AI or in the EU; Mistral: Large 3 and Large 4. The requests were written and tuned with Claude. The term: Dell'Acqua et al., ‘Navigating the Jagged Technological Frontier’, <i>Organization Science</i> (2026), <a href=\"https://doi.org/10.1287/orsc.2025.21838\">doi:10.1287/orsc.2025.21838</a>."};
 const NS = 'http://www.w3.org/2000/svg', R = 112, n = D.axes.length;
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const pct = (a) => (a.builds ? Math.round(100 * a.worked / a.builds) : null);
@@ -129,7 +131,8 @@ D.models.forEach((m) => {
     <div class="score"><span class="big">${Math.round(share('works'))}%</span><span class="of">of ${m.builds} builds worked</span></div>
     <div class="bar" role="img" aria-label="${m.works} worked, ${m.partly} partly, ${m.broke} broke">
       <div style="flex:${m.works};background:${colour}"></div><div class="partly" style="flex:${m.partly};background:${colour}"></div><div class="broke" style="flex:${m.broke}"></div></div>
-    <div class="key"><span><b>${m.works}</b> worked</span><span><b>${m.partly}</b> partly</span><span><b>${m.broke}</b> broke</span></div>`;
+    <div class="key"><span><b>${m.works}</b> worked</span><span><b>${m.partly}</b> partly</span><span><b>${m.broke}</b> broke</span></div>
+    <div class="cost"><b>$${m.cost.per_build.toFixed(2)}</b> a build<span>·</span><b>$${m.cost.per_working.toFixed(2)}</b> per working app</div>`;
   const svg = el('svg', { class: 'radar', viewBox: '-205 -160 410 318', role: 'img',
     'aria-label': `${m.name}: ` + D.axes.map((a, i) => `${a} ${m.axes[i].worked} of ${m.axes[i].builds}`).join('; ') }, card);
   [25, 50, 75, 100].forEach((v) => el('polygon', { class: 'ring' + (v === 100 ? ' full' : ''), points: D.axes.map((_, i) => at(i, R * v / 100).join(',')).join(' ') }, svg));
@@ -156,7 +159,8 @@ document.getElementById('finds').innerHTML = D.findings.map((f) => `<li>${f}</li
 document.getElementById('source').innerHTML = D.source;
 document.getElementById('table').innerHTML = `<tr><th scope="col">App</th>${D.models.map((m) => `<th scope="col">${esc(m.name)}</th>`).join('')}</tr>` +
   D.axes.map((label, i) => `<tr><th scope="row">${esc(label)}</th>${D.models.map((m) => `<td class="n">${m.axes[i].worked} of ${m.axes[i].builds} (${pct(m.axes[i]) ?? '–'}%)</td>`).join('')}</tr>`).join('') +
-  `<tr><th scope="row">All builds: worked · partly · broke</th>${D.models.map((m) => `<td class="n">${m.works} · ${m.partly} · ${m.broke}</td>`).join('')}</tr>`;
+  `<tr><th scope="row">All builds: worked · partly · broke</th>${D.models.map((m) => `<td class="n">${m.works} · ${m.partly} · ${m.broke}</td>`).join('')}</tr>` +
+  `<tr><th scope="row">Cost a build · per working app</th>${D.models.map((m) => `<td class="n">$${m.cost.per_build.toFixed(2)} · $${m.cost.per_working.toFixed(2)}</td>`).join('')}</tr>`;
 </script>
 </body>
 </html>
