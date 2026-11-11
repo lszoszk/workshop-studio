@@ -760,6 +760,8 @@ def schema(packs):
             "",
             "`{title, source, count, records: [...]}`. Cite as `symbol, para. paragraph`.",
             "",
+            "`symbol` comes in many forms (`CCPR/C/GC/37`, `E/C.12/GC/27`, `A/53/44`, `E/1989/22`, `A/54/38/Rev.1, chap. 1`, `HRI/GEN/1/Rev.9 (Vol. I) p. 181`): to find a symbol in a text, look for the file's own symbols as plain text, longest first, never for a pattern of capitals and slashes.",
+            "",
             "Fields:",
             *describe(packs["gc"]),
             "",

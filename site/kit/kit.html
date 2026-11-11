@@ -141,7 +141,7 @@ a { color: var(--red); }
     stage.querySelectorAll('.qbox').forEach((x) => x.remove());
     if (typeof content === 'string') {
       frame = document.createElement('iframe');
-      frame.setAttribute('sandbox', 'allow-scripts allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox');
+      frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox');
       frame.title = 'Your app';
       frame.srcdoc = content;
       stage.append(frame);

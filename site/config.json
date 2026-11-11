@@ -2,6 +2,7 @@
   "version": "2026-11-01",
   "title": "Garage Research",
   "event": "AI for Human Rights Professionals · Geneva Human Rights Hub · ITU, 4 December 2026",
+  "event_venice": "AI and human rights sources · Global Campus of Human Rights · Venice, 12 November 2026",
   "default_country": "Kenya",
   "default_model": "glm-eu",
   "routes": [

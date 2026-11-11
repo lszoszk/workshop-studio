@@ -66,6 +66,13 @@ EDIT_REPAIR = ("Removed the call to a function that does not exist.\n```edit\n<<
 APP_OWN = ("Here is your table.\n```html\n<!doctype html><html><head><title>Mine</title></head><body><h1 id=c></h1>"
            "<script>const d = WORKSHOP_DATA.own_1; document.getElementById('c').textContent = d.count + ' rows, first: ' + d.records[0].Name;"
            "</script></body></html>\n```")
+# a checker built as a form: one that stops the submission itself, one that does not (the frame's policy stops it)
+APP_FORM = ("Here is the checker.\n```html\n<!doctype html><html><head><title>Form</title></head><body>"
+            "<form id=f><textarea>x</textarea><button id=go>Check</button></form><p id=out>none</p>"
+            "<form id=g><button id=go2>Check again</button></form><p id=out2>none</p>"
+            "<script>document.getElementById('f').addEventListener('submit', (e) => { e.preventDefault(); document.getElementById('out').textContent = 'checked'; });"
+            "document.getElementById('g').addEventListener('submit', () => { document.getElementById('out2').textContent = 'ran'; });"
+            "</script></body></html>\n```")
 PLAN_V2 = ("Here is the revised plan.\n\n```markdown\n## Context\nThe same dashboard, revised.\n\n"
            "## The app, screen by screen\n1. A line chart of the records per year.\n2. The table of records.\n```")
 
@@ -151,6 +158,8 @@ def fake_api():
                 events.append({"delta": PLAN_V2})
             elif req["purpose"] == "build" and "a query that breaks" in last.lower():
                 events.append({"delta": "I will count them.\n```query\nreturn WORKSHOP_DATA.uhri.records.map((r) => r.nothere.length);\n```"})
+            elif req["purpose"] == "build" and "a checker with a form" in last.lower():
+                events.append({"delta": APP_FORM})
             elif req["purpose"] == "build" and "WORKSHOP_DATA.own_1" in last:
                 events.append({"delta": APP_OWN})
             elif req["purpose"] == "build":
@@ -1474,6 +1483,69 @@ def test_the_venice_course_has_three_sessions(base_url, browser):
     ctx.close()
 
 
+def test_venice_shows_only_what_its_sessions_use(base_url, browser, tmp_path):
+    """The Venice course without Geneva's leftovers: each session's shelf holds only its own file, the country picker
+    shows only where the recommendations are used, two models, no Advanced, no Facilitator's brief, no Cut the model
+    link for an app without a model inside, its own header line, and a take-home kit with the Venice requests."""
+    ctx = browser.new_context(viewport={"width": 1600, "height": 900}, accept_downloads=True)
+    page = ctx.new_page()
+    page.goto(base_url + "?course=venice&via=replay&planpace=1&country=Kenya&reset=1")
+    started(page)
+    shelf = lambda: page.eval_on_selector_all("#shelf .fcard[data-key]", "cs => cs.filter(c => c.offsetParent).map(c => c.dataset.key)")
+    assert "Venice" in page.inner_text("#event") and "Geneva" not in page.get_attribute("#brand", "title")
+    assert sorted(page.eval_on_selector_all("#modelSelect option", "os => os.map(o => o.value)")) == ["claude", "glm-eu"]
+    assert not page.is_visible("#advBtn")
+    assert shelf() == ["gc"] and not page.is_visible("#countryChip")
+    assert "your country is" not in page.inner_text("#log")
+    page.get_by_role("tab", name="Session 2").click()
+    assert shelf() == ["hrc"] and not page.is_visible("#countryChip")
+    page.get_by_role("tab", name="Session 3").click()
+    assert shelf() == ["uhri"] and page.is_visible("#countryChip")
+    send(page, DASHBOARD, "uhri", 1)
+    assert page.get_attribute("#planBrief", "hidden") is not None
+    page.click("#lookBtn")
+    assert not page.is_visible("#linkBtn") and page.is_visible("#traceBtn")
+    page.keyboard.press("Escape")
+    page.click("#takeHomeBtn")
+    with page.expect_download(timeout=60000) as dl:
+        page.click("#kitBtn")
+    kit = tmp_path / dl.value.suggested_filename
+    dl.value.save_as(kit)
+    k = ctx.new_page()
+    k.goto(kit.as_uri())
+    reqs = k.locator(".req").all_inner_texts()
+    assert len(reqs) == 7 and any("Who votes with this State" in r for r in reqs)
+    assert not any("PDF" in r or "wiki" in r.lower() for r in reqs)
+    data = k.text_content("#datalist")   # in a folded section
+    assert "WORKSHOP_DATA.hrc" in data and "pdf" not in data.lower() and "wiki" not in data.lower()
+    ctx.close()
+
+
+def test_the_tour_and_the_country_picker_follow_the_course(base_url, browser):
+    """Geneva keeps two sessions in the tour and the country picker in Session 1, without it in Session 2 (Basic);
+    Venice's tour says three sessions and skips the country step where the picker is not shown."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + "?course=geneva&via=replay&planpace=1&country=Kenya&reset=1&advanced=0")
+    started(page)
+    assert page.is_visible("#countryChip")
+    page.get_by_role("tab", name="Session 2").click()
+    assert not page.is_visible("#countryChip")
+    page.click("#tourBtn")
+    page.click(".tour-card [data-t=next]")
+    assert page.inner_text(".tour-card h3") == "Two sessions"
+    page.click(".tour-card [data-t=next]")
+    assert page.inner_text(".tour-card h3") == "Your model"          # the country step is skipped where it is hidden
+    page.click(".tour-card [data-t=skip]")
+    page.goto(base_url + "?course=venice&via=replay&planpace=1&country=Kenya")
+    started(page)
+    page.get_by_role("tab", name="Session 1").click()
+    page.click("#tourBtn")
+    page.click(".tour-card [data-t=next]")
+    assert page.inner_text(".tour-card h3") == "Three sessions"
+    ctx.close()
+
+
 def test_start_over_clears_the_work_and_keeps_the_settings(base_url, browser):
     """About → Start over, and ?reset=1: the apps and the conversation in this browser go; the course, the
     settings and the seat stay."""
@@ -1494,4 +1566,25 @@ def test_start_over_clears_the_work_and_keeps_the_settings(base_url, browser):
     page.wait_for_load_state()
     started(page)
     assert page.locator("#versions [data-v]").count() == 0
+    ctx.close()
+
+
+def test_a_button_in_a_form_works_in_the_app(base_url, browser, fake_api):
+    """A model often builds a checker as a form. Without allow-forms Chrome never fires its submit event, so the
+    button did nothing (11.11.2026). A form that does not stop its own submission reloads the app, as on any page;
+    the frame's policy (form-action 'none') keeps a submission from reaching another address."""
+    api, calls = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + f"?api={api}&planpace=1&reset=1#s=TEST22")
+    started(page)
+    page.fill("#input", "Build a checker with a form")
+    page.click("#sendBtn")
+    built(page, 1)
+    app = app_frame(page)
+    app.locator("#go").click()
+    app.locator("#out", has_text="checked").wait_for(timeout=5000)
+    app.locator("#go2").click()   # submits: the app may reload, too fast to read its line, but it stays on the stage
+    page.wait_for_timeout(500)
+    app.locator("#go").wait_for(timeout=5000)
     ctx.close()

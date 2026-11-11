@@ -9,9 +9,9 @@ window.Tour = (function () {
         'Generative AI does not have to write the text you rely on. Here it writes the tool, which shortens the way to the sources you should take into account: each finding links to the document and paragraph it comes from. Reading those sources and judging them stays with you.',
         'Building such tools is also a way to learn where the models help and where they fail (the so-called jagged frontier), and to keep that skill after the workshop.',
         'Every app can be adjusted: ask for a change in your own words. The tour takes one minute.'] },
-    { at: '#sessionSwitch', title: 'Two sessions',
-      text: 'Session 1 and Session 2 offer different apps. Your facilitator will say when to switch.' },
-    { at: '#countryChip', title: 'Your country',
+    { at: '#sessionSwitch', get title() { return venice() ? 'Three sessions' : 'Two sessions'; },
+      get text() { return (venice() ? 'Session 1, 2 and 3 offer' : 'Session 1 and Session 2 offer') + ' different apps. Your facilitator will say when to switch.'; } },
+    { at: '#countryChip', onlyIfShown: true, title: 'Your country',
       text: 'Its UN recommendations and observations are your first file. Pick another country to run the same app on its records.' },
     { at: '.model-pick', title: 'Your model',
       text: 'Choose who builds your app. The line beside it says where the model was made and where it runs: that is where your request goes.' },
@@ -24,7 +24,8 @@ window.Tour = (function () {
     { at: '.foot-end', title: 'The gallery, and this tour again',
       text: 'The Gallery at the top shows what different models built from the same plans. Tour, down here, starts this again.' },
   ];
-  let i = 0, root = null, onKey = null;
+  const venice = () => document.body.classList.contains('venice');
+  let i = 0, root = null, onKey = null, steps = STEPS;   // steps: this run's, without a step whose element is not shown here
 
   const visible = (el) => el && el.offsetParent !== null && el.getBoundingClientRect().width > 0;
   // the area to light: the first of the step's elements on screen, or all of them together
@@ -39,14 +40,14 @@ window.Tour = (function () {
   }
 
   function draw() {
-    const step = STEPS[i], r = target(step);
+    const step = steps[i], r = target(step);
     const hole = root.querySelector('.tour-hole'), card = root.querySelector('.tour-card');
-    card.querySelector('.tour-n').textContent = `${i + 1} of ${STEPS.length}`;
+    card.querySelector('.tour-n').textContent = `${i + 1} of ${steps.length}`;
     card.querySelector('h3').textContent = step.title;
     card.querySelector('.tour-text').replaceChildren(...[].concat(step.text).map((t) => Object.assign(document.createElement('p'), { textContent: t })));
     card.classList.toggle('wide', !!step.wide);
     card.querySelector('[data-t=back]').hidden = i === 0;
-    card.querySelector('[data-t=next]').textContent = i === STEPS.length - 1 ? 'Start' : i === 0 ? 'Show me around' : 'Next';
+    card.querySelector('[data-t=next]').textContent = i === steps.length - 1 ? 'Start' : i === 0 ? 'Show me around' : 'Next';
     if (!r) {   // nothing to point at: the card in the middle, the whole screen dimmed
       hole.style.cssText = 'left:50%;top:50%;width:0;height:0';
       card.style.cssText = 'left:50%;top:50%;transform:translate(-50%,-50%)';
@@ -63,7 +64,7 @@ window.Tour = (function () {
   }
 
   function go(d) {
-    if (i + d >= STEPS.length || i + d < 0) return stop();
+    if (i + d >= steps.length || i + d < 0) return stop();
     i += d;
     draw();
   }
@@ -79,6 +80,7 @@ window.Tour = (function () {
   function start() {
     if (root) return;
     i = 0;
+    steps = STEPS.filter((s) => !s.onlyIfShown || target(s));
     root = document.createElement('div');
     root.className = 'tour';
     root.setAttribute('role', 'dialog');

@@ -47,6 +47,16 @@
   const sessionOf = (p) => (S.course === 'venice' ? p.venice : p.session);
   // the participant's own files: Advanced, or the Venice session built on one's own idea
   const ownAllowed = () => S.advanced || (S.course === 'venice' && S.session === 'V3');
+  // Venice: the two models of the course (GLM in the EU by default, Claude second); Geneva: every model
+  const COURSE_MODELS = { venice: ['glm-eu', 'claude'] };
+  const modelAllowed = (id) => !COURSE_MODELS[S.course] || COURSE_MODELS[S.course].includes(id);
+  // the files a Venice session works on, from its requests; Geneva keeps the whole shelf
+  const sessionFiles = () => S.course !== 'venice' ? null
+    : new Set(S.prompts.filter((p) => sessionOf(p) === S.session && p.dataset).flatMap((p) => [p.dataset, ...(fileMeta(p.dataset).also || [])]));
+  // the country picker: in a session whose requests read the recommendations, or for an app on the stage that reads them
+  const countryUsed = () => S.prompts.some((p) => sessionOf(p) === S.session && p.dataset === 'uhri' &&
+      (S.advanced || p.level !== 'advanced' || S.course === 'venice')) ||
+    (!!currentVersion() && chainOf(currentVersion()).some((x) => (x.files || []).includes('uhri')));
 
   // Activity, to calibrate the studio before the workshop (server/app.py, POST /studio-api/events): what was done,
   // how long it took and what failed, as ids and codes; never a message, a file, an app or a value from the data.
@@ -113,13 +123,15 @@
       getText('vendor/chart.umd.min.js'), getText('runtime.js'),
     ]);
     Object.assign(S, { config, index, prompts: prompts.prompts, schema, samples, sysmd, chart, runtime });
-    $('event').textContent = config.event;
-    $('brand').title = config.event;
     // the course: Geneva, two sessions (S7, S8, shown as 1 and 2), or the Global Campus in Venice, three (V1-V3;
     // ?course=venice, remembered; ?course=geneva goes back)
     S.course = params.get('course') === 'venice' || (params.get('course') !== 'geneva' && localGet('ws:course') === 'venice') ? 'venice' : 'geneva';
     localSet('ws:course', S.course);
     document.body.classList.toggle('venice', S.course === 'venice');
+    const event = (S.course === 'venice' && config.event_venice) || config.event;
+    $('event').textContent = event;
+    $('brand').title = event;
+    if (S.course === 'venice') $('feedbackText').placeholder = 'e.g. I pasted a quotation into Check and nothing happened';
     const list = COURSES[S.course];
     $('sessionSwitch').innerHTML = list.map((s, i) => `<button type="button" role="tab" data-session="${s}" aria-label="Session ${i + 1}">` +
       `<span class="sl">Session </span><span class="ss">S</span>${i + 1}</button>`).join('');
@@ -133,9 +145,11 @@
     if (S.seatCode) localSet('ws:seat', S.seatCode);
     if (hash.has('s') || hash.has('k')) history.replaceState(null, '', location.pathname + location.search);
 
-    S.model = localGet('ws:model') || config.default_model;
+    const savedModel = localGet('ws:model');
+    S.model = savedModel && modelAllowed(savedModel) ? savedModel : config.default_model;
     renderModelMenu();
-    setAdvanced(params.get('advanced') === '1' || (params.get('advanced') !== '0' && localGet('ws:advanced') === '1'));
+    // in Venice the course picks the requests, so there is no Advanced (and Geneva's setting stays as it was)
+    setAdvanced(S.course !== 'venice' && (params.get('advanced') === '1' || (params.get('advanced') !== '0' && localGet('ws:advanced') === '1')));
 
     setRoute(await pickRoute());
     if (S.route.type === 'server') await ensureSeat();
@@ -159,8 +173,8 @@
     if (params.get('from')) await fromGallery(params.get('from'));
     else Tour.startOnce();   // the first visit in this browser
     if (!S.versions.length && !S.talk.length) {
-      note(`Hello! Ask me anything, or pick a suggestion below. To build an app, first drag a file from <b>Your files</b> into the chat: ` +
-        `your country is <b>${esc(S.country)}</b>, with ${fmt(S.countryCount)} UN recommendations and observations.`);
+      note(`Hello! Ask me anything, or pick a suggestion below. To build an app, first drag a file from <b>Your files</b> into the chat` +
+        (countryUsed() ? `: your country is <b>${esc(S.country)}</b>, with ${fmt(S.countryCount)} UN recommendations and observations.` : '.'));
     }
   }
 
@@ -1004,7 +1018,7 @@
     init() {
       for (let i = 0; i < 2; i++) {
         const f = document.createElement('iframe');
-        f.setAttribute('sandbox', 'allow-scripts allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox');
+        f.setAttribute('sandbox', 'allow-scripts allow-forms allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox');
         f.setAttribute('allow', 'clipboard-write');
         f.title = 'Your app';
         f.className = 'back';
@@ -1449,10 +1463,16 @@
 
   // the take-home kit (site/kit.js, site/kit/kit.html): one file with the workshop requests for any chatbot, a place to
   // run the app a chatbot writes, the data, and the participant's apps
-  const KIT_STEPS = [['Session 1', 's7-1-dashboard', true], ['Session 1', 's7-3-quote-check', false], ['Session 1', 's7-1b-ask-data', false],
-    ['Session 2', 's7-4-extract', true], ['Session 2', 's7-4b-run-ten', false], ['Session 2', 's7-4c-show-broken', false],
-    ['Session 2', 's8-1-verbatim', true], ['Session 2', 's8-5-wiki', true]];
-  const KIT_DATA = ['uhri', 'gc', 'pdf_text', 'pdf_ten', 'wiki', 'library'];
+  // by course: the requests of its sessions, and the files they read
+  const KIT_STEPS = {
+    geneva: [['Session 1', 's7-1-dashboard', true], ['Session 1', 's7-3-quote-check', false], ['Session 1', 's7-1b-ask-data', false],
+      ['Session 2', 's7-4-extract', true], ['Session 2', 's7-4b-run-ten', false], ['Session 2', 's7-4c-show-broken', false],
+      ['Session 2', 's8-1-verbatim', true], ['Session 2', 's8-5-wiki', true]],
+    venice: [['Session 1', 's8-1-verbatim', true], ['Session 1', 's8-1b-gc-quote-check', false],
+      ['Session 2', 's8-3-voting', true], ['Session 2', 's8-3b-blocs', false],
+      ['Session 3', 's7-1-dashboard', true], ['Session 3', 's7-3-quote-check', false], ['Session 3', 's7-1b-ask-data', false]],
+  };
+  const KIT_DATA = { geneva: ['uhri', 'gc', 'pdf_text', 'pdf_ten', 'wiki', 'library'], venice: ['uhri', 'gc', 'hrc'] };
   const slugOf = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'app';
 
   async function downloadKit(btn) {
@@ -1462,7 +1482,7 @@
     try {
       const built = new Date().toISOString().slice(0, 10), sys = Kit.system(S.sysmd), steps = [];
       let had = [];
-      for (const [session, id, first] of KIT_STEPS) {
+      for (const [session, id, first] of KIT_STEPS[S.course]) {
         const p = S.prompts.find((q) => q.id === id);
         if (!p) continue;
         const keys = p.dataset ? [p.dataset, ...(fileMeta(p.dataset).also || [])] : [];
@@ -1479,7 +1499,7 @@
       const apps = leaves.map((v) => ({ title: titleOf(v.html), note: `version ${v.n}, by ${v.label}`, html: v.html }));
       const own = [...new Set(leaves.flatMap((v) => chainOf(v).flatMap((x) => x.files || [])).filter((k) => S.own[k]))];
       const datasets = {};
-      for (const k of [...KIT_DATA, ...own]) datasets[k] = await dataParsed(k);
+      for (const k of [...KIT_DATA[S.course], ...own]) datasets[k] = await dataParsed(k);
       const html = Kit.page(await getText('kit/kit.html'), { chart: S.chart, runtime: S.runtime, datasets, meta: { country: S.country, built }, steps, apps });
       const blob = new Blob([html], { type: 'text/html' });
       const a = document.createElement('a');
@@ -2084,7 +2104,7 @@
     $('planTitle').textContent = pl.pack.title || pl.p.title;
     $('planKicker').textContent = (h.version === 1 ? `Plan · written beforehand by ${pl.pack.planner || 'Claude Fable 5.1'}, with your answers` : `Plan v${h.version} · changed live by ${h.by}`) +
       (latest ? '' : ' · an earlier version');
-    $('planBrief').hidden = !pl.pack.facilitator_brief;
+    $('planBrief').hidden = !pl.pack.facilitator_brief || S.course === 'venice';   // written for Geneva's facilitators
     $('planDoc').innerHTML = md(planText(h.plan));
     $('planView').hidden = false;
     $('planView').querySelector('.plan-scroll').scrollTop = 0;
@@ -2386,10 +2406,13 @@
   // what a participant can see grows with what they have done (Hick's law)
   function renderTools() {
     const has = S.versions.length > 0;
-    const s8 = S.session !== 'S7';   // the second Geneva session and every Venice one: Ask directly and the model link
+    const s8 = S.session !== 'S7';   // the second Geneva session and every Venice one: Ask directly
+    const v = currentVersion();
     $('toolbar').hidden = !has;
     $('ask3Btn').hidden = !s8 || !S.route || S.route.type === 'replay';
-    $('linkBtn').hidden = !s8 && S.linkOn;
+    // cutting the link changes something only for an app that asks a model itself (and a cut link can always be restored)
+    $('linkBtn').hidden = S.linkOn && !(v && /\bstudio\.ask\b/.test(v.html || ''));
+    $('countryChip').hidden = !countryUsed();
     $('wallBtn').hidden = !(S.route && S.route.type === 'server');
     $('linkOffPill').hidden = S.linkOn;
     $('traceCount').hidden = !S.trace.length;
@@ -2412,7 +2435,7 @@
     renderShelf();
     if (!S.versions.length) return;
     const n = COURSES[S.course].indexOf(s) + 1;
-    note(`<b>Session ${n}.</b> New suggestions below.` + (s === 'S8' ? ' <b>Look inside</b> now also lets you ask the model directly and cut the model link.' : ''));
+    note(`<b>Session ${n}.</b> New suggestions below.` + (s === 'S8' ? ' <b>Look inside</b> now also lets you ask the model directly.' : ''));
   }
 
   // Hick's law for versions: one button names the app and the version on the stage, arrows step to the next or the
@@ -2486,7 +2509,7 @@
     document.body.classList.toggle('own-ok', ownAllowed());
     $('advBtn').textContent = on ? 'Advanced: on' : 'Advanced: off';
     $('advBtn').setAttribute('aria-pressed', String(on));
-    if (S.ready) { renderSuggest(); renderShelf(); }
+    if (S.ready) { renderSuggest(); renderShelf(); renderTools(); }
     if (said) {
       track('advanced', { on });
       note(on ? '<b>Advanced</b> is on: more requests in the suggestions, your own files on the shelf, Plan mode on or off, <b>New tab</b> and <b>Send to wall</b>.'
@@ -2496,7 +2519,7 @@
 
   function renderModelMenu() {
     const sel = $('modelSelect');
-    sel.innerHTML = S.config.model_groups.map((g) =>
+    sel.innerHTML = S.config.model_groups.map((g) => ({ label: g.label, ids: g.ids.filter(modelAllowed) })).filter((g) => g.ids.length).map((g) =>
       `<optgroup label="${esc(g.label)}">${g.ids.map((id) => `<option value="${id}">${esc(S.config.models[id].label)}</option>`).join('')}</optgroup>`).join('');
     sel.value = S.model;
     renderBadge();
@@ -2544,7 +2567,8 @@
   // the participant's own files follow the workshop's, then the card that adds one
   function renderShelf(box = $('shelf')) {
     const own = Object.values(S.own).sort((a, b) => a.key.localeCompare(b.key, 'en', { numeric: true }));
-    box.innerHTML = S.config.files.map((f) => `
+    const keep = sessionFiles();   // Venice: only the files of this session's requests
+    box.innerHTML = S.config.files.filter((f) => !keep || keep.has(f.key)).map((f) => `
       <div class="fcard" draggable="true" data-key="${f.key}">
         <div class="fcard-top"><i class="ficon ${f.kind}">${f.kind.toUpperCase()}</i><h3>${esc(fileLabel(f.key))}</h3></div>
         <p>${esc(f.blurb.replace(/\{country\}/g, S.country))}</p>
@@ -2759,6 +2783,7 @@
   function renderFooter() {
     const a = S.config.author;
     $('footWho').innerHTML = `Made by ${link(a.url, `<b>${esc(a.name)}</b>`)}, ${link(a.place_url, esc(a.place))}`;
+    $('advBtn').hidden = S.course === 'venice';   // the Venice course picks the requests itself
     renderTheme();
   }
 
