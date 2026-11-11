@@ -9,6 +9,7 @@ service failed and not the model (a 5xx in the stream, an answer in under five s
 is the share of an app's builds that worked; the bar under each radar is all of a model's builds.
 """
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -70,6 +71,8 @@ def main():
                                     span=f"{span[0].day} {span[0]:%B} – {span[1].day} {span[1]:%B %Y}")}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(TEMPLATE.replace("__DATA__", json.dumps(data, ensure_ascii=False)), encoding="utf-8")
+    gallery = ROOT / "site" / "gallery" / "index.html"   # the gallery's link to the slide names the number of builds
+    gallery.write_text(re.sub(r'(<span id="frontierBuilds">)\d+(</span>)', rf"\g<1>{len(bs)}\g<2>", gallery.read_text(encoding="utf-8")), encoding="utf-8")
     for m in models:
         print(f"{m['name']:<24} {m['builds']:>3} builds: {m['works']} works, {m['partly']} partly, {m['broke']} broke |",
               " · ".join(f"{a['worked']}/{a['builds']}" for a in m["axes"]))
