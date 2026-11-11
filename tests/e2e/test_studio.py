@@ -193,7 +193,7 @@ def started(page):
 
 
 def built(page, n):
-    page.wait_for_function(f"() => document.querySelectorAll('#versions button').length === {n} && document.getElementById('building').hidden", timeout=90000)
+    page.wait_for_function(f"() => document.querySelectorAll('#versions [data-v]').length === {n} && document.getElementById('building').hidden", timeout=90000)
 
 
 def app_frame(page):
@@ -350,7 +350,7 @@ def test_participant_path(base_url, browser, tmp_path):
 
     # a reload keeps the version, its thinking, its lesson and the trace
     page.reload()
-    page.wait_for_function("() => document.querySelectorAll('#versions button').length === 1")
+    page.wait_for_function("() => document.querySelectorAll('#versions [data-v]').length === 1")
     if (SITE / "replay/claude/s7-1-dashboard.thought.md").exists():   # builds made in Claude Code have no recorded thinking
         assert page.locator(".thought summary").first.inner_text().startswith("Thought")
     assert page.locator(".lesson").count() == 1
@@ -504,13 +504,13 @@ def test_live_country_switch_and_asking_directly(base_url, browser, fake_api):
     page.select_option("#countrySelect", "Kenya")
     app_frame(page).get_by_text("Kenya 2264").wait_for(timeout=10000)
     assert "same code, different data" in page.locator(".msg.note").last.inner_text()
-    assert len(calls) == n and page.locator("#versions button").count() == 1
+    assert len(calls) == n and page.locator("#versions [data-v]").count() == 1
 
     # a chatbot: small talk gets an answer in words, and no new version
     page.fill("#input", "How are you?")
     page.keyboard.press("Enter")
     page.wait_for_function("() => [...document.querySelectorAll('.msg.assistant .answer-md')].some((e) => e.textContent.includes('well, thank you'))", timeout=15000)
-    assert page.locator("#versions button").count() == 1
+    assert page.locator("#versions [data-v]").count() == 1
     assert "(Attached:" in calls[-1]["messages"][0]["content"]   # the file named earlier is still in the conversation
 
     # Session 8: asking the model directly, a number, then a paragraph that does not exist
@@ -858,7 +858,7 @@ def test_plan_mode_in_recorded_mode(base_url, browser):
     page.locator(".approve button.ghost").last.click()   # Change something
     assert "no model is connected" in page.locator(".msg.note").last.inner_text()
     page.wait_for_timeout(300)
-    assert page.locator("#versions button").count() == 0 and page.is_visible("#planView")
+    assert page.locator("#versions [data-v]").count() == 0 and page.is_visible("#planView")
     # closed, the plan opens again from its card in the chat
     page.click("#planClose")
     page.locator(".plan-card").last.click()
@@ -977,7 +977,7 @@ def test_recorded_mode_refuses_free_requests(base_url, browser):
     assert "recorded answers" in page.locator(".msg.note").last.inner_text()
     assert page.input_value("#input") == "Make the chart red."
     page.wait_for_timeout(500)
-    assert page.locator("#versions button").count() == 1
+    assert page.locator("#versions [data-v]").count() == 1
     ctx.close()
 
 
@@ -1293,7 +1293,7 @@ def test_a_question_about_the_data_is_answered_by_a_query(base_url, browser, fak
     card = page.locator(".qcard").last
     assert "Total" in card.inner_text() and "nothing was sent to a model" in card.inner_text()
     assert "WORKSHOP_DATA.uhri" in card.locator("pre").text_content()   # closed until opened
-    assert page.locator("#versions button").count() == 1                     # an answer, not a new version of the app
+    assert page.locator("#versions [data-v]").count() == 1                     # an answer, not a new version of the app
     look(page, "traceBtn")
     assert "never saw the numbers" in page.inner_text("#drawerBody")
     page.click("#drawerClose")
@@ -1416,4 +1416,33 @@ def test_basic_shows_one_path_and_advanced_the_rest(base_url, browser, fake_api)
     assert page.locator(".msg.lenses button").count() == 5
     page.locator(".msg.lenses button", has_text="Pre-mortem").click()
     assert "pre-mortem" in page.input_value("#input").lower()
+    ctx.close()
+
+
+def test_versions_sit_in_one_menu(base_url, browser, fake_api, tmp_path):
+    """Hick's law for versions: one button names the app and the version on the stage, arrows step between versions,
+    and the menu lists them grouped by app with one line on each."""
+    api, _ = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + f"?api={api}&planpace=1#s=TEST22")
+    started(page)
+    add_file(page, "uhri")
+    page.fill("#input", "Build a counter")
+    page.click("#sendBtn")
+    built(page, 1)
+    page.fill("#input", "Now say how many in words")
+    page.click("#sendBtn")
+    built(page, 2)
+    assert "v2" in page.inner_text("#versions .vcur") and "of 2" in page.inner_text("#versions .vcur")
+    assert page.is_disabled("#versions .vnav[data-dir='1']")
+    page.click("#versions .vnav[data-dir='-1']")
+    page.wait_for_function("() => document.querySelector('#versions .vcur').textContent.includes('v1')")
+    page.click("#versions .vcur")
+    assert page.is_visible("#versions .vmenu") and page.locator("#versions .vmenu .vgroup").count() == 1
+    assert page.locator("#versions .vmenu [data-v]").count() == 2
+    page.screenshot(path=str(tmp_path / "menu.png"))
+    page.locator("#versions .vmenu [data-v='2']").click()
+    page.wait_for_function("() => document.querySelector('#versions .vcur').textContent.includes('v2')")
+    assert not page.is_visible("#versions .vmenu")
     ctx.close()

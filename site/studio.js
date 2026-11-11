@@ -2356,7 +2356,7 @@
   function renderContinuing() {
     const el = $('continuing');
     const v = currentVersion();
-    if (S.freshNext && v) { el.hidden = false; el.textContent = 'Starts a new app. Your versions stay in the list above the preview.'; return; }
+    if (S.freshNext && v) { el.hidden = false; el.textContent = 'Starts a new app. Your versions stay in the version menu above the preview.'; return; }
     if (v && v.n !== S.versions.length) { el.hidden = false; el.textContent = `Your next message continues from v${v.n}.`; return; }
     el.hidden = true;
   }
@@ -2392,27 +2392,67 @@
       : '<b>Session 1.</b> The suggestions below are from the first session.');
   }
 
+  // Hick's law for versions: one button names the app and the version on the stage, arrows step to the next or the
+  // one before; the full list, grouped by app with one line on each version, is one click away
+  const rootOf = (v) => { let r = v; while (r && r.parent) r = S.versions.find((x) => x.n === r.parent) || null; return r || v; };
+  const versionLine = (v) => {
+    const s = (v.summary || v.user || '').replace(/\s+/g, ' ').trim();
+    return (s.length > 80 ? s.slice(0, 78).replace(/\s+\S*$/, '') + '…' : s) || 'no description';
+  };
+  const appName = (v) => {
+    const p = S.prompts.find((q) => q.id === rootOf(v).promptId);
+    return p ? p.title : titleOf(v.html);
+  };
+
+  async function goToVersion(n) {
+    const v = S.versions.find((x) => x.n === n);
+    if (!v || S.busy) return;
+    S.current = v.n;
+    S.freshNext = false;
+    renderVersions();
+    renderSuggest();
+    await showVersion(v);
+    save();
+  }
+
   function renderVersions() {
     const box = $('versions');
     box.innerHTML = '';
+    if (!S.versions.length) { renderTools(); return; }
+    const cur = currentVersion() || S.versions[S.versions.length - 1];
+    const i = S.versions.indexOf(cur);
+    const groups = [];
     S.versions.forEach((v) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.setAttribute('role', 'tab');
-      b.setAttribute('aria-selected', v.n === S.current);
-      b.textContent = 'v' + v.n;
-      b.title = v.user.slice(0, 140);
-      b.onclick = async () => {
-        S.current = v.n;
-        S.freshNext = false;
-        renderVersions();
-        renderSuggest();
-        await showVersion(v);
-        save();
-      };
-      box.append(b);
+      const r = rootOf(v).n;
+      let g = groups.find((x) => x.root === r);
+      if (!g) groups.push(g = { root: r, name: appName(v), items: [] });
+      g.items.push(v);
     });
-    box.scrollLeft = box.scrollWidth;
+    box.innerHTML =
+      `<button type="button" class="vnav" data-dir="-1" aria-label="The version before"${i <= 0 ? ' disabled' : ''}>‹</button>` +
+      `<button type="button" class="vcur" aria-haspopup="menu" aria-expanded="false" title="All versions">` +
+      `<span class="vapp">${esc(appName(cur))}</span> <b>v${cur.n}</b><span class="vof"> of ${S.versions.length}</span> ▾</button>` +
+      `<button type="button" class="vnav" data-dir="1" aria-label="The next version"${i >= S.versions.length - 1 ? ' disabled' : ''}>›</button>` +
+      `<div class="vmenu" role="menu" hidden>${groups.map((g) => `<div class="vgroup"><div class="vglab">${esc(g.name)}</div>` +
+        g.items.map((v) => `<button type="button" role="menuitemradio" data-v="${v.n}" aria-checked="${v.n === cur.n}">` +
+          `<b>v${v.n}</b><span>${esc(versionLine(v))}</span><i>${esc(v.label || '')}${v.edit ? ' · a change' : ''}</i></button>`).join('') + '</div>').join('')}</div>`;
+    const menu = box.querySelector('.vmenu'), btn = box.querySelector('.vcur');
+    const close = () => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      menu.hidden = !menu.hidden;
+      btn.setAttribute('aria-expanded', String(!menu.hidden));
+      if (!menu.hidden) { const on = menu.querySelector('[aria-checked=true]'); if (on) on.focus(); }
+    };
+    box.querySelectorAll('.vnav').forEach((b) => { b.onclick = () => goToVersion(S.versions[i + Number(b.dataset.dir)].n); });
+    menu.querySelectorAll('[data-v]').forEach((b) => { b.onclick = () => { close(); goToVersion(Number(b.dataset.v)); }; });
+    menu.addEventListener('keydown', (e) => {
+      const items = [...menu.querySelectorAll('[data-v]')], k = items.indexOf(document.activeElement);
+      if (e.key === 'Escape') { close(); btn.focus(); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); items[Math.min(items.length - 1, k + 1)].focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); items[Math.max(0, k - 1)].focus(); }
+    });
+    document.addEventListener('click', (e) => { if (!box.contains(e.target)) close(); }, { once: true });
     renderTools();
   }
 

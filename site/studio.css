@@ -208,9 +208,21 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 /* stage */
 .stage { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line); }
-.versions { display: flex; gap: 4px; overflow-x: auto; min-width: 44px; }   /* a narrow stage wraps the toolbar instead of hiding the versions */
+.versions { position: relative; display: flex; gap: 4px; align-items: stretch; min-width: 44px; }
 .versions button { border: 1px solid var(--line); background: var(--surface); border-radius: 7px; padding: 3px 10px; font-size: 14px; cursor: pointer; flex: none; }
-.versions button[aria-selected=true] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.versions .vnav { padding: 3px 9px; font-size: 16px; }
+.versions .vnav:disabled { opacity: .35; cursor: default; }
+.versions .vcur { max-width: 340px; display: flex; gap: 5px; align-items: baseline; white-space: nowrap; }
+.versions .vcur .vapp { overflow: hidden; text-overflow: ellipsis; max-width: 220px; color: var(--muted); }
+.versions .vcur b { color: var(--accent); }
+.versions .vcur .vof { color: var(--faint); font-size: 12px; }
+.vmenu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 40; width: min(440px, 80vw); max-height: 60vh; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 6px; }
+.vmenu .vglab { font: 600 11px/1.3 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .05em; text-transform: uppercase; color: var(--faint); padding: 8px 6px 4px; }
+.vmenu button { display: grid; grid-template-columns: auto 1fr; gap: 0 8px; width: 100%; text-align: left; border: 0; border-radius: 4px; padding: 5px 6px; background: none; }
+.vmenu button:hover, .vmenu button:focus { background: var(--bg); }
+.vmenu button[aria-checked=true] b { color: var(--accent); }
+.vmenu button span { font-size: 13px; }
+.vmenu button i { grid-column: 2; font-size: 11px; font-style: normal; color: var(--faint); }
 .linkoff { font-size: 13px; padding: 3px 10px; border-radius: 999px; background: var(--err-bg); color: var(--danger); font-weight: 600; white-space: nowrap; }
 .tools { display: flex; gap: 8px; margin-left: auto; align-items: center; flex: none; }
 .tool { border: 1px solid var(--line); background: var(--surface); border-radius: 9px; padding: 6px 12px; font-size: 14px; cursor: pointer; white-space: nowrap; color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
@@ -548,7 +560,7 @@ body.wall .work { grid-template-columns: 1fr; height: calc(100% - var(--top-h));
 .session button, .seg button { border-radius: 0; border-bottom: 2px solid transparent; padding: 6px 10px 5px; }
 .session button[aria-selected=true], .seg button[aria-selected=true] { background: none; box-shadow: none; color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
 /* nearly square corners, thin rules */
-.primary, .ghost, .tool, .versions button, .suggest button, .fcard, .filechip, .needs, .msg.note, .msg.err, .drawer .verdict, .tour-card { border-radius: 3px; }
+.primary, .ghost, .tool, .versions > button, .suggest button, .fcard, .filechip, .needs, .msg.note, .msg.err, .drawer .verdict, .tour-card { border-radius: 3px; }
 .chip { border-radius: 3px; background: none; border: 1px solid var(--line); }
 .fcard { box-shadow: none; }
 .fcard:hover { border-color: var(--accent); }
