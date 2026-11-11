@@ -48,7 +48,7 @@ def builds():
                 left_out += 1
                 continue
             days.add(f.parent.name[:10])
-            out.append({"model": FAMILY[r["model"]], "prompt": r["prompt"], "outcome": outcome(r), "run": f.parent.name})
+            out.append({"model": FAMILY[r["model"]], "prompt": r["prompt"], "outcome": outcome(r)})
     return out, left_out, sorted(days)
 
 
@@ -65,7 +65,7 @@ def main():
         models.append({"id": key, "name": name, "origin": origin, "builds": len(mine), **total, "axes": axes})
     span = [datetime.strptime(d, "%Y-%m-%d") for d in (days[0], days[-1])]
     stats = [(f"{len(bs)}", "builds"), (f"{len({b['prompt'] for b in bs})}", "workshop requests"), ("3", "models"),
-             (f"{len({b['run'] for b in bs})}", "test runs"), (f"{(span[1] - span[0]).days + 1}", "days of testing")]
+             (f"{(span[1] - span[0]).days + 1}", "days of testing")]
     data = {"axes": [a for a, _, _ in AXES], "short": [b for _, b, _ in AXES], "models": models, "stats": stats, "findings": FINDINGS,
             "source": SOURCE.format(n=len(bs), left_out=left_out,
                                     span=f"{span[0].day} {span[0]:%B} – {span[1].day} {span[1]:%B %Y}")}
