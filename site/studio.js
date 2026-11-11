@@ -2833,6 +2833,7 @@
     const a = S.config.author;
     $('footWho').innerHTML = `Made by ${link(a.url, `<b>${esc(a.name)}</b>`)}, ${link(a.place_url, esc(a.place))}`;
     $('advBtn').hidden = S.course === 'venice';   // the Venice course picks the requests itself
+    $('wallBtn').classList.toggle('adv', S.course !== 'venice');   // Venice has no Advanced: the wall is for everyone there
     renderTheme();
   }
 

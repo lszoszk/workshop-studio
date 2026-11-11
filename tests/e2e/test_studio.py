@@ -1605,3 +1605,24 @@ def test_venice_session2_adds_the_alignment_map(base_url, browser):
     assert "African States" in app.locator("body").inner_text() and "adopted without a vote" in app.locator("body").inner_text()
     assert not errors, errors
     ctx.close()
+
+
+def test_venice_sends_to_the_wall_without_advanced(base_url, browser, fake_api):
+    """Venice has no Advanced, so Send to wall is in Save & share for everyone there (Geneva keeps it in Advanced)."""
+    api, _ = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + f"?course=venice&api={api}&planpace=1&reset=1#s=TEST22")
+    started(page)
+    page.get_by_role("tab", name="Session 3").click()
+    send(page, DASHBOARD, "uhri", 1)
+    page.click("#keepBtn")
+    assert page.is_visible("#wallBtn")
+    page.click("#wallBtn")
+    page.wait_for_function("() => /Sent to the wall/.test(document.getElementById('log').innerText)")
+    page.goto(base_url + f"?course=geneva&api={api}&planpace=1&advanced=0#s=TEST22")
+    started(page)
+    send(page, DASHBOARD, "uhri", 1)
+    page.click("#keepBtn")
+    assert not page.is_visible("#wallBtn")
+    ctx.close()
