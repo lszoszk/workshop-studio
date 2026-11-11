@@ -1448,3 +1448,27 @@ def test_versions_sit_in_one_menu(base_url, browser, fake_api, tmp_path):
     page.wait_for_function("() => document.querySelector('#versions .vcur').textContent.includes('v2')")
     assert not page.is_visible("#versions .vmenu")
     ctx.close()
+
+
+def test_the_venice_course_has_three_sessions(base_url, browser):
+    """?course=venice (the Global Campus): three sessions, one set of data each: the General Comments with the
+    Verbatim finder and a quotation checker, the Council votes with the blocs, then the recommendations or one's
+    own idea, with one's own files on the shelf without Advanced. ?course=geneva goes back to two sessions."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + "?course=venice&via=replay&planpace=1&country=Kenya")
+    started(page)
+    assert page.locator("#sessionSwitch button").count() == 3
+    assert page.locator("#suggest button b").all_inner_texts() == ["Verbatim finder for General Comments"]
+    page.get_by_role("tab", name="Session 2").click()
+    assert page.locator("#suggest button b").all_inner_texts() == ["How two States vote at the Human Rights Council"]
+    assert not page.is_visible("#shelf .add-own")
+    page.get_by_role("tab", name="Session 3").click()
+    assert page.locator("#suggest button b").all_inner_texts() == [DASHBOARD]   # "Your own idea" needs a live model
+    assert page.is_visible("#shelf .add-own")                                    # own files without Advanced
+    send(page, DASHBOARD, "uhri", 1)
+    assert "Check a quotation" in page.inner_text("#suggest")
+    page.goto(base_url + "?course=geneva&via=replay&planpace=1&country=Kenya")
+    started(page)
+    assert page.locator("#sessionSwitch button").count() == 2
+    ctx.close()

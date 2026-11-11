@@ -40,7 +40,13 @@
     packs: {},           // planning packages by request id; null where there is none
     own: {},             // the participant's own files (own-files.js), by key: kept in this browser
     advanced: false,     // Basic shows one path through the exercises; Advanced (footer) shows the rest
+    course: 'geneva',    // or 'venice' (?course=venice): the Global Campus, three sessions
   };
+  const COURSES = { geneva: ['S7', 'S8'], venice: ['V1', 'V2', 'V3'] };
+  // a request's session in this course (prompts.json "session" for Geneva, "venice" for the Global Campus)
+  const sessionOf = (p) => (S.course === 'venice' ? p.venice : p.session);
+  // the participant's own files: Advanced, or the Venice session built on one's own idea
+  const ownAllowed = () => S.advanced || (S.course === 'venice' && S.session === 'V3');
 
   // Activity, to calibrate the studio before the workshop (server/app.py, POST /studio-api/events): what was done,
   // how long it took and what failed, as ids and codes; never a message, a file, an app or a value from the data.
@@ -109,8 +115,17 @@
     Object.assign(S, { config, index, prompts: prompts.prompts, schema, samples, sysmd, chart, runtime });
     $('event').textContent = config.event;
     $('brand').title = config.event;
-    const stage = (params.get('stage') || '').toUpperCase().replace(/^S?/, 'S');
-    S.session = ['S7', 'S8'].includes(stage) ? stage : (localGet('ws:session') || 'S7');
+    // the course: Geneva, two sessions (S7, S8, shown as 1 and 2), or the Global Campus in Venice, three (V1-V3;
+    // ?course=venice, remembered; ?course=geneva goes back)
+    S.course = params.get('course') === 'venice' || (params.get('course') !== 'geneva' && localGet('ws:course') === 'venice') ? 'venice' : 'geneva';
+    localSet('ws:course', S.course);
+    document.body.classList.toggle('venice', S.course === 'venice');
+    const list = COURSES[S.course];
+    $('sessionSwitch').innerHTML = list.map((s, i) => `<button type="button" role="tab" data-session="${s}" aria-label="Session ${i + 1}">` +
+      `<span class="sl">Session </span><span class="ss">S</span>${i + 1}</button>`).join('');
+    const stage = (params.get('stage') || '').toUpperCase();
+    const asked = list.find((s) => s === stage || s === 'S' + stage.replace(/^S/, '') || s === 'V' + stage.replace(/^V/, ''));
+    S.session = asked || (list.includes(localGet('ws:session')) ? localGet('ws:session') : list[0]);
     renderSession();
 
     const code = (hash.get('s') || localGet('ws:seat') || '').toUpperCase();
@@ -158,8 +173,8 @@
       if (!r || !p) throw new Error('not in the gallery');
       const html = await getText(`gallery/apps/${model}/${promptId}.html`);
       const name = (g.models[model] || {}).name || model;
-      S.session = p.session;
-      localSet('ws:session', p.session);
+      S.session = sessionOf(p) || COURSES[S.course][0];
+      localSet('ws:session', S.session);
       renderSession();
       const v = {
         n: S.versions.length + 1, parent: null, user: `From the gallery: ${p.title}`, files: p.dataset ? [p.dataset] : [],
@@ -2326,14 +2341,14 @@
     const used = new Set(chainOf(v).map((x) => x.promptId));
     const built = new Set(S.versions.map((x) => x.promptId));
     const live = S.route && S.route.type !== 'replay';
-    const mine = (p) => p.session === S.session && !p.hidden && p.id !== S.pendingPromptId && !(S.planning && S.planning.p.id === p.id) && (S.advanced || p.level !== 'advanced');
+    const mine = (p) => sessionOf(p) === S.session && !p.hidden && p.id !== S.pendingPromptId && !(S.planning && S.planning.p.id === p.id) && (S.advanced || p.level !== 'advanced' || S.course === 'venice');   // in Venice the course picks the requests
     // Hick's law: a few suggestions at a time, never the whole list
     // a next step continues this app; it may bring a file of its own (a second document to add)
     // a step with no recorded answer (prompts.json "live_only") is offered only when a model is on the line
     const next = v ? S.prompts.filter((p) => mine(p) && p.builds_on && p.builds_on !== 'any' && !used.has(p.id) && used.has(p.builds_on) && (live || !p.live_only)).slice(0, 2) : [];
     if (v && live) next.push(...S.prompts.filter((p) => p.builds_on === 'any' && !p.lens && p.id !== S.pendingPromptId && (S.advanced || p.level !== 'advanced')));   // "Suggest improvements"
     // Hick's law: Session 8 keeps its three apps in view (PDF, Verbatim finder, wiki); Session 7 has one
-    const starters = S.prompts.filter((p) => mine(p) && !p.builds_on && !built.has(p.id)).slice(0, !v || S.session === 'S8' ? 3 : 1);
+    const starters = S.prompts.filter((p) => mine(p) && !p.builds_on && !built.has(p.id) && (live || !p.live_only)).slice(0, !v || S.session !== 'S7' ? 3 : 1);
     const group = (label, list, fresh) => {
       if (!list.length) return;
       const l = document.createElement('div');
@@ -2366,7 +2381,7 @@
   // what a participant can see grows with what they have done (Hick's law)
   function renderTools() {
     const has = S.versions.length > 0;
-    const s8 = S.session === 'S8';
+    const s8 = S.session !== 'S7';   // the second Geneva session and every Venice one: Ask directly and the model link
     $('toolbar').hidden = !has;
     $('ask3Btn').hidden = !s8 || !S.route || S.route.type === 'replay';
     $('linkBtn').hidden = !s8 && S.linkOn;
@@ -2378,6 +2393,7 @@
 
   function renderSession() {
     document.querySelectorAll('#sessionSwitch button').forEach((b) => b.setAttribute('aria-selected', b.dataset.session === S.session));
+    document.body.classList.toggle('own-ok', ownAllowed());
   }
 
   function setSession(s) {
@@ -2388,10 +2404,10 @@
     renderSession();
     renderTools();
     renderSuggest();
+    renderShelf();
     if (!S.versions.length) return;
-    note(s === 'S8'
-      ? '<b>Session 2.</b> New suggestions below. <b>Look inside</b> now also lets you ask the model directly and cut the model link.'
-      : '<b>Session 1.</b> The suggestions below are from the first session.');
+    const n = COURSES[S.course].indexOf(s) + 1;
+    note(`<b>Session ${n}.</b> New suggestions below.` + (s === 'S8' ? ' <b>Look inside</b> now also lets you ask the model directly and cut the model link.' : ''));
   }
 
   // Hick's law for versions: one button names the app and the version on the stage, arrows step to the next or the
@@ -2462,6 +2478,7 @@
     S.advanced = on;
     localSet('ws:advanced', on ? '1' : '0');
     document.body.classList.toggle('basic', !on);
+    document.body.classList.toggle('own-ok', ownAllowed());
     $('advBtn').textContent = on ? 'Advanced: on' : 'Advanced: off';
     $('advBtn').setAttribute('aria-pressed', String(on));
     if (S.ready) { renderSuggest(); renderShelf(); }
@@ -2898,7 +2915,7 @@
   function dropped(list, attach) {
     const all = [...list], pics = all.filter((f) => f.type.startsWith('image/'));
     if (pics.length) addImages(pics);
-    if (pics.length < all.length && !S.advanced) note('Your own files are part of <b>Advanced</b> (in the footer). Turn it on, then add the file again.');
+    if (pics.length < all.length && !ownAllowed()) note('Your own files are part of <b>Advanced</b> (in the footer). Turn it on, then add the file again.');
     else if (pics.length < all.length) addOwnFiles(all.filter((f) => !f.type.startsWith('image/')), attach);
   }
   document.addEventListener('dragend', () => chatCol.classList.remove('dragging'));
@@ -2926,7 +2943,7 @@
     renderBadge();
     if (S.versions.length) note(`Your next build goes to <b>${esc(S.config.models[S.model].label)}</b> (${esc(whereOf(S.model))}). Earlier versions keep the model that made them.`);
   };
-  document.querySelectorAll('#sessionSwitch button').forEach((b) => { b.onclick = () => setSession(b.dataset.session); });
+  $('sessionSwitch').onclick = (e) => { const b = e.target.closest('[data-session]'); if (b) setSession(b.dataset.session); };
   $('lookBtn').onclick = (e) => { e.stopPropagation(); toggleMenu(); };
   $('keepBtn').onclick = (e) => { e.stopPropagation(); toggleMenu($('keepBtn'), $('keepPanel')); };
   document.addEventListener('click', (e) => { if (!e.target.closest('.menu')) closeMenu(); });
