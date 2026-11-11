@@ -6,54 +6,99 @@
 <title>The jagged frontier · Garage Research</title>
 <meta name="robots" content="noindex, nofollow">
 <style>
-  :root { --paper: #f4f0e8; --ink: #1d1b18; --muted: #57524a; --faint: #8a8378; --rule: #d9d2c3; --red: #9b2335;
-    --serif: Georgia, "Iowan Old Style", "Times New Roman", serif; --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  /* the workshop's paper and ink; each model keeps its colour on every slide (validated: tools/../dataviz validator) */
+  :root {
+    color-scheme: light;
+    --paper: #f4f0e8; --card: #fbf9f4; --ink: #1d1b18; --muted: #57524a; --faint: #8a8378; --rule: #d9d2c3; --red: #9b2335;
+    --claude: #1f6fb2; --glm: #9b2335; --mistral: #8a6d1c;
+    --serif: Georgia, "Iowan Old Style", "Times New Roman", serif; --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --paper: #191816; --card: #22201d; --ink: #ede8de; --muted: #b3ada1; --faint: #8f897e; --rule: #3a3631; --red: #e0707f;
+      --claude: #3d86d6; --glm: #d0505f; --mistral: #b08a26;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #191816; --card: #22201d; --ink: #ede8de; --muted: #b3ada1; --faint: #8f897e; --rule: #3a3631; --red: #e0707f;
+    --claude: #3d86d6; --glm: #d0505f; --mistral: #b08a26;
+  }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.5 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
-  .slide { max-width: 1280px; min-height: 100vh; margin: 0 auto; padding: 40px 56px 28px; display: grid; grid-template-rows: auto 1fr auto; gap: 18px; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.45 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+  .slide { max-width: 1320px; min-height: 100vh; margin: 0 auto; padding: 32px 48px 22px; display: flex; flex-direction: column; gap: 18px; }
   .kicker { font: 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--red); }
-  h1 { font: 400 40px/1.15 var(--serif); margin: 8px 0 0; max-width: 24ch; }
-  .body { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 40px; align-items: center; }
-  svg { width: 100%; height: auto; display: block; overflow: visible; }
-  .grid line, .grid polygon { fill: none; stroke: var(--rule); stroke-width: 1; }
-  .grid text { font: 11px var(--mono); fill: var(--faint); }
-  .axis-label { font: 15px var(--serif); fill: var(--ink); }
-  .series polygon { stroke-width: 2.5; stroke-linejoin: round; fill-opacity: .07; }
-  .series circle { stroke: var(--paper); stroke-width: 2; cursor: default; }
-  .series.dim { opacity: .18; }
-  .legend { list-style: none; padding: 0; margin: 0 0 20px; display: grid; gap: 10px; }
-  .legend button { all: unset; display: flex; align-items: baseline; gap: 10px; cursor: pointer; }
-  .legend button:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
-  .legend .sw { width: 22px; height: 0; border-top: 3px solid; transform: translateY(-4px); flex: none; }
-  .legend b { font: 400 21px/1.2 var(--serif); }
-  .legend span.m { color: var(--muted); font-size: 14px; }
-  .finds { margin: 0; padding: 0 0 0 18px; display: grid; gap: 10px; }
-  .finds li { font-size: 17px; }
-  .tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--paper); font-size: 13px; padding: 6px 9px; max-width: 280px; display: none; }
-  footer { border-top: 1px solid var(--rule); padding-top: 10px; color: var(--muted); font-size: 13px; }
+  h1 { font: 400 38px/1.12 var(--serif); margin: 8px 0 0; }
+  h1 em { font-style: normal; border-bottom: 3px solid var(--red); }
+  /* how much testing stands behind the chart: big numbers, small words */
+  .stats { display: flex; flex-wrap: wrap; gap: 6px 30px; margin-top: 14px; }
+  .stats div { display: flex; align-items: baseline; gap: 7px; }
+  .stats b { font: 400 34px/1 var(--serif); font-variant-numeric: tabular-nums; }
+  .stats div:first-child b { color: var(--red); }
+  .stats span { font: 11.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .card { background: var(--card); border: 1px solid var(--rule); border-radius: 14px; padding: 18px 20px 8px; display: flex; flex-direction: column; }
+  .who { display: flex; align-items: center; gap: 10px; }
+  .who i { width: 14px; height: 14px; border-radius: 4px; flex: none; }
+  .who b { font: 400 22px/1.15 var(--serif); }
+  .who span { margin-left: auto; font: 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+  .score { display: flex; align-items: baseline; gap: 10px; margin-top: 8px; }
+  .score .big { font: 400 54px/1 var(--serif); font-variant-numeric: tabular-nums; }
+  .score .of { color: var(--muted); font-size: 15px; }
+  /* works | partly | broke: the model's colour, a tint of it, and a hatched grey; 2px gaps between the parts */
+  .bar { display: flex; gap: 2px; height: 10px; margin-top: 10px; }
+  .bar div { border-radius: 3px; min-width: 3px; }
+  .bar .partly { opacity: .38; }
+  .bar .broke { background: repeating-linear-gradient(135deg, var(--faint) 0 2px, transparent 2px 5px); }
+  .key { display: flex; gap: 14px; margin-top: 6px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .key b { color: var(--ink); font-weight: 600; }
+  svg.radar { width: 100%; height: auto; display: block; margin-top: 4px; overflow: visible; }
+  .ring { fill: none; stroke: var(--rule); stroke-width: 1; }
+  .ring.full { stroke: var(--faint); stroke-dasharray: 3 4; }
+  .spoke { stroke: var(--rule); stroke-width: 1; }
+  .ax { font: 11.5px -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: var(--muted); }
+  .val { font: 600 12.5px var(--mono); fill: var(--ink); font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--card); stroke-width: 4px; stroke-linejoin: round; }
+  .ringlab { font: 10px var(--mono); fill: var(--faint); }
+  .shape { stroke-width: 2.5; stroke-linejoin: round; fill-opacity: .2; }
+  .dot { stroke: var(--card); stroke-width: 2; }
+  .hit { fill: transparent; cursor: default; }
+  .finds { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 32px; }
+  .finds li { font-size: 16px; padding-left: 14px; border-left: 3px solid var(--rule); }
+  .finds li:last-child { border-left-color: var(--red); font-weight: 600; }
+  .tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--paper); font-size: 13px; line-height: 1.35; padding: 7px 10px; border-radius: 6px; max-width: 300px; display: none; z-index: 2; }
+  footer { border-top: 1px solid var(--rule); padding-top: 10px; color: var(--muted); font-size: 12.5px; }
   footer a { color: var(--red); }
-  details { margin-top: 8px; }
-  summary { font: 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; color: var(--muted); }
-  table { border-collapse: collapse; margin-top: 10px; font-size: 13px; width: 100%; }
-  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  details { margin-top: 6px; }
+  summary { font: 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; color: var(--muted); }
+  table { border-collapse: collapse; margin-top: 8px; font-size: 13px; width: 100%; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--rule); }
   th[scope=col] { font: 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
   td.n { text-align: right; font-variant-numeric: tabular-nums; }
-  @media (max-width: 860px) { .slide { padding: 24px 16px; } .body { grid-template-columns: 1fr; } h1 { font-size: 30px; } }
+  /* a 720-pixel projector: everything on one screen */
+  @media (max-height: 800px) and (min-width: 981px) {
+    .slide { padding: 18px 40px 10px; gap: 10px; }
+    h1 { font-size: 30px; margin-top: 6px; }
+    .stats { margin-top: 8px; } .stats b { font-size: 27px; }
+    .card { padding: 12px 16px 2px; }
+    .who b { font-size: 19px; } .score { margin-top: 4px; } .score .big { font-size: 40px; }
+    .bar { margin-top: 7px; } .key { font-size: 12px; margin-top: 4px; }
+    svg.radar { max-height: 236px; margin: 2px auto 0; }
+    .finds { gap: 6px 28px; } .finds li { font-size: 14px; }
+    footer { font-size: 11px; padding-top: 6px; }
+  }
+  @media (max-width: 980px) { .cards { grid-template-columns: 1fr; } .finds { grid-template-columns: 1fr; } .slide { padding: 22px 16px; } h1 { font-size: 28px; } }
 </style>
 </head>
 <body>
 <div class="slide">
   <header>
-    <div class="kicker">Session 8 · The jagged frontier</div>
-    <h1>Same plans, three models: each is good at different tasks</h1>
+    <div class="kicker" id="kicker">The jagged frontier</div>
+    <h1>Same requests, three models: <em>each one fails somewhere else</em></h1>
+    <div class="stats" id="stats"></div>
   </header>
-  <div class="body">
-    <svg id="radar" viewBox="-330 -280 660 560" role="img" aria-labelledby="radarTitle"><title id="radarTitle">Radar chart: share of automatic checks passed by each model, per task</title></svg>
-    <div>
-      <ul class="legend" id="legend"></ul>
-      <ol class="finds" id="finds"></ol>
-    </div>
-  </div>
+  <div class="cards" id="cards"></div>
+  <ul class="finds" id="finds"></ul>
   <footer>
     <div id="source"></div>
     <details><summary>The numbers as a table</summary><table id="table"></table></details>
@@ -62,49 +107,56 @@
 <div class="tip" id="tip" role="tooltip"></div>
 <script>
 const D = __DATA__;
+const NS = 'http://www.w3.org/2000/svg', R = 112, n = D.axes.length;
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const svg = document.getElementById('radar'), NS = 'http://www.w3.org/2000/svg', R = 200, n = D.axes.length;
-const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); (parent || svg).append(e); return e; };
-const pt = (i, v) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [Math.cos(a) * R * v / 100, Math.sin(a) * R * v / 100]; };
-const grid = el('g', { class: 'grid' });
-[25, 50, 75, 100].forEach((v) => {
-  el('polygon', { points: D.axes.map((_, i) => pt(i, v).join(',')).join(' ') }, grid);
-  el('text', { x: 4, y: -R * v / 100 - 3 }, grid).textContent = v + '%';
-});
-D.axes.forEach(([, label], i) => {
-  const [x, y] = pt(i, 100); el('line', { x1: 0, y1: 0, x2: x, y2: y }, grid);
-  const [lx, ly] = pt(i, 118);
-  const t = el('text', { x: lx, y: ly + 5, class: 'axis-label', 'text-anchor': Math.abs(lx) < 20 ? 'middle' : lx > 0 ? 'start' : 'end' });
-  t.textContent = label;
-});
+const pct = (a) => (a.builds ? Math.round(100 * a.worked / a.builds) : null);
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.append(e); return e; };
+const at = (i, r) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [Math.cos(a) * r, Math.sin(a) * r]; };
+const all = D.models.reduce((s, m) => s + m.builds, 0);
+document.getElementById('kicker').textContent = 'The jagged frontier · how often a model built a working app';
+document.getElementById('stats').innerHTML = D.stats.map(([v, w]) => `<div><b>${esc(v)}</b><span>${esc(w)}</span></div>`).join('');
 const tip = document.getElementById('tip');
-const groups = {};
-Object.entries(D.models).forEach(([id, m]) => {
-  const g = groups[id] = el('g', { class: 'series' });
-  const pts = D.axes.map(([k], i) => pt(i, m.values[k] ?? 0));
-  el('polygon', { points: pts.map((p) => p.join(',')).join(' '), stroke: m.colour, fill: m.colour }, g);
-  D.axes.forEach(([k, label], i) => {
-    const c = el('circle', { cx: pts[i][0], cy: pts[i][1], r: 6, fill: m.colour }, g);
-    const hit = el('circle', { cx: pts[i][0], cy: pts[i][1], r: 14, fill: 'transparent' }, g);
-    const show = (e) => { tip.innerHTML = `<b>${esc(m.name)}</b> · ${esc(label)}<br>${m.values[k] == null ? 'not built' : m.values[k] + '%'} · ${esc(m.notes[k] || '')}`; tip.style.display = 'block'; tip.style.left = e.clientX + 14 + 'px'; tip.style.top = e.clientY + 14 + 'px'; };
-    hit.addEventListener('mousemove', show); hit.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+const show = (e, html) => { tip.innerHTML = html; tip.style.display = 'block'; tip.style.left = Math.min(e.clientX + 14, innerWidth - 320) + 'px'; tip.style.top = e.clientY + 14 + 'px'; };
+const hide = () => { tip.style.display = 'none'; };
+
+D.models.forEach((m) => {
+  const colour = `var(--${m.id})`;
+  const card = document.createElement('section');
+  card.className = 'card';
+  card.setAttribute('aria-label', m.name);
+  const share = (k) => (100 * m[k] / m.builds);
+  card.innerHTML = `<div class="who"><i style="background:${colour}"></i><b>${esc(m.name)}</b><span>${esc(m.origin)}</span></div>
+    <div class="score"><span class="big">${Math.round(share('works'))}%</span><span class="of">of ${m.builds} builds worked</span></div>
+    <div class="bar" role="img" aria-label="${m.works} worked, ${m.partly} partly, ${m.broke} broke">
+      <div style="flex:${m.works};background:${colour}"></div><div class="partly" style="flex:${m.partly};background:${colour}"></div><div class="broke" style="flex:${m.broke}"></div></div>
+    <div class="key"><span><b>${m.works}</b> worked</span><span><b>${m.partly}</b> partly</span><span><b>${m.broke}</b> broke</span></div>`;
+  const svg = el('svg', { class: 'radar', viewBox: '-205 -160 410 318', role: 'img',
+    'aria-label': `${m.name}: ` + D.axes.map((a, i) => `${a} ${m.axes[i].worked} of ${m.axes[i].builds}`).join('; ') }, card);
+  [25, 50, 75, 100].forEach((v) => el('polygon', { class: 'ring' + (v === 100 ? ' full' : ''), points: D.axes.map((_, i) => at(i, R * v / 100).join(',')).join(' ') }, svg));
+  el('text', { class: 'ringlab', x: 4, y: -R - 4 }, svg).textContent = '100%';
+  D.axes.forEach((_, i) => { const [x, y] = at(i, R); el('line', { class: 'spoke', x1: 0, y1: 0, x2: x, y2: y }, svg); });
+  const pts = m.axes.map((a, i) => at(i, R * (pct(a) ?? 0) / 100));
+  el('polygon', { class: 'shape', points: pts.map((p) => p.join(',')).join(' '), stroke: colour, fill: colour }, svg);
+  m.axes.forEach((a, i) => {
+    const [x, y] = pts[i];
+    el('circle', { class: 'dot', cx: x, cy: y, r: 5, fill: colour }, svg);
+    // the axis name outside the ring, the value just outside its dot
+    const [lx, ly] = at(i, R + 26), anchor = Math.abs(lx) < 8 ? 'middle' : lx > 0 ? 'start' : 'end';
+    const t = el('text', { class: 'ax', x: lx, y: ly + (ly > 10 ? 10 : ly < -10 ? -2 : 4), 'text-anchor': anchor }, svg);
+    t.textContent = D.short[i];
+    const off = (pct(a) ?? 0) > 80 ? -16 : 16, [vx, vy] = at(i, Math.max(R * (pct(a) ?? 0) / 100 + off, 18));
+    el('text', { class: 'val', x: vx, y: vy + 4, 'text-anchor': 'middle' }, svg).textContent = pct(a) == null ? '–' : pct(a) + '%';
+    const hit = el('circle', { class: 'hit', cx: x, cy: y, r: 16 }, svg);
+    const html = `<b>${esc(m.name)}</b><br>${esc(D.axes[i])}: ${a.worked} of ${a.builds} builds worked`;
+    hit.addEventListener('mousemove', (e) => show(e, html)); hit.addEventListener('mouseleave', hide);
   });
+  document.getElementById('cards').append(card);
 });
-// the legend names each model and dims the others while it is hovered or focused
-const legend = document.getElementById('legend');
-Object.entries(D.models).forEach(([id, m]) => {
-  const li = document.createElement('li');
-  li.innerHTML = `<button type="button"><span class="sw" style="border-color:${m.colour}"></span><b>${esc(m.name)}</b><span class="m">${m.minutes != null ? 'median ' + m.minutes + ' min per build' : 'built in Claude Code, not timed'}</span></button>`;
-  const b = li.querySelector('button');
-  const on = () => Object.entries(groups).forEach(([k, g]) => g.classList.toggle('dim', k !== id));
-  const off = () => Object.values(groups).forEach((g) => g.classList.remove('dim'));
-  b.addEventListener('mouseenter', on); b.addEventListener('focus', on); b.addEventListener('mouseleave', off); b.addEventListener('blur', off);
-  legend.append(li);
-});
-document.getElementById('finds').innerHTML = (D.findings || []).map((f) => `<li>${f}</li>`).join('');
-document.getElementById('source').innerHTML = D.source || '';
-document.getElementById('table').innerHTML = `<caption class="kicker" style="text-align:left">Share of checks passed by the best first build</caption><tr><th scope="col">Task</th>${Object.values(D.models).map((m) => `<th scope="col">${esc(m.name)}</th>`).join('')}</tr>` +
-  D.axes.map(([k, label]) => `<tr><th scope="row">${esc(label)}</th>${Object.values(D.models).map((m) => `<td class="n" title="${esc(m.notes[k] || '')}">${m.values[k] == null ? '–' : m.values[k] + '%'}</td>`).join('')}</tr>`).join('');
+document.getElementById('finds').innerHTML = D.findings.map((f) => `<li>${f}</li>`).join('');
+document.getElementById('source').innerHTML = D.source;
+document.getElementById('table').innerHTML = `<tr><th scope="col">App</th>${D.models.map((m) => `<th scope="col">${esc(m.name)}</th>`).join('')}</tr>` +
+  D.axes.map((label, i) => `<tr><th scope="row">${esc(label)}</th>${D.models.map((m) => `<td class="n">${m.axes[i].worked} of ${m.axes[i].builds} (${pct(m.axes[i]) ?? '–'}%)</td>`).join('')}</tr>`).join('') +
+  `<tr><th scope="row">All builds: worked · partly · broke</th>${D.models.map((m) => `<td class="n">${m.works} · ${m.partly} · ${m.broke}</td>`).join('')}</tr>`;
 </script>
 </body>
 </html>

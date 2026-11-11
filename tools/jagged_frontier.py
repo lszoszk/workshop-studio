@@ -1,123 +1,95 @@
 #!/usr/bin/env python3
-"""The jagged-frontier slide: one radar of what three models built from the same plans, from the bake-off results.
+"""The jagged-frontier slide: what three models built from the same requests, as three radars side by side.
 
     python3 tools/jagged_frontier.py      # writes site/slides/jagged-frontier.html
 
-Each axis is the share of a workshop app's automatic checks that a model's first build passed, with the setting the
-studio uses (GLM-5.3 at medium reasoning, Mistral Large 3 without; the best build when there were several); "Footnotes" is whether the build found all 141 footnotes of CESCR GC 27 (the earlier,
-footnote plan). The runs are listed in RUNS; a run that is missing is skipped.
+Every bake-off build in tests/bakeoff (all settings tried), sorted three ways: it works (the app passed all of its
+automatic checks), partly (it runs but failed a check) or it broke (an error in the app, or no app). A build where the
+service failed and not the model (a 5xx in the stream, an answer in under five seconds) is left out. Each radar axis
+is the share of an app's builds that worked; the bar under each radar is all of a model's builds.
 """
 import json
+from datetime import datetime
 from pathlib import Path
-from statistics import median
 
 ROOT = Path(__file__).resolve().parent.parent
 B = ROOT / "tests" / "bakeoff"
 OUT = ROOT / "site" / "slides" / "jagged-frontier.html"
 
-# run directory -> what it is. Sonnet was built in Claude Code (no API, no timing); the others through OpenRouter.
-RUNS = {
-    "2026-11-03-tabs-sonnet": "claude",
-    "2026-11-04-extract-chain": "claude",
-    "2026-11-04-pins-inline": "claude",
-    "2026-11-04-pdf-flag": "claude",
-    "2026-11-04T09-57-48-reasoning-high": "high",
-    "2026-11-04T10-38-46-reasoning-low": "low",
-    "2026-11-04T10-51-44-reasoning-medium": "medium",
-    "2026-11-04T10-58-20": "none",
-}
-# the setting the studio uses for each model since 4 November 2026 (server/models.py)
-STUDIO = {"claude": "claude", "glm-cn": "medium", "mistral-l3": "none"}
-NEW_PDF = "2026-11-04-pdf-flag"          # paragraphs only (the plan since 4 November, 11:00)
-NEW_PDF_OTHERS = []                      # filled in main(): bake-off runs of s7-4 started after the plan changed
-MODELS = [("claude", "Claude Sonnet 5.5", "#1f6fb2"), ("glm-cn", "GLM-5.3", "#9b2335"), ("mistral-l3", "Mistral Large 3", "#8a6d1c")]
-AXES = [
-    ("s7-1-dashboard", "Dashboard on UN data"),
-    ("pdf-paragraphs", "Paragraphs out of a PDF"),
-    ("pdf-footnotes", "Footnotes out of a PDF"),
-    ("s8-1-verbatim", "Verbatim search"),
-    ("s8-5-wiki", "Wiki with checked quotes"),
-    ("first-try", "Runs on the first try"),
+# bake-off model key -> the model on the slide (GLM-5.3 at Z.AI or in the EU is one model; Mistral is Large 3 and 4)
+FAMILY = {"claude": "claude", "claude-api": "claude", "glm-cn": "glm", "glm-eu": "glm", "mistral-l3": "mistral", "mistral": "mistral"}
+MODELS = [("claude", "Claude Sonnet 5.5", "USA"), ("glm", "GLM-5.3", "China"), ("mistral", "Mistral Large 3 and 4", "France")]
+AXES = [   # (the label in the table and tooltip, the short one on the radar, the requests it counts)
+    ("Dashboard on UN data", "Dashboard", ["s7-1-dashboard"]),
+    ("Paragraphs out of a PDF", "PDF \u2192 paragraphs", ["s7-4-extract", "s7-4-extract-pdf"]),
+    ("Verbatim search", "Verbatim search", ["s8-1-verbatim"]),
+    ("Wiki with checked quotes", "Wiki", ["s8-5-wiki"]),
+    ("Small changes to an app", "Small changes", ["edit-1-column", "edit-2-chart", "edit-3-filter"]),
+    ("Checks on recommendations", "Recommendations", ["s7-2-who-recommends", "s7-3-check-ten"]),
 ]
+
+
+def outcome(r):
+    if not r["total"]:
+        return "broke"
+    if r["passed"] == r["total"]:
+        return "works"
+    return "broke" if r["checks"].get("no_console_errors") is False else "partly"
 
 
 def builds():
-    out = []
-    runs = dict(RUNS)
-    for d in sorted(B.glob("2026-11-04T1[12]-*")):   # the new PDF plan (11:xx) and the dashboards (12:xx); the HTML builds (13:xx) are another exercise
-        runs[d.name] = "new-pdf:" + (d.name.split("reasoning-")[-1] if "reasoning-" in d.name else "none")
-    for run, kind in runs.items():
-        f = B / run / "results.json"
-        if not f.exists():
-            continue
+    out, left_out, days = [], 0, set()
+    for f in sorted(B.glob("*/results.json")):
         for r in json.loads(f.read_text()):
-            m = r["model"]
-            if m not in {k for k, _, _ in MODELS}:
+            if r["model"] not in FAMILY:
                 continue
-            new_pdf = run == NEW_PDF or kind.startswith("new-pdf")
-            if r["prompt"] == "s7-4-extract" and r["total"] == 0:
-                continue
-            # the service failed, not the model (a 502 in the stream, an answer in a second): not a build
             if any('"code": 5' in e for e in r.get("errors", [])) or (r.get("seconds") is not None and r["seconds"] < 5):
+                left_out += 1
                 continue
-            setting = kind.split(":")[-1]
-            if STUDIO[m] != setting:
-                continue
-            out.append({**r, "run": run, "setting": setting, "new_pdf": new_pdf})
-    return out
+            days.add(f.parent.name[:10])
+            out.append({"model": FAMILY[r["model"]], "prompt": r["prompt"], "outcome": outcome(r), "run": f.parent.name})
+    return out, left_out, sorted(days)
 
 
 def main():
-    bs = builds()
-    data = {}
-    for m, name, colour in MODELS:
-        mine = [b for b in bs if b["model"] == m]
-        share = lambda b: b["passed"] / b["total"] if b["total"] else 0.0
-        vals, notes = {}, {}
-        for key, _ in AXES:
-            if key == "pdf-paragraphs":
-                pool = [b for b in mine if b["prompt"] == "s7-4-extract" and b["new_pdf"]]
-                score = share
-            elif key == "pdf-footnotes":
-                pool = [b for b in mine if b["prompt"] == "s7-4-extract" and not b["new_pdf"]]
-                score = lambda b: 1.0 if b["checks"].get("text_matches") and b["lines"] else 0.0
-            elif key == "first-try":
-                pool = [b for b in mine if b["prompt"] in ("s7-1-dashboard", "s7-4-extract", "s8-1-verbatim", "s8-5-wiki")]
-                vals[key] = round(100 * sum(1 for b in pool if b["lines"] and b["checks"].get("no_console_errors")) / len(pool)) if pool else None
-                notes[key] = f"{sum(1 for b in pool if b['lines'] and b['checks'].get('no_console_errors'))} of {len(pool)} builds"
-                continue
-            else:
-                pool = [b for b in mine if b["prompt"] == key]
-                score = share
-            if not pool:
-                vals[key], notes[key] = None, "not built"
-                continue
-            best = max(pool, key=score)
-            vals[key] = round(100 * score(best))
-            got = sum(1 for b in pool if score(b) == 1.0)
-            notes[key] = f"best {round(100 * score(best))}% ({best['setting']}); {len(pool)} build{'s' if len(pool) > 1 else ''}, {got} fully passed"
-        secs = [b["seconds"] for b in mine if b.get("seconds")]
-        data[m] = {"name": name, "colour": colour, "values": vals, "notes": notes,
-                   "minutes": round(median(secs) / 60, 1) if secs else None, "builds": len(mine)}
-    html = TEMPLATE.replace("__DATA__", json.dumps({"axes": AXES, "models": data, "findings": FINDINGS, "source": SOURCE}, ensure_ascii=False))
+    bs, left_out, days = builds()
+    models = []
+    for key, name, origin in MODELS:
+        mine = [b for b in bs if b["model"] == key]
+        total = {k: sum(1 for b in mine if b["outcome"] == k) for k in ("works", "partly", "broke")}
+        axes = []
+        for label, _, prompts in AXES:
+            pool = [b for b in mine if b["prompt"] in prompts]
+            axes.append({"worked": sum(1 for b in pool if b["outcome"] == "works"), "builds": len(pool)})
+        models.append({"id": key, "name": name, "origin": origin, "builds": len(mine), **total, "axes": axes})
+    span = [datetime.strptime(d, "%Y-%m-%d") for d in (days[0], days[-1])]
+    stats = [(f"{len(bs)}", "builds"), (f"{len({b['prompt'] for b in bs})}", "workshop requests"), ("3", "models"),
+             (f"{len({b['run'] for b in bs})}", "test runs"), (f"{(span[1] - span[0]).days + 1}", "days of testing")]
+    data = {"axes": [a for a, _, _ in AXES], "short": [b for _, b, _ in AXES], "models": models, "stats": stats, "findings": FINDINGS,
+            "source": SOURCE.format(n=len(bs), left_out=left_out,
+                                    span=f"{span[0].day} {span[0]:%B} – {span[1].day} {span[1]:%B %Y}")}
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(html, encoding="utf-8")
-    for m in data.values():
-        print(m["name"], m["values"], m["minutes"], "min")
+    OUT.write_text(TEMPLATE.replace("__DATA__", json.dumps(data, ensure_ascii=False)), encoding="utf-8")
+    for m in models:
+        print(f"{m['name']:<24} {m['builds']:>3} builds: {m['works']} works, {m['partly']} partly, {m['broke']} broke |",
+              " · ".join(f"{a['worked']}/{a['builds']}" for a in m["axes"]))
     print("->", OUT)
 
 
-# read against the printed values before each run of this script: they are written by hand
+# written by hand: read them against the printed numbers before each run
 FINDINGS = [
-    "<b>No model is best at everything.</b> Mistral Large 3 passed every check on the PDF and the wiki, but only 2 of its 6 dashboards had no error (GLM-5.3: 5 of 6).",
-    "<b>GLM-5.3</b> found all 141 footnotes on the harder PDF plan, yet its build of the simpler one stopped on an error.",
-    "<b>Claude Sonnet 5.5</b> passed everything, but the plans were written and tuned with it.",
+    "<b>Claude Sonnet 5.5</b> built a working app nine times in ten; GLM-5.3 and Mistral six and five times in ten.",
+    "<b>The frontier is jagged.</b> GLM-5.3 made every small change work (11 of 11) but fewer than half of the PDF tools; "
+    "Mistral built every check on recommendations (9 of 9) and a third of the PDF tools.",
+    "<b>Live, 11 November:</b> GLM-5.3 built the wiki from ten PDFs twice; asked to add a network, it wrote the tab but not the graph. "
+    "Claude added it the first time.",
     "Try a model on your own task before you rely on it.",
 ]
-SOURCE = ("Share of each app's automatic checks passed by the first build, with the studio's settings (GLM-5.3 at medium reasoning, "
-          "Mistral Large 3 without). Kenya data, 3–4 November 2026; one or two builds per app, so the chart shows a direction, not a measurement. "
-          "Footnotes: all 141 of CESCR General comment No. 27, on the earlier plan. Claude was built in Claude Code, not through the studio. "
-          "The term: Dell'Acqua et al., \u2018Navigating the Jagged Technological Frontier\u2019, <i>Organization Science</i> (2026), "
+SOURCE = ("Each axis: the share of an app's builds that passed all of its automatic checks (the app runs without an error, "
+          "uses the workshop data and shows what was asked). All {n} bake-off builds, {span}, with every setting tried "
+          "({left_out} builds where the service failed, not the model, are left out). Claude: Sonnet 5.5, in Claude Code or through "
+          "the API; GLM-5.3 at Z.AI or in the EU; Mistral: Large 3 and Large 4. The requests were written and tuned with Claude. "
+          "The term: Dell'Acqua et al., ‘Navigating the Jagged Technological Frontier’, <i>Organization Science</i> (2026), "
           "<a href=\"https://doi.org/10.1287/orsc.2025.21838\">doi:10.1287/orsc.2025.21838</a>.")
 
 TEMPLATE = (Path(__file__).parent / "jagged_frontier.html").read_text(encoding="utf-8")
