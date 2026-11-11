@@ -344,6 +344,7 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 .apperror details { font-size: 13px; }
 .apperror summary { cursor: pointer; }
 .apperror button { background: var(--danger); color: #fff; border: 0; border-radius: 7px; padding: 5px 12px; cursor: pointer; white-space: nowrap; }
+.apperror button.recorded { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
 
 /* drawer: files, trace, run x3, ask x3, take it further */
 .drawer {

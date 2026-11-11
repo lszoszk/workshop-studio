@@ -63,7 +63,7 @@ MAX_CHAT_BYTES = 8_000_000   # a conversation plus up to three screenshots (ngin
 # activity events (POST /studio-api/events): the names the front sends; see track() in site/studio.js
 EVENT_NAMES = {"open", "session", "pick", "plan_open", "plan_build", "build", "build_fail", "app_error", "repair",
                "query", "look", "gallery_in", "own_file", "own_samples", "picture", "model", "save", "wall", "kit",
-               "advanced", "reset"}
+               "advanced", "reset", "rescue", "ask_cached", "json_view"}
 EVENT_FIELD = re.compile(r"[a-z_]{1,20}")
 EVENT_VALUE = re.compile(r"[A-Za-z0-9_.:/+\-]{0,60}")   # ids and codes: no spaces, so no sentence fits
 MAX_EVENTS_PER_POST = 100

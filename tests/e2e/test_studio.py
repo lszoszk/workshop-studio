@@ -1442,7 +1442,7 @@ def test_the_venice_course_has_three_sessions(base_url, browser):
     assert page.locator("#suggest button b").all_inner_texts() == [DASHBOARD]   # the wiki and "Your own idea" need a live model
     assert page.is_visible("#shelf .add-own")                                    # own files without Advanced
     send(page, DASHBOARD, "uhri", 1)
-    assert "Check a quotation" in page.inner_text("#suggest")
+    assert "Ask your data a question" in page.inner_text("#suggest") and "Check a quotation" not in page.inner_text("#suggest")
     page.goto(base_url + "?course=geneva&via=replay&planpace=1&country=Kenya")
     started(page)
     assert page.locator("#sessionSwitch button").count() == 2
@@ -1471,8 +1471,8 @@ def test_venice_shows_only_what_its_sessions_use(base_url, browser, tmp_path):
     assert "The first" in page.inner_text("#drawerBody") and page.locator("#drawerBody .json-view").inner_text().count('"id"') >= 5
     page.click("#drawerClose")
     page.get_by_role("tab", name="Session 2").click()
-    assert shelf() == ["hrc", "hrc_all"] and not page.is_visible("#countryChip")
-    assert "Hugging Face" in page.inner_text("#shelf .fcard[data-key=hrc_all]")
+    assert shelf() == ["hrc"] and not page.is_visible("#countryChip")
+    assert "Hugging Face" in page.inner_text("#shelf .fcard[data-key=hrc]")
     page.get_by_role("tab", name="Session 3").click()
     assert shelf() == ["uhri", "pdfs"] and page.is_visible("#countryChip")
     send(page, DASHBOARD, "uhri", 1)
@@ -1488,7 +1488,7 @@ def test_venice_shows_only_what_its_sessions_use(base_url, browser, tmp_path):
     k = ctx.new_page()
     k.goto(kit.as_uri())
     reqs = k.locator(".req").all_inner_texts()
-    assert len(reqs) == 8 and any("Who votes with this State" in r for r in reqs) and any("Where every State stands" in r for r in reqs)
+    assert len(reqs) == 6 and any("Where every State stands" in r for r in reqs) and not any("Who votes with" in r for r in reqs)
     assert not any("PDF" in r for r in reqs)
     data = k.text_content("#datalist")   # in a folded section
     assert "WORKSHOP_DATA.hrc" in data and "wiki" not in data and "pdf_t" not in data
@@ -1597,7 +1597,7 @@ def test_venice_session2_adds_the_alignment_map(base_url, browser):
     started(page)
     page.get_by_role("tab", name="Session 2").click()
     send(page, "How two States vote at the Human Rights Council", "hrc", 1)
-    assert page.locator("#suggest button b").all_inner_texts()[:2] == ["Where every State stands", "Who votes with this State"]
+    assert page.locator("#suggest button b").all_inner_texts() == ["Where every State stands"]   # recorded mode: no Suggest improvements
     send(page, "Where every State stands", None, 2)
     app = app_frame(page)
     app.get_by_role("tab", name=re.compile("map", re.I)).click()
@@ -1625,4 +1625,23 @@ def test_venice_sends_to_the_wall_without_advanced(base_url, browser, fake_api):
     send(page, DASHBOARD, "uhri", 1)
     page.click("#keepBtn")
     assert not page.is_visible("#wallBtn")
+    ctx.close()
+
+
+def test_a_broken_app_offers_a_working_version(base_url, browser):
+    """An app that breaks after it opened shows, next to Ask the model to fix it, Load a working version: the build
+    of the same exercise recorded before the class comes in as a new version."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + "?course=venice&via=replay&planpace=1&country=Kenya&reset=1")
+    started(page)
+    page.get_by_role("tab", name="Session 2").click()
+    send(page, "How two States vote at the Human Rights Council", "hrc", 1)
+    page.wait_for_timeout(9000)   # past the window in which the studio repairs by itself
+    frame = next(f for f in page.frames if f != page.main_frame and f.parent_frame == page.main_frame and not f.is_detached() and f.evaluate("() => !!window.WORKSHOP_DATA"))
+    frame.evaluate("() => setTimeout(() => { throw new Error('boom'); }, 0)")
+    page.locator("#appError button.recorded").click()
+    page.wait_for_function("() => document.querySelectorAll('#versions [data-v]').length === 2")
+    assert "recorded beforehand" in page.inner_text("#log")
+    app_frame(page).locator("select").first.wait_for(timeout=10000)
     ctx.close()

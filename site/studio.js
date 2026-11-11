@@ -1111,15 +1111,19 @@
   }
 
   let asking = 0;
+  const askCache = new Map();   // model + request -> answer, until the page is reloaded
   async function handleAsk(win, m) {
     const reply = (x) => win.postMessage(Object.assign({ type: 'studio:answer', id: m.id }, x), '*');
+    const content = m.prompt + (m.json ? '\n\nReply with JSON only.' : '');
+    const key = S.model + '\n' + content;
+    if (askCache.has(key)) { track('ask_cached'); return reply({ text: askCache.get(key) }); }
     while (asking >= 2) await new Promise((r) => setTimeout(r, 150));
     asking++;
-    const content = m.prompt + (m.json ? '\n\nReply with JSON only.' : '');
     try {
       const { text, usage } = await chat({ purpose: 'inapp', model: S.model, messages: [{ role: 'user', content }] });
       addTrace({ purpose: 'inapp', usage, messages: [{ role: 'user', content }], userText: content });
       if (usage.budget_left != null) setBudget(usage.budget_left);
+      askCache.set(key, text);
       reply({ text });
     } catch (e) {
       reply({ error: e.message });
@@ -1201,6 +1205,43 @@
       box.hidden = true;
       openComposer(`${FIX} "${m.message}"${m.line ? ' at line ' + m.line : ''}. Please fix it and keep everything else the same.`);
     };
+    offerRecorded(box, chain);
+  }
+
+  // a second button where a working build of the same exercise was recorded beforehand: it comes in as a new
+  // version, so the session goes on (the broken one stays in the version menu)
+  async function offerRecorded(box, chain) {
+    const ids = [...new Set([chain[chain.length - 1].promptId, (chain.find((v) => !v.fix) || chain[0]).promptId].filter(Boolean))];
+    for (const id of ids) {
+      let html = '', by = '';
+      for (const rec of [S.config.replay, S.config.replay.fallback]) {
+        if (!rec || html) continue;
+        html = extractHtml(await getText(rec.dir + id + '.md').catch(() => '')) || '';
+        by = (S.config.models[rec.model] || {}).label || rec.model;
+      }
+      if (!html || box.hidden) continue;
+      const p = S.prompts.find((q) => q.id === id);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'recorded';
+      b.textContent = 'Load a working version';
+      b.onclick = async () => {
+        box.hidden = true;
+        track('rescue', { prompt: id });
+        const local = S.country === 'Kenya' ? html : html.replace(/Kenya/g, S.country);
+        const v = { n: S.versions.length + 1, parent: null, user: `A working version: ${p.title}`, files: p.dataset ? [p.dataset] : [], sent: promptText(p),
+          model: S.model, label: `${by} · recorded beforehand`, seconds: null, cost: null, recorded: true, promptId: id, created: Date.now(),
+          html: local, reply: '```html\n' + local + '\n```', fix: false,
+          summary: `${p.title}, as ${by} built it before the class. Your broken version stays in the version menu. Go on from here: ask for a change, or pick a next step below.` };
+        S.versions.push(v);
+        S.current = v.n;
+        save();
+        renderAll();
+        await showVersion(v);
+      };
+      box.append(b);
+      return;
+    }
   }
 
   /* ---------- Run x3, Ask x3 ---------- */
@@ -1445,8 +1486,8 @@
       ['Session 2', 's7-4-extract', true], ['Session 2', 's7-4b-run-ten', false], ['Session 2', 's7-4c-show-broken', false],
       ['Session 2', 's8-1-verbatim', true], ['Session 2', 's8-5-wiki', true]],
     venice: [['Session 1', 's8-1-verbatim', true], ['Session 1', 's8-1b-gc-quote-check', false],
-      ['Session 2', 's8-3-voting', true], ['Session 2', 's8-3c-alignment', false], ['Session 2', 's8-3b-blocs', false],
-      ['Session 3', 's7-1-dashboard', true], ['Session 3', 's7-3-quote-check', false], ['Session 3', 's7-1b-ask-data', false]],
+      ['Session 2', 's8-3-voting', true], ['Session 2', 's8-3c-alignment', false],
+      ['Session 3', 's7-1-dashboard', true], ['Session 3', 's7-1b-ask-data', false]],
   };
   const KIT_DATA = { geneva: ['uhri', 'gc', 'pdf_text', 'pdf_ten', 'wiki', 'library'], venice: ['uhri', 'gc', 'hrc'] };
   const slugOf = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'app';
@@ -1755,6 +1796,7 @@
   // The four workshop apps fill it with a short problem, in plan mode.
   function useSuggestion(p, fresh) {
     track('pick', { prompt: p.id, plan: plannable(p) && S.planMode });
+    if (p.id === 'any-improve' && S.course === 'venice') p = S.prompts.find((q) => q.id === 'improve-trust') || p;   // one way, not five
     if (p.id === 'any-improve') return showLenses();
     preferModel(p);
     if (plannable(p)) return openPlanning(p, fresh);
@@ -1797,7 +1839,7 @@
   // goes on the stage. What follows is live: changes to the plan, and the build.
   const PLAN_HEAD = 'Build this app. Follow the plan below; where it says nothing, keep it simple.';
   const CHANGE = 'Change the plan: ';
-  const PACE = Math.max(0.2, Number(params.get('planpace')) || 80);   // seconds the notes take (120 felt slow, 3.11); ?planpace=20 for a rehearsal
+  const PACE = Math.max(0.2, Number(params.get('planpace')) || (params.get('course') === 'venice' || (params.get('course') !== 'geneva' && localGet('ws:course') === 'venice') ? 20 : 80));   // seconds the notes take (120 felt slow, 3.11); ?planpace=20 for a rehearsal
   const plannable = (p) => !!(p && p.planning && S.packs[p.id] !== null);
   const defaultOf = (q) => Math.max(0, q.options.findIndex((o) => o.default));
   const plain = (s) => s.replace(/\*\*|`/g, '').replace(/^#{1,6}\s*/gm, '');

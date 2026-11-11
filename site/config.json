@@ -145,7 +145,7 @@
     {"key": "hrc", "kind": "csv", "label": "Human Rights Council votes",
      "blurb": "Every recorded vote since 2021, with how each member State voted and its UN regional group",
      "from": [{"label": "HRC Voting", "url": "https://lszoszk.github.io/hrc-voting/"}, {"label": "Hugging Face", "icon": "🤗", "url": "https://huggingface.co/datasets/lszoszk/hrc-voting"}]},
-    {"key": "hrc_all", "kind": "csv", "label": "Every Human Rights Council text, 2006–2026", "venice": ["V2"],
+    {"key": "hrc_all", "kind": "csv", "label": "Every Human Rights Council text, 2006–2026", "venice": [],
      "blurb": "All 3,324 resolutions, decisions and amendments: how each was adopted (most of them without a vote) and, where there was a recorded vote, how each member State voted",
      "from": [{"label": "HRC Voting", "url": "https://lszoszk.github.io/hrc-voting/"}, {"label": "Hugging Face", "icon": "🤗", "url": "https://huggingface.co/datasets/lszoszk/hrc-voting"}]},
     {"key": "wiki", "kind": "wiki", "label": "Research wiki: neurotechnology and justice", "also": ["library"],
