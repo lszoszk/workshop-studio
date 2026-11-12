@@ -33,10 +33,11 @@
   --radius: 4px;
   --shadow: 0 1px 2px rgba(29, 27, 24, .05), 0 6px 22px rgba(29, 27, 24, .07);
   --serif: Georgia, "Times New Roman", serif;
-  --mono: ui-monospace, Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --top-h: 56px;
   --foot-h: 34px;
-  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font: 16px/1.5 var(--sans);
   color: var(--ink);
   color-scheme: light;
 }
@@ -135,11 +136,13 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 .answer-md p:last-child, .answer-md ul:last-child, .answer-md ol:last-child { margin-bottom: 0; }
 .answer-md ul, .answer-md ol { margin: 0 0 8px; padding-left: 22px; }
 .answer-md li { margin: 2px 0; }
-.answer-md code { font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--bg); padding: 1px 4px; border-radius: 4px; }
+/* code, keyboard keys and sample output everywhere: the mono stack, not the browser's default Courier */
+code, kbd, samp, pre { font-family: var(--mono); }
+.answer-md code { font: 13px var(--mono); background: var(--bg); padding: 1px 4px; border-radius: 4px; }
 .answer-md h4 { margin: 8px 0 4px; font-size: 15px; }
 .code {
   margin-top: 8px; background: var(--code-bg); color: var(--code-ink); border-radius: 8px;
-  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow: hidden;
+  font: 12px/1.45 var(--mono); overflow: hidden;
 }
 .code pre { margin: 0; padding: 10px 12px; max-height: 260px; overflow: auto; white-space: pre; }
 .code .bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 10px; background: var(--code-bar); color: #9fb6cc; font-family: system-ui, sans-serif; font-size: 13px; }
@@ -185,7 +188,7 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 .filechip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; padding: 3px 8px 3px 6px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 600; max-width: 100%; }
 .filechip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .filechip button { border: 0; background: none; color: inherit; cursor: pointer; padding: 0 2px; font-size: 15px; line-height: 1; }
-.ficon { flex: none; font: 700 9px/1 system-ui, sans-serif; letter-spacing: .03em; color: #fff; border-radius: 3px; padding: 3px 3px; }
+.ficon { flex: none; font: 700 9px/1 var(--sans); letter-spacing: .03em; color: #fff; border-radius: 3px; padding: 3px 3px; }
 .ficon.pdf, .ficon.pdfs { background: #c0392b; }
 .ficon.html { background: #2c5f8a; }
 .ficon.csv { background: #2e8b57; }
@@ -221,7 +224,7 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 .versions .vcur b { color: var(--accent); }
 .versions .vcur .vof { color: var(--faint); font-size: 12px; }
 .vmenu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 40; width: min(440px, 80vw); max-height: 60vh; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 6px; }
-.vmenu .vglab { font: 600 11px/1.3 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .05em; text-transform: uppercase; color: var(--faint); padding: 8px 6px 4px; }
+.vmenu .vglab { font: 600 11px/1.3 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--faint); padding: 8px 6px 4px; }
 .vmenu button { display: grid; grid-template-columns: auto 1fr; gap: 0 8px; width: 100%; text-align: left; border: 0; border-radius: 4px; padding: 5px 6px; background: none; }
 .vmenu button:hover, .vmenu button:focus { background: var(--bg); }
 .vmenu button[aria-checked=true] b { color: var(--accent); }
@@ -299,7 +302,7 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 .codeview { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; background: var(--code-bg); color: var(--code-ink); }
 .codeview-note { margin: 0; padding: 10px 16px; font-size: 14px; color: #b9cbdc; background: var(--code-bar); border-bottom: 1px solid #22303f; }
 .codeview-note b { color: #fff; }
-.codeview pre { flex: 1; margin: 0; overflow: auto; padding: 12px 0; display: flex; align-items: flex-start; font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.codeview pre { flex: 1; margin: 0; overflow: auto; padding: 12px 0; display: flex; align-items: flex-start; font: 13px/1.55 var(--mono); }
 .codeview .gutter { flex: none; min-width: 52px; padding: 0 14px 0 8px; text-align: right; color: #4b5d70; user-select: none; white-space: pre; }
 .codeview code { flex: 1; padding-right: 16px; white-space: pre; font: inherit; }
 .tk-tag { color: #7cc4ff; }
@@ -309,7 +312,7 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 .tk-kw { color: #ffb86b; }
 .tk-num { color: #f5d67b; }
 /* a JSON file in the drawer, as a code editor shows it */
-.json-view { margin: 0 0 12px; padding: 12px 14px; max-height: 68vh; overflow: auto; border-radius: 10px; background: var(--code-bg); color: var(--code-ink); font: 12.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.json-view { margin: 0 0 12px; padding: 12px 14px; max-height: 68vh; overflow: auto; border-radius: 10px; background: var(--code-bg); color: var(--code-ink); font: 12.5px/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
 
 .building, .apperror {
   position: absolute; left: 50%; transform: translateX(-50%); z-index: 5; border-radius: 999px;
@@ -338,7 +341,7 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
   max-width: 980px; width: 100%; margin: 0 auto;
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 45%); mask-image: linear-gradient(to bottom, transparent 0, #000 45%);
 }
-.mind.code .mind-text { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #9fc4e8; }
+.mind.code .mind-text { font: 14px/1.5 var(--mono); color: #9fc4e8; }
 .mind-note { margin: 0 auto; max-width: 980px; width: 100%; font-size: 14px; color: #8aa0b5; border-top: 1px solid #1f2d3d; padding-top: 12px; }
 .apperror { bottom: 14px; background: var(--err-bg); color: var(--danger); display: flex; gap: 12px; align-items: center; max-width: 90%; border-radius: 12px; }
 .apperror details { font-size: 13px; }
@@ -393,7 +396,7 @@ body.resizing iframe { pointer-events: none; }   /* the app must not swallow the
 .tool-card p { font-size: 14px; color: var(--muted); }
 .tool-card .row { margin-top: 6px; font-size: 14px; }
 .prompt-box { position: relative; }
-.prompt-box textarea { width: 100%; min-height: 170px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface); font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize: vertical; }
+.prompt-box textarea { width: 100%; min-height: 170px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface); font: 13px/1.5 var(--mono); resize: vertical; }
 .caution { font-size: 14px; background: var(--warn-bg); color: var(--warn-ink); border-radius: 8px; padding: 8px 10px; }
 
 /* footer: who made this, and the open tools it comes from */
@@ -478,7 +481,7 @@ dialog::backdrop { background: rgba(14, 22, 33, .45); }
 .answer-md table { border-collapse: collapse; font-size: .92em; }
 .answer-md th, .answer-md td { border: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
 .answer-md th { background: var(--bg); }
-.answer-md pre.md-code { margin: 0 0 8px; padding: 8px 10px; background: var(--code-bg); color: var(--code-ink); border-radius: 8px; overflow-x: auto; white-space: pre; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.answer-md pre.md-code { margin: 0 0 8px; padding: 8px 10px; background: var(--code-bg); color: var(--code-ink); border-radius: 8px; overflow-x: auto; white-space: pre; font: 13px/1.5 var(--mono); }
 .answer-md pre.md-code code { background: none; padding: 0; color: inherit; font: inherit; }
 /* a reference-shelf page and the facilitator's brief, in the drawer */
 .drawer-body .lab { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); margin-bottom: 4px; }
@@ -492,7 +495,7 @@ body.handoff-mode .top, body.handoff-mode .work, body.handoff-mode .foot { displ
 .handoff-card .logo { height: 36px; }
 .handoff h1 { font-size: 24px; line-height: 1.25; margin: 14px 0 8px; }
 .handoff p { color: var(--muted); }
-.handoff-code { font: 700 34px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .18em; padding: 12px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); text-align: center; }
+.handoff-code { font: 700 34px/1.2 var(--mono); letter-spacing: .18em; padding: 12px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); text-align: center; }
 .handoff .row { flex-wrap: wrap; margin-top: 8px; }
 
 /* projector: ?wall=1 shows the app alone */
@@ -594,7 +597,7 @@ dialog h2 { font-family: var(--serif); font-weight: 400; }
 
 /* a question about the data: the table the browser computed */
 .qcard { margin-top: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 10px 12px; }
-.qcard .qhead { font: 600 11px/1.3 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .04em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+.qcard .qhead { font: 600 11px/1.3 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
 .qcard table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .qcard caption { text-align: left; font-weight: 600; padding-bottom: 6px; }
 .qcard th, .qcard td { border-bottom: 1px solid var(--line); padding: 3px 6px; text-align: left; vertical-align: top; }

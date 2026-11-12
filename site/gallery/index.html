@@ -11,8 +11,8 @@
   :root {
     --paper: #f4f0e8; --card: #fbf9f4; --ink: #1d1b18; --muted: #5b564c; --rule: #d9d2c3; --red: #9b2335;
     --ok: #1f6b3a; --bad: #9b2335;
-    --serif: Georgia, "Times New Roman", serif; --mono: ui-monospace, Menlo, Consolas, monospace;
-    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --serif: Georgia, "Times New Roman", serif; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root { --paper: #191816; --card: #22201d; --ink: #ede8de; --muted: #a59f93; --rule: #3a3631; --red: #e0707f; --ok: #6cc28a; --bad: #e0707f; }
@@ -77,7 +77,7 @@
 <body>
 <div class="wrap">
   <header class="bar">
-    <svg viewBox="0 0 98 40" role="img" aria-label="Garage Research"><rect width="98" height="40" rx="8" fill="#141414"/><text x="12" y="28.5" fill="#fff" font-family="'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif" font-weight="700" font-size="23" letter-spacing="-0.5">GR</text><text x="55" y="28.5" fill="#5bd45b" font-family="ui-monospace, Menlo, Consolas, monospace" font-weight="700" font-size="23">&gt;_</text></svg>
+    <svg viewBox="0 0 98 40" role="img" aria-label="Garage Research"><rect width="98" height="40" rx="8" fill="#141414"/><text x="12" y="28.5" fill="#fff" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="700" font-size="23" letter-spacing="-0.5">GR</text><text x="55" y="28.5" fill="#5bd45b" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-weight="700" font-size="23">&gt;_</text></svg>
     <span class="name">Garage Research</span><span class="mono" style="color:var(--muted)">· Gallery</span>
     <a class="back mono" href="../">← Back to the studio</a>
   </header>
