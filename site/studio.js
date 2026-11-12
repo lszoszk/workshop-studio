@@ -143,7 +143,6 @@
 
     const code = (hash.get('s') || localGet('ws:seat') || '').toUpperCase();
     S.seatCode = code || null;
-    if (S.seatCode) localSet('ws:seat', S.seatCode);
     if (hash.has('s') || hash.has('k')) history.replaceState(null, '', location.pathname + location.search);
 
     const savedModel = localGet('ws:model');
@@ -169,7 +168,7 @@
     $('sendBtn').disabled = false;
     renderFooter();
     renderAll();
-    track('open', { route: S.route.type, session: S.session, model: S.model, seat: !!S.seatCode, apps: S.versions.length,
+    track('open', { route: S.route.type, session: S.session, model: S.model, has_seat: !!S.seatCode, apps: S.versions.length,
       w: innerWidth, ua: /Firefox/.test(navigator.userAgent) ? 'firefox' : /Edg\//.test(navigator.userAgent) ? 'edge' : /Chrome/.test(navigator.userAgent) ? 'chrome' : /Safari/.test(navigator.userAgent) ? 'safari' : 'other' });
     if (params.get('from')) await fromGallery(params.get('from'));
     else Tour.startOnce();   // the first visit in this browser
@@ -260,6 +259,7 @@
   }
 
   async function ensureSeat() {
+    let typed = false;   // the code came from the dialog, not from the link or from an earlier visit
     for (;;) {
       let err = '';
       if (S.seatCode) {
@@ -268,20 +268,27 @@
           if (res.ok) {
             S.seat = await res.json();
             setBudget(S.seat.budget_left);
+            localSet('ws:seat', S.seatCode);
+            track('seat_ok', { typed });
             return;
           }
-          err = 'That code was not recognised. Check your badge.';
+          err = 'That code was not recognised. Check your card: six letters and digits, no O, I, L, 0 or 1.';
+          track('seat_wrong', { typed, status: res.status, len: S.seatCode.length });
+          S.seatCode = null;   // a wrong code is not kept for the next visit
+          try { localStorage.removeItem('ws:seat'); } catch (e) { /* private mode */ }
         } catch (e) {
           err = 'The studio could not reach its server to check the code. Check the Wi‑Fi, then press Start again.';
         }
       }
       const answer = await askSeat(err);
+      typed = true;
       if (answer === null) {
+        S.seatCode = null;
+        track('seat_skip', {});
         setRoute(S.config.routes.find((r) => r.type === 'replay'), 'No seat code: the studio replays recorded answers instead of calling a model.');
         return;
       }
       S.seatCode = answer;
-      localSet('ws:seat', answer);
     }
   }
 
@@ -291,8 +298,23 @@
       $('seatErr').hidden = !err;
       $('seatErr').textContent = err;
       $('seatInput').value = '';
-      d.onclose = () => resolve(d.returnValue === 'ok' && $('seatInput').value.trim() ? $('seatInput').value.trim().toUpperCase() : null);
+      // only the "Continue without a model" button leads to recorded answers: Escape keeps the dialog, and so does
+      // Start (or Enter) on an empty field
+      d.oncancel = (e) => e.preventDefault();
+      $('seatForm').onsubmit = (e) => {
+        if (e.submitter !== $('seatSkip') && !$('seatInput').value.trim()) { e.preventDefault(); $('seatInput').focus(); }
+      };
+      d.onclose = () => {
+        const typed = $('seatInput').value.trim().toUpperCase();
+        if (d.returnValue === 'skip') return resolve(null);
+        if (d.returnValue === 'ok' && typed) return resolve(typed);
+        d.returnValue = '';
+        d.showModal();   // closed some other way (a second Escape in Chrome): ask again
+        $('seatInput').focus();
+      };
+      d.returnValue = '';
       d.showModal();
+      $('seatInput').focus();
     });
   }
 
@@ -869,7 +891,7 @@
       });
       S.versions.push(v);
       S.current = v.n;
-      track('build', Object.assign(buildFacts('app'), { v: v.n, lines: html.split('\n').length, edit: !!edit, whole: asked !== messages, auto: !!opts.auto }));
+      track('build', Object.assign(buildFacts('app'), { ver: v.n, lines: html.split('\n').length, edit: !!edit, whole: asked !== messages, auto: !!opts.auto }));
       if (plan) retirePlanning(`Built as v${v.n}.`);
       view.done(v);
       const p = S.prompts.find((q) => q.id === promptId);
@@ -892,7 +914,7 @@
 
   const REPAIR_WINDOW_MS = 8000;   // an app that fails on load fails in the first seconds; later errors come from a click
   function autoRepair(m) {
-    track('repair', { v: S.current });
+    track('repair', { ver: S.current });
     note(`The app showed an error as it opened (<i>${esc(String(m.message || '').slice(0, 120))}</i>). The studio sends it back to the model to fix, once; the fix usually takes a few seconds.`);
     build(`${FIX} "${m.message}"${m.line ? ' at line ' + m.line : ''}. Please fix it and keep everything else the same.`, [], { auto: true });
   }
@@ -1171,7 +1193,7 @@
     S.lastAppError = String(m.message || '').slice(0, 200);
     const a = S.autoFix;
     // the kind of error only (TypeError, SyntaxError…): its message may quote the data
-    track('app_error', { prompt: (currentVersion() || {}).promptId || null, kind: (/^\w*Error\b/.exec(String(m.message || '').replace(/^Uncaught\s+/, '')) || ['other'])[0], v: S.current,
+    track('app_error', { prompt: (currentVersion() || {}).promptId || null, kind: (/^\w*Error\b/.exec(String(m.message || '').replace(/^Uncaught\s+/, '')) || ['other'])[0], ver: S.current,
       first: !!(a && a.n === S.current && performance.now() - a.t < REPAIR_WINDOW_MS) });
     if (a && a.n === S.current && performance.now() - a.t < REPAIR_WINDOW_MS) {
       S.autoFix = null;
@@ -1468,7 +1490,7 @@
   async function download() {
     const v = currentVersion();
     if (!v) return;
-    track('save', { prompt: v.promptId || null, v: v.n });
+    track('save', { prompt: v.promptId || null, ver: v.n });
     const blob = new Blob([await fullDoc(v)], { type: 'text/html' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);

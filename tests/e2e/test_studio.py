@@ -495,7 +495,7 @@ def test_live_country_switch_and_asking_directly(base_url, browser, fake_api):
     page.wait_for_function("() => document.getElementById('truth').textContent.includes('records in total')")
     page.get_by_role("tab", name="A quotation").click()
     page.wait_for_function("() => document.getElementById('askNote').textContent.includes('no paragraph 97')", timeout=15000)
-    assert "There is no paragraph 97: E/C.12/GC/27 has 90 numbered paragraphs" in page.inner_text("#truth")
+    page.wait_for_function("() => document.getElementById('truth').textContent.includes('There is no paragraph 97: E/C.12/GC/27 has 90 numbered paragraphs')", timeout=15000)
     assert sum(1 for c in calls if c["purpose"] == "question" and "paragraph 97" in c["messages"][-1]["content"]) == 3
     assert page.inner_text("#traceCount") == "7"   # this session's: one build, three counts, three quotations
     page.click("#drawerClose")
@@ -1645,3 +1645,39 @@ def test_a_broken_app_offers_a_working_version(base_url, browser):
     assert "recorded beforehand" in page.inner_text("#log")
     app_frame(page).locator("select").first.wait_for(timeout=10000)
     ctx.close()
+
+
+def test_the_seat_dialog_takes_enter_and_keeps_escape(base_url, browser, fake_api):
+    """Without a code in the link the studio asks for one. Typing it and pressing Enter starts the live studio (in
+    Venice on 12.11.2026 Enter picked "Continue without a model", the form's first button, and three laptops never
+    got in). Escape and an empty field keep the dialog; a wrong code shows why and is not kept; only the
+    "Continue without a model" button leads to recorded answers."""
+    api, _ = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + f"?course=venice&api={api}&planpace=1")
+    page.wait_for_selector("#seatDialog[open]")
+    page.keyboard.press("Escape")
+    page.keyboard.press("Enter")                                   # an empty field: nothing happens
+    page.wait_for_timeout(400)
+    assert page.is_visible("#seatDialog[open]")
+    page.fill("#seatInput", "WRONG2")
+    page.keyboard.press("Enter")
+    page.wait_for_function("() => !document.getElementById('seatErr').hidden")
+    assert "not recognised" in page.inner_text("#seatErr") and page.evaluate("localStorage.getItem('ws:seat')") is None
+    page.fill("#seatInput", "test22")                              # lower case is fine
+    page.keyboard.press("Enter")
+    started(page)
+    assert page.inner_text("#routeBadge") == "Live model" and "7.5" in page.inner_text("#budget")
+    assert page.evaluate("localStorage.getItem('ws:seat')") == "TEST22"
+    # the button on the right is still Start, and the other one still gives recorded answers
+    ctx2 = browser.new_context(viewport={"width": 1440, "height": 900})
+    p2 = ctx2.new_page()
+    p2.goto(base_url + f"?course=venice&api={api}&planpace=1")
+    p2.wait_for_selector("#seatDialog[open]")
+    box = lambda sel: p2.locator(sel).bounding_box()["x"]
+    assert box("#seatOk") > box("#seatSkip")
+    p2.click("#seatSkip")
+    started(p2)
+    assert p2.inner_text("#routeBadge") == "Recorded answers"
+    ctx.close(); ctx2.close()

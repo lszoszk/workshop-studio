@@ -63,7 +63,7 @@ MAX_CHAT_BYTES = 8_000_000   # a conversation plus up to three screenshots (ngin
 # activity events (POST /studio-api/events): the names the front sends; see track() in site/studio.js
 EVENT_NAMES = {"open", "session", "pick", "plan_open", "plan_build", "build", "build_fail", "app_error", "repair",
                "query", "look", "gallery_in", "own_file", "own_samples", "picture", "model", "save", "wall", "kit",
-               "advanced", "reset", "rescue", "ask_cached", "json_view", "route"}
+               "advanced", "reset", "rescue", "ask_cached", "json_view", "route", "seat_ok", "seat_wrong", "seat_skip"}
 EVENT_FIELD = re.compile(r"[a-z_]{1,20}")
 EVENT_VALUE = re.compile(r"[A-Za-z0-9_.:/+\-]{0,60}")   # ids and codes: no spaces, so no sentence fits
 MAX_EVENTS_PER_POST = 100
@@ -621,7 +621,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
                     "v": str(d.get("v") or "")[:20] if EVENT_VALUE.fullmatch(str(d.get("v") or "")) else None}
             with (events_dir / f"{day}.jsonl").open("a", encoding="utf-8") as fh:
                 for x in kept:
-                    fh.write(json.dumps({**head, **x}, ensure_ascii=False) + "\n")
+                    fh.write(json.dumps({**x, **head}, ensure_ascii=False) + "\n")
         return {"ok": True, "kept": len(kept)}
 
     @app.post("/studio-api/feedback")

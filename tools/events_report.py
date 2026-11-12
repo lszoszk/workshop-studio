@@ -31,7 +31,7 @@ def secs(xs):
 def main(paths):
     ev = list(load(paths))
     visits = {e["sid"] for e in ev}
-    seats = {e["seat"] for e in ev if e.get("seat")}
+    seats = {e["seat"] for e in ev if isinstance(e.get("seat"), str)}
     print(f"{len(ev)} events, {len(visits)} page visits, {len(seats)} seats\n")
 
     print("Builds by request and model (kind: app / talk / query):")

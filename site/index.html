@@ -8,7 +8,7 @@
 <meta name="robots" content="noindex, nofollow">
 <script src="gate.js"></script>
 <script>try { const t = localStorage.getItem('ws:theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
-<link rel="stylesheet" href="studio.css?v=2026-11-12j"></head>
+<link rel="stylesheet" href="studio.css?v=2026-11-12m"></head>
 <body>
 <!-- a phone that scanned the badge's QR code gets this instead of the studio -->
 <div class="handoff" id="handoff" hidden>
@@ -156,12 +156,13 @@
 <dialog id="seatDialog">
   <form method="dialog" id="seatForm">
     <h2>Enter your seat code</h2>
-    <p>It is printed on your badge, under the QR code.</p>
+    <p>It is printed on your card. Type it and press Enter.</p>
     <input id="seatInput" autocomplete="off" maxlength="8" placeholder="e.g. K7Q2MA">
     <p class="err" id="seatErr" hidden></p>
     <div class="row">
-      <button value="skip" class="ghost" id="seatSkip">Continue without a model</button>
+      <!-- Start comes first in the markup: the first submit button of a form is the one Enter presses -->
       <button value="ok" class="primary" id="seatOk">Start</button>
+      <button value="skip" class="ghost" id="seatSkip">Continue without a model</button>
     </div>
   </form>
 </dialog>
@@ -180,11 +181,11 @@
   </form>
 </dialog>
 
-<script src="preview-doc.js?v=2026-11-12j"></script>
-<script src="pdf-view.js?v=2026-11-12j"></script>
-<script src="tour.js?v=2026-11-12j"></script>
-<script src="own-files.js?v=2026-11-12j"></script>
-<script src="kit.js?v=2026-11-12j"></script>
-<script src="studio.js?v=2026-11-12j"></script>
+<script src="preview-doc.js?v=2026-11-12m"></script>
+<script src="pdf-view.js?v=2026-11-12m"></script>
+<script src="tour.js?v=2026-11-12m"></script>
+<script src="own-files.js?v=2026-11-12m"></script>
+<script src="kit.js?v=2026-11-12m"></script>
+<script src="studio.js?v=2026-11-12m"></script>
 </body>
 </html>
