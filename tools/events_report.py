@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Summarise the studio's activity records (server state/events/<day>.jsonl, or GET /studio-api/admin/events) for
 calibrating the workshop: builds per request and model with their times, failures, fallbacks, repairs, app errors,
-queries, and which tools and files people used.
+queries, and which tools and files people used; route switches, rescues, and for Geneva, how long a visit took
+from its first pick to its first working app. Refused requests (budget, rate limit) are in the server's usage table:
+status "refused" (GET /studio-api/admin?format=json).
 
     python3 tools/events_report.py events-2026-11-20.jsonl [more.jsonl …]
 """
@@ -70,6 +72,29 @@ def main(paths):
           "· from the gallery:", sum(1 for e in ev if e["t"] == "gallery_in"))
     print("Browsers:", dict(Counter(e.get("ua") for e in ev if e["t"] == "open")),
           "· routes:", dict(Counter(e.get("route") for e in ev if e["t"] == "open")))
+    print("Route switches (from → to):", dict(Counter((e.get("from"), e.get("to")) for e in ev if e["t"] == "route")))
+    print("Working versions loaded after a break:", dict(Counter(e.get("prompt") for e in ev if e["t"] == "rescue")),
+          "· in-app answers from memory:", sum(1 for e in ev if e["t"] == "ask_cached"),
+          "· JSON views:", sum(1 for e in ev if e["t"] == "json_view"))
+    print("App errors by request:", dict(Counter(e.get("prompt") for e in ev if e["t"] == "app_error").most_common()))
+
+    # Geneva feasibility: per visit, how long until the first working app, and how many visits got one at all
+    first_pick, first_app = {}, {}
+    for e in ev:
+        sid = e.get("sid")
+        if e["t"] == "pick" and sid not in first_pick:
+            first_pick[sid] = e.get("ms")
+        if e["t"] == "build" and e.get("kind") == "app" and sid not in first_app:
+            first_app[sid] = e.get("ms")
+    waits = [(first_app[s] - first_pick[s]) / 1000 for s in first_app if s in first_pick and first_app[s] and first_pick[s] is not None]
+    print(f"\nVisits that picked a request: {len(first_pick)} · got an app: {sum(1 for s in first_pick if s in first_app)}"
+          f" · first pick to first app: {secs(waits)}")
+    for prompt in sorted({e.get("prompt") for e in ev if e["t"] == "pick" and e.get("prompt")}):
+        picks = sum(1 for e in ev if e["t"] == "pick" and e.get("prompt") == prompt)
+        built = sum(1 for e in ev if e["t"] == "build" and e.get("kind") == "app" and e.get("prompt") == prompt and not e.get("auto"))
+        broke = sum(1 for e in ev if e["t"] == "app_error" and e.get("prompt") == prompt)
+        rescued = sum(1 for e in ev if e["t"] == "rescue" and e.get("prompt") == prompt)
+        print(f"  {prompt:28} picked {picks:3} · built {built:3} · app errors {broke:3} · working version loaded {rescued:3}")
 
 
 if __name__ == "__main__":

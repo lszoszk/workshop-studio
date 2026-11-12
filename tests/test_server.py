@@ -171,6 +171,8 @@ def test_seat_budget_exhausted_is_429_in_english(env):
     r = env.client.post("/studio-api/chat", json=body())
     assert r.status_code == 429 and r.json()["error"] == "This seat has used its budget"
     assert env.fake.requests == []
+    refused = env.seats.db.execute("SELECT status, error FROM usage WHERE seat='ABCDEF' ORDER BY id DESC LIMIT 1").fetchone()
+    assert tuple(refused) == ("refused", "seat_budget")   # the refusal is in the log, for the report after the class
     env.seats.set_budget("ABCDEF", 10)                 # a top-up from the admin page reopens it
     assert env.client.post("/studio-api/chat", json=body()).status_code == 200
 

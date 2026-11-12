@@ -70,7 +70,6 @@
     off: params.has('notrack') || localGet('ws:notrack') === '1' || params.has('via') ||
       (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && !params.has('api')),
     base() {
-      if (S.route && S.route.type === 'server') return S.route.base;
       const vm = S.config && S.config.routes.find((r) => r.id === 'vm');
       return params.get('api') || (vm && vm.base);
     },
@@ -250,6 +249,7 @@
   }
 
   function setRoute(r, why) {
+    if (S.route && S.route.id !== r.id) track('route', { from: S.route.id, to: r.id });
     S.route = r;
     const b = $('routeBadge');
     b.textContent = r.type === 'replay' ? 'Recorded answers' : 'Live model';
@@ -379,7 +379,7 @@
     if (!res.ok) {
       let j = {};
       try { j = await res.json(); } catch (e) { /* not JSON */ }
-      throw Object.assign(new Error(j.error || `server error ${res.status}`), { status: res.status, failover: res.status >= 500 && res.status !== 503 });
+      throw Object.assign(new Error(j.error || `server error ${res.status}`), { status: res.status, code: j.code, failover: res.status >= 500 && res.status !== 503 });
     }
     return readSSE(res, o, (ev, j) => (ev === 'usage' ? { usage: j } : ev === 'error' ? { error: j.error || 'The model stopped' } : { delta: j.delta, reasoning: j.reasoning }));
   }
@@ -881,7 +881,7 @@
       S.autoFix = S.route.type !== 'replay' && !opts.auto ? { n: v.n, t: performance.now() } : null;
       await showVersion(v);
     } catch (e) {
-      track('build_fail', { prompt: promptId, model, code: e.name === 'AbortError' ? 'stopped' : String(e.status || (e.failover ? 'no_route' : 'error')) });
+      track('build_fail', { prompt: promptId, model, code: e.name === 'AbortError' ? 'stopped' : String(e.code || e.status || (e.failover ? 'no_route' : 'error')) });
       view.fail('', friendly(e));
       giveBack();
     } finally {
@@ -1171,7 +1171,7 @@
     S.lastAppError = String(m.message || '').slice(0, 200);
     const a = S.autoFix;
     // the kind of error only (TypeError, SyntaxError…): its message may quote the data
-    track('app_error', { kind: (/^\w*Error\b/.exec(String(m.message || '').replace(/^Uncaught\s+/, '')) || ['other'])[0], v: S.current,
+    track('app_error', { prompt: (currentVersion() || {}).promptId || null, kind: (/^\w*Error\b/.exec(String(m.message || '').replace(/^Uncaught\s+/, '')) || ['other'])[0], v: S.current,
       first: !!(a && a.n === S.current && performance.now() - a.t < REPAIR_WINDOW_MS) });
     if (a && a.n === S.current && performance.now() - a.t < REPAIR_WINDOW_MS) {
       S.autoFix = null;

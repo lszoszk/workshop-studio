@@ -63,7 +63,7 @@ MAX_CHAT_BYTES = 8_000_000   # a conversation plus up to three screenshots (ngin
 # activity events (POST /studio-api/events): the names the front sends; see track() in site/studio.js
 EVENT_NAMES = {"open", "session", "pick", "plan_open", "plan_build", "build", "build_fail", "app_error", "repair",
                "query", "look", "gallery_in", "own_file", "own_samples", "picture", "model", "save", "wall", "kit",
-               "advanced", "reset", "rescue", "ask_cached", "json_view"}
+               "advanced", "reset", "rescue", "ask_cached", "json_view", "route"}
 EVENT_FIELD = re.compile(r"[a-z_]{1,20}")
 EVENT_VALUE = re.compile(r"[A-Za-z0-9_.:/+\-]{0,60}")   # ids and codes: no spaces, so no sentence fits
 MAX_EVENTS_PER_POST = 100
@@ -459,6 +459,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
 
     @app.post("/studio-api/chat")
     async def chat(request: Request):
+        d = {}
         try:
             d = await read_json(request, MAX_CHAT_BYTES)
             seat = seat_or_refuse(d.get("seat"))
@@ -480,6 +481,11 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
                 raise Refusal(429, "Too many requests from this seat, wait a minute", "rate_limit",
                               {"Retry-After": str(wait)})
         except Refusal as e:
+            code = d.get("seat") if isinstance(d, dict) and isinstance(d.get("seat"), str) else None
+            log_event(event="chat", seat=code, status="refused", error=e.code)
+            if e.code in ("seat_budget", "daily_budget", "rate_limit", "paused") and code:
+                seats.record(code, model=str(d.get("model") or ""), host="", purpose=str(d.get("purpose") or ""),
+                             status="refused", error=e.code)
             return refuse(e)
 
         t0 = time.monotonic()
