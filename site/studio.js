@@ -129,6 +129,7 @@
     S.course = params.get('course') === 'venice' || (params.get('course') !== 'geneva' && localGet('ws:course') === 'venice') ? 'venice' : 'geneva';
     localSet('ws:course', S.course);
     document.body.classList.toggle('venice', S.course === 'venice');
+    $('courseLink').hidden = S.course !== 'venice';
     const event = (S.course === 'venice' && config.event_venice) || config.event;
     $('event').textContent = event;
     $('brand').title = event;
