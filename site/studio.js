@@ -1543,9 +1543,10 @@
       });
       const leaves = work.flat().sort((a, b) => (a.v.created || 0) - (b.v.created || 0)).slice(-6);
       const apps = leaves.map(({ v, n }) => ({ title: titleOf(v.html), note: `Session ${n}, version ${v.n}, by ${v.label}`, html: v.html }));
-      const own = [...new Set(leaves.flatMap(({ v, vs }) => chainOf(v, vs).flatMap((x) => x.files || [])).filter((k) => S.own[k]))];
+      // every file those apps read, the workshop's (hrc_all dragged into a Venice app) and the participant's own
+      const used = [...new Set(leaves.flatMap(({ v, vs }) => chainOf(v, vs).flatMap((x) => x.files || [])).filter((k) => S.own[k] || S.index.datasets[k]))];
       const datasets = {};
-      for (const k of [...KIT_DATA[S.course], ...own]) datasets[k] = await dataParsed(k);
+      for (const k of new Set([...KIT_DATA[S.course], ...used])) datasets[k] = await dataParsed(k);
       const html = Kit.page(await getText('kit/kit.html'), { chart: S.chart, runtime: S.runtime, datasets, meta: { country: S.country, built }, steps, apps });
       const blob = new Blob([html], { type: 'text/html' });
       const a = document.createElement('a');
