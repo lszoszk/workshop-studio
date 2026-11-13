@@ -764,6 +764,90 @@ def hrc_all():
     }
 
 
+CHR = "Commission on Human Rights"
+GA3 = "General Assembly (Third Committee)"
+UN_HR_SAMPLE_VOTES = 5
+
+
+def un_hr_all():
+    """hrc_all widened: every text of the Commission on Human Rights (1946–2006) and the Council (2006–), and the
+    General Assembly's plenary recorded votes on Third Committee texts (1970–), with a `body` field."""
+    def how(t):
+        if t.startswith("RECORDED"): return "recorded vote"
+        return {"ADOPTED WITHOUT VOTE": "without a vote", "NON-RECORDED": "non-recorded vote",
+                "NON-RECORDED, adopted unanimously": "adopted unanimously", "NON-RECORDED, no voting information available": "no voting information",
+                "WITHDRAWN": "withdrawn", "NOT CONSIDERED": "not considered"}.get(t, t.lower())
+    num = lambda s: int(s) if s not in ("", None) else None
+    res = list(csv.DictReader(open(VOTING / "resolutions.csv", encoding="utf-8")))
+    votes, names = {}, {}
+    for v in csv.DictReader(open(VOTING / "votes_long.csv", encoding="utf-8")):
+        if v["vote"] in ("Y", "N", "A"):
+            votes.setdefault(v["record_id"], {})[v["iso3"]] = v["vote"]
+            names[v["iso3"]] = v["country"].title()
+    out = []
+    for r in res:
+        a = how(r["vote_type"])
+        counted = a in ("recorded vote", "non-recorded vote")   # the official totals, where the source gives them
+        out.append({
+            "id": r["record_id"],
+            "body": r["body"],
+            "symbol": r["symbol"],
+            "kind": "amendment" if re.search(r":\s*amendment\s*/?\s*$", r["title"]) else "decision" if "/DEC/" in r["symbol"] or re.search(r":\s*decision\s*/?\s*$", r["title"]) else "resolution",
+            "title": re.sub(r"\s*:\s*(resolution|amendment|decision)\s*/?\s*$", "", r["title"]).strip(" :/"),
+            "date": r["date"],
+            "year": int(r["year"]),
+            "session": re.sub(r"^adopted by the (Human Rights Council|Commission on Human Rights)( of the Economic and Social Council)? at its ", "", r["statement"]),
+            "agenda_item": agenda(r["agenda_item_no"]),
+            "main_sponsors": split_outside_parens(r["main_sponsors"]),
+            "adoption": a,
+            "yes": num(r["yes"]) if counted else None, "no": num(r["no"]) if counted else None,
+            "abstain": num(r["abstain"]) if counted else None,
+            "doc_url": r["url_resolution"],
+            "record_url": r["record_url"],
+            "votes": votes.get(r["record_id"], {}) if a == "recorded vote" else {},
+        })
+    gv = {}
+    for v in csv.DictReader(open(VOTING / "ga_votes_long.csv", encoding="utf-8")):
+        if v["vote"] in ("Y", "N", "A"):
+            gv.setdefault(v["undl_id"], {})[v["iso3"]] = v["vote"]
+            names.setdefault(v["iso3"], v["country"].title())
+    for r in csv.DictReader(open(VOTING / "ga_resolutions.csv", encoding="utf-8")):
+        out.append({
+            "id": r["undl_id"],
+            "body": GA3,
+            "symbol": r["symbol"],
+            "kind": "resolution",
+            "title": re.sub(r"\s*:\s*resolution\s*/.*$", "", r["title"]).strip(" :/"),
+            "date": r["date"],
+            "year": int(r["year"]),
+            "session": f"{r['session']}th session",
+            "agenda_item": r["agenda_title"].strip().rstrip("."),
+            "main_sponsors": [],
+            "adoption": "recorded vote",
+            "yes": num(r["yes"]), "no": num(r["no"]), "abstain": num(r["abstain"]),
+            "doc_url": "http://undocs.org/" + r["symbol"],
+            "record_url": r["record_url"],
+            "votes": gv.get(r["undl_id"], {}),
+        })
+    out.sort(key=lambda x: x["date"], reverse=True)
+    names = {k: re.sub(r"\bUssr\b", "USSR", v) for k, v in names.items()}   # .title() lowercases the acronym
+    groups = un_groups()
+    span = lambda b: f"{min(x['year'] for x in out if x['body'] == b)}–{max(x['year'] for x in out if x['body'] == b)}"
+    return {
+        "dataset": "un_hr_all",
+        "title": f"UN human rights texts and votes: Commission on Human Rights {span(CHR)}, Human Rights Council {span('Human Rights Council')}, "
+                 f"General Assembly votes on Third Committee texts {span(GA3)}",
+        "source": "OHCHR voting records (searchlibrary.ohchr.org) and the UN Digital Library, compiled by Ł. Szoszkiewicz",
+        "source_url": "https://huggingface.co/datasets/lszoszk/hrc-voting",
+        "built": date.today().isoformat(),
+        "count": len(out),
+        "countries": dict(sorted(names.items())),
+        "groups": {k: groups[k] for k in sorted(names) if k in groups},
+        "vote_codes": {"Y": "yes", "N": "no", "A": "abstain"},
+        "records": out,
+    }
+
+
 def hrc_votes():
     res = [r for r in csv.DictReader(open(VOTING / "resolutions.csv", encoding="utf-8"))
            if r["body"] == "Human Rights Council" and r["vote_type"] == "RECORDED" and int(r["year"]) >= HRC_FROM_YEAR]
@@ -842,6 +926,37 @@ def hrc_all_schema(p):
             "Only a recorded vote has the official totals `yes`/`no`/`abstain` (null otherwise) and `votes` (ISO3 to",
             "\"Y\", \"N\" or \"A\"; empty otherwise): agreement between States can be counted only on recorded votes,",
             "while a share of texts adopted without a vote is counted on all records.", "",
+            "Fields:", *describe(p), ""]
+
+
+def un_hr_all_schema(p):
+    rec = p["records"]
+    bodies = Counter(r["body"] for r in rec)
+    span = lambda b: f"{min(r['year'] for r in rec if r['body'] == b)}–{max(r['year'] for r in rec if r['body'] == b)}"
+    kinds = Counter(r["adoption"] for r in rec)
+    no_group = sorted(k for k in p["countries"] if k not in p["groups"])
+    off = Counter(r["body"] for r in rec if r["votes"] and (r["yes"], r["no"], r["abstain"]) !=
+                  tuple(sum(v == c for v in r["votes"].values()) for c in "YNA"))
+    no_doc = Counter(r["body"] for r in rec if not r["doc_url"])
+    return ["## `WORKSHOP_DATA.un_hr_all`: UN human rights texts and votes, 1946 onwards (three bodies)", "",
+            "`{title, count, countries: {ISO3: name}, groups: {ISO3: regional group}, vote_codes: {Y,N,A}, records: [...]}`:",
+            "the shape of `hrc_all`, with one more field, `body`. " + "; ".join(f'"{b}" ({bodies[b]:,} records, {span(b)})' for b in (CHR, "Human Rights Council", GA3)) + ".",
+            "The Commission and the Council records are every text they acted on; the General Assembly records are only its",
+            "plenary recorded votes on Third Committee texts (the many Third Committee texts adopted without a vote are not here),",
+            "so a share of texts adopted without a vote can be counted for the Commission and the Council, never for the General Assembly.",
+            "`adoption`: " + ", ".join(f'\"{k}\" ({v:,})' for k, v in kinds.most_common()) + ".",
+            "`yes`/`no`/`abstain` are the official totals, set for a recorded vote and for a non-recorded vote (a vote counted",
+            "without a roll call, at the Commission), null otherwise. `votes` (ISO3 to \"Y\", \"N\" or \"A\") is filled only for a",
+            "recorded vote: agreement between States can be counted only there. Members differ: the Commission had 18 to 53,",
+            "the Council has 47, the General Assembly up to 193, so compare shares, not counts, across bodies.",
+            "Counting `votes` gives the roll call, which differs from the totals for " + " and ".join(f"{n} {b} records" for b, n in off.most_common()) +
+            " (gaps in the source): show both rather than silently picking one.",
+            "`groups` maps every ISO3 code to the State's UN regional group, States that no longer exist included (SUN USSR, YUG Yugoslavia)."
+            if not no_group else f"`groups` maps ISO3 codes to UN regional groups; {len(no_group)} have none.",
+            "`doc_url` is empty for " + " and ".join(f"{n:,} {b} records" for b, n in no_doc.most_common()) +
+            ": link `record_url` (the catalogue record) for those.",
+            "General Assembly records have no `main_sponsors` (empty list) and their `agenda_item` is the agenda title.",
+            f"In the samples, `votes` of the recorded votes is cut to {UN_HR_SAMPLE_VOTES} States to save space; the real records have every State that voted.", "",
             "Fields:", *describe(p), ""]
 
 
@@ -1075,8 +1190,27 @@ def main():
     ap.add_argument("--ten-only", action="store_true", help="build pdf_ten.json and add it to index.json, schema.md and samples.json")
     ap.add_argument("--venice-only", action="store_true", help="rebuild hrc.json (with regional groups), build hrc_all.json and pdfs.json, "
                     "and add them to index.json, schema.md and samples.json")
+    ap.add_argument("--un-hr-only", action="store_true", help="build un_hr_all.json (Commission, Council, General Assembly Third Committee) "
+                    "and add it to index.json, schema.md and samples.json")
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
+    if a.un_hr_only:
+        p = un_hr_all()
+        write("un_hr_all.json", p)
+        index = json.loads((OUT / "index.json").read_text())
+        index["datasets"]["un_hr_all"] = {"file": "un_hr_all.json", "count": p["count"]}
+        (OUT / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8")
+        sc = re.sub(r"## `WORKSHOP_DATA\.un_hr_all`.*?(?=\n## )", "", (OUT / "schema.md").read_text(), flags=re.S)
+        sc = sc.replace("## Rules for every app", "\n".join(un_hr_all_schema(p)) + "\n## Rules for every app", 1)
+        (OUT / "schema.md").write_text(re.sub(r"\n{3,}", "\n\n", sc), encoding="utf-8")
+        smp = json.loads((OUT / "samples.json").read_text())
+        rec = p["records"]   # one record per body: a General Assembly roll call, a Council text adopted without a vote, a Commission roll call
+        cut = lambda r: dict(r, votes=dict(list(r["votes"].items())[:UN_HR_SAMPLE_VOTES]))   # every request carries the samples
+        smp["un_hr_all"] = [cut(next(r for r in rec if r["body"] == GA3)), next(r for r in rec if r["body"] == "Human Rights Council" and r["adoption"] == "without a vote"),
+                            cut(next(r for r in rec if r["body"] == CHR and r["adoption"] == "recorded vote"))]
+        (OUT / "samples.json").write_text(json.dumps(smp, ensure_ascii=False, indent=1), encoding="utf-8")
+        print("  un_hr_all.json, index.json, schema.md, samples.json")
+        return
     if a.ten_only:
         index = json.loads((OUT / "index.json").read_text())
         p = pdf_ten(json.loads((OUT / "gc.json").read_text()))

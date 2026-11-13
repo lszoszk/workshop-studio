@@ -807,5 +807,79 @@
     }
    ]
   }
+ ],
+ "un_hr_all": [
+  {
+   "id": "4096575",
+   "body": "General Assembly (Third Committee)",
+   "symbol": "A/RES/80/199",
+   "kind": "resolution",
+   "title": "Effective promotion of the Declaration on the Rights of Persons Belonging to National or Ethnic, Religious and Linguistic Minorities",
+   "date": "2025-12-18",
+   "year": 2025,
+   "session": "80th session",
+   "agenda_item": "Human rights questions, including alternative approaches for improving the effective enjoyment of human rights and fundamental freedoms",
+   "main_sponsors": [],
+   "adoption": "recorded vote",
+   "yes": 173,
+   "no": 1,
+   "abstain": 3,
+   "doc_url": "http://undocs.org/A/RES/80/199",
+   "record_url": "https://digitallibrary.un.org/record/4096575",
+   "votes": {
+    "ALB": "Y",
+    "DZA": "Y",
+    "AND": "Y",
+    "AGO": "Y",
+    "ATG": "Y"
+   }
+  },
+  {
+   "id": "35639",
+   "body": "Human Rights Council",
+   "symbol": "A/HRC/RES/63/14",
+   "kind": "resolution",
+   "title": "Human rights and Indigenous Peoples",
+   "date": "2026-10-06",
+   "year": 2026,
+   "session": "63rd session",
+   "agenda_item": "Item 3",
+   "main_sponsors": [
+    "Guatemala",
+    "Mexico"
+   ],
+   "adoption": "without a vote",
+   "yes": null,
+   "no": null,
+   "abstain": null,
+   "doc_url": "http://undocs.org/A/HRC/RES/63/14",
+   "record_url": "https://searchlibrary.ohchr.org/record/35639",
+   "votes": {}
+  },
+  {
+   "id": "21428",
+   "body": "Commission on Human Rights",
+   "symbol": "E/CN.4/DEC/2005/116",
+   "kind": "decision",
+   "title": "Proposed reform of the Secretary-General in the area of human rights",
+   "date": "2005-04-22",
+   "year": 2005,
+   "session": "adopted by the Commission on Human Rights  at its 61st session",
+   "agenda_item": "Item 3",
+   "main_sponsors": [],
+   "adoption": "recorded vote",
+   "yes": 34,
+   "no": 15,
+   "abstain": 4,
+   "doc_url": "",
+   "record_url": "https://searchlibrary.ohchr.org/record/21428",
+   "votes": {
+    "ARG": "Y",
+    "ARM": "A",
+    "AUS": "N",
+    "BTN": "Y",
+    "BRA": "Y"
+   }
+  }
  ]
 }

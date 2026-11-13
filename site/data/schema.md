@@ -202,6 +202,43 @@ Documents: A/81/351 (UN report, 2026: Secretary-General's report on human rights
 `studio.openSource(id, page, quote)` opens that document's PDF at that page next to the app and marks `quote` on it.
 Send a model one document per request: all ten together are too long for one.
 
+## `WORKSHOP_DATA.un_hr_all`: UN human rights texts and votes, 1946 onwards (three bodies)
+
+`{title, count, countries: {ISO3: name}, groups: {ISO3: regional group}, vote_codes: {Y,N,A}, records: [...]}`:
+the shape of `hrc_all`, with one more field, `body`. "Commission on Human Rights" (3,082 records, 1946–2006); "Human Rights Council" (3,324 records, 2006–2026); "General Assembly (Third Committee)" (708 records, 1970–2025).
+The Commission and the Council records are every text they acted on; the General Assembly records are only its
+plenary recorded votes on Third Committee texts (the many Third Committee texts adopted without a vote are not here),
+so a share of texts adopted without a vote can be counted for the Commission and the Council, never for the General Assembly.
+`adoption`: "without a vote" (3,868), "recorded vote" (2,439), "non-recorded vote" (371), "withdrawn" (247), "adopted unanimously" (142), "not considered" (32), "no voting information" (15).
+`yes`/`no`/`abstain` are the official totals, set for a recorded vote and for a non-recorded vote (a vote counted
+without a roll call, at the Commission), null otherwise. `votes` (ISO3 to "Y", "N" or "A") is filled only for a
+recorded vote: agreement between States can be counted only there. Members differ: the Commission had 18 to 53,
+the Council has 47, the General Assembly up to 193, so compare shares, not counts, across bodies.
+Counting `votes` gives the roll call, which differs from the totals for 31 Human Rights Council records and 18 Commission on Human Rights records (gaps in the source): show both rather than silently picking one.
+`groups` maps every ISO3 code to the State's UN regional group, States that no longer exist included (SUN USSR, YUG Yugoslavia).
+`doc_url` is empty for 3,078 Commission on Human Rights records and 1,750 Human Rights Council records: link `record_url` (the catalogue record) for those.
+General Assembly records have no `main_sponsors` (empty list) and their `agenda_item` is the agenda title.
+In the samples, `votes` of the recorded votes is cut to 5 States to save space; the real records have every State that voted.
+
+Fields:
+- `id` (str): e.g. "35639"
+- `body` (str): e.g. "Human Rights Council"
+- `symbol` (str): e.g. "A/HRC/RES/63/14"
+- `kind` (str): e.g. "resolution"
+- `title` (str): e.g. "Human rights and Indigenous Peoples"
+- `date` (str): e.g. "2026-10-06"
+- `year` (int): e.g. 2026
+- `session` (str): e.g. "63rd session"
+- `agenda_item` (str): e.g. "Item 3"
+- `main_sponsors` (list): e.g. "Russian Federation", "Egypt", "China", "Cuba"
+- `adoption` (str): e.g. "without a vote"
+- `yes` (NoneType): e.g. null
+- `no` (NoneType): e.g. null
+- `abstain` (NoneType): e.g. null
+- `doc_url` (str): e.g. "http://undocs.org/A/HRC/RES/63/14"
+- `record_url` (str): e.g. "https://searchlibrary.ohchr.org/record/35639"
+- `votes` (object): e.g. {}
+
 ## Rules for every app
 
 - Always show where a number comes from: n of records, the filter applied, and a link

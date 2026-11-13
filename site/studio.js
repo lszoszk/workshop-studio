@@ -2612,7 +2612,7 @@
   function fileMetaLine(key) {
     const d = S.index.datasets[key];
     if (key === 'library' || key === 'pdfs') return `${fmt(d.count)} PDFs · passage by passage, with pages`;
-    if (key === 'hrc_all') return `${fmt(d.count)} texts · opens in Excel`;
+    if (key === 'hrc_all' || key === 'un_hr_all') return `${fmt(d.count)} texts · opens in Excel`;
     if (key === 'wiki') return `${fmt(d.count)} pages · every quotation verified`;
     if (key === 'uhri') return `${fmt(S.countryCount)} records · opens in Excel`;
     if (key === 'gc') return `${fmt(d.count)} paragraphs · opens in Excel`;
@@ -2853,7 +2853,7 @@
     };
     let cols = Object.keys(d.records[0]);
     let row = (r) => cols.map((c) => r[c]);
-    if (key === 'hrc' || key === 'hrc_all') {
+    if (key === 'hrc' || key === 'hrc_all' || key === 'un_hr_all') {
       const word = { Y: 'yes', N: 'no', A: 'abstained' };
       cols = cols.filter((c) => c !== 'votes').concat('votes');
       row = (r) => cols.map((c) => (c === 'votes' ? Object.entries(r.votes || {}).map(([k, v]) => `${d.countries[k] || k}: ${word[v] || v}`) : r[c]));
