@@ -699,12 +699,27 @@ def test_the_wall_shows_what_participants_sent(base_url, browser, fake_api):
                                  data=json.dumps({"seat": "TEST22", "title": "Two General Comments", "model": "claude", "country": "Kenya",
                                                   "files": ["pdf_text", "pdf_text_2"], "html": app}).encode())
     urllib.request.urlopen(req).read()
+    # a third built on a participant's own file, which never reaches the server: drawn without it, with a note
+    req = urllib.request.Request(api + "/gallery", method="POST", headers={"Content-Type": "application/json"},
+                                 data=json.dumps({"seat": "TEST22", "title": "Own notes and two General Comments", "model": "claude", "country": "Kenya",
+                                                  "files": ["own_1", "pdf_text", "pdf_text_2"], "html": app}).encode())
+    urllib.request.urlopen(req).read()
     page.goto(base_url + f"wall.html?api={api}")
-    page.wait_for_function("() => document.querySelectorAll('.tile').length === 2")
-    caps = page.locator(".tile .cap").all_inner_texts()
-    assert "COLOMBIA" in caps[1].upper() and "KENYA" in caps[0].upper(), caps   # newest first; the studio sent the seat's country
-    page.wait_for_function("() => document.querySelectorAll('.thumb iframe').length === 2", timeout=30000)
+    page.wait_for_function("() => document.querySelectorAll('.tile').length === 3")
+    page.wait_for_function("() => document.querySelectorAll('.thumb iframe').length === 3", timeout=30000)
+    assert "Could not draw" not in page.inner_text("#tiles")
+    assert "own file" in page.locator(".tile").first.inner_text()
     page.locator(".tile").first.click()
+    page.wait_for_url("**/gallery/view.html?wall=*")
+    page.frame_locator("#frame").locator("body").get_by_text("CCPR/C/GC/32").first.wait_for(timeout=20000)
+    assert "own file" in page.inner_text(".bar")
+    page.goto(base_url + f"wall.html?api={api}")
+    page.wait_for_function("() => document.querySelectorAll('.tile').length === 3")
+    page.locator(".tile").nth(1).scroll_into_view_if_needed()
+    caps = page.locator(".tile .cap").all_inner_texts()
+    assert "COLOMBIA" in caps[2].upper() and "KENYA" in caps[1].upper(), caps   # newest first; the studio sent the seat's country
+    page.wait_for_function("() => document.querySelectorAll('.thumb iframe').length === 3", timeout=30000)
+    page.locator(".tile").nth(1).click()
     page.wait_for_url("**/gallery/view.html?wall=*")
     body = page.frame_locator("#frame").locator("body")
     body.get_by_text("CCPR/C/GC/32").first.wait_for(timeout=20000)   # the second file reached the app

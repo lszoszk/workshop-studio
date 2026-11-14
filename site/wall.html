@@ -40,6 +40,7 @@
   .cap { padding: 12px 14px 14px; }
   .cap b { display: block; font: 400 19px/1.25 var(--serif); margin-bottom: 4px; }
   .cap span { font: 12px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .cap .own { display: block; margin-top: 6px; font: italic 13px/1.35 var(--serif); letter-spacing: 0; text-transform: none; }
   .empty { padding: 90px 24px; text-align: center; }
   .empty b { display: block; font: 400 30px/1.2 var(--serif); margin-bottom: 8px; }
   .empty span { color: var(--muted); }
@@ -59,7 +60,7 @@
   <main class="tiles" id="tiles"></main>
   <p class="empty" id="empty" hidden><b>Nothing on the wall yet.</b><span>In the studio, <b>Send to wall</b> puts your app here.</span></p>
 </div>
-<script src="preview-doc.js?v=2026-11-14a"></script>
+<script src="preview-doc.js?v=2026-11-14b"></script>
 <script>
 (async function () {
   const W = 1280, H = 800;   // the size an app is drawn at before it is scaled into its tile
@@ -73,6 +74,8 @@
   const local = (h) => h === 'localhost' || h === '127.0.0.1';
   const testApi = api && local(location.hostname) && local(new URL(api).hostname) ? api.replace(/\/$/, '') : null;
   const bases = testApi ? [testApi] : config.routes.filter((r) => r.type === 'server').map((r) => r.base);
+  const ownFile = (item) => (item.files || []).some((k) => k.startsWith('own_'));
+  const OWN_NOTE = 'Built on the participant\'s own file, which stays on their computer: shown here without it.';
   const cache = {};   // a data file is fetched once, however many apps use it
   const dataFor = (country) => (k) => {
     const f = k === 'uhri' ? (index.countries.find((c) => c.name === country) || index.countries[0]).file : index.datasets[k].file;
@@ -88,7 +91,8 @@
     const { tile, item, base } = queue.shift();
     try {
       const html = await text(base + '/gallery/' + item.id);
-      const doc = await PreviewDoc.build(html, { chart, runtime, dataText: dataFor(item.country), files: item.files || [] });
+      // a participant's own file (own_<n>) stays in their browser and never reaches the server: the app is drawn without it
+      const doc = await PreviewDoc.build(html, { chart, runtime, dataText: dataFor(item.country), files: (item.files || []).filter((k) => !k.startsWith('own_')) });
       const f = document.createElement('iframe');
       f.setAttribute('sandbox', 'allow-scripts');
       f.setAttribute('tabindex', '-1');
@@ -138,7 +142,7 @@
       a.className = 'tile';
       a.href = 'gallery/view.html?wall=' + encodeURIComponent(item.id) + (testApi ? '&api=' + encodeURIComponent(testApi) : '');
       a.innerHTML = `<div class="thumb"><span class="wait">Drawing…</span></div>
-        <div class="cap"><b>${esc(item.title)}</b><span>${esc(item.country)} · ${esc(m)} · ${esc((item.created || '').slice(11, 16))}</span></div>`;
+        <div class="cap"><b>${esc(item.title)}</b><span>${esc(item.country)} · ${esc(m)} · ${esc((item.created || '').slice(11, 16))}</span>${ownFile(item) ? `<span class="own">${OWN_NOTE}</span>` : ''}</div>`;
       a._job = { tile: a, item, base };
       tiles.prepend(a);
       fit(a.querySelector('.thumb'));

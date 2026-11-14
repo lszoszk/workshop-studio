@@ -6,7 +6,7 @@
 <title>Gallery app</title>
 <meta name="robots" content="noindex, nofollow">
 <script src="../gate.js"></script>
-<link rel="stylesheet" href="../studio.css?v=2026-11-14a">
+<link rel="stylesheet" href="../studio.css?v=2026-11-14b">
 <style>
   body { display: flex; flex-direction: column; }
   .bar { display: flex; gap: 14px; align-items: center; padding: 8px 14px; background: var(--surface); border-bottom: 1px solid var(--line); }
@@ -24,8 +24,8 @@
     <div class="drawer-body" id="drawerBody"></div>
   </aside>
 </div>
-<script src="../pdf-view.js?v=2026-11-14a"></script>
-<script src="../preview-doc.js?v=2026-11-14a"></script>
+<script src="../pdf-view.js?v=2026-11-14b"></script>
+<script src="../preview-doc.js?v=2026-11-14b"></script>
 <script>
 (async function () {
   // ?app=model/prompt: a gallery app; ?wall=id: an app a participant sent to the wall, run on their country and files
@@ -51,10 +51,12 @@
     if (!item) { what.textContent = 'This app is no longer on the wall.'; return; }
     html = await text(base + '/gallery/' + wall);
     country = item.country;
-    files = item.files || [];
+    // a participant's own file (own_<n>) stays in their browser and never reaches the server: the app runs without it
+    files = (item.files || []).filter((k) => !k.startsWith('own_'));
     const m = (config.models[item.model] || {}).label || 'A model';
     const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    what.innerHTML = `<b>${esc(m)}</b> · ${esc(item.title)} · ${esc(country)}`;
+    what.innerHTML = `<b>${esc(m)}</b> · ${esc(item.title)} · ${esc(country)}` +
+      (files.length < (item.files || []).length ? ' · <i>built on the participant\'s own file, which stays on their computer: shown here without it</i>' : '');
     document.title = `${item.title} · the wall`;
   } else {
     const g = await text('gallery.json').then(JSON.parse);
