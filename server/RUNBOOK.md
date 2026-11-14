@@ -65,6 +65,7 @@ Admin page: `https://150.254.115.204/studio-api/admin?key=<STUDIO_ADMIN_KEY>`. R
 - the **kill switch**: every chat and gallery post gets 503 until you press **Resume**, and `/health` says `accepting: false`
 - **Set default model**: what a request with an empty `model` uses
 - the **Wall**: remove a page from the projector
+- links to the **room chat** (Venice, Geneva): `…/studio-api/admin/room?key=…&course=venice`, a live page for a laptop or a phone. What you write reaches every studio of the course within 15 seconds, as a strip at the top with clickable links (also in recorded mode); participants write back from **Messages** in the studio header, and only you see that. **take back** removes one of your messages; **Clear this course's chat** deletes everything after the class.
 
 The same actions as JSON: `POST /studio-api/admin` with `{"key", "action": disable|enable|budget|pause|resume|default_model|remove_gallery, "seat", "value"}`.
 
@@ -124,4 +125,4 @@ ssh -t amuvmuser@150.254.115.204 'sudo bash /home/amuvmuser/workshop-studio/serv
 ssh amuvmuser@150.254.115.204 'cd /home/amuvmuser/workshop-studio && docker compose -f server/docker-compose.yml down && docker image rm studio-api:latest'
 ```
 
-Then revoke both OpenRouter keys. `state/` holds the usage table and the wall: archive it or delete it.
+Then revoke both OpenRouter keys. `state/` holds the usage table, the wall and the room chat (`state/room/`): archive it or delete it.

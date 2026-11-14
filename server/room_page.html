@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Room chat</title>
+<style>
+  :root { --ink: #1d1b18; --muted: #6b655b; --rule: #e3ddd2; --paper: #faf8f4; --red: #9b1c2c; --me: #fbeef0; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: var(--paper);
+         display: flex; flex-direction: column; }
+  header { padding: 10px 16px; border-bottom: 1px solid var(--rule); display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; background: #fff; }
+  header h1 { font: 600 17px/1.2 Georgia, serif; margin: 0; }
+  header a { color: var(--red); }
+  header .st { color: var(--muted); font-size: 13px; margin-left: auto; }
+  #log { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .m { max-width: 720px; padding: 8px 12px; border: 1px solid var(--rule); border-radius: 8px; background: #fff; overflow-wrap: anywhere; }
+  .m.host { align-self: flex-end; background: var(--me); border-color: #ecc8ce; }
+  .m .who { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+  .m .who b { color: var(--ink); }
+  .m .t { white-space: pre-wrap; }
+  .m a { color: var(--red); }
+  .m button { font: inherit; font-size: 12px; color: var(--muted); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; margin-left: 6px; }
+  .empty { color: var(--muted); font-style: italic; }
+  form { display: flex; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--rule); background: #fff; align-items: flex-end; }
+  textarea { flex: 1; font: inherit; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; resize: vertical; min-height: 44px; max-height: 40vh; }
+  form button { font: 600 15px system-ui, sans-serif; padding: 10px 16px; border: 0; border-radius: 6px; background: var(--red); color: #fff; cursor: pointer; }
+  .foot { padding: 0 16px 10px; background: #fff; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .foot button { font: inherit; color: var(--muted); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+  .err { color: var(--red); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Room chat · <span id="course">__COURSE__</span></h1>
+  <span><a href="#" data-course="venice">Venice</a> · <a href="#" data-course="geneva">Geneva</a></span>
+  <span class="st" id="st">connecting…</span>
+</header>
+<div id="log" aria-live="polite"><p class="empty">No messages yet.</p></div>
+<form id="f">
+  <textarea id="text" maxlength="1000" placeholder="To everyone in the studio: a link, a hint, the time left…" aria-label="Message to the room"></textarea>
+  <button type="submit">Send to the room</button>
+</form>
+<div class="foot"><span>Enter sends · Shift+Enter: new line · participants see your messages at the top of the studio within 15 seconds; their messages appear here</span>
+  <button type="button" id="clear">Clear this course's chat</button></div>
+<script>
+(function () {
+  'use strict';
+  const params = new URLSearchParams(location.search);
+  const key = params.get('key') || '', course = document.getElementById('course').textContent;
+  const base = location.pathname.replace(/\/admin\/room$/, '');
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const linkify = (s) => esc(s).replace(/https?:\/\/(?:(?!&quot;|&gt;)[^\s<'])+/g, (u) => {
+    const tail = (/[.,;:!?)\]]+$/.exec(u) || [''])[0], url = u.slice(0, u.length - tail.length);
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>${tail}`;
+  });
+  const time = (iso) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  let last = -1, seenGuests = 0, firstLoad = true;
+
+  document.querySelectorAll('[data-course]').forEach((a) => {
+    a.href = '?key=' + encodeURIComponent(key) + '&course=' + a.dataset.course;
+  });
+
+  function render(items) {
+    const top = items.length ? items[items.length - 1].id : 0;
+    if (top === last && items.length === $('log').children.length) return;
+    const atBottom = $('log').scrollHeight - $('log').scrollTop - $('log').clientHeight < 40;
+    last = top;
+    $('log').innerHTML = items.length ? items.map((i) => i.from === 'host'
+      ? `<div class="m host"><div class="who"><b>You, to the room</b> · ${time(i.at)}<button type="button" data-remove="${i.id}">take back</button></div><div class="t">${linkify(i.text)}</div></div>`
+      : `<div class="m"><div class="who"><b>${esc(i.label || i.seat || 'no seat')}</b>${i.country ? ' · ' + esc(i.country) : ''}${i.seat && i.label ? ' · ' + esc(i.seat) : ''} · ${time(i.at)}</div><div class="t">${linkify(i.text)}</div></div>`).join('')
+      : '<p class="empty">No messages yet.</p>';
+    if (atBottom || firstLoad) $('log').scrollTop = $('log').scrollHeight;
+    const guests = items.filter((i) => i.from === 'guest').length;
+    if (!firstLoad && guests > seenGuests && document.hidden) document.title = `(${guests - seenGuests}) Room chat`;
+    if (!document.hidden) { seenGuests = guests; document.title = 'Room chat'; }
+    firstLoad = false;
+  }
+
+  async function call(method, body) {
+    const res = method === 'GET'
+      ? await fetch(`${base}/admin/room.json?key=${encodeURIComponent(key)}&course=${encodeURIComponent(course)}`, { cache: 'no-store' })
+      : await fetch(`${base}/admin/room`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, course, ...body }) });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(j.error || res.status);
+    return j;
+  }
+
+  async function poll() {
+    try {
+      render((await call('GET')).items);
+      $('st').textContent = 'updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      $('st').className = 'st';
+    } catch (e) {
+      $('st').textContent = 'not connected: ' + e.message;
+      $('st').className = 'st err';
+    }
+  }
+
+  $('f').onsubmit = async (e) => {
+    e.preventDefault();
+    const text = $('text').value.trim();
+    if (!text) return;
+    try {
+      render((await call('POST', { action: 'post', text })).items);
+      $('text').value = '';
+      $('log').scrollTop = $('log').scrollHeight;
+    } catch (err) {
+      $('st').textContent = 'not sent: ' + err.message;
+      $('st').className = 'st err';
+    }
+  };
+  $('text').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('f').requestSubmit(); }
+  });
+  $('log').addEventListener('click', async (e) => {
+    const id = e.target.dataset && e.target.dataset.remove;
+    if (!id) return;
+    try { render((await call('POST', { action: 'remove', id: Number(id) })).items); } catch (err) { $('st').textContent = 'not removed: ' + err.message; }
+  });
+  $('clear').onclick = async () => {
+    if (!confirm('Delete every message in this course\'s chat, yours and the participants\'? This cannot be undone.')) return;
+    try { render((await call('POST', { action: 'clear' })).items); } catch (err) { $('st').textContent = 'not cleared: ' + err.message; }
+  };
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { document.title = 'Room chat'; poll(); } });
+  poll();
+  setInterval(poll, 4000);
+  $('text').focus();
+})();
+</script>
+</body>
+</html>

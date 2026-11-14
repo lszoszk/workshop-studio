@@ -75,6 +75,14 @@ The front fails over to the next route only when the request fails before the fi
 
 `GET /gallery` → `[{"id", "seat", "country", "title", "model", "created"}]`, newest first. `GET /gallery/{id}` → the stored HTML (`text/html`). The Worker does not implement the gallery.
 
+## `GET /room` and `POST /room`: the room chat
+
+`GET /room?course=venice` → `{"items": [{"id", "at", "text"}]}`: the facilitator's messages to everyone in the course (the newest 50, oldest first; `at` in UTC). No seat needed, so recorded mode gets them too. The studio asks every 15 s while the page is visible.
+
+`POST {"course", "text", "seat", "sid"}` (text ≤ 1,000 characters; a seat or the page's session id; 8 messages in 5 minutes per sender) → `{"ok": true, "id"}`: a participant's message to the facilitator. It is never shown to the other participants.
+
+The facilitator reads and writes on `GET /admin/room?key=…&course=…` (a live page; JSON at `/admin/room.json`, actions `post`, `remove` and `clear` on `POST /admin/room`). Messages are kept in `state/room/<course>.json` until the facilitator clears them; logs hold who and how long, never the text. The Worker does not implement the room.
+
 ## Logging
 
 Seat, model, purpose, tokens, cost, seconds, status. Never message content, never IP addresses.

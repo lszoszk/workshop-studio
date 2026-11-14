@@ -20,7 +20,10 @@ Endpoints (under /studio-api):
   POST /chat              {seat, model, purpose, messages} → text/event-stream
   POST /gallery           {seat, title, model, prompt_id, html} → put a participant's page on the wall
   GET  /gallery           the list for the wall;  GET /gallery/{id} → the page itself
+  GET  /room?course=      the facilitator's messages to the room;  POST /room {course, text, seat, sid} → a
+                          participant's message to the facilitator (kept in state/room/ until cleared)
   GET  /admin?key=        facilitator page; POST /admin does the actions (not part of the contract)
+  GET  /admin/room?key=&course=   the facilitator's live room chat (JSON: /admin/room.json; POST /admin/room)
 
 Configuration: environment variables, see Config below and RUNBOOK.md.
 Run: uvicorn --factory app:create_app --port 8011 --no-access-log   (from server/)
@@ -35,6 +38,7 @@ import os
 import re
 import secrets
 import time
+from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -51,19 +55,27 @@ from seats import Seats, normalise
 
 VERSION = "2026-11-01"
 HERE = Path(__file__).resolve().parent
+ROOM_PAGE = (HERE / "room_page.html").read_text(encoding="utf-8")   # the facilitator's live room chat
 OPENROUTER = "https://openrouter.ai/api/v1"
 ORIGINS = "https://lszoszk.github.io,http://localhost:8766,http://127.0.0.1:8766"
 GALLERY_LINK_HOSTS = ("docs.un.org", "undocs.org", "uhri.ohchr.org", "searchlibrary.ohchr.org")
 GALLERY_MAX_BYTES = 300_000
 GALLERY_PER_SEAT = 20
 FEEDBACK_MAX_CHARS = 3000
+# the room chat: the facilitator writes to everyone in a course, a participant writes to the facilitator
+ROOM_COURSE = re.compile(r"[a-z0-9-]{1,20}")
+ROOM_MAX_CHARS = 1000
+ROOM_MAX_ITEMS = 3000          # per course; past it, participants are told to speak to the facilitator
+ROOM_SHOWN = 50                # the newest messages from the facilitator that a participant's page gets
+ROOM_RATE = (8, 300)           # a participant (session or seat): 8 messages in 5 minutes
 FEEDBACK_MAX_ITEMS = 2000
 MAX_BODY_BYTES = 1_000_000
 MAX_CHAT_BYTES = 8_000_000   # a conversation plus up to three screenshots (nginx: client_max_body_size 8m)
 # activity events (POST /studio-api/events): the names the front sends; see track() in site/studio.js
 EVENT_NAMES = {"open", "session", "pick", "plan_open", "plan_build", "build", "build_fail", "app_error", "repair",
                "query", "look", "gallery_in", "own_file", "own_samples", "picture", "model", "save", "wall", "kit",
-               "advanced", "reset", "rescue", "ask_cached", "json_view", "route", "seat_ok", "seat_wrong", "seat_skip"}
+               "advanced", "reset", "rescue", "ask_cached", "json_view", "route", "seat_ok", "seat_wrong", "seat_skip",
+               "room_msg", "room_open", "room_sent"}
 EVENT_FIELD = re.compile(r"[a-z_]{1,20}")
 EVENT_VALUE = re.compile(r"[A-Za-z0-9_.:/+\-]{0,60}")   # ids and codes: no spaces, so no sentence fits
 MAX_EVENTS_PER_POST = 100
@@ -275,6 +287,8 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
     gallery_dir.mkdir(parents=True, exist_ok=True)
     feedback_dir = cfg.state_dir / "feedback"
     feedback_dir.mkdir(parents=True, exist_ok=True)
+    room_dir = cfg.state_dir / "room"
+    room_dir.mkdir(parents=True, exist_ok=True)
     systems = {"build": build_system_prompt(cfg.data_dir), "inapp": INAPP_SYSTEM, "question": None}
     client = httpx.AsyncClient(transport=transport, timeout=httpx.Timeout(10.0, read=180.0),
                                limits=httpx.Limits(max_connections=100, max_keepalive_connections=20))
@@ -646,6 +660,83 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         log_event(event="feedback", seat=item["seat"], id=fid, chars=len(item["text"]))
         return {"ok": True, "id": fid}
 
+    # ── the room chat: one file per course (state/room/<course>.json); messages stay until the facilitator clears
+    # them. Logs hold who and how long, never the text. ──
+    room_cache: dict[str, list] = {}
+    room_hits: dict[str, deque] = defaultdict(deque)
+
+    def room(course: str) -> list[dict]:
+        if course not in room_cache:
+            p = room_dir / f"{course}.json"
+            try:
+                room_cache[course] = json.loads(p.read_text()) if p.exists() else []
+            except (OSError, ValueError):
+                room_cache[course] = []
+        return room_cache[course]
+
+    def room_save(course: str):
+        p = room_dir / f"{course}.json"
+        tmp = p.with_suffix(".tmp")
+        tmp.write_text(json.dumps(room(course), ensure_ascii=False))
+        tmp.replace(p)
+
+    def room_add(course: str, item: dict) -> dict:
+        items = room(course)
+        item = {"id": (items[-1]["id"] + 1) if items else 1,
+                "at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), **item}
+        items.append(item)
+        room_save(course)
+        return item
+
+    def room_course(value) -> str:
+        c = str(value or "")
+        if not ROOM_COURSE.fullmatch(c):
+            raise Refusal(400, "Unknown course", "bad_course")
+        return c
+
+    def room_text(value) -> str:
+        if not isinstance(value, str) or not value.strip():
+            raise Refusal(400, "There is nothing to send", "no_text")
+        return value.strip()[:ROOM_MAX_CHARS]
+
+    @app.get("/studio-api/room")
+    async def room_get(course: str = ""):
+        """What the facilitator sent to the room: everyone in the course may read it, with or without a seat."""
+        try:
+            c = room_course(course)
+        except Refusal as e:
+            return refuse(e)
+        host = [{"id": i["id"], "at": i["at"], "text": i["text"]} for i in room(c) if i["from"] == "host"]
+        return JSONResponse({"items": host[-ROOM_SHOWN:]}, headers={"Cache-Control": "no-store"})
+
+    @app.post("/studio-api/room")
+    async def room_post(request: Request):
+        """A participant's message to the facilitator; it reaches only the facilitator's room page."""
+        try:
+            d = await read_json(request)
+            c, text = room_course(d.get("course")), room_text(d.get("text"))
+            seat = seats.get(d.get("seat")) if d.get("seat") else None   # a recorded-mode visitor has no seat
+            sid = str(d.get("sid") or "")
+            sid = sid if re.fullmatch(r"[0-9a-f]{8,16}", sid) else None
+            who = seat["code"] if seat else sid
+            if not who:
+                raise Refusal(400, "A message needs a seat or a session", "no_sender")
+            if sum(1 for i in room(c) if i["from"] == "guest") >= ROOM_MAX_ITEMS:
+                raise Refusal(429, "The room chat is full; tell the facilitator in person", "room_full")
+            hits, now = room_hits[f"{c}:{who}"], time.monotonic()
+            while hits and now - hits[0] >= ROOM_RATE[1]:
+                hits.popleft()
+            if len(hits) >= ROOM_RATE[0]:
+                raise Refusal(429, "Too many messages, wait a minute", "room_rate")
+            hits.append(now)
+        except Refusal as e:
+            return refuse(e)
+        item = room_add(c, {"from": "guest", "text": text, "seat": seat["code"] if seat else None,
+                            "label": seat.get("label") if seat else None, "country": seat.get("country") if seat else None,
+                            "sid": sid})
+        log_event(event="room", course=c, seat=item["seat"], chars=len(text))
+        return {"ok": True, "id": item["id"]}
+
     @app.get("/studio-api/gallery")
     async def gallery_list():
         keep = ("id", "seat", "country", "title", "model", "prompt_id", "files", "created")
@@ -730,6 +821,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
 td,th{{border-bottom:1px solid #ddd;padding:4px 8px;text-align:left}}form{{display:inline}}tr.off{{opacity:.5}}
 .bar{{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin:12px 0}}.paused{{color:#b00;font-weight:600}}</style>
 <h1>Workshop Studio · admin</h1>{f"<p><b>{e(note)}</b></p>" if note else ""}
+<p>Room chat: <a href="/studio-api/admin/room?key={k}&amp;course=venice">Venice</a> · <a href="/studio-api/admin/room?key={k}&amp;course=geneva">Geneva</a></p>
 <div class="bar"><span class="{'paused' if s['paused'] else ''}">{'PAUSED: every seat is refused' if s['paused'] else 'Running'}</span>
 {form('resume' if s['paused'] else 'pause', 'Resume all seats' if s['paused'] else 'Kill switch: pause all seats')}
 <span>Spent today ${s['spent_today']:.2f} / ${s['daily_budget']:.0f} · OpenRouter balance {bal} · times in UTC</span>
@@ -737,6 +829,56 @@ td,th{{border-bottom:1px solid #ddd;padding:4px 8px;text-align:left}}form{{displ
 <table><tr><th>Seat</th><th>Label</th><th>Country</th><th>Spent / budget</th><th>Req</th><th>Err</th><th>Last request</th>
 <th>Last error</th><th></th></tr>{rows}</table><h2>Feedback ({len(s["feedback"])})</h2><ul>{fb}</ul><h2>Wall</h2><ul>{wall}</ul>"""
         return HTMLResponse(body, headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
+
+    @app.get("/studio-api/admin/room.json")
+    async def admin_room_json(key: str = "", course: str = ""):
+        if not admin_ok(key):
+            return refuse(Refusal(403, "Wrong admin key", "admin"))
+        try:
+            c = room_course(course)
+        except Refusal as e:
+            return refuse(e)
+        return JSONResponse({"course": c, "items": room(c)}, headers={"Cache-Control": "no-store"})
+
+    @app.post("/studio-api/admin/room")
+    async def admin_room_post(request: Request):
+        """{key, course, action: post | remove | clear, text, id}: post to the room, take one of your messages back,
+        or clear the course's chat after the class."""
+        try:
+            d = await read_json(request)
+            if not admin_ok(str(d.get("key", ""))):
+                raise Refusal(403, "Wrong admin key", "admin")
+            c, action = room_course(d.get("course")), d.get("action")
+            if action == "post":
+                item = room_add(c, {"from": "host", "text": room_text(d.get("text"))})
+                log_event(event="room", course=c, seat="host", chars=len(item["text"]))
+            elif action == "remove":
+                items = room(c)
+                keep = [i for i in items if not (i["from"] == "host" and i["id"] == d.get("id"))]
+                if len(keep) == len(items):
+                    raise Refusal(404, "No such message", "not_found")
+                items[:] = keep
+                room_save(c)
+            elif action == "clear":
+                room(c).clear()
+                room_save(c)
+                log_event(event="room_clear", course=c)
+            else:
+                raise Refusal(400, "Unknown action", "bad_action")
+        except Refusal as e:
+            return refuse(e)
+        return JSONResponse({"ok": True, "course": c, "items": room(c)}, headers={"Cache-Control": "no-store"})
+
+    @app.get("/studio-api/admin/room")
+    async def admin_room_page(key: str = "", course: str = "venice"):
+        if not admin_ok(key):
+            return refuse(Refusal(403, "Wrong admin key", "admin"))
+        try:
+            c = room_course(course)
+        except Refusal as e:
+            return refuse(e)
+        page = ROOM_PAGE.replace("__COURSE__", htmlmod.escape(c))
+        return HTMLResponse(page, headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
 
     @app.get("/studio-api/admin/events")
     async def admin_events(key: str = "", day: str = ""):

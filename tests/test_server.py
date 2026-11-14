@@ -881,3 +881,63 @@ def test_activity_events_keep_codes_and_drop_content(env):
     assert env.client.get("/studio-api/admin/events").status_code == 403
     got = env.client.get("/studio-api/admin/events", params={"key": "admin-test"})
     assert got.status_code == 200 and got.text.count("\n") == 3
+
+
+# ── the room chat: the facilitator to everyone in a course, a participant to the facilitator ──
+
+def room_admin(env, **body):
+    return env.client.post("/studio-api/admin/room", json={"key": "admin-test", "course": "venice", **body})
+
+
+def test_the_facilitator_writes_to_the_room_and_everyone_reads_it(env):
+    assert env.client.get("/studio-api/room?course=venice").json() == {"items": []}
+    assert room_admin(env, action="post", text="  Slides: https://example.org/day2  ").status_code == 200
+    items = env.client.get("/studio-api/room?course=venice").json()["items"]
+    assert [i["text"] for i in items] == ["Slides: https://example.org/day2"] and set(items[0]) == {"id", "at", "text"}
+    assert env.client.get("/studio-api/room?course=geneva").json()["items"] == []      # one chat per course
+    env.client.post("/studio-api/admin", data={"key": "admin-test", "action": "pause"})   # the models are paused, not the room
+    assert len(env.client.get("/studio-api/room?course=venice").json()["items"]) == 1
+    assert env.client.post("/studio-api/room", json={"course": "venice", "text": "Still here?", "sid": "0123abcd"}).status_code == 200
+
+
+def test_a_participant_writes_to_the_facilitator_only(env):
+    r = env.client.post("/studio-api/room", json={"course": "venice", "text": "Which file for the voting app?", "seat": "abcdef"})
+    assert r.status_code == 200 and r.json()["ok"]
+    env.client.post("/studio-api/room", json={"course": "venice", "text": "x" * 5000, "sid": "0123abcd"})   # recorded mode: no seat
+    assert env.client.get("/studio-api/room?course=venice").json()["items"] == []       # never shown to the other participants
+    items = env.client.get("/studio-api/admin/room.json?key=admin-test&course=venice").json()["items"]
+    assert [i["from"] for i in items] == ["guest", "guest"]
+    assert items[0]["seat"] == "ABCDEF" and items[0]["country"] == "Switzerland" and len(items[1]["text"]) == 1000
+    assert env.client.get("/studio-api/admin/room.json?key=wrong&course=venice").status_code == 403
+    assert env.client.get("/studio-api/admin/room?key=admin-test&course=venice").status_code == 200
+
+
+@pytest.mark.parametrize("body", [{"course": "venice", "text": "  ", "sid": "0123abcd"},
+                                  {"course": "Venice!", "text": "hi", "sid": "0123abcd"},
+                                  {"course": "venice", "text": "hi"}])
+def test_a_room_message_needs_text_a_course_and_a_sender(env, body):
+    assert env.client.post("/studio-api/room", json=body).status_code == 400
+
+
+def test_room_messages_are_rate_limited_per_participant(env):
+    send = lambda sid: env.client.post("/studio-api/room", json={"course": "venice", "text": "hi", "sid": sid}).status_code
+    assert [send("0123abcd") for _ in range(9)] == [200] * 8 + [429]
+    assert send("4567cdef") == 200                                                     # someone else still gets through
+
+
+def test_the_facilitator_takes_a_message_back_and_clears_the_chat(env, caplog):
+    first = room_admin(env, action="post", text="Wrong link").json()["items"][-1]["id"]
+    room_admin(env, action="post", text="Right link")
+    env.client.post("/studio-api/room", json={"course": "venice", "text": "thanks", "seat": "ABCDEF"})
+    assert room_admin(env, action="remove", id=first).status_code == 200
+    assert [i["text"] for i in env.client.get("/studio-api/room?course=venice").json()["items"]] == ["Right link"]
+    assert room_admin(env, action="remove", id=999).status_code == 404
+    assert room_admin(env, action="clear").json()["items"] == []
+    assert room_admin(env, action="post", text="x", key="wrong").status_code == 403
+    assert "Wrong link" not in caplog.text and "thanks" not in caplog.text             # logs never hold the text
+
+
+def test_the_room_survives_a_restart(env):
+    room_admin(env, action="post", text="Break until 15:30")
+    again = TestClient(studio.create_app(env.cfg, transport=httpx.MockTransport(env.fake.handler)))
+    assert [i["text"] for i in again.get("/studio-api/room?course=venice").json()["items"]] == ["Break until 15:30"]

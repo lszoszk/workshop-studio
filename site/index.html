@@ -8,7 +8,7 @@
 <meta name="robots" content="noindex, nofollow">
 <script src="gate.js"></script>
 <script>try { const t = localStorage.getItem('ws:theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
-<link rel="stylesheet" href="studio.css?v=2026-11-14b"></head>
+<link rel="stylesheet" href="studio.css?v=2026-11-14c"></head>
 <body>
 <!-- a phone that scanned the badge's QR code gets this instead of the studio -->
 <div class="handoff" id="handoff" hidden>
@@ -50,11 +50,18 @@
   </div>
   <div class="top-right">
     <a class="top-link" id="courseLink" href="https://lszoszk.github.io/teaching-materials/global-campus/" target="_blank" title="The course page: plan, slides and readings" hidden>Course page</a>
+    <button type="button" class="top-link room-btn" id="roomBtn" hidden title="Messages from the facilitator, and a box to write to them">Messages<span class="room-dot" id="roomDot" hidden></span></button>
     <a class="top-link" href="gallery/" target="_blank" title="The same plans, built by different models">Gallery</a>
     <span class="route" id="routeBadge" title="How the studio reaches the model">connecting…</span>
     <span class="budget" id="budget" hidden></span>
   </div>
 </header>
+<div class="room-strip" id="roomStrip" role="status" hidden>
+  <span class="room-lab">From the facilitator <span id="roomWhen"></span></span>
+  <span class="room-text" id="roomText"></span>
+  <button type="button" class="linkish" id="roomOpen">All messages</button>
+  <button type="button" class="room-x" id="roomClose" aria-label="Close the message">×</button>
+</div>
 
 <main class="work">
   <section class="chat" aria-label="Conversation">
@@ -182,11 +189,11 @@
   </form>
 </dialog>
 
-<script src="preview-doc.js?v=2026-11-14b"></script>
-<script src="pdf-view.js?v=2026-11-14b"></script>
-<script src="tour.js?v=2026-11-14b"></script>
-<script src="own-files.js?v=2026-11-14b"></script>
-<script src="kit.js?v=2026-11-14b"></script>
-<script src="studio.js?v=2026-11-14b"></script>
+<script src="preview-doc.js?v=2026-11-14c"></script>
+<script src="pdf-view.js?v=2026-11-14c"></script>
+<script src="tour.js?v=2026-11-14c"></script>
+<script src="own-files.js?v=2026-11-14c"></script>
+<script src="kit.js?v=2026-11-14c"></script>
+<script src="studio.js?v=2026-11-14c"></script>
 </body>
 </html>

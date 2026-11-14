@@ -171,6 +171,7 @@
     renderAll();
     track('open', { route: S.route.type, session: S.session, model: S.model, has_seat: !!S.seatCode, apps: S.versions.length,
       w: innerWidth, ua: /Firefox/.test(navigator.userAgent) ? 'firefox' : /Edg\//.test(navigator.userAgent) ? 'edge' : /Chrome/.test(navigator.userAgent) ? 'chrome' : /Safari/.test(navigator.userAgent) ? 'safari' : 'other' });
+    Room.start();
     if (params.get('from')) await fromGallery(params.get('from'));
     else Tour.startOnce();   // the first visit in this browser
     if (!S.versions.length && !S.talk.length) {
@@ -1194,6 +1195,109 @@
     d.showModal();
     $('feedbackText').focus();
   }
+
+  /* ---------- the room chat: the facilitator's messages to everyone in the course, and a participant's message back ---------- */
+
+  // GET /room every 15 s while the page is visible, in recorded mode too; a local page talks only to a local test
+  // server (?api=). The newest unread message stays in a strip until it is closed; Messages opens them all, with a
+  // box to write to the facilitator, who answers the whole room. What a participant wrote reaches only the
+  // facilitator's room page (server/room_page.html) and this browser.
+  const Room = {
+    items: [], title: 'Messages',
+    key: (k) => `ws:room:${S.course}:${k}`,
+    base() {
+      if (S.route && S.route.type === 'server') return S.route.base;
+      if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return null;
+      return (S.config.routes.find((r) => r.type === 'server') || {}).base || null;
+    },
+    seen() { return Number(localGet(this.key('seen'))) || 0; },
+    top() { return this.items.length ? this.items[this.items.length - 1].id : 0; },
+    mine() { try { return JSON.parse(localGet(this.key('mine')) || '[]'); } catch (e) { return []; } },
+    drawerOpen() { return !$('drawer').hidden && $('drawerTitle').textContent === this.title; },
+    start() {
+      if (!this.base()) return;
+      $('roomBtn').hidden = false;
+      this.poll();
+      setInterval(() => { if (!document.hidden) this.poll(); }, 15000);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) this.poll(); });
+    },
+    async poll() {
+      const base = this.base();
+      if (!base) return;
+      try {
+        const res = await fetch(`${base}/room?course=${encodeURIComponent(S.course)}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const items = (await res.json()).items || [];
+        const changed = items.map((i) => i.id).join() !== this.items.map((i) => i.id).join();
+        this.items = items;
+        if (changed) this.render();
+      } catch (e) { /* the next poll */ }
+    },
+    render() {
+      if (this.drawerOpen()) { this.renderList(); if (this.top() > this.seen()) localSet(this.key('seen'), String(this.top())); }
+      const unread = this.items.filter((i) => i.id > this.seen()), last = unread[unread.length - 1];
+      $('roomDot').hidden = !unread.length;
+      if (last) {
+        if ($('roomStrip').hidden) track('room_msg', { n: unread.length });
+        $('roomText').innerHTML = linkify(last.text);
+        $('roomWhen').textContent = '· ' + hhmm(last.at) + (unread.length > 1 ? ` · ${unread.length} new` : '');
+      }
+      $('roomStrip').hidden = !last;
+    },
+    read() {
+      if (this.top() > this.seen()) localSet(this.key('seen'), String(this.top()));
+      this.render();
+    },
+    open() {
+      openDrawer(this.title);
+      $('drawerBody').innerHTML = `<div class="room-list" id="roomList"></div>
+        <form class="room-form" id="roomForm">
+          <label for="roomInput"><b>Write to the facilitator</b></label>
+          <textarea id="roomInput" maxlength="1000" placeholder="A question, a problem, a link that does not work…"></textarea>
+          <div class="row"><small>Only the facilitator sees what you write; answers come here, to the whole room.</small>
+            <button type="submit" class="primary">Send</button></div>
+          <p class="room-err" id="roomErr" hidden></p>
+        </form>`;
+      $('roomForm').onsubmit = (e) => { e.preventDefault(); this.send(); };
+      $('roomInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); this.send(); }
+      });
+      this.renderList();
+      this.read();
+      track('room_open', { n: this.items.length });
+      $('roomInput').focus();
+    },
+    renderList() {
+      if (!$('roomList')) return;
+      const all = [...this.items.map((i) => ({ ...i, me: false })), ...this.mine().map((i) => ({ ...i, me: true }))]
+        .sort((a, b) => new Date(a.at) - new Date(b.at));
+      $('roomList').innerHTML = all.length ? all.map((i) => `<div class="room-msg${i.me ? ' mine' : ''}"><span class="who">${i.me ? 'You, to the facilitator' : 'Facilitator, to the room'} · ${hhmm(i.at)}</span>${linkify(i.text)}</div>`).join('')
+        : '<p class="room-empty">No messages yet. The facilitator\'s messages to the room appear here and at the top of the studio.</p>';
+    },
+    async send() {
+      const text = $('roomInput').value.trim();
+      if (!text) return;
+      $('roomErr').hidden = true;
+      try {
+        const res = await fetch(`${this.base()}/room`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ course: S.course, text, seat: S.seatCode || null, sid: Track.sid }) });
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'not sent');
+        localSet(this.key('mine'), JSON.stringify([...this.mine(), { at: new Date().toISOString(), text }].slice(-30)));
+        $('roomInput').value = '';
+        track('room_sent', { chars: text.length });
+        this.renderList();
+      } catch (e) {
+        $('roomErr').textContent = 'Your message could not be sent (' + e.message + '). Try again, or raise your hand.';
+        $('roomErr').hidden = false;
+      }
+    },
+  };
+  const hhmm = (iso) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // plain text with its web addresses as links, which open in a new tab
+  const linkify = (s) => esc(s).replace(/https?:\/\/(?:(?!&#39;|&quot;|&gt;)[^\s<])+/g, (u) => {
+    const tail = (/[.,;:!?)\]]+$/.exec(u) || [''])[0], url = u.slice(0, u.length - tail.length);   // "see https://x.org." ends before the dot
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>${tail}`;
+  });
 
   function showAppError(m) {
     S.lastAppError = String(m.message || '').slice(0, 200);
@@ -3129,6 +3233,9 @@
   $('wallBtn').onclick = () => { closeMenu(); sendToWall(); };
   $('kitMenuBtn').onclick = (e) => { downloadKit(e.currentTarget.querySelector('b')).then(closeMenu); };
   $('drawerClose').onclick = () => { $('drawer').hidden = true; };
+  $('roomBtn').onclick = () => Room.open();
+  $('roomOpen').onclick = () => Room.open();
+  $('roomClose').onclick = () => Room.read();
 
   boot().catch((e) => {
     note('The studio could not start: ' + esc(e.message) + '. Reload the page; if it persists, tell a facilitator.');

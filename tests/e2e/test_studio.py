@@ -79,6 +79,8 @@ PLAN_V2 = ("Here is the revised plan.\n\n```markdown\n## Context\nThe same dashb
 
 FEEDBACK = []   # what the fake server received from the Feedback form
 EVENTS = []     # the activity records it received (POST /events)
+ROOM = []       # the facilitator's messages to the room that the fake server hands out (GET /room); empty by default
+ROOM_IN = []    # what participants wrote to the facilitator (POST /room)
 
 
 @pytest.fixture(scope="module")
@@ -105,6 +107,8 @@ def fake_api():
                 body = {"ok": True, "accepting": True}
             elif self.path.endswith("/seat/TEST22"):
                 body = {"seat": "TEST22", "country": "Colombia", "budget_total": 8, "budget_left": 7.5, "disabled": False}
+            elif "/room?" in self.path:
+                body = {"items": ROOM}
             elif self.path.endswith("/gallery"):
                 body = [{k: v for k, v in w.items() if k != "html"} for w in reversed(wall)]
             elif "/gallery/" in self.path:
@@ -131,6 +135,10 @@ def fake_api():
                 EVENTS.append(req)
                 self.head(200, "application/json")
                 return self.wfile.write(json.dumps({"ok": True}).encode())
+            if self.path.endswith("/room"):
+                ROOM_IN.append(req)
+                self.head(200, "application/json")
+                return self.wfile.write(json.dumps({"ok": True, "id": len(ROOM_IN)}).encode())
             if self.path.endswith("/feedback"):
                 FEEDBACK.append(req)
                 self.head(200, "application/json")
@@ -750,6 +758,45 @@ def test_a_tester_sends_feedback_with_its_context(base_url, browser, fake_api):
     assert sent["context"]["version"] and "v1" in sent["context"]["app"]
     assert "<!doctype" not in payload.lower() and "WORKSHOP_DATA" not in payload   # no app code, no data
     ctx.close()
+
+
+def test_the_facilitator_writes_to_the_room_and_a_participant_answers(base_url, browser, fake_api):
+    """A message to the room shows at the top of the studio with its link, until it is closed, and stays under
+    Messages; a participant writes back from there. A newer message shows again; a reload does not bring back
+    what was closed."""
+    api, _ = fake_api
+    ROOM[:] = [{"id": 1, "at": "2026-12-04T09:00:00+00:00", "text": "Slides for today: https://example.org/day2."}]
+    try:
+        ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+        page = ctx.new_page()
+        page.goto(base_url + f"?api={api}&planpace=1#s=TEST22")
+        started(page)
+        page.wait_for_selector("#roomStrip:not([hidden])", timeout=10000)
+        link = page.locator("#roomText a")
+        assert link.get_attribute("href") == "https://example.org/day2" and link.get_attribute("target") == "_blank"
+        assert page.is_visible("#roomDot")
+        page.click("#roomClose")
+        assert not page.is_visible("#roomStrip") and not page.is_visible("#roomDot")
+        page.reload()
+        started(page)
+        page.wait_for_timeout(1500)
+        assert not page.is_visible("#roomStrip")                                  # closed stays closed
+        page.click("#roomBtn")
+        assert "Slides for today" in page.inner_text("#roomList")
+        page.fill("#roomInput", "The link to the slides does not open")
+        page.press("#roomInput", "Enter")
+        page.wait_for_function("() => document.querySelectorAll('#roomList .room-msg.mine').length === 1")
+        sent = ROOM_IN[-1]
+        assert sent["text"] == "The link to the slides does not open" and sent["seat"] == "TEST22" and sent["sid"] and sent["course"]
+        assert page.input_value("#roomInput") == ""
+        page.click("#drawerClose")
+        ROOM.append({"id": 2, "at": "2026-12-04T09:05:00+00:00", "text": "Fixed: https://example.org/day2-slides"})
+        page.evaluate("() => document.dispatchEvent(new Event('visibilitychange'))")   # as when the tab comes back
+        page.wait_for_selector("#roomStrip:not([hidden])", timeout=10000)
+        assert "day2-slides" in page.inner_text("#roomText")
+        ctx.close()
+    finally:
+        ROOM.clear()
 
 
 def test_the_tour_from_the_footer(base_url, browser):
