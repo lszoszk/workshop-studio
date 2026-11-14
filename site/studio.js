@@ -943,11 +943,16 @@
     const id = 'q' + Math.random().toString(36).slice(2);
     const known = (k) => k === 'uhri' || (S.index.datasets[k]) || k.startsWith('own_');
     const parts = await Promise.all(files.filter(known).map(async (k) => JSON.stringify(k) + ':' + (await dataText(k))));
+    const post = `parent.postMessage({ type: 'studio:query', id: ${JSON.stringify(id)}, out: out }, '*')`;
+    // A body that does not parse (a typo, or `await` in a plain function) never runs, so nothing would come back
+    // and the card waited for the timeout: 29 of 30 queries on 13.11.2026. window.onerror reports the SyntaxError,
+    // and the body runs inside an async function, so `await` is allowed.
     const doc = PreviewDoc.inject('<!doctype html><html><head></head><body></body></html>', PreviewDoc.CSP +
+      `<script>window.onerror = function (m) { var out = { ok: false, error: String(m).replace(/^Uncaught /, '') }; ${post}; };</script>` +
       '<script>window.WORKSHOP_DATA={' + parts.join(',') + '};</script>' +
-      '<script>(function () { let out; try { const r = (function () {\n' + PreviewDoc.escapeScript(code) + '\n})();' +
+      '<script>(async function () { let out; try { const r = await (async function () {\n' + PreviewDoc.escapeScript(code) + '\n})();' +
       ' out = { ok: true, r: JSON.parse(JSON.stringify(r === undefined ? null : r)) }; } catch (e) { out = { ok: false, error: String((e && e.message) || e) }; }' +
-      ` parent.postMessage({ type: 'studio:query', id: ${JSON.stringify(id)}, out: out }, '*'); })();</script>`);
+      ` ${post}; })();</script>`);
     const f = document.createElement('iframe');
     f.setAttribute('sandbox', 'allow-scripts');
     f.hidden = true;

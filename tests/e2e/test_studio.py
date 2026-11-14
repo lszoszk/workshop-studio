@@ -158,6 +158,10 @@ def fake_api():
                 events.append({"delta": PLAN_V2})
             elif req["purpose"] == "build" and "a query that breaks" in last.lower():
                 events.append({"delta": "I will count them.\n```query\nreturn WORKSHOP_DATA.uhri.records.map((r) => r.nothere.length);\n```"})
+            elif req["purpose"] == "build" and "a query with a typo" in last.lower():
+                events.append({"delta": "I will count them.\n```query\nreturn {title: 'Count' columns: ['n'], rows: []};\n```"})
+            elif req["purpose"] == "build" and "a query that awaits" in last.lower():
+                events.append({"delta": "I will count them.\n```query\nconst n = await Promise.resolve(WORKSHOP_DATA.uhri.records.length);\nreturn {title: 'Count', columns: ['Records'], rows: [[n]], note: 'all records'};\n```"})
             elif req["purpose"] == "build" and "a checker with a form" in last.lower():
                 events.append({"delta": APP_FORM})
             elif req["purpose"] == "build" and "WORKSHOP_DATA.own_1" in last:
@@ -1290,6 +1294,16 @@ def test_a_question_about_the_data_is_answered_by_a_query(base_url, browser, fak
     page.click("#sendBtn")
     page.wait_for_selector(".qcard .qerr", timeout=30000)
     assert "The query failed" in page.inner_text(".qcard")
+    # code that does not parse says so at once, not after the 15-second timeout (13.11.2026: 29 of 30 queries)
+    page.fill("#input", "Count with a query with a typo")
+    page.click("#sendBtn")
+    page.wait_for_function("() => document.querySelectorAll('.qcard .qerr').length === 2", timeout=8000)
+    assert "SyntaxError" in page.locator(".qcard .qerr").last.inner_text()
+    # and a body that awaits runs
+    page.fill("#input", "Count with a query that awaits")
+    page.click("#sendBtn")
+    page.wait_for_function("() => document.querySelectorAll('.qcard').length === 3 && document.querySelectorAll('.qcard')[2].querySelector('table')", timeout=8000)
+    assert "Records" in page.locator(".qcard").last.inner_text()
     ctx.close()
 
 
@@ -1471,7 +1485,7 @@ def test_venice_shows_only_what_its_sessions_use(base_url, browser, tmp_path):
     assert "The first" in page.inner_text("#drawerBody") and page.locator("#drawerBody .json-view").inner_text().count('"id"') >= 5
     page.click("#drawerClose")
     page.get_by_role("tab", name="Session 2").click()
-    assert shelf() == ["hrc"] and not page.is_visible("#countryChip")
+    assert shelf() == ["hrc", "hrc_all", "un_hr_all"] and not page.is_visible("#countryChip")   # Session 2's three files (13.11.2026)
     assert "Hugging Face" in page.inner_text("#shelf .fcard[data-key=hrc]")
     page.get_by_role("tab", name="Session 3").click()
     assert shelf() == ["uhri", "pdfs"] and page.is_visible("#countryChip")
