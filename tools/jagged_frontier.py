@@ -59,7 +59,7 @@ def builds():
     out, left_out, days = [], 0, set()
     for f in sorted(B.glob("*/results.json")):
         for r in json.loads(f.read_text()):
-            if r["model"] not in FAMILY:
+            if r["model"] not in FAMILY or r["prompt"].startswith("x-"):   # x-…: a prototype task, measured on one model so far
                 continue
             if any('"code": 5' in e for e in r.get("errors", [])) or (r.get("seconds") is not None and r["seconds"] < 5):
                 left_out += 1

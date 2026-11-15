@@ -1,0 +1,47 @@
+[
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · built in Claude Code (no API)",
+  "prompt": "x-meta-pdfs",
+  "passed": 8,
+  "total": 9,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "table_min_rows": true,
+   "text_contains": true,
+   "download": true,
+   "row_facts_dates": true,
+   "row_facts_types": true,
+   "row_facts_replaces": false
+  },
+  "errors": [],
+  "network": [],
+  "lines": 510,
+  "seconds": null,
+  "cost": 0
+ },
+ {
+  "model": "claude",
+  "label": "Claude Sonnet 5.5 · built in Claude Code (no API)",
+  "prompt": "x-versions",
+  "passed": 8,
+  "total": 8,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "controls_min": true,
+   "text_contains": true,
+   "diff_added": true,
+   "diff_removed": true,
+   "diff_not": true
+  },
+  "errors": [],
+  "network": [],
+  "lines": 355,
+  "seconds": null,
+  "cost": 0
+ }
+]

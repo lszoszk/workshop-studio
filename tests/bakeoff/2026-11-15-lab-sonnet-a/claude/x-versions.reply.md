@@ -1,0 +1,474 @@
+I built a drafting-history viewer: pick an article (it opens on the first one in the file) and see every stage in date order with added and removed words, the votes taken since the previous stage, and a ranking of which stages changed the text most. Punctuation, capitals and line-end hyphens are ignored when comparing.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How a Covenant article changed</title>
+<style>
+:root{--paper:#f4f0e8;--ink:#1d1b18;--rule:#d9d2c3;--accent:#9b2335;--muted:#5b554a;--ins-bg:#dcebd6;--ins-fg:#17401b;--del-bg:#f3d9d6;--del-fg:#7a1a28}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 24px 48px}
+.label,.mono{font:11.5px/1.4 ui-monospace,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.hint{font:11.5px/1.4 ui-monospace,Menlo,Consolas,monospace;color:var(--muted);letter-spacing:.03em}
+h1{font:400 34px/1.15 Georgia,"Times New Roman",serif;margin:6px 0 6px}
+h2{font:400 22px/1.25 Georgia,"Times New Roman",serif;margin:0 0 4px}
+.sub{margin:0;color:var(--muted)}
+header{border-bottom:1px solid var(--rule);padding-bottom:14px;display:grid;grid-template-columns:1fr auto;gap:8px 24px;align-items:end}
+header .head-main{min-width:0}
+.picker{display:flex;flex-direction:column;gap:4px}
+select{font:16px Georgia,serif;padding:7px 10px;background:var(--paper);color:var(--ink);border:1px solid var(--ink);border-radius:0;max-width:340px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+[role=tablist]{display:flex;flex-wrap:wrap;gap:0 22px;border-bottom:1px solid var(--rule);margin-bottom:22px}
+[role=tab]{background:none;border:0;border-bottom:3px solid transparent;padding:12px 0 9px;cursor:pointer;font:12px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+[role=tab][aria-selected=true]{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+.answer{font:400 21px/1.4 Georgia,"Times New Roman",serif;margin:0 0 22px;max-width:46em}
+.bigs{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin-bottom:26px}
+.big{padding:16px 18px 14px 0}
+.big+.big{border-left:1px solid var(--rule);padding-left:18px}
+.big .n{font:400 52px/1.05 Georgia,"Times New Roman",serif;display:block;margin:4px 0}
+.big .n.sm{font-size:30px;line-height:1.2;padding-top:8px}
+.big p{margin:0;font-size:14px;color:var(--muted)}
+.fig{margin:0 0 30px}
+.fig .label{color:var(--accent)}
+.how{margin:8px 0 0}
+.bars{display:grid;gap:0;margin-top:10px}
+.bar{display:grid;grid-template-columns:minmax(150px,300px) 1fr auto;gap:14px;align-items:center;padding:8px 0;border-top:1px solid var(--rule)}
+.bar:last-child{border-bottom:1px solid var(--rule)}
+.bar .name{font-size:15px;line-height:1.3}
+.bar .name b{font-family:Georgia,serif;font-weight:400}
+.track{height:18px;background:transparent}
+.fill{height:100%;background:var(--accent);min-width:2px}
+.bar .val{font:13px ui-monospace,Menlo,Consolas,monospace;text-align:right;white-space:nowrap}
+table{border-collapse:collapse;width:100%;font-size:15px}
+caption{text-align:left;padding-bottom:8px;font:11.5px ui-monospace,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+th,td{padding:7px 10px 7px 0;border-top:1px solid var(--rule);vertical-align:top;text-align:left}
+th{font:11.5px ui-monospace,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:400;border-top:0;border-bottom:1px solid var(--ink)}
+.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+td.num,th.num{padding-right:10px}
+a{color:var(--accent)}
+.stages{border-top:1px solid var(--rule)}
+.stage{border-bottom:1px solid var(--rule)}
+.stage>button{width:100%;display:grid;grid-template-columns:44px 1fr auto;gap:4px 14px;text-align:left;background:none;border:0;padding:14px 0;cursor:pointer;color:var(--ink);font:inherit;align-items:baseline}
+.stage>button .no{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--accent);letter-spacing:.08em}
+.stage>button .t{font:400 19px/1.3 Georgia,"Times New Roman",serif}
+.stage>button .meta{grid-column:2;font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted);letter-spacing:.04em}
+.stage>button .sum{grid-row:1;grid-column:3;font:13px ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
+.stage>button[aria-expanded=true] .t{color:var(--accent)}
+.panelin{padding:2px 0 22px 58px}
+.diff{font:400 18px/1.7 Georgia,"Times New Roman",serif;margin:8px 0 12px;max-width:44em}
+ins{background:var(--ins-bg);color:var(--ins-fg);text-decoration:underline;text-decoration-thickness:1px;padding:0 2px}
+del{background:var(--del-bg);color:var(--del-fg);text-decoration:line-through;padding:0 2px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;align-items:baseline;margin-bottom:6px}
+details{margin-top:12px}
+summary{cursor:pointer;font:11.5px ui-monospace,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.raw{white-space:pre-wrap;font:14px/1.5 ui-monospace,Menlo,Consolas,monospace;background:transparent;border-left:3px solid var(--rule);padding:4px 12px;margin:8px 0 0}
+.votes{margin-top:18px}
+.checks{list-style:none;padding:0;margin:0;border-top:1px solid var(--rule)}
+.checks li{display:grid;grid-template-columns:72px 1fr;gap:14px;padding:11px 0;border-bottom:1px solid var(--rule)}
+.checks .st{font:12px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase}
+.st.ok{color:#17401b}.st.warn{color:var(--accent)}
+.checks b{font-weight:600}
+.btn{font:12px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;background:var(--ink);color:var(--paper);border:0;padding:10px 16px;cursor:pointer}
+ol.method{padding-left:22px;max-width:46em}
+ol.method li{margin-bottom:8px}
+.empty{padding:40px 0;color:var(--muted);font:italic 18px Georgia,serif}
+@media (max-width:760px){
+  header{grid-template-columns:1fr}
+  .bigs{grid-template-columns:1fr}
+  .big+.big{border-left:0;padding-left:0;border-top:1px solid var(--rule)}
+  .bar{grid-template-columns:1fr auto}
+  .bar .track{grid-column:1/3;grid-row:2}
+  .panelin{padding-left:0}
+  .stage>button{grid-template-columns:34px 1fr}
+  .stage>button .sum{grid-row:auto;grid-column:2}
+  table{display:block;overflow-x:auto}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="head-main">
+    <div class="label">WORKSHOP_DATA.drafts &middot; ICCPR drafting history</div>
+    <h1 id="title">How an article of the Covenant changed</h1>
+    <p class="sub" id="sub"></p>
+  </div>
+  <div class="picker">
+    <label class="label" for="art">Choose an article</label>
+    <select id="art"></select>
+  </div>
+</header>
+<div role="tablist" id="tabs" aria-label="Views"></div>
+<main>
+  <section role="tabpanel" id="panel-0" aria-labelledby="tab-0"></section>
+  <section role="tabpanel" id="panel-1" aria-labelledby="tab-1" hidden></section>
+  <section role="tabpanel" id="panel-2" aria-labelledby="tab-2" hidden></section>
+  <section role="tabpanel" id="panel-3" aria-labelledby="tab-3" hidden></section>
+</main>
+</div>
+<script>
+(function(){
+"use strict";
+var D=(window.WORKSHOP_DATA&&window.WORKSHOP_DATA.drafts)||{};
+var RECS=Array.isArray(D.records)?D.records:[];
+var TABS=["Overview","Stages and votes","Can I trust this","Method and export"];
+var MONTHS={january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12};
+var MN=["","January","February","March","April","May","June","July","August","September","October","November","December"];
+var state={art:0,tab:0,open:null};
+var M=null;
+
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function $(id){return document.getElementById(id)}
+
+/* ---------- dates ---------- */
+function parseDate(s){
+  s=String(s==null?"":s).trim();var m;
+  if((m=s.match(/^(\d{4})-(\d{2})-(\d{2})/)))return{y:+m[1],mo:+m[2],d:+m[3]};
+  if((m=s.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/))&&MONTHS[m[2].toLowerCase()])return{y:+m[3],mo:MONTHS[m[2].toLowerCase()],d:+m[1]};
+  if((m=s.match(/^([A-Za-z]+)\s+(\d{4})/))&&MONTHS[m[1].toLowerCase()])return{y:+m[2],mo:MONTHS[m[1].toLowerCase()],d:0};
+  if((m=s.match(/^(\d{4})$/)))return{y:+m[1],mo:0,d:0};
+  return null;
+}
+function endKey(p){if(!p)return null;return p.y*10000+(p.mo||12)*100+(p.d||31)}
+function fmtDate(p,raw){
+  if(!p)return raw||"date unknown";
+  return (p.d?p.d+" ":"")+(p.mo?MN[p.mo]+" ":"")+p.y;
+}
+
+/* ---------- text and diff ---------- */
+function tokenize(text){
+  var s=String(text==null?"":text).replace(/\s+/g," ");
+  s=s.replace(/(\p{L})- (?=\p{Ll})/gu,"$1");
+  var out=[];
+  s.split(" ").forEach(function(w){
+    if(!w)return;
+    var n=w.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,"");
+    if(n)out.push({raw:w,norm:n});
+  });
+  return out;
+}
+function diff(a,b){
+  var s=0;
+  while(s<a.length&&s<b.length&&a[s].norm===b[s].norm)s++;
+  var ea=a.length,eb=b.length;
+  while(ea>s&&eb>s&&a[ea-1].norm===b[eb-1].norm){ea--;eb--}
+  var ops=[],i,j;
+  for(i=0;i<s;i++)ops.push({t:"eq",raw:b[i].raw});
+  var A=a.slice(s,ea),B=b.slice(s,eb),n=A.length,m=B.length,approx=false;
+  if(n*m>6000000){
+    approx=true;
+    A.forEach(function(x){ops.push({t:"del",raw:x.raw})});
+    B.forEach(function(x){ops.push({t:"ins",raw:x.raw})});
+  }else{
+    var W=m+1,L=new Uint32Array((n+1)*W);
+    for(i=n-1;i>=0;i--)for(j=m-1;j>=0;j--){
+      L[i*W+j]=A[i].norm===B[j].norm?L[(i+1)*W+j+1]+1:Math.max(L[(i+1)*W+j],L[i*W+j+1]);
+    }
+    i=0;j=0;
+    while(i<n&&j<m){
+      if(A[i].norm===B[j].norm){ops.push({t:"eq",raw:B[j].raw});i++;j++}
+      else if(L[(i+1)*W+j]>=L[i*W+j+1]){ops.push({t:"del",raw:A[i].raw});i++}
+      else{ops.push({t:"ins",raw:B[j].raw});j++}
+    }
+    while(i<n){ops.push({t:"del",raw:A[i++].raw})}
+    while(j<m){ops.push({t:"ins",raw:B[j++].raw})}
+  }
+  for(i=eb;i<b.length;i++)ops.push({t:"eq",raw:b[i].raw});
+  var c={eq:0,ins:0,del:0};
+  ops.forEach(function(o){c[o.t]++});
+  return{ops:ops,eq:c.eq,ins:c.ins,del:c.del,approx:approx};
+}
+function diffHtml(ops){
+  var runs=[],cur=null;
+  ops.forEach(function(o){
+    if(cur&&cur.t===o.t)cur.w.push(o.raw);else{cur={t:o.t,w:[o.raw]};runs.push(cur)}
+  });
+  return runs.map(function(r){
+    var t=esc(r.w.join(" "));
+    return r.t==="ins"?"<ins>"+t+"</ins>":r.t==="del"?"<del>"+t+"</del>":t;
+  }).join(" ");
+}
+
+/* ---------- model ---------- */
+function build(rec){
+  var raw=Array.isArray(rec.stages)?rec.stages:[];
+  var stages=raw.map(function(s,i){
+    var p=parseDate(s.date);
+    return{src:s,orig:i,p:p,key:endKey(p),toks:tokenize(s.text)};
+  });
+  var last=0;
+  stages.forEach(function(s){if(s.key==null){s.key=last;s.badDate=true}else last=s.key});
+  var sorted=stages.slice().sort(function(a,b){return a.key-b.key});
+  var inOrder=sorted.every(function(s,i){return s===stages[i]});
+  stages=sorted;
+  stages.forEach(function(s,i){
+    s.i=i;s.words=s.toks.length;
+    s.d=i>0?diff(stages[i-1].toks,s.toks):null;
+    s.churn=s.d?s.d.ins+s.d.del:0;
+    s.votes=[];
+  });
+  var votes=(Array.isArray(rec.votes)?rec.votes:[]).map(function(v){
+    var p=parseDate(v.date);return{v:v,p:p,key:endKey(p)};
+  }).sort(function(a,b){return (a.key||0)-(b.key||0)});
+  var unplaced=0,sameMonth=0,beforeFirst=0;
+  votes.forEach(function(v){
+    var st=null;
+    if(v.key==null){unplaced++;return}
+    for(var k=0;k<stages.length;k++){if(v.key<=stages[k].key){st=stages[k];break}}
+    if(!st&&stages.length){st=stages[stages.length-1];unplaced++}
+    if(!st)return;
+    if(st.i===0)beforeFirst++;
+    if(st.p&&v.p&&st.p.y===v.p.y&&st.p.mo===v.p.mo)sameMonth++;
+    st.votes.push(v);
+  });
+  var ranked=stages.filter(function(s){return s.i>0}).sort(function(a,b){return b.churn-a.churn});
+  var keep=null;
+  if(stages.length>1)keep=diff(stages[0].toks,stages[stages.length-1].toks);
+  return{rec:rec,stages:stages,votes:votes,ranked:ranked,inOrder:inOrder,unplaced:unplaced,sameMonth:sameMonth,beforeFirst:beforeFirst,keep:keep};
+}
+function years(m){
+  var ys=[];
+  m.stages.forEach(function(s){if(s.p)ys.push(s.p.y)});
+  m.votes.forEach(function(v){if(v.p)ys.push(v.p.y)});
+  if(!ys.length)return"years not in file";
+  var a=Math.min.apply(null,ys),b=Math.max.apply(null,ys);
+  return a===b?String(a):a+"–"+b;
+}
+function docLink(sym){
+  if(!sym)return"";
+  return '<a href="https://docs.un.org/en/'+encodeURI(String(sym))+'" target="_blank" rel="noopener">'+esc(sym)+'</a>';
+}
+function signed(s){return s.d?"+"+s.d.ins+" −"+s.d.del:"first draft"}
+
+/* ---------- panels ---------- */
+function overview(m){
+  var st=m.stages,rec=m.rec;
+  if(!st.length)return'<p class="empty">This article has no stages in the file.</p>';
+  var top=m.ranked[0];
+  var first=st[0],lastS=st[st.length-1];
+  var h='<p class="answer">Article '+esc(rec.article)+' ('+esc(rec.title)+') went through '+st.length+' recorded stage'+(st.length===1?"":"s")+', from '+esc(fmtDate(first.p,first.src.date))+' to '+esc(fmtDate(lastS.p,lastS.src.date))+'.';
+  if(top&&top.churn>0)h+=' The biggest rewrite came at <em>'+esc(top.src.symbol||top.src.stage)+'</em> ('+esc(fmtDate(top.p,top.src.date))+'), with '+top.d.ins+' words added and '+top.d.del+' removed.';
+  h+='</p>';
+  h+='<div class="bigs">';
+  h+='<div class="big"><span class="label">Stages</span><span class="n">'+st.length+'</span><p>from the first draft to the adopted text</p></div>';
+  h+='<div class="big"><span class="label">Votes recorded</span><span class="n">'+m.votes.length+'</span><p>on this article, '+esc(years(m))+'</p></div>';
+  if(m.keep&&first.words){
+    var pct=Math.round(100*m.keep.eq/first.words);
+    h+='<div class="big"><span class="label">First draft still in the final text</span><span class="n">'+pct+'%</span><p>'+m.keep.eq+' of '+first.words+' words of the first draft are still there</p></div>';
+  }else{
+    h+='<div class="big"><span class="label">Words in the text</span><span class="n">'+first.words+'</span><p>only one stage to compare</p></div>';
+  }
+  h+='</div>';
+  if(m.ranked.length){
+    var max=Math.max.apply(null,m.ranked.map(function(s){return s.churn}))||1;
+    h+='<div class="fig"><div class="label">FIG.01 &middot; Which stages changed the text most</div>';
+    h+='<h2>Words added and removed compared with the stage before</h2>';
+    h+='<div class="bars" role="list">';
+    m.ranked.forEach(function(s){
+      h+='<div class="bar" role="listitem"><div class="name"><b>'+esc(s.src.symbol||"no symbol")+'</b><br><span class="hint">'+esc(fmtDate(s.p,s.src.date))+' &middot; stage '+(s.i+1)+'</span></div>';
+      h+='<div class="track"><div class="fill" style="width:'+Math.round(100*s.churn/max)+'%"></div></div>';
+      h+='<div class="val">'+s.churn+' words <span class="hint">(+'+s.d.ins+' −'+s.d.del+')</span></div></div>';
+    });
+    h+='</div>';
+    h+='<p class="hint how">How this is computed: words added + words removed against the previous stage, after ignoring punctuation, capitals and line-end hyphens. The first draft has nothing before it, so it is not ranked.</p></div>';
+  }
+  h+='<div class="fig"><div class="label">FIG.02 &middot; All stages at a glance</div>';
+  h+='<table><caption>Stages of Article '+esc(rec.article)+' in date order</caption><thead><tr><th scope="col">No.</th><th scope="col">Date</th><th scope="col">Symbol</th><th scope="col" class="num">Draft art.</th><th scope="col" class="num">Words</th><th scope="col" class="num">Added</th><th scope="col" class="num">Removed</th><th scope="col" class="num">Votes since</th></tr></thead><tbody>';
+  st.forEach(function(s){
+    h+='<tr><td>'+(s.i+1)+'</td><td>'+esc(fmtDate(s.p,s.src.date))+'</td><td>'+docLink(s.src.symbol)+'</td><td class="num">'+(s.src.draft_article==null?"–":esc(s.src.draft_article))+'</td><td class="num">'+s.words+'</td><td class="num">'+(s.d?"+"+s.d.ins:"–")+'</td><td class="num">'+(s.d?"−"+s.d.del:"–")+'</td><td class="num">'+s.votes.length+'</td></tr>';
+  });
+  h+='</tbody></table><p class="hint how">How this is computed: word counts come from the OCR text after joining words broken at a line end. "Draft art." is the article number in that draft.</p></div>';
+  return h;
+}
+function voteTable(s,prev){
+  var h='<div class="votes"><div class="label">Votes taken '+(prev?'since '+esc(fmtDate(prev.p,prev.src.date)):'up to this first draft')+'</div>';
+  if(!s.votes.length)return h+'<p class="hint">No recorded vote for this stretch in the file.</p></div>';
+  h+='<table><caption>'+s.votes.length+' vote'+(s.votes.length===1?"":"s")+', by date</caption><thead><tr><th scope="col">Date</th><th scope="col">Meeting</th><th scope="col">What was voted on</th><th scope="col">Result</th><th scope="col" class="num">Yes–No–Abst.</th><th scope="col">Proposed by</th></tr></thead><tbody>';
+  s.votes.forEach(function(x){
+    var v=x.v,fig=(v.yes==null&&v.no==null&&v.abstentions==null)?"no figures":(v.yes==null?"?":v.yes)+"–"+(v.no==null?"?":v.no)+"–"+(v.abstentions==null?"?":v.abstentions);
+    var pr=Array.isArray(v.proposers)&&v.proposers.length?v.proposers.join(", "):"not recorded";
+    h+='<tr><td>'+esc(fmtDate(x.p,v.date))+'</td><td>'+docLink(v.meeting)+'</td><td>'+esc(v.subject||"not recorded")+'</td><td>'+esc(v.outcome||"not recorded")+'</td><td class="num">'+esc(fig)+'</td><td>'+esc(pr)+'</td></tr>';
+  });
+  return h+'</tbody></table></div>';
+}
+function stagesPanel(m){
+  var st=m.stages;
+  if(!st.length)return'<p class="empty">This article has no stages in the file.</p>';
+  var h='<div class="label">Click a stage to open it &middot; one open at a time</div><div class="stages">';
+  st.forEach(function(s){
+    var open=state.open===s.i,prev=s.i>0?st[s.i-1]:null;
+    h+='<div class="stage"><button type="button" aria-expanded="'+open+'" aria-controls="sp'+s.i+'" data-i="'+s.i+'">';
+    h+='<span class="no">'+String(s.i+1).padStart(2,"0")+'</span><span class="t">'+esc(s.src.stage||s.src.symbol||"Stage")+'</span><span class="sum">'+esc(signed(s))+' &middot; '+s.votes.length+' vote'+(s.votes.length===1?"":"s")+'</span>';
+    h+='<span class="meta">'+esc(fmtDate(s.p,s.src.date))+' &middot; '+esc(s.src.symbol||"no symbol")+'</span></button>';
+    if(open){
+      h+='<div class="panelin" id="sp'+s.i+'">';
+      if(prev){
+        h+='<div class="legend"><span class="hint">Compared with</span> <b>'+esc(prev.src.symbol||"previous stage")+'</b> <ins>added</ins> <del>removed</del> <span>unchanged</span><span class="hint">ignores punctuation, capitals, line-end hyphens</span></div>';
+        h+='<p class="diff">'+(diffHtml(s.d.ops)||'<span class="hint">No text in this stage.</span>')+'</p>';
+        if(s.churn===0)h+='<p class="hint">No word differs from the stage before.</p>';
+      }else{
+        h+='<div class="legend"><span class="hint">First draft: nothing earlier to compare with</span></div><p class="diff">'+(esc(s.toks.map(function(t){return t.raw}).join(" "))||'<span class="hint">No text in this stage.</span>')+'</p>';
+      }
+      h+=voteTable(s,prev);
+      h+='<details><summary>Original OCR text of this stage'+(s.src.page!=null?' (page '+esc(s.src.page)+')':'')+'</summary><div class="raw">'+esc(s.src.text||"")+'</div></details>';
+      h+='</div>';
+    }
+    h+='</div>';
+  });
+  return h+'</div>';
+}
+function oddWords(m){
+  var out=[],seen={};
+  m.stages.forEach(function(s){
+    String(s.src.text||"").split(/\s+/).forEach(function(w){
+      var c=w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu,"");
+      if(/\p{Ll}\p{Lu}/u.test(c)&&!seen[c]){seen[c]=1;out.push(c+" (stage "+(s.i+1)+")")}
+    });
+  });
+  return out;
+}
+function trust(m){
+  var st=m.stages,rec=m.rec,items=[];
+  function add(ok,title,detail){items.push({ok:ok,t:title,d:detail})}
+  if(!st.length)return'<p class="empty">Nothing to check: this article has no stages.</p>';
+  add(m.inOrder,"Stages already in date order in the file",m.inOrder?"The file lists them in date order; the app sorts them anyway.":"The file order differed from date order; the app re-sorted the stages.");
+  var lastS=st[st.length-1];
+  var adopted=/^A\/RES\/2200/i.test(String(lastS.src.symbol||""));
+  add(adopted,"Last stage is the adopted Covenant",adopted?"The last stage is "+lastS.src.symbol+", "+fmtDate(lastS.p,lastS.src.date)+".":"The last stage is "+(lastS.src.symbol||"unknown")+", not A/RES/2200 A (XXI).");
+  var bad=st.filter(function(s){return s.badDate}).length;
+  add(bad===0,"Every stage has a readable date",bad?bad+" stage date(s) could not be read; they were placed after the stage before.":"All "+st.length+" dates were read.");
+  var short=st.filter(function(s){return s.words<8}).length;
+  add(short===0,"No stage text is nearly empty",short?short+" stage(s) have fewer than 8 words; the comparison there may be unreliable.":"Every stage has at least 8 words.");
+  var big=m.ranked.filter(function(s){return s.words&&s.d.ins/s.words>0.8}).length;
+  add(big===0,"No stage looks entirely new",big?big+" stage(s) are more than 80% new words; the article may have been redrafted from scratch, or the OCR text may cover a different passage.":"No stage is more than 80% new words.");
+  var odd=oddWords(m);
+  add(odd.length===0,"OCR slips inside words",odd.length?"Words with a capital inside them look like OCR errors and show up as changes: "+odd.slice(0,12).join(", ")+(odd.length>12?", and "+(odd.length-12)+" more":"")+". They are left as the file has them.":"No word with a capital letter inside it was found.");
+  var nofig=m.votes.filter(function(x){return x.v.yes==null&&x.v.no==null&&x.v.abstentions==null}).length;
+  add(nofig===0,"Votes carry their figures",nofig?nofig+" of "+m.votes.length+" votes have no figures in the file; shown as “no figures”.":"All "+m.votes.length+" votes have figures.");
+  add(m.unplaced===0,"Every vote falls between the first and last stage",m.unplaced?m.unplaced+" vote(s) have an unreadable date or fall after the last stage and were put with the last stage.":"All "+m.votes.length+" votes could be placed.");
+  add(m.sameMonth===0,"Vote and stage in different months",m.sameMonth?m.sameMonth+" vote(s) fall in the same month as the stage they are listed under. Stage dates are only month-precise, so it is not certain the vote came before that draft.":"No vote shares a month with its stage.");
+  add(m.beforeFirst===0,"No vote before the first draft",m.beforeFirst?m.beforeFirst+" vote(s) are dated on or before the first draft and are listed under it.":"None.");
+  var nopage=st.filter(function(s){return s.src.page==null}).length;
+  add(nopage===0,"Every stage has a page reference",nopage?nopage+" stage(s) have no page in the file (the adopted resolution has none).":"All stages have a page.");
+  var h='<div class="label">What this app checked about its own data</div><ul class="checks" style="margin-top:10px">';
+  items.forEach(function(x){
+    h+='<li><span class="st '+(x.ok?"ok":"warn")+'">'+(x.ok?"OK":"Note")+'</span><span><b>'+esc(x.t)+'.</b> '+esc(x.d)+'</span></li>';
+  });
+  h+='</ul><p class="hint how">Document links are built from each symbol (docs.un.org/en/&lt;symbol&gt;) because the file has no URL for these documents: older records may not open. The diff compares words only; it cannot tell a moved phrase from a deleted and a new one.</p>';
+  return h;
+}
+function methodPanel(m){
+  var h='<div class="label">How the comparison works</div><ol class="method">';
+  h+='<li>Each stage text is cleaned for comparing only: words broken at a line end (<i>restric- tions</i>) are joined, then capitals and punctuation are ignored.</li>';
+  h+='<li>Each stage is compared with the one before, word by word, with a longest-common-subsequence match. Words only in the newer text are <ins>added</ins>; words only in the older text are <del>removed</del>.</li>';
+  h+='<li>Stages are sorted by date. Stage dates are month-precise, so a month counts as ending on its last day.</li>';
+  h+='<li>A vote belongs to the first stage dated on or after it, so each stage lists the votes taken since the stage before.</li>';
+  h+='<li>"Changed most" means words added + words removed. Nothing here is estimated; it is counted by the page, and OCR slips count as changes.</li>';
+  h+='</ol>';
+  h+='<p style="margin-top:20px"><button type="button" class="btn" id="csv">Download this table as CSV</button> <span class="hint">stages of Article '+esc(m.rec.article)+', one row each</span></p>';
+  return h;
+}
+
+/* ---------- render ---------- */
+function render(){
+  var rec=RECS[state.art];
+  $("title").textContent=rec?"How Article "+rec.article+" ("+rec.title+") changed":"How an article of the Covenant changed";
+  var nv=M?M.votes.length:0,ns=M?M.stages.length:0;
+  $("sub").textContent=rec?((D.source?D.source+" · ":"")+rec.instrument+" Article "+rec.article+" · n = "+ns+" stages, "+nv+" votes · "+years(M)):"No drafting data in this preview.";
+  $("panel-0").innerHTML=M?overview(M):'<p class="empty">No drafting data was attached.</p>';
+  $("panel-1").innerHTML=M?stagesPanel(M):"";
+  $("panel-2").innerHTML=M?trust(M):"";
+  $("panel-3").innerHTML=M?methodPanel(M):"";
+  var b=$("csv");if(b)b.onclick=csv;
+  [].forEach.call(document.querySelectorAll(".stage>button"),function(btn){
+    btn.onclick=function(){
+      var i=+btn.getAttribute("data-i");
+      state.open=state.open===i?null:i;
+      $("panel-1").innerHTML=stagesPanel(M);
+      bindStages();
+      var nb=document.querySelector('.stage>button[data-i="'+i+'"]');if(nb)nb.focus();
+    };
+  });
+}
+function bindStages(){
+  [].forEach.call(document.querySelectorAll(".stage>button"),function(btn){
+    btn.onclick=function(){
+      var i=+btn.getAttribute("data-i");
+      state.open=state.open===i?null:i;
+      $("panel-1").innerHTML=stagesPanel(M);
+      bindStages();
+      var nb=document.querySelector('.stage>button[data-i="'+i+'"]');if(nb)nb.focus();
+    };
+  });
+}
+function csv(){
+  var rows=[["stage_no","date","symbol","stage","draft_article","words","added","removed","votes_since"]];
+  M.stages.forEach(function(s){
+    rows.push([s.i+1,s.src.date,s.src.symbol,s.src.stage,s.src.draft_article,s.words,s.d?s.d.ins:"",s.d?s.d.del:"",s.votes.length]);
+  });
+  var t=rows.map(function(r){return r.map(function(c){c=c==null?"":String(c);return'"'+c.replace(/"/g,'""')+'"'}).join(",")}).join("\n");
+  try{
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([t],{type:"text/csv"}));
+    a.download="article-"+M.rec.article+"-stages.csv";
+    document.body.appendChild(a);a.click();a.remove();
+  }catch(e){alert("This preview does not allow downloads.")}
+}
+function selectTab(i,focus){
+  state.tab=i;
+  TABS.forEach(function(_,k){
+    var t=$("tab-"+k);
+    t.setAttribute("aria-selected",k===i);
+    t.tabIndex=k===i?0:-1;
+    $("panel-"+k).hidden=k!==i;
+  });
+  if(focus)$("tab-"+i).focus();
+}
+function pickArticle(i){
+  state.art=i;
+  M=RECS[i]?build(RECS[i]):null;
+  state.open=null;
+  if(M&&M.stages.length>1){state.open=M.ranked[0]?M.ranked[0].i:1}
+  else if(M&&M.stages.length===1)state.open=0;
+  render();bindStages();
+}
+
+/* ---------- start ---------- */
+var tl=$("tabs");
+TABS.forEach(function(name,k){
+  var b=document.createElement("button");
+  b.type="button";b.id="tab-"+k;b.setAttribute("role","tab");
+  b.setAttribute("aria-controls","panel-"+k);
+  b.textContent=String(k+1).padStart(2,"0")+" "+name;
+  b.onclick=function(){selectTab(k,false)};
+  b.onkeydown=function(e){
+    var n=TABS.length,t=null;
+    if(e.key==="ArrowRight")t=(k+1)%n;
+    else if(e.key==="ArrowLeft")t=(k+n-1)%n;
+    else if(e.key==="Home")t=0;
+    else if(e.key==="End")t=n-1;
+    if(t!==null){e.preventDefault();selectTab(t,true)}
+  };
+  tl.appendChild(b);
+});
+var sel=$("art");
+RECS.forEach(function(r,i){
+  var o=document.createElement("option");
+  o.value=i;o.textContent="Article "+r.article+" — "+r.title+" ("+r.instrument+")";
+  sel.appendChild(o);
+});
+if(!RECS.length){sel.disabled=true;var o=document.createElement("option");o.textContent="No articles in the file";sel.appendChild(o)}
+sel.onchange=function(){pickArticle(+sel.value)};
+selectTab(0,false);
+pickArticle(0);
+})();
+</script>
+</body>
+</html>
+```

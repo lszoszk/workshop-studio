@@ -1,0 +1,397 @@
+I built a catalogue that reads the text of every file and fills one sortable row per file: symbol, cover date, issuing body, type and number, subject, what it replaces or updates, and pages. Any value the tool is not sure of carries a red "?" with the reason, a click on a row shows the words and the page each value was read from, and the CSV download is on tab 03.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Catalogue of UN documents</title>
+<style>
+:root{--paper:#f4f0e8;--ink:#1d1b18;--rule:#d9d2c3;--red:#9b2335;--mute:#575247;--serif:Georgia,"Times New Roman",serif;--mono:ui-monospace,Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 var(--sans)}
+#app{max-width:1240px;margin:0 auto;padding:20px 24px 48px}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.mono{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+h1{font:400 34px/1.15 var(--serif);margin:4px 0 6px}
+header{border-bottom:1px solid var(--rule);padding-bottom:14px}
+header p{margin:0;color:var(--mute)}
+[role=tablist]{display:flex;gap:4px;border-bottom:1px solid var(--rule);margin:0 0 20px;flex-wrap:wrap}
+[role=tab]{background:none;border:0;border-bottom:3px solid transparent;padding:12px 14px 9px;font:12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);cursor:pointer}
+[role=tab][aria-selected=true]{color:var(--red);border-bottom-color:var(--red)}
+.big{font:400 52px/1 var(--serif)}
+.nums{display:flex;gap:44px;flex-wrap:wrap;margin:6px 0 16px}
+.nums div span{display:block}
+.controls{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:0 0 12px}
+.controls label{font:12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+select,button.btn{font:15px var(--sans);color:var(--ink);background:var(--paper);border:1px solid var(--ink);padding:6px 10px;cursor:pointer}
+button.btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.hint{font:12px var(--mono);color:var(--mute)}
+table{border-collapse:collapse;width:100%}
+caption{text-align:left;font:12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mute);padding:0 0 8px}
+th,td{text-align:left;vertical-align:top;padding:8px 8px;border-bottom:1px solid var(--rule);overflow-wrap:anywhere}
+th{font:11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);border-bottom:1px solid var(--ink)}
+.cat{table-layout:fixed;font-size:15px}
+td.n,th.n{text-align:right}
+.q{display:inline-block;min-width:16px;height:16px;line-height:14px;text-align:center;border:1px solid var(--red);border-radius:50%;color:var(--red);font:700 11px var(--mono);margin-left:4px;vertical-align:1px}
+.unsure .v{border-bottom:1px dotted var(--red)}
+.miss{color:var(--mute);font-style:italic}
+.pg{display:block;font:11px var(--mono);color:var(--mute)}
+button.rowbtn{background:none;border:0;padding:0;font:600 15px var(--mono);color:var(--ink);cursor:pointer;text-align:left;overflow-wrap:anywhere}
+button.rowbtn::before{content:"+ ";color:var(--red)}
+button.rowbtn[aria-expanded=true]::before{content:"\2212 "}
+tr.detail>td{background:#ece6d8;padding:14px 16px}
+.inner{font-size:15px;margin-bottom:12px}
+.inner td,.inner th{border-bottom:1px solid var(--rule)}
+.viewer pre{white-space:pre-wrap;font:13px/1.5 var(--mono);background:var(--paper);border:1px solid var(--rule);padding:12px;max-height:380px;overflow:auto;margin:6px 0 0}
+mark{background:#f0c9ce;color:var(--ink);outline:1px solid var(--red)}
+.bar{display:inline-block;height:12px;background:var(--red);vertical-align:middle}
+.track{display:inline-block;width:160px;background:var(--rule);height:12px;vertical-align:middle}
+.track .bar{display:block}
+.how{font:12px var(--mono);color:var(--mute);margin:10px 0 0}
+ul.plain{padding-left:18px;margin:6px 0}
+dl.m dt{font:12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--red);margin-top:12px}
+dl.m dd{margin:2px 0 0}
+textarea{width:100%;height:150px;font:12px var(--mono);background:var(--paper);color:var(--ink);border:1px solid var(--rule);padding:8px}
+.fig{margin:0 0 28px}
+.fig h2{font:400 22px var(--serif);margin:0 0 6px}
+@media(max-width:900px){.wrap{overflow-x:auto}.cat{min-width:860px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+"use strict";
+var D=window.WORKSHOP_DATA||{};
+var META=D.pdf_meta||{};
+var FILES=Array.isArray(META.records)?META.records:[];
+var MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+var BODIES=[
+ {name:"Committee on Economic, Social and Cultural Rights",re:/Committee\s+on\s+Economic,\s+Social\s+and\s+Cultural\s+Rights/i,pfx:/^E\/C\.12\//},
+ {name:"Committee on the Rights of the Child",re:/Committee\s+on\s+the\s+Rights\s+of\s+the\s+Child/i,pfx:/^CRC\//},
+ {name:"Human Rights Committee",re:/Human\s+Rights\s+Committee/i,pfx:/^CCPR\//},
+ {name:"Committee on the Elimination of Racial Discrimination",re:/Committee\s+on\s+the\s+Elimination\s+of\s+Racial\s+Discrimination/i,pfx:/^CERD\//},
+ {name:"Committee on the Elimination of Discrimination against Women",re:/Committee\s+on\s+the\s+Elimination\s+of\s+Discrimination\s+against\s+Women/i,pfx:/^CEDAW\//},
+ {name:"Committee against Torture",re:/Committee\s+against\s+Torture/i,pfx:/^CAT\//},
+ {name:"Committee on the Rights of Persons with Disabilities",re:/Committee\s+on\s+the\s+Rights\s+of\s+Persons\s+with\s+Disabilities/i,pfx:/^CRPD\//},
+ {name:"Committee on Migrant Workers",re:/Committee\s+on\s+(?:the\s+Protection\s+of\s+the\s+Rights\s+of\s+All\s+)?Migrant\s+Workers/i,pfx:/^CMW\//}
+];
+var FIELDS=[["symbol","Symbol"],["date","Date on cover"],["body","Issuing body"],["kind","Type and number"],["subject","Subject"],["rel","Replaces or updates"],["pages","Pages"]];
+
+var esc=function(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});};
+var norm=function(s){return String(s==null?"":s).replace(/\s+/g," ").trim();};
+function roman(s){var m={I:1,V:5,X:10,L:50,C:100},t=0,i,a,b;for(i=0;i<s.length;i++){a=m[s[i]];b=m[s[i+1]]||0;t+=a<b?-a:a;}return t;}
+function toNum(s){return /^\d+$/.test(s)?parseInt(s,10):roman(s.toUpperCase());}
+function F(v,ok,why,ev,k){return {v:v,ok:!!ok,why:why||"",ev:ev||[],k:k==null?v:k};}
+function sentEnd(w){var r=/\.\s+(?=[A-Z])/g,m;while((m=r.exec(w))){if(!/\b[Nn]os?$/.test(w.slice(0,m.index)))return m.index;}return w.length;}
+
+function parseFile(rec){
+ var pages=Array.isArray(rec.pages)?rec.pages:[];
+ var p1=pages[0]||{page:1,text:""};
+ var pn=p1.page||1;
+ var text=String(p1.text||"");
+ var L=text.split("\n").map(function(x){return x.trim();}).filter(Boolean);
+ var r={file:rec.file||"(no name)",chk:{num:"n/a",body:"n/a"}};
+ var i,m;
+
+ /* symbol */
+ var SYMRE=/^[A-Z][A-Za-z0-9.\-]*(?:\/[A-Za-z0-9.\-()]+)+$/;
+ var cand=[];
+ L.slice(0,15).forEach(function(l,ix){if(SYMRE.test(l))cand.push({l:l,i:ix});});
+ var sym=null,symIdx=-1;
+ if(cand.length){
+  sym=cand[0].l;symIdx=cand[0].i;
+  var distinct=cand.map(function(c){return c.l;}).filter(function(x,ix,a){return a.indexOf(x)===ix;});
+  r.symbol=distinct.length>1?F(sym,false,"Several symbol-like lines on the cover: "+distinct.join(", ")+". The first was taken.",[{page:pn,snip:sym}])
+   :F(sym,true,"",[{page:pn,snip:sym}]);
+ }else{
+  m=/\b[A-Z][A-Za-z0-9.\-]*(?:\/[A-Za-z0-9.\-()]+){2,}/.exec(L.slice(0,40).join(" "));
+  if(m){sym=m[0];r.symbol=F(sym,false,"Not alone on a line of the cover, so it may be a reference to another document.",[{page:pn,snip:sym}]);}
+  else r.symbol=F(null,false,"No symbol found in the first lines of page 1.",[]);
+ }
+
+ /* date */
+ var DANY=new RegExp("(\\d{1,2})\\s+("+MONTHS.join("|")+")\\s+(\\d{4})");
+ var DRE=new RegExp("^(\\d{1,2})\\s+("+MONTHS.join("|")+")\\s+(\\d{4})$");
+ var dl=null;
+ for(i=0;i<Math.min(L.length,25);i++){if(DANY.test(L[i])){dl={l:L[i],i:i};break;}}
+ if(dl){
+  m=DANY.exec(dl.l);
+  var iso=m[3]+"-"+("0"+(MONTHS.indexOf(m[2])+1)).slice(-2)+"-"+("0"+m[1]).slice(-2);
+  var near=symIdx<0||Math.abs(dl.i-symIdx)<=6;
+  var clean=DRE.test(dl.l)||/^Distr/i.test(dl.l);
+  var dOk=near&&clean;
+  r.date=F(m[0],dOk,dOk?"":(!near?"The first date is far from the symbol, so it may not be the issue date.":"The date shares its line with other words."),[{page:pn,snip:m[0]}],iso);
+ }else{
+  m=DANY.exec(norm(text));
+  if(m)r.date=F(m[0],false,"No date among the first lines of the cover; this one comes from further down page 1.",[{page:pn,snip:m[0]}],
+   m[3]+"-"+("0"+(MONTHS.indexOf(m[2])+1)).slice(-2)+"-"+("0"+m[1]).slice(-2));
+  else r.date=F(null,false,"No date in the form '12 March 2021' on page 1.",[],null);
+ }
+
+ /* type and number */
+ var TL=/^[Gg]eneral\s+([Cc]omment|[Rr]ecommendation)s?\s+(?:[Nn]o\.?\s*)?(\d+|[IVXLC]+)\b/;
+ var tIdx=-1,tm=null;
+ for(i=0;i<Math.min(L.length,40);i++){tm=TL.exec(L[i]);if(tm){tIdx=i;break;}}
+ var tType=null,tRaw=null,tN=null,kindLoose=false;
+ if(tIdx>=0){tType=/^c/i.test(tm[1])?"General comment":"General recommendation";tRaw=tm[2];tN=toNum(tRaw);}
+ else{
+  m=/[Gg]eneral\s+([Cc]omment|[Rr]ecommendation)s?\s+(?:[Nn]o\.?\s*)?(\d+|[IVXLC]+)\b/.exec(L.slice(0,40).join(" "));
+  if(m){tm=m;tType=/^c/i.test(m[1])?"General comment":"General recommendation";tRaw=m[2];tN=toNum(tRaw);kindLoose=true;}
+ }
+ if(tType){
+  var disp=tType+" No. "+tRaw+(/^\d+$/.test(tRaw)?"":" ("+tN+")");
+  var tail=sym?/(?:^|\/)(?:GC|GR)\/(?:\d{4}\/)?(\d+)$/.exec(sym):null;
+  var kOk=!kindLoose,kWhy=kindLoose?"The title line is split or not at the start of a line.":"";
+  if(tail){
+   if(parseInt(tail[1],10)===tN)r.chk.num="agree";
+   else{r.chk.num="differ";kOk=false;kWhy="The title says No. "+tRaw+" but the symbol ends in "+tail[1]+".";}
+  }
+  r.kind=F(disp,kOk,kWhy,[{page:pn,snip:tm[0].replace(/^\s+/,"")}],tType+"|"+("00000"+tN).slice(-5));
+  r.kind.type=tType;r.kind.num=tRaw;
+ }else{
+  var g=sym&&/\/(GC|GR)\//.exec(sym);
+  if(g){r.kind=F((g[1]==="GC"?"General comment":"General recommendation"),false,"Type guessed from '"+g[1]+"' in the symbol; no 'General comment No. N' line found.",[],null);r.kind.type=r.kind.v;r.kind.num="";}
+  else{r.kind=F(null,false,"No 'General comment No. N' or 'General recommendation No. N' line found on page 1.",[],null);r.kind.type="";r.kind.num="";}
+ }
+
+ /* subject */
+ var titleNorm="";
+ if(tIdx>=0){
+  var STOP=/^(?:[IVX]+\.(?:\s|$)|\d+\.(?:\s|$)|Contents|Introduction|Summary|Paragraphs|Page\b|Adopted\b|\*|GE\.|Distr)/;
+  var parts=[L[tIdx].slice(tm[0].length)],stopped=false;
+  for(i=tIdx+1;i<Math.min(L.length,tIdx+7);i++){if(STOP.test(L[i])){stopped=true;break;}parts.push(L[i]);}
+  titleNorm=norm(parts.join(" "));
+  var s=titleNorm.replace(/^\(\d{4}\)\s*/,"").replace(/^(?:on|concerning|[—–:-])\s*/i,"").replace(/\s*[*†‡]+$/,"");
+  s=s.replace(/,?\s+(?:updating|replacing|revising|superseding)\b.*$/i,"");
+  var sOk=stopped&&s.length>=6&&s.length<=250;
+  var sWhy=s.length<6?"Nothing readable after the number on the title line.":(!stopped?"The title did not end at a clear heading, so the words may run on into the text.":(s.length>250?"The title is unusually long.":""));
+  r.subject=s.length>=3?F(s,sOk,sWhy,[{page:pn,snip:s.split(" ").slice(0,12).join(" ")}]):F(null,false,sWhy,[]);
+ }else r.subject=F(null,false,"No title line found to read a subject from.",[]);
+
+ /* body */
+ var region=(tIdx>=0?L.slice(0,tIdx):L.slice(0,30)).join(" ");
+ var found=[];
+ BODIES.forEach(function(b){var mm=b.re.exec(region);if(mm)found.push({b:b,i:mm.index,s:mm[0]});});
+ found.sort(function(a,b){return a.i-b.i;});
+ var symB=sym?BODIES.filter(function(b){return b.pfx.test(sym);})[0]:null;
+ if(found.length){
+  var fb=found[0],bOk=found.length===1,bWhy=bOk?"":"Several committee names on the cover; the first was taken.";
+  if(symB){if(symB===fb.b)r.chk.body="agree";else{r.chk.body="differ";bOk=false;bWhy="The cover names the "+fb.b.name+" but the symbol prefix belongs to the "+symB.name+".";}}
+  r.body=F(fb.b.name,bOk,bWhy,[{page:pn,snip:fb.s}]);
+ }else{
+  var after=null;
+  BODIES.forEach(function(b){var mm=b.re.exec(L.slice(0,40).join(" "));if(mm&&!after)after={b:b,s:mm[0]};});
+  if(after)r.body=F(after.b.name,false,"Named only after the title, not on the cover header.",[{page:pn,snip:after.s}]);
+  else if(symB)r.body=F(symB.name,false,"No committee name on the cover; inferred from the symbol prefix.",[]);
+  else r.body=F(null,false,"No known committee name on the cover and the symbol prefix is not one the tool knows.",[]);
+ }
+
+ /* replaces / updates */
+ var REF=/[Gg]eneral\s+([Cc]omments?|[Rr]ecommendations?)\s+(?:[Nn]os?\.?\s*)?((?:\d+|[IVXLC]+)(?:\s*(?:,|and|&)\s*(?:[Nn]os?\.?\s*)?(?:\d+|[IVXLC]+))*)/;
+ var items={};
+ pages.forEach(function(pg){
+  var t=norm(pg.text),re=/\b(replac(?:es|ed|ing)|supersed(?:es|ed|ing)|updat(?:es|ed|ing)|revis(?:es|ed|ing))\b/gi,mv;
+  while((mv=re.exec(t))){
+   var win=t.slice(mv.index,mv.index+190);win=win.slice(0,sentEnd(win));
+   var rf=REF.exec(win);
+   if(!rf||rf.index>130)continue;
+   var snip=win.slice(0,rf.index+rf[0].length);
+   var rel=/^(replac|supersed)/i.test(mv[1])?"replaces":"updates";
+   var ty=/^c/i.test(rf[1])?"GC":"GR";
+   var before=t.slice(Math.max(0,mv.index-90),mv.index);
+   var self=/(?:this|present)\s+general\s+(?:comment|recommendation)(?:\s+No\.?\s*\d+)?(?:\s*\(\d{4}\))?\s*$/i.test(before);
+   var ing=/ing$/i.test(mv[1])&&pg.page===pn&&titleNorm.toLowerCase().indexOf(mv[1].toLowerCase())>=0;
+   var okI=(self||ing)&&pg.page<=3;
+   rf[2].split(/\s*(?:,|and|&)\s*/).map(function(x){return x.replace(/^[Nn]os?\.?\s*/,"").trim();}).filter(function(x){return /^(\d+|[IVXLC]+)$/.test(x);}).forEach(function(num){
+    if(tType&&((ty==="GC")===(tType==="General comment"))&&toNum(num)===tN)return;
+    var key=rel+"|"+ty+"|"+num;
+    if(!items[key])items[key]={rel:rel,ty:ty,num:num,ok:false,ev:[]};
+    items[key].ok=items[key].ok||okI;
+    if(items[key].ev.length<2)items[key].ev.push({page:pg.page,snip:snip});
+   });
+  }
+ });
+ var keys=Object.keys(items);
+ if(keys.length){
+  var grp={},allOk=true,ev=[];
+  keys.forEach(function(k){var it=items[k],g2=it.rel+" "+it.ty;(grp[g2]=grp[g2]||[]).push(it.num);if(!it.ok)allOk=false;it.ev.forEach(function(e){if(ev.length<6)ev.push(e);});});
+  var val=Object.keys(grp).map(function(g2){return g2+" "+grp[g2].join(", ");}).join("; ");
+  r.rel=F(val,allOk,allOk?"":"At least one earlier text is named in a sentence that does not clearly say this document replaces or updates it, or sits beyond page 3.",ev,val);
+ }else r.rel=F("none found",false,"No sentence with replaces, supersedes, updates or revises next to a general comment or recommendation number was found in "+pages.length+" pages. A document may say it in other words.",[],null);
+
+ r.pages=F(pages.length,pages.length>0,pages.length?"":"The file has no pages in the data.",[],pages.length);
+ return r;
+}
+function blank(rec,e){
+ var o={file:rec&&rec.file||"(no name)",chk:{num:"n/a",body:"n/a"}},w="The tool failed to read this file: "+(e&&e.message);
+ FIELDS.forEach(function(f){o[f[0]]=F(null,false,w,[],null);});
+ o.kind.type="";o.kind.num="";return o;
+}
+var ROWS=FILES.map(function(rec){try{return parseFile(rec);}catch(e){return blank(rec,e);}});
+
+/* ---------- state and helpers ---------- */
+var S={tab:0,key:"file",dir:1,onlyQ:false,open:null,view:null};
+var SORTS={file:["File",function(r){return r.file;}],symbol:["Symbol",function(r){return r.symbol.v;}],date:["Date on cover",function(r){return r.date.k;}],body:["Issuing body",function(r){return r.body.v;}],kind:["Type and number",function(r){return r.kind.k;}],subject:["Subject",function(r){return r.subject.v;}],rel:["Replaces or updates",function(r){return r.rel.k;}],pages:["Pages",function(r){return r.pages.k;}]};
+var TABS=["01 CATALOGUE","02 CAN I TRUST THIS","03 METHOD AND EXPORT"];
+function shown(){
+ var a=ROWS.filter(function(r){return !S.onlyQ||FIELDS.some(function(f){return !r[f[0]].ok;});});
+ var g=SORTS[S.key][1];
+ return a.slice().sort(function(x,y){
+  var p=g(x),q=g(y),pn=p==null||p==="",qn=q==null||q==="";
+  if(pn&&qn)return 0;if(pn)return 1;if(qn)return -1;
+  var c=(typeof p==="number"&&typeof q==="number")?p-q:String(p).localeCompare(String(q),undefined,{numeric:true,sensitivity:"base"});
+  return c*S.dir;
+ });
+}
+function marks(){var n=0;ROWS.forEach(function(r){FIELDS.forEach(function(f){if(!r[f[0]].ok)n++;});});return n;}
+function cell(f,align){
+ var h;
+ if(f.v==null||f.v===""){h='<span class="miss">not found</span><span class="q" title="'+esc(f.why)+'" aria-label="not sure: '+esc(f.why)+'">?</span>';}
+ else{
+  h='<span class="v">'+esc(f.v)+"</span>";
+  if(!f.ok)h+='<span class="q" title="'+esc(f.why)+'" aria-label="not sure: '+esc(f.why)+'">?</span>';
+  if(f.ev.length)h+='<span class="pg">p. '+esc(f.ev[0].page)+"</span>";
+ }
+ return '<td class="'+(f.ok?"":"unsure")+(align?" n":"")+'">'+h+"</td>";
+}
+
+/* ---------- views ---------- */
+function header(){
+ var pgs=0,ys=[];
+ ROWS.forEach(function(r){pgs+=r.pages.v||0;if(r.date.k)ys.push(parseInt(r.date.k.slice(0,4),10));});
+ var span=ys.length?Math.min.apply(null,ys)+(Math.min.apply(null,ys)===Math.max.apply(null,ys)?"":"–"+Math.max.apply(null,ys)):"no dates read";
+ return '<header><div class="mono">WORKSHOP_DATA.pdf_meta · bare PDF files</div><h1>Catalogue of '+ROWS.length+' UN documents</h1><p>Source: '+esc(META.source||"not stated")+" · n = "+ROWS.length+" files, "+pgs+" pages · cover dates "+esc(span)+"</p></header>";
+}
+function tabs(){
+ return '<div role="tablist" aria-label="Views">'+TABS.map(function(t,i){return '<button role="tab" id="tab-'+i+'" aria-selected="'+(S.tab===i)+'" aria-controls="panel-'+i+'" tabindex="'+(S.tab===i?0:-1)+'" data-act="tab" data-i="'+i+'">'+t+"</button>";}).join("")+"</div>";
+}
+function viewerHtml(r){
+ if(!S.view||S.view.file!==r.file)return "";
+ var rec=FILES.filter(function(x){return x.file===r.file;})[0]||{pages:[]};
+ var pg=(rec.pages||[]).filter(function(p){return p.page===S.view.page;})[0];
+ var txt=String(pg&&pg.text||""),html=esc(txt),hit=false;
+ if(S.view.snip){
+  try{
+   var words=norm(S.view.snip).split(" ").filter(Boolean).map(function(w){return w.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&");});
+   var mm=new RegExp(words.join("\\s+")).exec(txt);
+   if(mm){hit=true;html=esc(txt.slice(0,mm.index))+"<mark>"+esc(mm[0])+"</mark>"+esc(txt.slice(mm.index+mm[0].length));}
+  }catch(e){}
+ }
+ return '<div class="viewer"><div class="mono">FIG.01 · '+esc(r.file)+" · page "+esc(S.view.page)+" of "+(rec.pages||[]).length+(hit?" · the words the value came from are marked":" · the exact words could not be marked, read the page")+'</div><pre tabindex="0">'+html+'</pre><p><button class="btn" id="closev" data-act="close">Close page</button></p></div>';
+}
+function detail(r,ri){
+ var rows=FIELDS.map(function(f,fi){
+  var x=r[f[0]],btns=x.ev.length?x.ev.map(function(e,ei){return '<button class="btn" id="op-'+ri+"-"+fi+"-"+ei+'" data-act="open" data-file="'+esc(r.file)+'" data-f="'+f[0]+'" data-e="'+ei+'">Open page '+esc(e.page)+"</button>";}).join(" "):'<span class="hint">'+(f[0]==="pages"?"counted from the file":"no page to show")+"</span>";
+  return "<tr><th scope=\"row\">"+f[1]+"</th><td>"+(x.v==null?'<span class="miss">not found</span>':esc(x.v))+"</td><td>"+btns+"</td><td>"+(x.ok?"read by rule":'<span class="q" aria-hidden="true">?</span> '+esc(x.why))+"</td></tr>";
+ }).join("");
+ return '<tr class="detail"><td colspan="8"><table class="inner"><caption>Where each value was read · '+esc(r.file)+'</caption><thead><tr><th scope="col">Field</th><th scope="col">Value</th><th scope="col">Page</th><th scope="col">Status</th></tr></thead><tbody>'+rows+"</tbody></table>"+viewerHtml(r)+"</td></tr>";
+}
+function catalogue(){
+ var rs=shown(),m=marks();
+ var body=rs.map(function(r){
+  var ri=ROWS.indexOf(r),open=S.open===r.file;
+  return "<tr><td><button class=\"rowbtn\" id=\"row-"+ri+"\" aria-expanded=\""+open+"\" data-act=\"row\" data-file=\""+esc(r.file)+"\">"+esc(r.file)+"</button></td>"+cell(r.symbol)+cell(r.date)+cell(r.body)+cell(r.kind)+cell(r.subject)+cell(r.rel)+cell(r.pages,true)+"</tr>"+(open?detail(r,ri):"");
+ }).join("");
+ return '<div class="nums"><div><span class="big">'+ROWS.length+'</span><span class="mono">files catalogued</span></div><div><span class="big">'+m+'</span><span class="mono">values marked ? of '+(ROWS.length*FIELDS.length)+"</span></div></div>"+
+ '<div class="controls"><label for="sortKey">Sort by</label><select id="sortKey">'+Object.keys(SORTS).map(function(k){return '<option value="'+k+'"'+(S.key===k?" selected":"")+">"+SORTS[k][0]+"</option>";}).join("")+'</select><button class="btn" id="dirBtn" data-act="dir" aria-label="Sort direction: '+(S.dir>0?"ascending":"descending")+'">'+(S.dir>0?"↑ ascending":"↓ descending")+'</button><label><input type="checkbox" id="onlyQ" '+(S.onlyQ?"checked":"")+'> only files with a ?</label><span class="hint">click a row = see the page it was read from</span></div>'+
+ '<div class="wrap"><table class="cat"><caption>FIG.01 · One row per file · sorted by '+esc(SORTS[S.key][0])+" ("+(S.dir>0?"ascending":"descending")+") · showing "+rs.length+" of "+ROWS.length+'</caption><colgroup><col style="width:9%"><col style="width:12%"><col style="width:10%"><col style="width:14%"><col style="width:11%"><col style="width:22%"><col style="width:15%"><col style="width:7%"></colgroup><thead><tr><th scope="col">File</th><th scope="col">Symbol</th><th scope="col">Date on cover</th><th scope="col">Issuing body</th><th scope="col">Type and number</th><th scope="col">Subject</th><th scope="col">Replaces / updates</th><th scope="col" class="n">Pages</th></tr></thead><tbody>'+(body||'<tr><td colspan="8" class="miss">No file matches. '+(ROWS.length?"Untick the filter.":"The data has no files.")+"</td></tr>")+"</tbody></table></div>"+
+ '<p class="how">How this is computed: plain rules read the text of each page. Symbol, date, body, number and subject come from page 1; replaces/updates from every page; pages are counted. ? = weak match, several candidates or nothing found. GC = general comment, GR = general recommendation.</p>';
+}
+function checks(){
+ var n=ROWS.length,m=marks(),tot=n*FIELDS.length;
+ var per=FIELDS.map(function(f){var ok=ROWS.filter(function(r){return r[f[0]].ok;}).length;var w=n?Math.round(ok/n*100):0;return "<tr><th scope=\"row\">"+f[1]+'</th><td class="n">'+ok+'</td><td class="n">'+(n-ok)+'</td><td><span class="track"><span class="bar" style="width:'+w+'%"></span></span> '+w+"%</td></tr>";}).join("");
+ function chk(label,key){
+  var t=ROWS.filter(function(r){return r.chk[key]!=="n/a";}),bad=t.filter(function(r){return r.chk[key]==="differ";});
+  return "<tr><th scope=\"row\">"+label+"</th><td class=\"n\">"+t.length+"</td><td>"+(t.length?(bad.length?bad.length+" differ: "+esc(bad.map(function(r){return r.file;}).join(", ")):"all agree"):"nothing to compare")+"</td></tr>";
+ }
+ var syms={},dup=[];ROWS.forEach(function(r){var s=r.symbol.v;if(s){if(syms[s])dup.push(s);syms[s]=1;}});
+ var withText=FILES.filter(function(r){return r.pages&&r.pages[0]&&String(r.pages[0].text||"").trim();}).length;
+ var cnt=typeof META.count==="number"?META.count:null;
+ var listed=[];
+ ROWS.forEach(function(r){FIELDS.forEach(function(f){var x=r[f[0]];if(!x.ok)listed.push("<tr><td>"+esc(r.file)+"</td><th scope=\"row\">"+f[1]+"</th><td>"+(x.v==null?'<span class="miss">not found</span>':esc(x.v))+"</td><td>"+esc(x.why)+'</td><td><button class="btn" data-act="show" data-file="'+esc(r.file)+'">Show</button></td></tr>');});});
+ return '<div class="nums"><div><span class="big">'+(tot-m)+'</span><span class="mono">values read with confidence</span></div><div><span class="big">'+m+'</span><span class="mono">values marked ?</span></div></div>'+
+ '<div class="fig"><h2>How sure is each column?</h2><table><caption>FIG.02 · Values by field</caption><thead><tr><th scope="col">Field</th><th scope="col" class="n">Sure</th><th scope="col" class="n">Marked ?</th><th scope="col">Share sure</th></tr></thead><tbody>'+per+'</tbody></table></div>'+
+ '<div class="fig"><h2>Does the tool contradict itself?</h2><table><caption>FIG.03 · Cross-checks between values</caption><thead><tr><th scope="col">Check</th><th scope="col" class="n">Tested</th><th scope="col">Result</th></tr></thead><tbody>'+
+ chk("Number in the title = number at the end of the symbol","num")+chk("Committee on the cover = committee the symbol prefix belongs to","body")+
+ "<tr><th scope=\"row\">No two files share a symbol</th><td class=\"n\">"+Object.keys(syms).length+"</td><td>"+(dup.length?"repeated: "+esc(dup.join(", ")):"all different")+"</td></tr>"+
+ "<tr><th scope=\"row\">Page 1 of every file has text</th><td class=\"n\">"+FILES.length+"</td><td>"+(withText===FILES.length?"yes":(FILES.length-withText)+" files have an empty first page (scanned image?)")+"</td></tr>"+
+ "<tr><th scope=\"row\">Files received = count stated by the data</th><td class=\"n\">"+FILES.length+"</td><td>"+(cnt==null?"the data states no count":(cnt===FILES.length?"agree ("+cnt+")":"differ: data says "+cnt))+"</td></tr>"+
+ '</tbody></table><p class="how">How this is computed: each check compares two values the tool read independently. Agreement does not prove either is right.</p></div>'+
+ '<div class="fig"><h2>Every value to check by hand</h2><div class="wrap"><table><caption>FIG.04 · '+m+' marked values</caption><thead><tr><th scope="col">File</th><th scope="col">Field</th><th scope="col">Value</th><th scope="col">Why it is marked</th><th scope="col">Page</th></tr></thead><tbody>'+(listed.join("")||'<tr><td colspan="5" class="miss">Nothing is marked.</td></tr>')+"</tbody></table></div></div>";
+}
+function csvCell(s){s=s==null?"":String(s);if(/^[=+\-@\t\r]/.test(s))s="'"+s;return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+function buildCsv(){
+ var head=["file","symbol","date_on_cover_iso","issuing_body","type","number","subject","replaces_or_updates","pages","values_not_sure","read_from_page"];
+ var out=[head.join(",")];
+ shown().forEach(function(r){
+  var ns=FIELDS.filter(function(f){return !r[f[0]].ok;}).map(function(f){return f[0];}).join("; ");
+  var rd=FIELDS.filter(function(f){return r[f[0]].ev.length;}).map(function(f){return f[0]+" p"+r[f[0]].ev[0].page;}).join("; ");
+  var row=[r.file,r.symbol.v,r.date.k,r.body.v,r.kind.type,r.kind.num,r.subject.v,r.rel.v==="none found"?"":r.rel.v,r.pages.v,ns,rd];
+  out.push(row.map(csvCell).join(","));
+ });
+ return out.join("\r\n");
+}
+function method(){
+ var csv=buildCsv();
+ return '<div class="fig"><h2>Download the table</h2><p><button class="btn primary" id="dl" data-act="dl">Download CSV</button> <span class="hint">'+shown().length+' rows · same order and filter as tab 01 · UTF-8</span></p><p class="hint" id="dlmsg" role="status"></p><label class="mono" for="csvbox">If the download is blocked here, copy from this box</label><textarea id="csvbox" readonly>'+esc(csv)+'</textarea></div>'+
+ '<div class="fig"><h2>How each value is read</h2><dl class="m">'+
+ '<dt>Symbol</dt><dd>The one line in the first 15 lines of page 1 that is only a document symbol (letters, slashes, dots). Several candidates, or one inside a sentence: marked ?.</dd>'+
+ '<dt>Date on cover</dt><dd>The first date like "6 November 2025" in the first 25 lines, accepted when it stands alone near the symbol. The CSV writes it as YYYY-MM-DD.</dd>'+
+ '<dt>Issuing body</dt><dd>One of eight known committee names on the cover, above the title. If absent, the body is guessed from the symbol prefix and marked ?. A cover name and a prefix that disagree are marked ?.</dd>'+
+ '<dt>Type and number</dt><dd>The title line "General comment No. N" or "General recommendation No. N" (roman numerals are converted). Compared with the number at the end of the symbol when there is one.</dd>'+
+ '<dt>Subject</dt><dd>The words after the number up to the first heading ("I. Introduction"), as printed. It is the title, not a classification.</dd>'+
+ '<dt>Replaces or updates</dt><dd>Every sentence on every page with replaces, supersedes, updates or revises (any form) followed within a few words by a general comment or recommendation number. Sure only when the sentence is about "this general comment" or sits in the title, on pages 1 to 3.</dd>'+
+ '<dt>Pages</dt><dd>The number of pages in the file as supplied.</dd></dl>'+
+ '<p class="how">What it leaves out: scanned images without text, tables of earlier texts in footnotes, and relations written without the four verbs. "none found" is not proof of "replaces nothing".</p></div>';
+}
+function render(){
+ var fid=document.activeElement&&document.activeElement.id;
+ var body=[catalogue,checks,method].map(function(f,i){return '<section role="tabpanel" id="panel-'+i+'" aria-labelledby="tab-'+i+'"'+(S.tab===i?"":" hidden")+">"+(S.tab===i?f():"")+"</section>";}).join("");
+ document.getElementById("app").innerHTML=header()+tabs()+(ROWS.length?body:'<p class="miss">The data has no files in WORKSHOP_DATA.pdf_meta.</p>');
+ if(fid){var el=document.getElementById(fid);if(el)el.focus();}
+}
+function download(){
+ var msg=document.getElementById("dlmsg");
+ try{
+  var blob=new Blob(["﻿"+buildCsv()],{type:"text/csv;charset=utf-8"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="un-documents-catalogue.csv";
+  document.body.appendChild(a);a.click();a.remove();
+  msg.textContent="CSV prepared: un-documents-catalogue.csv";
+ }catch(e){msg.textContent="The download did not start; copy the text from the box below.";}
+}
+var app=document.getElementById("app");
+app.addEventListener("click",function(e){
+ var t=e.target.closest("[data-act]");if(!t)return;
+ var act=t.dataset.act,file=t.dataset.file;
+ if(act==="tab"){S.tab=+t.dataset.i;render();}
+ else if(act==="dir"){S.dir=-S.dir;render();}
+ else if(act==="row"){S.open=S.open===file?null:file;S.view=null;render();}
+ else if(act==="open"){
+  var r=ROWS.filter(function(x){return x.file===file;})[0],ev=r[t.dataset.f].ev[+t.dataset.e];
+  S.view={file:file,page:ev.page,snip:ev.snip};render();
+  var pre=document.querySelector(".viewer pre");if(pre){var mk=pre.querySelector("mark");if(mk)mk.scrollIntoView({block:"center"});}
+ }
+ else if(act==="close"){S.view=null;render();}
+ else if(act==="show"){S.tab=0;S.onlyQ=false;S.open=file;S.view=null;render();var b=app.querySelector('[data-act="row"][aria-expanded="true"]');if(b){b.focus();b.scrollIntoView({block:"center"});}}
+ else if(act==="dl"){download();}
+});
+app.addEventListener("change",function(e){
+ if(e.target.id==="sortKey"){S.key=e.target.value;render();}
+ else if(e.target.id==="onlyQ"){S.onlyQ=e.target.checked;S.open=null;S.view=null;render();}
+});
+app.addEventListener("keydown",function(e){
+ var t=e.target;if(!t||t.getAttribute("role")!=="tab")return;
+ var n=TABS.length,i=S.tab,k=e.key;
+ if(k==="ArrowRight")i=(i+1)%n;else if(k==="ArrowLeft")i=(i+n-1)%n;else if(k==="Home")i=0;else if(k==="End")i=n-1;else return;
+ e.preventDefault();S.tab=i;render();document.getElementById("tab-"+i).focus();
+});
+render();
+})();
+</script>
+</body>
+</html>
+```

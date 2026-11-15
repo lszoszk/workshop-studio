@@ -594,6 +594,270 @@
       "lesson": "Asking the questions first is a method of its own: the model learns what you need before it writes anything, and you notice what you had not decided yet.",
       "live_only": true,
       "bakeoff": false
+    },
+    {
+      "id": "x-meta-pdfs",
+      "session": "lab",
+      "minute": 0,
+      "dataset": "pdf_meta",
+      "builds_on": null,
+      "hidden": true,
+      "title": "A catalogue of ten PDFs",
+      "blurb": "Read ten bare PDF files and catalogue them: symbol, date, type, number and what each replaces",
+      "prompt": "I have ten UN documents as PDF files, named only doc-01.pdf to doc-10.pdf. Build a tool that reads each file and catalogues it: the document symbol, the date on its cover, the body that issued it, whether it is a general comment or a general recommendation and its number, its subject, the earlier general comments or recommendations it replaces or updates, and its number of pages. Show one row per file in a table I can sort, mark every value the tool is not sure of, and let me open the page a value was read from. Let me download the table as a CSV file.",
+      "lesson": "Cataloguing is the first job with any pile of documents. Every value can be checked against the page it came from.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "table_min_rows": 10,
+        "text_contains": [
+          "CRPD/C/GC/7",
+          "CRC/C/GC/25",
+          "CCPR/C/GC/36",
+          "E/C.12/GC/24",
+          "E/C.12/GC/27",
+          "CCPR/C/GC/34",
+          "CAT/C/GC/4",
+          "CEDAW/C/GC/35",
+          "CCPR/C/GC/32",
+          "E/C.12/GC/25"
+        ],
+        "download": true,
+        "row_facts_dates": {
+          "rows": [
+            "CRPD/C/GC/7",
+            "CRC/C/GC/25",
+            "CCPR/C/GC/36",
+            "E/C.12/GC/24",
+            "E/C.12/GC/27",
+            "CCPR/C/GC/34",
+            "CAT/C/GC/4",
+            "CEDAW/C/GC/35",
+            "CCPR/C/GC/32",
+            "E/C.12/GC/25"
+          ],
+          "facts": [
+            {
+              "row": "CRPD/C/GC/7",
+              "has": [
+                "9\\ November\\ 2018|2018-11-09|0?9/11/2018|0?9\\.11\\.2018|November 0?9,? 2018|0?9 Nov\\.? 2018"
+              ]
+            },
+            {
+              "row": "CRC/C/GC/25",
+              "has": [
+                "2\\ March\\ 2021|2021-03-02|0?2/03/2021|0?2\\.03\\.2021|March 0?2,? 2021|0?2 Mar\\.? 2021"
+              ]
+            },
+            {
+              "row": "CCPR/C/GC/36",
+              "has": [
+                "3\\ September\\ 2019|2019-09-03|0?3/09/2019|0?3\\.09\\.2019|September 0?3,? 2019|0?3 Sep\\.? 2019"
+              ]
+            },
+            {
+              "row": "E/C.12/GC/24",
+              "has": [
+                "10\\ August\\ 2017|2017-08-10|0?10/08/2017|0?10\\.08\\.2017|August 0?10,? 2017|0?10 Aug\\.? 2017"
+              ]
+            },
+            {
+              "row": "E/C.12/GC/27",
+              "has": [
+                "6\\ November\\ 2025|2025-11-06|0?6/11/2025|0?6\\.11\\.2025|November 0?6,? 2025|0?6 Nov\\.? 2025"
+              ]
+            },
+            {
+              "row": "CCPR/C/GC/34",
+              "has": [
+                "12\\ September\\ 2011|2011-09-12|0?12/09/2011|0?12\\.09\\.2011|September 0?12,? 2011|0?12 Sep\\.? 2011"
+              ]
+            },
+            {
+              "row": "CAT/C/GC/4",
+              "has": [
+                "4\\ September\\ 2018|2018-09-04|0?4/09/2018|0?4\\.09\\.2018|September 0?4,? 2018|0?4 Sep\\.? 2018"
+              ]
+            },
+            {
+              "row": "CEDAW/C/GC/35",
+              "has": [
+                "26\\ July\\ 2017|2017-07-26|0?26/07/2017|0?26\\.07\\.2017|July 0?26,? 2017|0?26 Jul\\.? 2017"
+              ]
+            },
+            {
+              "row": "CCPR/C/GC/32",
+              "has": [
+                "23\\ August\\ 2007|2007-08-23|0?23/08/2007|0?23\\.08\\.2007|August 0?23,? 2007|0?23 Aug\\.? 2007"
+              ]
+            },
+            {
+              "row": "E/C.12/GC/25",
+              "has": [
+                "30\\ April\\ 2020|2020-04-30|0?30/04/2020|0?30\\.04\\.2020|April 0?30,? 2020|0?30 Apr\\.? 2020"
+              ]
+            }
+          ]
+        },
+        "row_facts_types": {
+          "rows": [
+            "CRPD/C/GC/7",
+            "CRC/C/GC/25",
+            "CCPR/C/GC/36",
+            "E/C.12/GC/24",
+            "E/C.12/GC/27",
+            "CCPR/C/GC/34",
+            "CAT/C/GC/4",
+            "CEDAW/C/GC/35",
+            "CCPR/C/GC/32",
+            "E/C.12/GC/25"
+          ],
+          "facts": [
+            {
+              "row": "CRPD/C/GC/7",
+              "has": [
+                "comment"
+              ]
+            },
+            {
+              "row": "CRC/C/GC/25",
+              "has": [
+                "comment"
+              ]
+            },
+            {
+              "row": "CCPR/C/GC/36",
+              "has": [
+                "comment"
+              ]
+            },
+            {
+              "row": "E/C.12/GC/24",
+              "has": [
+                "comment"
+              ]
+            },
+            {
+              "row": "E/C.12/GC/27",
+              "has": [
+                "comment"
+              ]
+            },
+            {
+              "row": "CCPR/C/GC/34",
+              "has": [
+                "comment"
+              ]
+            },
+            {
+              "row": "CAT/C/GC/4",
+              "has": [
+                "comment"
+              ]
+            },
+            {
+              "row": "CEDAW/C/GC/35",
+              "has": [
+                "recommendation"
+              ]
+            },
+            {
+              "row": "CCPR/C/GC/32",
+              "has": [
+                "comment"
+              ]
+            },
+            {
+              "row": "E/C.12/GC/25",
+              "has": [
+                "comment"
+              ]
+            }
+          ]
+        },
+        "row_facts_replaces": {
+          "rows": [
+            "CRPD/C/GC/7",
+            "CRC/C/GC/25",
+            "CCPR/C/GC/36",
+            "E/C.12/GC/24",
+            "E/C.12/GC/27",
+            "CCPR/C/GC/34",
+            "CAT/C/GC/4",
+            "CEDAW/C/GC/35",
+            "CCPR/C/GC/32",
+            "E/C.12/GC/25"
+          ],
+          "facts": [
+            {
+              "row": "CCPR/C/GC/36",
+              "has": [
+                "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?14\\b",
+                "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?6\\b"
+              ]
+            },
+            {
+              "row": "CCPR/C/GC/34",
+              "has": [
+                "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?10\\b"
+              ]
+            },
+            {
+              "row": "CAT/C/GC/4",
+              "has": [
+                "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?1\\b"
+              ]
+            },
+            {
+              "row": "CEDAW/C/GC/35",
+              "has": [
+                "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?19\\b"
+              ]
+            },
+            {
+              "row": "CCPR/C/GC/32",
+              "has": [
+                "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?13\\b"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "x-versions",
+      "session": "lab",
+      "minute": 0,
+      "dataset": "drafts",
+      "builds_on": null,
+      "hidden": true,
+      "title": "How an article changed",
+      "blurb": "Every draft of an ICCPR article, 1947–1966, with what changed at each stage and the votes behind it",
+      "prompt": "Build a tool that shows how an article of the Covenant changed while it was drafted. Let me pick the article, and open on the first one in the file. Show every stage in date order, from the first draft to the text adopted in 1966, each with its document symbol and date, and with what changed from the stage before: added words marked as added (<ins>) and removed words as removed (<del>). The drafts come from OCR: ignore differences of punctuation, of capital letters and of words broken at a line end (restric- tions). For each stage, list the votes taken since the stage before, by date, with what was voted on, the result and who proposed it. Show which stages changed the text most.",
+      "lesson": "Comparing versions is what lawyers do with every draft. OCR noise is the trap: a careful tool tells a real change from a scanning error.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "controls_min": 1,
+        "text_contains": [
+          "E/CN.4/669",
+          "A/RES/2200",
+          "E/CN.4/L.201"
+        ],
+        "diff_added": [
+          "democratic society",
+          "safety",
+          "ordre public"
+        ],
+        "diff_removed": [
+          "to ensure"
+        ],
+        "diff_not": [
+          "restric"
+        ]
+      }
     }
   ]
 }

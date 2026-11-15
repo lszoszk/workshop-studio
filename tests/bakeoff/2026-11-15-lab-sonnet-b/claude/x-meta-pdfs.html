@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catalogue of ten UN documents</title>
+<style>
+:root{--paper:#f4f0e8;--ink:#1d1b18;--rule:#d9d2c3;--red:#9b2335;--mute:#5b5648}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 24px 48px}
+.mono{font:11px/1.4 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase}
+.hint{font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;color:var(--mute)}
+h1{font:400 34px/1.15 Georgia,"Times New Roman",serif;margin:6px 0 4px}
+h2{font:400 22px/1.2 Georgia,"Times New Roman",serif;margin:28px 0 8px}
+header{border-bottom:1px solid var(--rule);padding-bottom:14px}
+header .src{color:var(--mute);margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+[role=tablist]{display:flex;gap:4px;border-bottom:1px solid var(--rule);margin-top:12px;flex-wrap:wrap}
+[role=tab]{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+[role=tab][aria-selected=true]{color:var(--red);border-bottom-color:var(--red);font-weight:700}
+.bignums{display:flex;gap:48px;flex-wrap:wrap;margin:24px 0 8px}
+.bignums .n{font:400 52px/1 Georgia,"Times New Roman",serif}
+.bignums .l{display:block;margin-top:6px;color:var(--mute)}
+.bar-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:18px 0 10px}
+.btn{background:transparent;border:1px solid var(--ink);padding:6px 12px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.06em;text-transform:uppercase}
+.btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+select{font:inherit;padding:5px 8px;background:var(--paper);border:1px solid var(--ink);color:var(--ink)}
+table{width:100%;border-collapse:collapse}
+caption{text-align:left;padding:8px 0;font-family:Georgia,"Times New Roman",serif;font-size:18px}
+.fig{font:11px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;color:var(--red);margin-right:8px}
+th{font:11px/1.3 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;text-align:left;color:var(--mute);border-bottom:2px solid var(--ink);padding:8px 8px 6px 0;vertical-align:bottom}
+th.sortable{cursor:pointer}
+th[aria-sort=ascending]::after{content:" \25B2";color:var(--red)}
+th[aria-sort=descending]::after{content:" \25BC";color:var(--red)}
+td{border-bottom:1px solid var(--rule);padding:9px 8px 9px 0;vertical-align:top;overflow-wrap:anywhere}
+td.num,th.num{text-align:right;padding-right:0}
+.rowbtn{background:none;border:0;padding:0;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;text-decoration:underline;text-underline-offset:3px;text-align:left}
+.rowbtn::before{content:"+ ";color:var(--red)}
+.rowbtn[aria-expanded=true]::before{content:"\2212 "}
+a{color:var(--red)}
+.q{display:inline-block;margin-left:4px;padding:0 5px;border-radius:8px;background:var(--red);color:#fff;font:700 11px/16px ui-monospace,Menlo,Consolas,monospace;vertical-align:1px;cursor:help}
+.miss{color:var(--red);font-style:italic}
+.mute{color:var(--mute)}
+tr.detail td{background:#efe9dc;padding:16px 14px}
+.dgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
+.flist{list-style:none;margin:0;padding:0}
+.flist li{padding:7px 0;border-bottom:1px solid var(--rule)}
+.flist .fl{display:block;color:var(--mute)}
+.flist .why{display:block;font-size:14px;color:var(--mute)}
+.evb{margin:4px 6px 0 0;background:transparent;border:1px solid var(--red);color:var(--red);padding:1px 8px;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace}
+.evb[aria-pressed=true]{background:var(--red);color:#fff}
+.viewer .vh{margin-bottom:6px}
+.viewer pre{position:relative;margin:0;white-space:pre-wrap;overflow-wrap:anywhere;max-height:380px;overflow:auto;background:var(--paper);border:1px solid var(--rule);padding:12px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace}
+mark{background:#ecd9a0;color:var(--ink);padding:0 1px;border-bottom:2px solid var(--red)}
+.how{margin:10px 0 0;color:var(--mute);font-size:14px}
+.how b{font:11px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+.track{background:var(--rule);height:12px;min-width:120px}
+.track i{display:block;height:12px;background:var(--red)}
+textarea{width:100%;height:150px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;background:var(--paper);color:var(--ink);border:1px solid var(--rule);padding:8px}
+ol.rules{padding-left:22px}
+ol.rules li{margin:6px 0}
+.warn{border-left:3px solid var(--red);padding:4px 12px;margin:14px 0}
+@media (max-width:900px){.dgrid{grid-template-columns:1fr}.bignums{gap:28px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="mono" id="hLabel"></div>
+  <h1>Catalogue of ten UN documents</h1>
+  <p class="src" id="hSrc"></p>
+</header>
+<div role="tablist" aria-label="Views" id="tabs"></div>
+<section role="tabpanel" id="panel0" aria-labelledby="tab0"></section>
+<section role="tabpanel" id="panel1" aria-labelledby="tab1" hidden></section>
+<section role="tabpanel" id="panel2" aria-labelledby="tab2" hidden></section>
+</div>
+<script>
+(function(){
+'use strict';
+var D = window.WORKSHOP_DATA || {};
+var META = D.pdf_meta || {};
+var FILES = Array.isArray(META.records) ? META.records : [];
+var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+var MONTH_RE = MONTHS.join('|');
+var FIELDS = [
+  {k:'symbol',l:'Symbol'},{k:'date',l:'Date on the cover'},{k:'body',l:'Issuing body'},
+  {k:'type',l:'General comment or recommendation'},{k:'number',l:'Number'},{k:'subject',l:'Subject'},
+  {k:'replaces',l:'Replaces / updates'},{k:'pages',l:'Number of pages'}
+];
+var BODIES = [
+  'Committee on the Elimination of Discrimination against Women','Committee on the Elimination of Racial Discrimination',
+  'Committee on Economic, Social and Cultural Rights','Committee on the Rights of Persons with Disabilities',
+  'Committee on the Protection of the Rights of All Migrant Workers and Members of Their Families',
+  'Committee on Migrant Workers','Committee on the Rights of the Child','Committee against Torture',
+  'Subcommittee on Prevention of Torture','Human Rights Committee'
+];
+var SYM_RE = /\b[A-Z][A-Za-z]*(?:\.\d+)?(?:\/[A-Za-z0-9][A-Za-z0-9.()\-]*)+/g;
+var GCR = /\b(joint\s+)?general\s+(comment|recommendation)s?\b[\s,]*(?:(?:no|nos|number)\b\.?\s*)?(\d{1,3}|[A-Za-z]{1,6})\b(?:\s*\((\d{4})\))?/gi;
+var REP = /\b(replaces?|replacing|supersedes?|superseding|updates?|updating|revises?|revising)\b([^.;]{0,160}?)\bgeneral\s+(comment|recommendation)s?\b[\s,]*(?:(?:no|nos|number)\b\.?\s*)?(\d{1,3}|[A-Za-z]{1,6})\b/gi;
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function rxWords(w){return w.trim().split(/\s+/).map(function(x){return x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}).join('\\s+');}
+function roman(s){var v={I:1,V:5,X:10,L:50},t=0,i;for(i=0;i<s.length;i++){var a=v[s[i]],b=v[s[i+1]]||0;t+=a<b?-a:a;}return t;}
+function toNum(s){if(/^\d+$/.test(s))return parseInt(s,10);if(/^[IVXL]+$/.test(s))return roman(s);return null;}
+function mk(value,conf,evid,why,extra){var o={value:value,conf:conf,evid:evid||[],why:why||''};if(extra)for(var k in extra)o[k]=extra[k];return o;}
+function missing(why){return mk('','missing',[],why);}
+function two(n){return (n<10?'0':'')+n;}
+
+/* ---------- readers ---------- */
+function readSymbol(P){
+  if(!P.length)return missing('The file has no page text.');
+  for(var pi=0;pi<Math.min(2,P.length);pi++){
+    var t=P[pi],re=new RegExp(SYM_RE.source,'g'),m;
+    while((m=re.exec(t))){
+      var v=m[0].replace(/[.,;:]+$/,'');
+      if(/\)$/.test(v)&&v.indexOf('(')<0)v=v.slice(0,-1);
+      if(v.split('/').length<2)continue;
+      var rep=0;P.forEach(function(x,i){if(i!==pi&&x.indexOf(v)>=0)rep++;});
+      var ev=[{pi:pi,start:m.index,end:m.index+v.length}];
+      if(pi===0&&m.index<500){
+        return mk(v,(rep>=1||P.length===1)?'ok':'unsure',ev,
+          rep>=1?'Top of the cover page, and repeated on '+rep+' other page(s) as a running header.':'Top of the cover page, but not repeated on other pages.');
+      }
+      return mk(v,'unsure',ev,'Found, but not in the first lines of page 1.');
+    }
+  }
+  return missing('No text shaped like a UN symbol (letters, slashes, numbers) on pages 1-2.');
+}
+function readDate(P){
+  var t=P[0]||'';
+  var m=new RegExp('Distr[\\s\\S]{0,80}?(\\b\\d{1,2}\\s+(?:'+MONTH_RE+')\\s+\\d{4}\\b)','i').exec(t);
+  var dre=new RegExp('\\b(\\d{1,2})\\s+('+MONTH_RE+')\\s+(\\d{4})\\b','i');
+  function build(str,start,conf,why){
+    var d=dre.exec(str),mi=MONTHS.map(function(x){return x.toLowerCase();}).indexOf(d[2].toLowerCase());
+    return mk(d[0].replace(/\s+/g,' '),conf,[{pi:0,start:start,end:start+str.length}],why,{iso:d[3]+'-'+two(mi+1)+'-'+two(parseInt(d[1],10))});
+  }
+  if(m){var s=m.index+m[0].lastIndexOf(m[1]);return build(m[1],s,'ok','The date line right after "Distr." on the cover.');}
+  var m2=dre.exec(t.slice(0,1500));
+  if(m2)return build(m2[0],m2.index,'unsure','First full date in the top of page 1; there is no "Distr." line to anchor it, so it may be a session date.');
+  var m3=new RegExp('\\b('+MONTH_RE+')\\s+(\\d{4})\\b','i').exec(t.slice(0,1500));
+  if(m3){var mi=MONTHS.map(function(x){return x.toLowerCase();}).indexOf(m3[1].toLowerCase());
+    return mk(m3[0].replace(/\s+/g,' '),'unsure',[{pi:0,start:m3.index,end:m3.index+m3[0].length}],'Only a month and year found; no day.',{iso:m3[2]+'-'+two(mi+1)});}
+  return missing('No date found in the top of page 1.');
+}
+function readBody(P){
+  var t=(P[0]||'').slice(0,1800),best=null;
+  BODIES.forEach(function(b){
+    var m=new RegExp(rxWords(b),'i').exec(t);
+    if(m&&(!best||m.index<best.index||(m.index===best.index&&b.length>best.name.length)))best={name:b,index:m.index,len:m[0].length};
+  });
+  if(best)return mk(best.name,'ok',[{pi:0,start:best.index,end:best.index+best.len}],'Named on the cover page.');
+  var lines=t.split('\n'),off=0,i;
+  for(i=0;i<lines.length;i++){
+    var ln=lines[i];
+    if(/committee|commission|working group|special rapporteur|council/i.test(ln)&&!/^\s*economic and social council\s*$/i.test(ln)&&ln.length<120){
+      return mk(ln.trim(),'unsure',[{pi:0,start:off,end:off+ln.length}],'Not one of the bodies the tool knows by name; the first cover line that mentions a committee, council or similar.');
+    }
+    off+=ln.length+1;
+  }
+  return missing('No committee or similar body named in the top of page 1.');
+}
+function coverEnd(t){
+  var re=/\n[ \t]*(?:[IVX]{1,4}|1)\.[ \t]*(?=\S|\n)/g,m;
+  while((m=re.exec(t))){if(m.index>60)return Math.min(m.index,1800);}
+  return Math.min(t.length,1800);
+}
+function findGC(txt){
+  var re=new RegExp(GCR.source,'gi'),out=[],m;
+  while((m=re.exec(txt))){
+    var n=toNum(m[3]);if(n==null)continue;
+    out.push({joint:!!m[1],kind:m[2].toLowerCase(),raw:m[3],num:n,year:m[4]||null,start:m.index,end:m.index+m[0].length});
+  }
+  return out;
+}
+function readType(P,sym){
+  var t=P[0]||'';
+  if(!t)return {type:missing('No page 1 text.'),number:missing('No page 1 text.'),hits:[]};
+  var cover=t.slice(0,coverEnd(t)),inCover=true;
+  var hits=findGC(cover).filter(function(h){return !/(replac|supersed|updat|revis|builds? on|further to)/i.test(cover.slice(Math.max(0,h.start-70),h.start));});
+  if(!hits.length){hits=findGC(t).slice(0,1);inCover=false;}
+  if(!hits.length){
+    return {type:missing('The words "general comment" or "general recommendation" with a number do not appear on page 1.'),
+            number:missing('No number found.'),hits:[]};
+  }
+  var kinds=[];hits.forEach(function(h){if(kinds.indexOf(h.kind)<0)kinds.push(h.kind);});
+  var joint=kinds.length>1;
+  var first=hits[0];
+  var ev=[{pi:0,start:first.start,end:first.end}];
+  var typeVal,numVal,numN=first.num;
+  if(joint){
+    typeVal='Joint: general '+kinds.join(' + general ');
+    var seen={},nums=[];
+    hits.forEach(function(h){var key=h.kind+h.num;if(!seen[key]){seen[key]=1;nums.push(h.raw);}});
+    numVal=nums.join(' / ');
+  }else{
+    typeVal='General '+first.kind;numVal=String(first.num);
+  }
+  var symNum=null;
+  if(sym&&sym.value){var sm=/\/(?:GC|GR)\/(?:\d{4}\/)?(\d+)\b/.exec(sym.value);if(sm)symNum=parseInt(sm[1],10);}
+  var tconf=inCover?'ok':'unsure';
+  var twhy=inCover?(joint?'Both a comment and a recommendation are named in the title block, so it is read as a joint document.':'Named in the title block of the cover page.')
+                  :'Found only below the title block; it may refer to another document.';
+  var nconf=inCover?'ok':'unsure',nwhy=inCover?'Read after the words "No." in the title block.':'Found only below the title block.';
+  if(!/^\d+$/.test(first.raw)&&!joint)nwhy+=' Roman numeral '+first.raw+' converted to '+first.num+'.';
+  if(!joint&&symNum!=null){
+    if(symNum===first.num)nwhy+=' The symbol ends in the same number.';
+    else{nconf='unsure';nwhy+=' But the symbol ends in '+symNum+'.';}
+  }
+  return {type:mk(typeVal,tconf,ev,twhy),number:mk(numVal,nconf,ev,nwhy,{num:numN,symNum:symNum,titleYear:first.year}),hits:hits,inCover:inCover};
+}
+function readSubject(P,hit){
+  var t=P[0]||'';
+  if(!hit)return missing('Needs the title line, which was not found.');
+  var s=hit.end,lead=/^(?:\s|\([^)\n]{0,40}\)|[:\-–—]|on\s)+/i,m=lead.exec(t.slice(s));
+  if(m)s+=m[0].length;
+  var rest=t.slice(s,s+400);
+  var b=rest.search(/\n[ \t]*\n|\n[ \t]*(?:[IVX]{1,4}|\d{1,2})\.[ \t]*(?=\S|\n)|\n[ \t]*(?:Contents|Summary|Introduction|Preface|Distr)\b/);
+  var e=b>=0?s+b:s+Math.min(rest.length,300);
+  var subj=t.slice(s,e).replace(/\s+/g,' ').replace(/\s*\*+\s*$/,'').trim();
+  if(!subj)return missing('Nothing follows the title line before the first heading.');
+  var ok=b>=0&&subj.length>=8&&subj.length<=300;
+  return mk(subj,ok?'ok':'unsure',[{pi:0,start:s,end:e}],
+    ok?'The words after the number, up to the first heading or blank line.':'No clear heading or blank line ends the title, so the end of the subject is a guess.');
+}
+function readReplaces(P){
+  var items=[],seen={};
+  P.forEach(function(t,pi){
+    var re=new RegExp(REP.source,'gi'),m;
+    while((m=re.exec(t))){
+      var n=toNum(m[4]);if(n==null)continue;
+      var verb=/^(replac|supersed)/i.test(m[1])?'replaces':'updates';
+      var before=t.slice(Math.max(0,m.index-60),m.index).replace(/\s+/g,' ').toLowerCase();
+      var subj=/(this|the present)\s+(general\s+(comment|recommendation)|document|text)\s*$/.test(before);
+      var conf=(pi<=2&&subj)?'ok':'unsure';
+      var why=subj?'The sentence says that this document '+verb+' it.':'The verb is not clearly said of this document; it may describe another document.';
+      if(pi>2)why+=' Found on page '+(pi+1)+', not at the start.';
+      var key=verb+m[3].toLowerCase()+n;
+      var item={key:key,label:verb+' general '+m[3].toLowerCase()+' No. '+m[4].toUpperCase(),conf:conf,why:why,ev:{pi:pi,start:m.index,end:m.index+m[0].length}};
+      if(!seen[key])seen[key]=item;else if(seen[key].conf==='unsure'&&conf==='ok')seen[key]=item;
+    }
+  });
+  for(var k in seen)items.push(seen[k]);
+  items=items.slice(0,6);
+  if(!items.length)return mk('','ok',[],'No "replaces", "supersedes", "updates" or "revises" followed by a general comment or recommendation in '+P.length+' pages.',{items:[]});
+  var worst=items.some(function(i){return i.conf==='unsure';})?'unsure':'ok';
+  return mk(items.map(function(i){return i.label;}).join('; '),worst,items.map(function(i){return i.ev;}),
+    items.map(function(i){return i.label+': '+i.why;}).join(' '),{items:items});
+}
+function readPages(pages,P){
+  var n=pages.length;
+  if(!n)return missing('The file has no page records.');
+  var consec=pages.every(function(p,i){return p&&p.page===pages[0].page+i;});
+  var short=[];P.forEach(function(t,i){if(t.trim().length<30)short.push(i+1);});
+  var why='The file has '+n+' page records.';
+  if(!consec)why+=' Page numbers are not consecutive.';
+  if(short.length)why+=' Page(s) '+short.join(', ')+' hold almost no text (possibly a scan).';
+  return mk(n,(consec&&!short.length)?'ok':'unsure',[{pi:n-1,start:0,end:0}],why,{num:n});
+}
+function analyse(rec){
+  var pages=Array.isArray(rec.pages)?rec.pages:[];
+  var P=pages.map(function(p){return String((p&&p.text)||'');});
+  var f={};
+  f.symbol=readSymbol(P);
+  f.date=readDate(P);
+  f.body=readBody(P);
+  var ty=readType(P,f.symbol);
+  f.type=ty.type;f.number=ty.number;
+  var last=ty.hits.length?ty.hits[ty.hits.length-1]:null;
+  f.subject=readSubject(P,last);
+  f.replaces=readReplaces(P);
+  f.pages=readPages(pages,P);
+  var q=0;FIELDS.forEach(function(x){if(f[x.k].conf!=='ok')q++;});
+  return {file:String(rec.file||'(no name)'),pages:pages,P:P,f:f,q:q};
+}
+var ROWS=FILES.map(analyse);
+
+/* ---------- state ---------- */
+var state={tab:0,sort:'file',dir:1,open:{},view:{},status:''};
+var SORTS=[['file','File name'],['symbol','Symbol'],['date','Date'],['body','Issuing body'],['type','Type'],['number','Number'],['subject','Subject'],['pages','Pages']];
+function sortVal(r,k){
+  var f=r.f;
+  if(k==='file')return r.file;
+  if(k==='date')return f.date.conf==='missing'?null:f.date.iso;
+  if(k==='number')return f.number.conf==='missing'?null:f.number.num;
+  if(k==='pages')return f.pages.conf==='missing'?null:f.pages.num;
+  return f[k].conf==='missing'?null:f[k].value;
+}
+function sorted(){
+  var k=state.sort,d=state.dir;
+  return ROWS.slice().sort(function(a,b){
+    var x=sortVal(a,k),y=sortVal(b,k);
+    if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;
+    if(typeof x==='number'&&typeof y==='number')return (x-y)*d;
+    return String(x).localeCompare(String(y),undefined,{numeric:true,sensitivity:'base'})*d;
+  });
+}
+
+/* ---------- rendering ---------- */
+function badge(fl){return fl.conf==='unsure'?'<span class="q" title="'+esc(fl.why)+'">?</span>':'';}
+function cell(fl,text){
+  if(fl.conf==='missing')return '<span class="miss">not found</span><span class="q" title="'+esc(fl.why)+'">?</span>';
+  return esc(text)+badge(fl);
+}
+function firstEv(r){for(var i=0;i<FIELDS.length;i++){if(r.f[FIELDS[i].k].evid.length)return FIELDS[i].k;}return 'symbol';}
+function viewerHtml(r){
+  var v=state.view[r.file]||{fk:firstEv(r),ei:0};
+  var fl=r.f[v.fk],ev=fl.evid[v.ei]||fl.evid[0];
+  if(!ev)return '<div class="viewer"><p class="hint">This value has no single page to open (nothing was found to read it from).</p></div>';
+  var t=r.P[ev.pi]||'',label=FIELDS.filter(function(x){return x.k===v.fk;})[0].l;
+  var pno=r.pages[ev.pi]&&r.pages[ev.pi].page!=null?r.pages[ev.pi].page:ev.pi+1;
+  var body=ev.end>ev.start?esc(t.slice(0,ev.start))+'<mark>'+esc(t.slice(ev.start,ev.end))+'</mark>'+esc(t.slice(ev.end)):esc(t);
+  return '<div class="viewer"><div class="vh mono">'+esc(r.file)+' &middot; page '+esc(pno)+' &middot; '+esc(label)+(ev.end>ev.start?' &middot; marked':'')+'</div><pre data-viewer="1">'+body+'</pre><p class="hint">Text exactly as the PDF converter produced it. Marked words = where the value was read.</p></div>';
+}
+function detailHtml(r){
+  var v=state.view[r.file]||{fk:firstEv(r),ei:0};
+  var lis=FIELDS.map(function(x){
+    var fl=r.f[x.k],val;
+    if(fl.conf==='missing')val='<span class="miss">not found</span>';
+    else if(x.k==='replaces'&&!fl.value)val='<span class="mute">none found</span>';
+    else val=esc(fl.value);
+    var evb=fl.evid.map(function(e,i){
+      var pno=r.pages[e.pi]&&r.pages[e.pi].page!=null?r.pages[e.pi].page:e.pi+1;
+      var on=(v.fk===x.k&&(v.ei||0)===i);
+      return '<button type="button" class="evb" data-act="ev" data-file="'+esc(r.file)+'" data-fk="'+x.k+'" data-ei="'+i+'" data-id="ev-'+esc(r.file)+'-'+x.k+'-'+i+'" aria-pressed="'+on+'">open p. '+esc(pno)+'</button>';
+    }).join('');
+    return '<li><span class="fl mono">'+esc(x.l)+'</span>'+val+badge(fl)+'<span class="why">'+esc(fl.why)+'</span>'+evb+'</li>';
+  }).join('');
+  return '<tr class="detail"><td colspan="8"><div class="dgrid"><ul class="flist">'+lis+'</ul>'+viewerHtml(r)+'</div></td></tr>';
+}
+function tableHtml(){
+  var heads=[['file','File',''],['symbol','Symbol',''],['date','Date on cover',''],['body','Issuing body',''],['type','Type and number',''],['subject','Subject',''],['replaces','Replaces / updates','nosort'],['pages','Pages','num']];
+  var th=heads.map(function(h){
+    var ar=state.sort===h[0]||(h[0]==='type'&&state.sort==='number');
+    var sortable=h[2]!=='nosort';
+    return '<th scope="col" class="'+(h[2]==='num'?'num ':'')+(sortable?'sortable':'')+'"'+(sortable?' data-act="sortcol" data-k="'+h[0]+'" title="click = sort"':'')+(ar?' aria-sort="'+(state.dir>0?'ascending':'descending')+'"':'')+'>'+h[1]+'</th>';
+  }).join('');
+  var out='';
+  sorted().forEach(function(r){
+    var f=r.f,open=!!state.open[r.file];
+    var sym;
+    if(f.symbol.conf==='missing')sym=cell(f.symbol,'');
+    else sym='<a href="https://docs.un.org/en/'+encodeURI(f.symbol.value)+'" target="_blank" rel="noopener" title="Link built from the symbol">'+esc(f.symbol.value)+'</a>'+badge(f.symbol);
+    var tn;
+    if(f.type.conf==='missing'&&f.number.conf==='missing')tn='<span class="miss">not found</span><span class="q" title="'+esc(f.type.why)+'">?</span>';
+    else tn=(f.type.conf==='missing'?cell(f.type,''):esc(f.type.value)+badge(f.type))+(f.number.conf==='missing'?'':' No.&nbsp;'+esc(f.number.value)+badge(f.number));
+    var rep;
+    if(f.replaces.items&&f.replaces.items.length)rep=f.replaces.items.map(function(i){return esc(i.label)+(i.conf==='unsure'?'<span class="q" title="'+esc(i.why)+'">?</span>':'');}).join('<br>');
+    else rep='<span class="mute">none found</span>';
+    out+='<tr><td><button type="button" class="rowbtn" data-act="toggle" data-file="'+esc(r.file)+'" data-id="t-'+esc(r.file)+'" aria-expanded="'+open+'">'+esc(r.file)+'</button>'+(r.q?'<br><span class="hint">'+r.q+' value'+(r.q>1?'s':'')+' marked ?</span>':'')+'</td>'
+      +'<td>'+sym+'</td><td>'+cell(f.date,f.date.value)+'</td><td>'+cell(f.body,f.body.value)+'</td><td>'+tn+'</td>'
+      +'<td>'+cell(f.subject,f.subject.value)+'</td><td>'+rep+'</td><td class="num">'+cell(f.pages,f.pages.value)+'</td></tr>';
+    if(open)out+=detailHtml(r);
+  });
+  return '<table><caption><span class="fig">FIG.01</span>One row per file</caption><thead><tr>'+th+'</tr></thead><tbody>'+out+'</tbody></table>';
+}
+function stats(){
+  var total=ROWS.length*FIELDS.length,ok=0,un=0,mi=0;
+  ROWS.forEach(function(r){FIELDS.forEach(function(x){var c=r.f[x.k].conf;if(c==='ok')ok++;else if(c==='unsure')un++;else mi++;});});
+  return {total:total,ok:ok,un:un,mi:mi};
+}
+function csvText(){
+  function c(v){v=String(v==null?'':v);return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+  var head=['file','symbol','date','date_iso','issuing_body','type','number','subject','replaces_or_updates','pages','values_marked_unsure_or_missing','source_pages'];
+  var lines=[head.join(',')];
+  sorted().forEach(function(r){
+    var f=r.f,flags=[],src=[];
+    FIELDS.forEach(function(x){
+      if(f[x.k].conf!=='ok')flags.push(x.k+(f[x.k].conf==='missing'?' (not found)':' (unsure)'));
+      if(f[x.k].evid.length){var e=f[x.k].evid[0];src.push(x.k+' p.'+(r.pages[e.pi]&&r.pages[e.pi].page!=null?r.pages[e.pi].page:e.pi+1));}
+    });
+    lines.push([r.file,f.symbol.value,f.date.value,f.date.iso||'',f.body.value,f.type.value,f.number.value,f.subject.value,f.replaces.value,f.pages.value,flags.join('; '),src.join('; ')].map(c).join(','));
+  });
+  return lines.join('\r\n');
+}
+function checks(){
+  var out=[];
+  function add(name,list,total,hint){out.push({name:name,fail:list,total:total,hint:hint});}
+  var a=[],t1=0;
+  ROWS.forEach(function(r){var n=r.f.number;if(n.symNum!=null&&n.num!=null&&r.f.type.value.indexOf('Joint')!==0){t1++;if(n.symNum!==n.num)a.push(r.file+' (title '+n.num+', symbol '+n.symNum+')');}});
+  add('The number in the title equals the number in the symbol',a,t1,'Only for symbols that end in .../GC/N or .../GR/N.');
+  var b=[],t2=0;
+  ROWS.forEach(function(r){var y=r.f.number.titleYear,d=r.f.date.iso;if(y&&d){t2++;if(d.slice(0,4)!==y)b.push(r.file+' (title '+y+', cover '+d.slice(0,4)+')');}});
+  add('The year in brackets after the number equals the year of the cover date',b,t2,'Only for titles that carry a year in brackets.');
+  var cnt={},c=[],t3=0;
+  ROWS.forEach(function(r){if(r.f.symbol.conf!=='missing'){t3++;(cnt[r.f.symbol.value]=cnt[r.f.symbol.value]||[]).push(r.file);}});
+  for(var s in cnt)if(cnt[s].length>1)c.push(s+' in '+cnt[s].join(' and '));
+  add('No two files carry the same symbol',c,t3,'A repeat could mean the same document was added twice.');
+  var d=[];
+  ROWS.forEach(function(r){if(r.f.pages.conf!=='ok')d.push(r.file);});
+  add('Page records are consecutive and none is nearly empty',d,ROWS.length,'A nearly empty page often means a scan without text.');
+  var e=[];
+  ROWS.forEach(function(r){var miss=['symbol','date','body'].filter(function(k){return r.f[k].conf!=='ok';});if(miss.length)e.push(r.file+' ('+miss.join(', ')+')');});
+  add('Symbol, date and body were each read cleanly',e,ROWS.length,'The three values every catalogue entry needs.');
+  return out;
+}
+function tab0(){
+  var s=stats(),opts=SORTS.map(function(x){return '<option value="'+x[0]+'"'+(state.sort===x[0]?' selected':'')+'>'+x[1]+'</option>';}).join('');
+  return '<div class="bignums"><div><span class="n">'+ROWS.length+'</span><span class="l">files catalogued</span></div>'
+    +'<div><span class="n">'+s.ok+'<span style="font-size:26px;color:var(--mute)"> / '+s.total+'</span></span><span class="l">values read with confidence</span></div>'
+    +'<div><span class="n" style="color:var(--red)">'+(s.un+s.mi)+'</span><span class="l">values marked ? ('+s.un+' unsure, '+s.mi+' not found)</span></div></div>'
+    +'<div class="bar-row"><label class="hint" for="sortSel">SORT BY</label><select id="sortSel" data-act="sortsel">'+opts+'</select>'
+    +'<button type="button" class="btn" data-act="dir" data-id="dir">'+(state.dir>0?'ascending ▲':'descending ▼')+'</button>'
+    +'<button type="button" class="btn primary" data-act="csv" data-id="csv">Download CSV</button>'
+    +'<span class="hint" role="status">'+esc(state.status)+'</span></div>'
+    +'<p class="hint">click a row = see the page each value was read from &middot; click a column head = sort &middot; ? = the tool is not sure</p>'
+    +tableHtml()
+    +'<p class="how"><b>How this is computed</b> Plain text rules read the first page of each file (cover lines, title block) and search every page for "replaces / updates" phrases. Nothing is estimated or guessed: a value that fails its rule is marked ? or shown as "not found".</p>';
+}
+function tab1(){
+  var rows=FIELDS.map(function(x){
+    var ok=0,un=0,mi=0;
+    ROWS.forEach(function(r){var c=r.f[x.k].conf;if(c==='ok')ok++;else if(c==='unsure')un++;else mi++;});
+    var pct=ROWS.length?Math.round(ok/ROWS.length*100):0;
+    return '<tr><th scope="row" style="font:16px system-ui;text-transform:none;letter-spacing:0;color:var(--ink);border-bottom:1px solid var(--rule)">'+x.l+'</th><td class="num">'+ok+'</td><td class="num">'+un+'</td><td class="num">'+mi+'</td>'
+      +'<td style="width:34%"><div style="display:flex;gap:8px;align-items:center"><div class="track" style="flex:1"><i style="width:'+pct+'%"></i></div><span class="hint">'+ok+' of '+ROWS.length+'</span></div></td></tr>';
+  }).join('');
+  var ch=checks().map(function(c){
+    var pass=c.total-c.fail.length;
+    return '<tr><td>'+esc(c.name)+'<br><span class="hint">'+esc(c.hint)+'</span></td><td class="num">'+(c.total?pass+' of '+c.total:'n/a')+'</td><td>'+(c.fail.length?esc(c.fail.join('; ')):'<span class="mute">nothing to look at</span>')+'</td></tr>';
+  }).join('');
+  return '<h2>How sure is the tool, field by field?</h2>'
+    +'<table><caption><span class="fig">FIG.02</span>Confidence of each value across '+ROWS.length+' files</caption><thead><tr><th scope="col">Field</th><th scope="col" class="num">Read cleanly</th><th scope="col" class="num">Marked ?</th><th scope="col" class="num">Not found</th><th scope="col">Share read cleanly</th></tr></thead><tbody>'+rows+'</tbody></table>'
+    +'<p class="how"><b>How this is computed</b> Each value gets one of three states from its own rule (see 03 METHOD). "Read cleanly" means the rule found it where it expects it and a second sign agrees.</p>'
+    +'<h2>The app checks itself</h2>'
+    +'<table><caption><span class="fig">FIG.03</span>Cross-checks between values</caption><thead><tr><th scope="col">Check</th><th scope="col" class="num">Passes</th><th scope="col">Files to look at</th></tr></thead><tbody>'+ch+'</tbody></table>'
+    +'<p class="how"><b>How this is computed</b> Each check compares two values the tool read independently. A failure does not say which one is wrong: open the row on 01 CATALOGUE and read the page.</p>';
+}
+function tab2(){
+  return '<h2>How each value is read</h2><ol class="rules">'
+    +'<li><b>Symbol.</b> The first text shaped like a UN symbol (capital letters, slashes, numbers) in the first 500 characters of page 1. Sure if it also repeats on another page as a running header.</li>'
+    +'<li><b>Date.</b> The day, month and year right after the "Distr." line. Without that line, the first full date at the top is taken and marked ?.</li>'
+    +'<li><b>Issuing body.</b> A committee named on the cover, matched against the names of the UN treaty bodies; any other body is taken from the first cover line that mentions a committee or council and marked ?.</li>'
+    +'<li><b>Type and number.</b> "General comment" or "general recommendation" plus a number (Roman numerals converted) in the title block, before the first heading. It is marked ? if the symbol ends in a different number.</li>'
+    +'<li><b>Subject.</b> The words after the number, up to the first heading or blank line.</li>'
+    +'<li><b>Replaces / updates.</b> Sentences with replaces, supersedes, updates or revises followed by a general comment or recommendation. Sure only when the sentence is about this document and sits in the first three pages.</li>'
+    +'<li><b>Pages.</b> The number of page records in the file. Marked ? if page numbers skip or a page has almost no text.</li></ol>'
+    +'<div class="warn">What it cannot do: read a scanned PDF without a text layer, or a language other than English. Files that are not general comments or recommendations will show "not found" for type and number. Symbol links are built from the symbol and point to docs.un.org; they are not stored in the files.</div>'
+    +'<h2>Export</h2><div class="bar-row"><button type="button" class="btn primary" data-act="csv" data-id="csv2">Download CSV</button><span class="hint">one row per file &middot; columns list which values are unsure and which page each came from</span></div>'
+    +'<p class="hint">If your browser blocks the download, copy the text below into a file called catalogue.csv.</p>'
+    +'<textarea readonly aria-label="CSV text" data-id="csvbox">'+esc(csvText())+'</textarea>';
+}
+var PANELS=[tab0,tab1,tab2],TABNAMES=['01 CATALOGUE','02 CAN I TRUST THIS','03 METHOD AND EXPORT'];
+function render(){
+  var focusId=document.activeElement&&document.activeElement.getAttribute&&document.activeElement.getAttribute('data-id');
+  var sel=document.activeElement&&document.activeElement.id==='sortSel';
+  var tabs=document.getElementById('tabs');
+  tabs.innerHTML=TABNAMES.map(function(n,i){return '<button type="button" role="tab" id="tab'+i+'" aria-selected="'+(state.tab===i)+'" aria-controls="panel'+i+'" tabindex="'+(state.tab===i?0:-1)+'" data-act="tab" data-i="'+i+'">'+n+'</button>';}).join('');
+  PANELS.forEach(function(fn,i){
+    var p=document.getElementById('panel'+i);
+    p.hidden=state.tab!==i;
+    p.innerHTML=state.tab===i?fn():'';
+  });
+  var vs=document.querySelectorAll('pre[data-viewer]');
+  Array.prototype.forEach.call(vs,function(pre){var m=pre.querySelector('mark');if(m)pre.scrollTop=Math.max(0,m.offsetTop-40);});
+  if(focusId){var el=document.querySelector('[data-id="'+focusId.replace(/"/g,'\\"')+'"]');if(el)el.focus();}
+  else if(sel){var s=document.getElementById('sortSel');if(s)s.focus();}
+}
+function setSort(k){
+  if(state.sort===k)state.dir=-state.dir;else{state.sort=k;state.dir=1;}
+  if(k==='number')state.sort='number';
+}
+function download(){
+  var text=csvText();
+  try{
+    var blob=new Blob(['﻿'+text],{type:'text/csv;charset=utf-8'});
+    var url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download='un-documents-catalogue.csv';document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url);},3000);
+    state.status='CSV prepared: '+ROWS.length+' rows.';
+  }catch(e){state.status='Download blocked here: copy the text on 03 METHOD AND EXPORT.';}
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-act]');if(!t)return;
+  var act=t.getAttribute('data-act');
+  if(act==='tab'){state.tab=parseInt(t.getAttribute('data-i'),10);render();return;}
+  if(act==='toggle'){var fl=t.getAttribute('data-file');state.open[fl]=!state.open[fl];render();return;}
+  if(act==='ev'){state.view[t.getAttribute('data-file')]={fk:t.getAttribute('data-fk'),ei:parseInt(t.getAttribute('data-ei'),10)};render();return;}
+  if(act==='sortcol'){setSort(t.getAttribute('data-k'));render();return;}
+  if(act==='dir'){state.dir=-state.dir;render();return;}
+  if(act==='csv'){download();render();return;}
+});
+document.addEventListener('change',function(e){
+  if(e.target.id==='sortSel'){state.sort=e.target.value;state.dir=1;render();}
+});
+document.getElementById('tabs').addEventListener('keydown',function(e){
+  var k=e.key,n=TABNAMES.length,i=state.tab;
+  if(k==='ArrowRight')i=(i+1)%n;else if(k==='ArrowLeft')i=(i+n-1)%n;else if(k==='Home')i=0;else if(k==='End')i=n-1;else return;
+  e.preventDefault();state.tab=i;render();document.getElementById('tab'+i).focus();
+});
+
+/* ---------- header ---------- */
+(function(){
+  var pagesTotal=ROWS.reduce(function(a,r){return a+r.pages.length;},0);
+  var years=[];ROWS.forEach(function(r){if(r.f.date.iso)years.push(parseInt(r.f.date.iso.slice(0,4),10));});
+  var yr=years.length?(Math.min.apply(null,years)===Math.max.apply(null,years)?String(years[0]):Math.min.apply(null,years)+'–'+Math.max.apply(null,years)):'no dates read';
+  document.getElementById('hLabel').textContent='WORKSHOP_DATA.pdf_meta · '+ROWS.length+' PDF files';
+  document.getElementById('hSrc').textContent=ROWS.length
+    ?'Source: the text of '+ROWS.length+' PDF files'+(ROWS.length>1?' ('+ROWS[0].file+' to '+ROWS[ROWS.length-1].file+')':'')+', as a converter produced it · n = '+ROWS.length+' files, '+pagesTotal+' pages · cover dates '+yr
+    :'No files were found in WORKSHOP_DATA.pdf_meta. Attach the ten PDF files and ask again.';
+})();
+render();
+})();
+</script>
+</body>
+</html>

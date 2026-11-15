@@ -164,6 +164,27 @@ same fields as in `pdf_text` (`paragraphs`, `footnotes`, `adopted`, `first_words
 Database; `footnotes` is null where the database records none. The documents differ in layout: a rule written
 on one may break on another. The first is E/C.12/GC/27, the same document as `pdf_text`.
 
+## `WORKSHOP_DATA.pdf_meta`: ten UN documents as bare PDF files
+
+`{title, source, built, count, records: [{file, pages: [{page, text}]}]}`.
+`records` are 10 UN documents with nothing but a file name (`doc-01.pdf` to `doc-10.pdf`) and the text of every page,
+exactly as a PDF converter produced it: nothing cleaned, no metadata. What a document is (its symbol, date, issuing
+body, type and number) has to be read from its text, mostly from its first page. The layouts differ from one
+document to the next.
+
+## `WORKSHOP_DATA.drafts`: how three ICCPR articles were drafted, 1947–1966
+
+`{title, source, built, count, records: [{instrument, article, title, stages: [...], votes: [...]}]}`.
+One record per article: 21 (peaceful assembly), 19 (opinion and expression), 22 (association), in that order.
+- `stages`: `[{stage, symbol, date, draft_article, page, text}]` in date order, from the first draft (June 1947) to the
+  text adopted by the General Assembly (`A/RES/2200 A (XXI)`, 16 December 1966, the last stage). `date` is a month and
+  year ("June 1952"), or a full date for the last stage; `draft_article` is the article's number in that draft. `text`
+  is the draft as OCR read it: line-end hyphens ("restric- tions"), stray punctuation and misread letters remain, and
+  a few drafts carry footnote text.
+- `votes`: `[{meeting, date, outcome, yes, no, abstentions, proposers, subject}]`: every vote recorded on the article,
+  by meeting date (`YYYY-MM-DD`): the meeting or report symbol, adopted/rejected/…, the figures (null where none were
+  recorded), the proposing delegations and what was voted on (it names the amendment's symbol, e.g. E/CN.4/L.201).
+
 ## `WORKSHOP_DATA.hrc_all`: every Human Rights Council text, 2006 onwards
 
 `{title, count, countries: {ISO3: name}, groups: {ISO3: regional group}, vote_codes: {Y,N,A}, records: [...]}`.

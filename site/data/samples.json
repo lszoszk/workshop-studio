@@ -881,5 +881,79 @@
     "BRA": "Y"
    }
   }
+ ],
+ "pdf_meta": [
+  {
+   "file": "doc-02.pdf",
+   "pages": [
+    {
+     "page": 1,
+     "text": "CRC/C/GC/25\n\nUnited Nations\n\nConvention on the\nRights of the Child\n\nDistr.: General\n2 March 2021\nOriginal: English\n\nCommittee on the Rights of the Child\n\nGeneral comment No. 25 (2021) on children’s rights in\nrelation to the digital environment\nI. Introduction\n1.\nThe children consulted for the present general comment reported that digital\ntechnologies were vital to their current lives and to their future: “By the means of digital\ntechnology, we can get information from all around the world”; “[Digital technology]\nintroduced me to major aspects of how I identify myself”; “When you are sad, the Internet\ncan help you [to] see something that brings you joy”.1\n2.\nThe digital environment is constan …"
+    },
+    {
+     "page": 2,
+     "text": "CRC/C/GC/25\n\nRights Council and the special procedures of the Council, two rounds of consultations with\nStates, experts and other stakeholders on the concept no …"
+    }
+   ]
+  }
+ ],
+ "drafts": [
+  {
+   "instrument": "ICCPR",
+   "article": 21,
+   "title": "Peaceful assembly",
+   "stages": [
+    {
+     "stage": "United Kingdom's draft international bill (E/CN.4/21, annex B)",
+     "symbol": "E/CN.4/21",
+     "date": "June 1947",
+     "draft_article": 15,
+     "page": 36,
+     "text": "All persons shall’ have the right to assemble peaceably for any AawPul purpose including the discussion of any matter, on which under Article 14 any person has the right  …"
+    },
+    {
+     "stage": "Commission, 8th session: draft Covenants (E/2256)",
+     "symbol": "E/CN.4/669",
+     "date": "June 1952",
+     "draft_article": 17,
+     "page": 49,
+     "text": "The right of peaceful assembly shall be recognized. No restrictions may be placed on the exercise of this right other than those imposed in conformity with the law and wh …"
+    },
+    {
+     "stage": "General Assembly: the Covenant as adopted",
+     "symbol": "A/RES/2200 A (XXI)",
+     "date": "16 December 1966",
+     "draft_article": 21,
+     "page": null,
+     "text": "The right of peaceful assembly shall be recognized. No restrictions may be placed on the exercise of this right other than those imposed in conformity with the law and wh …"
+    }
+   ],
+   "votes": [
+    {
+     "meeting": "E/CN.4/SR.325",
+     "date": "1952-06-06",
+     "outcome": "adopted",
+     "yes": 9,
+     "no": 8,
+     "abstentions": 1,
+     "proposers": [
+      "France"
+     ],
+     "subject": "The French amendment (E/CN.4/L.201) to insert the words \"in a democratic society\" after \"necessary\""
+    },
+    {
+     "meeting": "E/CN.4/SR.120",
+     "date": "1949-06-09",
+     "outcome": "rejected",
+     "yes": 3,
+     "no": 6,
+     "abstentions": 5,
+     "proposers": [
+      "Union of Soviet Socialist Republics"
+     ],
+     "subject": "The first paragraph of the USSR amendment (E/CN.4/272)"
+    }
+   ]
+  }
  ]
 }

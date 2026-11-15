@@ -1240,6 +1240,14 @@
   "un_hr_all": {
    "file": "un_hr_all.json",
    "count": 7114
+  },
+  "pdf_meta": {
+   "file": "pdf_meta.json",
+   "count": 10
+  },
+  "drafts": {
+   "file": "drafts.json",
+   "count": 3
   }
  }
 }

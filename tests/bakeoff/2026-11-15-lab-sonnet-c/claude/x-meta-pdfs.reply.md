@@ -1,0 +1,572 @@
+I built a catalogue with one row per file: symbol, cover date, issuing body, type and number, subject, what it replaces or updates, and page count. Every value comes from fixed patterns on the page text, a "?" marks values the tool doubts, and "p.N" opens the page text with the value highlighted. Sorting is in the bar above the table, and the CSV download is there and on tab 03.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UN documents catalogue</title>
+<style>
+:root{--paper:#f4f0e8;--ink:#1d1b18;--rule:#d9d2c3;--red:#9b2335;--mute:#5a5549;--serif:Georgia,"Times New Roman",serif;--mono:ui-monospace,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1240px;margin:0 auto;padding:22px 24px 56px}
+.mono{font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mute)}
+h1{font:400 34px/1.15 var(--serif);margin:6px 0 4px}
+h2{font:400 22px/1.25 var(--serif);margin:0 0 6px}
+.src{margin:0;color:var(--mute)}
+header{padding-bottom:14px;border-bottom:1px solid var(--rule)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--rule);margin-bottom:22px;flex-wrap:wrap}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:12px 14px 9px;font:12px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink);cursor:pointer}
+.tab[aria-selected=true]{color:var(--red);border-bottom-color:var(--red)}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.kpis{display:flex;flex-wrap:wrap;gap:12px 56px;margin:0 0 18px}
+.kpi b{display:block;font:400 52px/1.05 var(--serif)}
+.kpi b.red{color:var(--red)}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:10px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.controls label{display:flex;align-items:center;gap:8px}
+select{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--ink);padding:5px 8px}
+.btn{font:12px var(--mono);letter-spacing:.08em;text-transform:uppercase;background:none;border:1px solid var(--ink);color:var(--ink);padding:8px 12px;cursor:pointer}
+.btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.hint{margin:8px 0 0}
+table{width:100%;border-collapse:collapse}
+caption{text-align:left;font:400 20px/1.3 var(--serif);padding:16px 0 8px}
+caption .mono{display:block;margin-bottom:2px}
+th[scope=col]{font:11.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:left;padding:8px 10px;border-bottom:2px solid var(--ink);vertical-align:bottom}
+td,tbody th{padding:10px;border-bottom:1px solid var(--rule);vertical-align:top;text-align:left;font-weight:400}
+th.num,td.num{text-align:right}
+.filebtn{font:13px var(--mono);background:none;border:0;border-bottom:1px solid var(--ink);color:var(--ink);padding:0;cursor:pointer;text-align:left}
+.filebtn[aria-expanded=true]{color:var(--red);border-bottom-color:var(--red)}
+.pg{font:11px var(--mono);background:none;border:1px solid var(--rule);color:var(--mute);padding:0 5px;margin-left:4px;cursor:pointer;white-space:nowrap}
+.pg:hover{border-color:var(--red);color:var(--red)}
+.unsure{border-bottom:1px dotted var(--red)}
+.q{font:700 12px var(--mono);color:var(--red);margin-left:3px;cursor:help}
+.miss,.muted{color:var(--mute);font-style:italic}
+.sr{position:absolute;left:-9999px}
+.sym{font-family:var(--mono);font-size:14px;word-break:break-all}
+.line{display:block}
+tr.detail td{border-left:3px solid var(--red);padding:16px 18px 20px;background:transparent}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.chip{font:11.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;background:none;border:1px solid var(--rule);color:var(--ink);padding:5px 9px;cursor:pointer}
+.chip[aria-pressed=true]{border-color:var(--red);color:var(--red);font-weight:700}
+.val{font:400 24px/1.25 var(--serif);margin:2px 0 4px}
+.why{margin:0 0 10px;color:var(--ink)}
+pre.page{font:12.5px/1.5 var(--mono);white-space:pre-wrap;border-left:1px solid var(--rule);padding:4px 0 4px 14px;margin:8px 0 0;max-height:330px;overflow:auto;position:relative}
+mark{background:rgba(155,35,53,.2);color:var(--ink);border-bottom:2px solid var(--red)}
+.how{margin:14px 0 0;color:var(--mute)}
+.bars{margin:10px 0 24px}
+.barrow{display:grid;grid-template-columns:200px 1fr 130px;gap:12px;align-items:center;padding:6px 0;border-bottom:1px solid var(--rule)}
+.track{height:14px;background:var(--rule)}
+.fill{height:14px;background:var(--red)}
+.barrow .v{font:400 20px var(--serif);text-align:right}
+ul.checks{list-style:none;padding:0;margin:8px 0 24px}
+ul.checks li{display:flex;gap:14px;padding:8px 0;border-bottom:1px solid var(--rule)}
+ul.checks .tag{flex:0 0 64px;font:700 11.5px var(--mono);letter-spacing:.08em}
+.pass{color:#1d1b18}
+.fail{color:var(--red)}
+ol.rules{padding-left:22px;margin:8px 0 24px}
+ol.rules li{margin:0 0 8px}
+textarea{width:100%;height:150px;font:12px/1.4 var(--mono);color:var(--ink);background:transparent;border:1px solid var(--rule);padding:8px}
+@media (max-width:760px){.barrow{grid-template-columns:1fr}.kpi b{font-size:40px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="mono" id="lbl">WORKSHOP_DATA.pdf_meta</div>
+  <h1>UN documents catalogue</h1>
+  <p class="src" id="src"></p>
+</header>
+
+<div class="tabs" role="tablist" aria-label="Views">
+  <button class="tab" role="tab" id="t0" aria-selected="true" aria-controls="p0" tabindex="0">01 Catalogue</button>
+  <button class="tab" role="tab" id="t1" aria-selected="false" aria-controls="p1" tabindex="-1">02 Can I trust it?</button>
+  <button class="tab" role="tab" id="t2" aria-selected="false" aria-controls="p2" tabindex="-1">03 Method &amp; export</button>
+</div>
+
+<section id="p0" role="tabpanel" aria-labelledby="t0">
+  <div class="kpis" id="kpis"></div>
+  <div class="controls">
+    <label><span class="mono">Sort by</span>
+      <select id="sortKey" aria-label="Sort the table by">
+        <option value="file">File</option>
+        <option value="symbol">Symbol</option>
+        <option value="date">Date</option>
+        <option value="body">Body</option>
+        <option value="num">Number</option>
+        <option value="subject">Subject</option>
+        <option value="pages">Pages</option>
+      </select>
+    </label>
+    <button class="btn" id="dirBtn" type="button" aria-label="Reverse the sort order">Ascending</button>
+    <button class="btn primary" id="csvBtn" type="button">Download CSV</button>
+    <span class="mono" id="csvMsg" role="status"></span>
+  </div>
+  <p class="mono hint">? = the tool is not sure &middot; file name or p.N = see the page text the value was read from</p>
+  <div id="tbl"></div>
+  <p class="how">How this is computed: each value is read from the page text by a fixed pattern (a symbol such as LETTERS/…/…, a date such as "6 November 2025", the committee's name, "General comment No. N", the title lines that follow it, and sentences with "replaces" or "updates"). No model is asked, nothing is estimated, and a "?" marks every value where the pattern met a doubt.</p>
+</section>
+
+<section id="p1" role="tabpanel" aria-labelledby="t1" hidden></section>
+<section id="p2" role="tabpanel" aria-labelledby="t2" hidden></section>
+</div>
+
+<script>
+(function(){
+'use strict';
+var D=(window.WORKSHOP_DATA&&window.WORKSHOP_DATA.pdf_meta)||{};
+var recs=Array.isArray(D.records)?D.records:[];
+var MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
+var FIELDS=[['symbol','Symbol'],['date','Date on cover'],['body','Issuing body'],['type','Type and number'],['subject','Subject'],['repl','Replaces / updates']];
+var COLS=[['file','File',''],['symbol','Symbol',''],['date','Date',''],['body','Body',''],['type','Type and no.',''],['subject','Subject',''],['repl','Replaces / updates',''],['pages','Pages','num']];
+var BODIES=[
+ ['Human Rights Committee','CCPR',/Human\s+Rights\s+Committee/i],
+ ['Committee on Economic, Social and Cultural Rights','CESCR',/Committee\s+on\s+Economic,\s+Social\s+and\s+Cultural\s+Rights/i],
+ ['Committee on the Elimination of Racial Discrimination','CERD',/Committee\s+on\s+the\s+Elimination\s+of\s+Racial\s+Discrimination/i],
+ ['Committee on the Elimination of Discrimination against Women','CEDAW',/Committee\s+on\s+the\s+Elimination\s+of\s+Discrimination\s+against\s+Women/i],
+ ['Committee on the Rights of the Child','CRC',/Committee\s+on\s+the\s+Rights\s+of\s+the\s+Child/i],
+ ['Committee against Torture','CAT',/Committee\s+against\s+Torture/i],
+ ['Committee on the Rights of Persons with Disabilities','CRPD',/Committee\s+on\s+the\s+Rights\s+of\s+Persons\s+with\s+Disabilities/i],
+ ['Committee on Migrant Workers','CMW',/Committee\s+on\s+(?:the\s+Protection\s+of\s+the\s+Rights\s+of\s+All\s+)?Migrant\s+Workers/i],
+ ['Committee on Enforced Disappearances','CED',/Committee\s+on\s+Enforced\s+Disappearances/i]
+];
+var PREFIX=[[/^CCPR\b/,'CCPR'],[/^E\/C\.12\b/,'CESCR'],[/^CERD\b/,'CERD'],[/^CEDAW\b/,'CEDAW'],[/^CRC\b/,'CRC'],[/^CAT\b/,'CAT'],[/^CMW\b/,'CMW'],[/^CRPD\b/,'CRPD'],[/^CED\b/,'CED']];
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function pad(n){return n<10?'0'+n:''+n;}
+function roman(s){var m={I:1,V:5,X:10,L:50},t=0;for(var i=0;i<s.length;i++){var a=m[s[i]],b=m[s[i+1]]||0;t+=a<b?-a:a;}return t;}
+function prefixCode(sym){for(var i=0;i<PREFIX.length;i++){if(PREFIX[i][0].test(sym||''))return PREFIX[i][1];}return null;}
+function symNumber(sym){var m=/\/(?:GC|GR)\/(?:\d{4}\/)?(\d+)/.exec(sym||'');return m?+m[1]:null;}
+function newF(){return {v:'',sure:false,note:'',ev:[]};}
+
+/* ---------- extraction ---------- */
+function findSymbol(pages){
+  var f=newF();
+  var PREF=/(?:^|\/)(?:GC|GR)(?:\/|$)|^HRI\/GEN|\/C\/\d+\/Rev|^A\/\d+\/\d+/;
+  for(var pi=0;pi<Math.min(2,pages.length);pi++){
+    var t=pages[pi].t,re=/\b[A-Z]{1,6}(?:\/[A-Za-z0-9][A-Za-z0-9.\-]*)+/g,m,c=[];
+    while((m=re.exec(t))){var v=m[0].replace(/[.\-]+$/,'');c.push({v:v,s:m.index,e:m.index+v.length});}
+    if(!c.length)continue;
+    var pref=c.filter(function(x){return PREF.test(x.v);});
+    var pick=pref[0]||c[0];
+    f.v=pick.v;f.ev=[{pi:pi,s:pick.s,e:pick.e}];
+    var others=[];
+    pref.forEach(function(x){if(x.v!==pick.v&&x.s<2000&&others.indexOf(x.v)<0)others.push(x.v);});
+    if(pi===0&&pref.length&&pick.s<400&&!others.length){f.sure=true;}
+    else if(pi>0){f.note='No symbol on page 1; taken from page '+pages[pi].n+'.';}
+    else if(!pref.length){f.note='No symbol with GC or GR in it; the first symbol-like string is shown.';}
+    else if(others.length){f.note='Other symbols on the same page: '+others.join(', ')+'. The first is taken.';}
+    else{f.note='The symbol is not at the very top of page 1.';}
+    return f;
+  }
+  f.note='No symbol-like text (LETTERS/…/…) on the first two pages.';
+  return f;
+}
+
+function findType(pages,symV){
+  var f=newF();f.kind='';f.num=null;f.written='';f.year=null;f.pi=null;f.endIdx=0;
+  var sn=symNumber(symV);
+  for(var pi=0;pi<Math.min(2,pages.length);pi++){
+    var t=pages[pi].t;
+    var a=/General\s+(Comment|Recommendation)\s+(?:No\.?\s*)?(\d{1,3})\b/i.exec(t);
+    var b=/\b(General|GENERAL)\s+(\w+)\s+(?:No\.?\s*)?([IVXL]{1,7})\b/.exec(t);
+    var cands=[];
+    if(a)cands.push({i:a.index,len:a[0].length,kind:a[1],w:a[2]});
+    if(b&&/^(comment|recommendation)$/i.test(b[2]))cands.push({i:b.index,len:b[0].length,kind:b[2],w:b[3]});
+    if(!cands.length)continue;
+    cands.sort(function(x,y){return x.i-y.i;});
+    var c=cands[0];
+    f.kind='General '+c.kind.toLowerCase();
+    f.written=c.w;
+    f.num=/^\d/.test(c.w)?+c.w:roman(c.w);
+    f.v=f.kind+' No. '+f.num;
+    f.ev=[{pi:pi,s:c.i,e:c.i+c.len}];
+    f.pi=pi;f.endIdx=c.i+c.len;
+    var ym=/^\s*\((\d{4})\)/.exec(t.slice(f.endIdx));
+    if(ym)f.year=+ym[1];
+    var notes=[];
+    if(!/^\d/.test(c.w))notes.push('Written in Roman numerals ('+c.w+') and converted.');
+    var ok=(pi===0&&c.i<2500);
+    if(!ok)notes.push(pi>0?'Not on page 1; found on page '+pages[pi].n+'.':'The title is far down page 1.');
+    if(sn!=null&&sn!==f.num){ok=false;notes.push('The text says No. '+f.num+' but the symbol ends in '+sn+'.');}
+    f.sure=ok;f.note=notes.join(' ');
+    return f;
+  }
+  if(sn!=null){
+    f.kind=/\/GR\//.test(symV)?'General recommendation':'General comment';
+    f.num=sn;f.written=String(sn);f.v=f.kind+' No. '+sn;
+    f.note='No "General comment No. N" text on the first two pages; type and number are taken from the symbol only.';
+    return f;
+  }
+  f.note='No "General comment No. N" or "General recommendation No. N" on the first two pages.';
+  return f;
+}
+
+function findDate(pages,typeYear){
+  var f=newF();f.iso='';
+  for(var pi=0;pi<Math.min(2,pages.length);pi++){
+    var t=pages[pi].t,re=new RegExp('\\b(\\d{1,2})\\s+('+MON.join('|')+')\\s+(\\d{4})\\b','g'),m,all=[];
+    while((m=re.exec(t))){all.push({txt:m[0].replace(/\s+/g,' '),d:+m[1],mo:MON.indexOf(m[2]),y:+m[3],s:m.index,len:m[0].length});}
+    if(!all.length)continue;
+    var first=all[0],seen=[];
+    all.forEach(function(x){if(x.s<1500&&seen.indexOf(x.txt)<0)seen.push(x.txt);});
+    f.v=first.txt;f.iso=first.y+'-'+pad(first.mo+1)+'-'+pad(first.d);
+    f.ev=[{pi:pi,s:first.s,e:first.s+first.len}];
+    if(pi===0&&first.s<900&&seen.length===1){f.sure=true;}
+    else if(pi>0){f.note='No full date on page 1; taken from page '+pages[pi].n+'.';}
+    else if(first.s>=900){f.note='The first date is far down page 1, not in the cover block.';}
+    else{f.note='Several different dates on the first page ('+seen.join('; ')+'); the first is taken.';}
+    return f;
+  }
+  if(typeYear){f.v=String(typeYear);f.iso=String(typeYear);f.note='No full date found; only the year in the title is shown.';return f;}
+  f.note='No date of the form "6 November 2025" on the first two pages.';
+  return f;
+}
+
+function findBody(pages,symV){
+  var f=newF();f.code='';
+  var pc=prefixCode(symV);
+  for(var pi=0;pi<Math.min(2,pages.length);pi++){
+    var t=pages[pi].t,best=null;
+    BODIES.forEach(function(b){var m=b[2].exec(t);if(m&&(!best||m.index<best.s))best={name:b[0],code:b[1],s:m.index,e:m.index+m[0].length};});
+    if(!best)continue;
+    f.v=best.name+' ('+best.code+')';f.code=best.code;f.ev=[{pi:pi,s:best.s,e:best.e}];
+    if(pc&&pc!==best.code){f.note='The cover names '+best.code+' but the symbol begins like '+pc+'.';}
+    else if(pi>0){f.note='Not named on page 1; found on page '+pages[pi].n+'.';}
+    else{f.sure=true;}
+    return f;
+  }
+  if(pc){
+    BODIES.forEach(function(b){if(b[1]===pc){f.v=b[0]+' ('+b[1]+')';f.code=pc;}});
+    f.note='No committee name on the first two pages; the body is guessed from the symbol prefix.';
+    return f;
+  }
+  f.note='No committee name on the first two pages and no known symbol prefix.';
+  return f;
+}
+
+function findSubject(pages,type){
+  var f=newF();
+  if(type.pi==null){f.note='The subject is read from the lines after "General comment No. N", which was not found.';return f;}
+  var t=pages[type.pi].t,off=type.endIdx,rest=t.slice(off),m;
+  m=/^\s*(?:\([^)\n]{1,50}\)\s*)+/.exec(rest);
+  if(m){off+=m[0].length;rest=rest.slice(m[0].length);}
+  m=/^\s*(?:[:–—-]\s*)?(?:on\s+)?/i.exec(rest);
+  if(m){off+=m[0].length;rest=rest.slice(m[0].length);}
+  var lines=rest.split('\n'),acc=[],pos=off,startOff=null,endOff=off,cut=false;
+  for(var i=0;i<lines.length;i++){
+    var ln=lines[i],ls=pos,tr=ln.trim();
+    pos+=ln.length+1;
+    if(!tr){if(acc.length)break;else continue;}
+    if(/^[IVX]+\.?$/.test(tr)||(acc.length&&(/^[IVX]+\.\s+\S/.test(tr)||/^\d+\.?$/.test(tr)||/^(Introduction|Contents|Summary|Distr|Original|Page)\b/i.test(tr)||/^\*/.test(tr))))break;
+    if(startOff==null)startOff=ls+(ln.length-ln.replace(/^\s+/,'').length);
+    acc.push(tr);endOff=ls+ln.replace(/\s+$/,'').length;
+    if(acc.length>=4){cut=true;break;}
+  }
+  if(!acc.length){f.note='No title lines follow the number on this page.';return f;}
+  var v=acc.join(' ').replace(/\s+/g,' ').replace(/[*†‡]+$/,'').trim();
+  f.v=v.charAt(0).toUpperCase()+v.slice(1);
+  f.ev=[{pi:type.pi,s:startOff,e:endOff}];
+  if(v.length>=12&&v.length<=250&&!cut)f.sure=true;
+  else f.note=cut?'The title runs over four lines; it may be cut or may include body text.':'The title is very short or very long, so it may be wrong.';
+  return f;
+}
+
+function findRepl(pages,type){
+  var f={v:'none found',list:[],sure:true,none:true,note:'',ev:[]};
+  var VERB=/\b(replac\w*|supersed\w*|updat\w*|revis\w*|supplant\w*)\b/i;
+  var own=type.written?new RegExp('general\\s+(?:comment|recommendation)\\s+(?:no\\.?\\s*)?'+type.written+'\\b','i'):null;
+  var notes=[];
+  pages.forEach(function(p,pi){
+    var t=p.t;
+    var masked=t.replace(/\b(No|Nos|art|arts|para|paras|pp?|Rev|Add|Vol|cf)\./g,function(x){return x.slice(0,-1)+'\u0001';});
+    var re=/[.;]\s+/g,last=0,r,segs=[];
+    while((r=re.exec(masked))){segs.push([last,r.index+1]);last=r.index+r[0].length;}
+    segs.push([last,t.length]);
+    segs.forEach(function(sg){
+      var s=t.slice(sg[0],sg[1]),vm=VERB.exec(s);
+      if(!vm)return;
+      var before=s.slice(0,vm.index),after=s.slice(vm.index+vm[0].length);
+      var thisDoc=/\b(this|the present)\s+(general\s+)?(comment|recommendation|document)\b/i.test(before)||(own&&own.test(before));
+      var mention=/\b(this|the present)\s+(general\s+)?(comment|recommendation|document)\b/i.test(s)||(own&&own.test(s));
+      var re2=/general\s+(comments?|recommendations?)\s+(?:Nos?\.?\s*)?((?:\d{1,3}|[IVXL]{1,7})\b(?:\s*(?:,|and|&|to|–|-)\s*(?:Nos?\.?\s*)?(?:\d{1,3}|[IVXL]{1,7})\b)*)/gi,m,found=[],range=false;
+      while((m=re2.exec(after))){
+        var kind=/^comment/i.test(m[1])?'General comment':'General recommendation';
+        if(/\bto\b|–|-/i.test(m[2]))range=true;
+        m[2].split(/\s*(?:,|and|&|to|–|-)\s*(?:Nos?\.?\s*)?/i).forEach(function(tok){if(tok)found.push(kind+' No. '+tok);});
+      }
+      if(!found.length&&!mention)return;
+      var lead=s.length-s.replace(/^\s+/,'').length;
+      f.ev.push({pi:pi,s:sg[0]+lead,e:sg[0]+s.replace(/\s+$/,'').length});
+      if(!found.length){
+        f.sure=false;
+        notes.push('Page '+p.n+': a sentence says "'+vm[0]+'" but names no general comment or recommendation.');
+        return;
+      }
+      found.forEach(function(x){if(f.list.indexOf(x)<0)f.list.push(x);});
+      f.none=false;
+      var why=[];
+      if(pi>=3)why.push('on page '+p.n+', beyond the introduction');
+      if(!thisDoc)why.push('the sentence does not say that this document does the replacing');
+      if(/\b(not|never|neither|nor)\b[^.]{0,30}$/i.test(before))why.push('the sentence may be negated');
+      if(range)why.push('a range written with "to" or a dash may hide numbers in between');
+      if(why.length){f.sure=false;notes.push('Page '+p.n+': '+why.join('; ')+'.');}
+    });
+  });
+  f.v=f.list.length?f.list.join('; '):'none found';
+  if(f.none&&f.sure)f.note='No sentence names an earlier general comment or recommendation together with replaces, supersedes, updates or revises. Words not found is not proof that there is none.';
+  else f.note=notes.join(' ');
+  return f;
+}
+
+function extract(rec,i){
+  var pages=(Array.isArray(rec.pages)?rec.pages:[]).map(function(p,k){return {n:(p&&p.page)||k+1,t:(p&&typeof p.text==='string')?p.text:''};});
+  var symbol=findSymbol(pages),type=findType(pages,symbol.v),date=findDate(pages,type.year),body=findBody(pages,symbol.v);
+  var subject=findSubject(pages,type),repl=findRepl(pages,type);
+  var fs={symbol:symbol,date:date,body:body,type:type,subject:subject,repl:repl};
+  Object.keys(fs).forEach(function(k){if(!fs[k].v){fs[k].sure=false;}});
+  var textless=!(pages[0]&&pages[0].t.trim().length>40);
+  if(textless){Object.keys(fs).forEach(function(k){fs[k].sure=false;fs[k].note='Page 1 has no usable text (a scanned file?); nothing could be read.';});}
+  return {i:i,file:rec.file||('file '+(i+1)),pages:pages,npages:pages.length,f:fs,textless:textless};
+}
+var rows=recs.map(extract);
+
+/* ---------- state ---------- */
+var st={tab:0,key:'file',dir:1,open:null,field:'symbol',evi:0,focus:null};
+function byI(i){for(var k=0;k<rows.length;k++){if(rows[k].i===i)return rows[k];}return null;}
+function fieldLabel(k){for(var j=0;j<FIELDS.length;j++){if(FIELDS[j][0]===k)return FIELDS[j][1];}return k==='pages'?'Pages':k;}
+function pgNum(r,f){return f.ev&&f.ev.length?r.pages[f.ev[0].pi].n:null;}
+
+function sortVal(r,k){
+  switch(k){
+    case 'file':return r.file;
+    case 'symbol':return r.f.symbol.v;
+    case 'date':return r.f.date.iso;
+    case 'body':return r.f.body.code||'';
+    case 'num':return r.f.type.num==null?'':r.f.type.num;
+    case 'subject':return r.f.subject.v;
+    case 'pages':return r.npages;
+  }
+  return '';
+}
+function sorted(){
+  var k=st.key,d=st.dir;
+  return rows.slice().sort(function(a,b){
+    var x=sortVal(a,k),y=sortVal(b,k),ex=(x===''||x==null),ey=(y===''||y==null);
+    if(ex&&ey)return 0;if(ex)return 1;if(ey)return -1;
+    var c=(typeof x==='number'&&typeof y==='number')?x-y:String(x).localeCompare(String(y),'en',{numeric:true,sensitivity:'base'});
+    return c*d;
+  });
+}
+
+/* ---------- catalogue ---------- */
+function cellHtml(r,key){
+  var f=r.f[key],val;
+  if(!f.v)val='<span class="miss">not found</span>';
+  else if(key==='repl'&&f.none)val='<span class="muted">none found</span>';
+  else if(key==='repl')val=f.list.map(function(x){return '<span class="line">'+esc(x)+'</span>';}).join('');
+  else if(key==='symbol')val='<span class="sym">'+esc(f.v)+'</span>';
+  else val=esc(f.v);
+  var q=f.sure?'':'<span class="q" title="'+esc(f.note)+'">?<span class="sr"> not sure: '+esc(f.note)+'</span></span>';
+  var pn=pgNum(r,f);
+  var pg=pn!=null?' <button type="button" class="pg" data-act="field" data-i="'+r.i+'" data-field="'+key+'" data-k="pg-'+r.i+'-'+key+'" aria-label="Open page '+pn+' of '+esc(r.file)+' where the '+esc(fieldLabel(key))+' was read">p.'+pn+'</button>':'';
+  return '<span class="'+(f.sure?'':'unsure')+'">'+val+'</span>'+q+pg;
+}
+function detailHtml(r){
+  var key=st.field,all=FIELDS.concat([['pages','Pages']]),f;
+  if(key==='pages')f={v:r.npages+' page'+(r.npages===1?'':'s'),sure:true,note:'Counted: the file holds '+r.npages+' page record'+(r.npages===1?'':'s')+'.',ev:[]};
+  else f=r.f[key];
+  var chips=all.map(function(a){
+    return '<button type="button" class="chip" data-act="field" data-i="'+r.i+'" data-field="'+a[0]+'" data-k="chip-'+r.i+'-'+a[0]+'" aria-pressed="'+(a[0]===key)+'">'+esc(a[1])+'</button>';
+  }).join('');
+  var why=f.note?esc(f.note):'Read with confidence: the pattern matched in the expected place.';
+  var show=f.v?(key==='repl'&&f.list.length?f.list.join('; '):f.v):'not found';
+  var h='<div class="chips" role="group" aria-label="Values read from '+esc(r.file)+'">'+chips+'</div>';
+  h+='<div class="mono">'+esc(fieldLabel(key))+(f.sure?' &middot; read with confidence':' &middot; not sure')+'</div>';
+  h+='<div class="val">'+esc(show)+'</div><p class="why">'+why+'</p>';
+  if(f.ev&&f.ev.length){
+    var ev=f.ev[st.evi%f.ev.length],pg=r.pages[ev.pi],t=pg.t;
+    h+='<div class="mono">Page '+pg.n+' of '+r.npages+' &middot; text as the converter produced it, value marked'+
+       (f.ev.length>1?' &middot; evidence '+((st.evi%f.ev.length)+1)+' of '+f.ev.length+' <button type="button" class="pg" data-act="next" data-i="'+r.i+'" data-k="next-'+r.i+'">next</button>':'')+'</div>';
+    h+='<pre class="page" tabindex="0" aria-label="Text of page '+pg.n+'">'+esc(t.slice(0,ev.s))+'<mark>'+esc(t.slice(ev.s,ev.e))+'</mark>'+esc(t.slice(ev.e))+'</pre>';
+    h+='<div class="mono hint">The PDF itself is not attached to this tool; this is the text layer of page '+pg.n+'.</div>';
+  } else if(key!=='pages'){
+    h+='<div class="mono hint">No page to show: nothing matched.</div>';
+  }
+  return h;
+}
+function renderTable(){
+  var box=document.getElementById('tbl');
+  if(!rows.length){box.innerHTML='<p>No files found in WORKSHOP_DATA.pdf_meta, so there is nothing to catalogue.</p>';return;}
+  var h='<table><caption><span class="mono">FIG.01</span>One row per file, as read from its text</caption><thead><tr>';
+  COLS.forEach(function(c){h+='<th scope="col"'+(c[2]?' class="'+c[2]+'"':'')+'>'+esc(c[1])+'</th>';});
+  h+='</tr></thead><tbody>';
+  sorted().forEach(function(r){
+    var open=st.open===r.i;
+    h+='<tr><th scope="row"><button type="button" class="filebtn" data-act="row" data-i="'+r.i+'" data-k="row-'+r.i+'" aria-expanded="'+open+'" aria-controls="d-'+r.i+'">'+esc(r.file)+'</button></th>';
+    ['symbol','date','body','type','subject','repl'].forEach(function(k){h+='<td>'+cellHtml(r,k)+'</td>';});
+    h+='<td class="num">'+r.npages+'</td></tr>';
+    if(open)h+='<tr class="detail" id="d-'+r.i+'"><td colspan="8">'+detailHtml(r)+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  box.innerHTML=h;
+  var mk=box.querySelector('pre.page mark');
+  if(mk){var pre=mk.parentNode;pre.scrollTop=Math.max(0,mk.offsetTop-50);}
+  if(st.focus){var el=box.querySelector('[data-k="'+st.focus+'"]');if(el)el.focus();st.focus=null;}
+}
+
+/* ---------- stats, CSV ---------- */
+function stats(){
+  var total=0,sure=0;
+  rows.forEach(function(r){FIELDS.forEach(function(a){total++;if(r.f[a[0]].sure)sure++;});});
+  return {total:total,sure:sure,check:total-sure};
+}
+function csvText(){
+  var head=['file','symbol','date','date_as_printed','body','body_code','type','number','subject','replaces_or_updates','pages','values_not_sure','read_from_pages'];
+  function q(s){return '"'+String(s==null?'':s).replace(/"/g,'""')+'"';}
+  var out=[head.map(q).join(',')];
+  sorted().forEach(function(r){
+    var f=r.f,unsure=[],src=[];
+    FIELDS.forEach(function(a){
+      if(!f[a[0]].sure)unsure.push(a[1]);
+      var pn=pgNum(r,f[a[0]]);if(pn!=null)src.push(a[0]+':p.'+pn);
+    });
+    out.push([r.file,f.symbol.v,f.date.iso,f.date.v,f.body.v,f.body.code||'',f.type.kind||'',f.type.num==null?'':f.type.num,f.subject.v,f.repl.list.join('; '),r.npages,unsure.join('; '),src.join('; ')].map(q).join(','));
+  });
+  return out.join('\r\n');
+}
+function download(){
+  var msg=document.getElementById('csvMsg');
+  try{
+    var blob=new Blob(['﻿'+csvText()],{type:'text/csv;charset=utf-8'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);a.download='un-documents-catalogue.csv';
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+    msg.textContent=rows.length+' rows prepared. If nothing downloads, copy the text on tab 03.';
+  }catch(e){msg.textContent='The browser blocked the download. Copy the text on tab 03 instead.';}
+}
+
+/* ---------- tab 02: checks ---------- */
+function renderChecks(){
+  var box=document.getElementById('p1');
+  if(!rows.length){box.innerHTML='<p>No files to check.</p>';return;}
+  var n=rows.length,h='<h2>Can I trust these values?</h2><p class="mono">Checks the tool runs on its own result</p>';
+  var order=FIELDS.map(function(a){var s=rows.filter(function(r){return r.f[a[0]].sure;}).length;return {k:a[0],l:a[1],s:s};}).sort(function(x,y){return x.s-y.s;});
+  h+='<h2 style="margin-top:20px"><span class="mono" style="display:block">FIG.02</span>Values read with confidence, by field</h2><div class="bars">';
+  order.forEach(function(o){
+    h+='<div class="barrow"><div>'+esc(o.l)+'</div><div class="track"><div class="fill" style="width:'+(100*o.s/n)+'%"></div></div><div class="v">'+o.s+' of '+n+'</div></div>';
+  });
+  h+='</div><p class="how" style="margin-top:-12px">How this is computed: a value counts as sure when its pattern matched in the expected place and no cross-check disagreed.</p>';
+
+  var withText=rows.filter(function(r){return !r.textless;}).length;
+  var seen={},dups=[];
+  rows.forEach(function(r){var s=r.f.symbol.v;if(!s)return;if(seen[s]&&dups.indexOf(s)<0)dups.push(s);seen[s]=1;});
+  var bc=rows.filter(function(r){return prefixCode(r.f.symbol.v)&&r.f.body.code;});
+  var bmis=bc.filter(function(r){return prefixCode(r.f.symbol.v)!==r.f.body.code;});
+  var nc=rows.filter(function(r){return symNumber(r.f.symbol.v)!=null&&r.f.type.num!=null&&r.f.type.ev.length;});
+  var nmis=nc.filter(function(r){return symNumber(r.f.symbol.v)!==r.f.type.num;});
+  function li(ok,txt){return '<li><span class="tag '+(ok?'pass':'fail')+'">'+(ok?'PASS':'CHECK')+'</span><span>'+txt+'</span></li>';}
+  h+='<h2 style="margin-top:20px">Automatic cross-checks</h2><ul class="checks">';
+  h+=li(withText===n,withText+' of '+n+' files have usable text on page 1.');
+  h+=li(!dups.length,dups.length?'These symbols appear in more than one file: '+esc(dups.join(', '))+'.':'No two files share a symbol.');
+  h+=li(!bmis.length,bc.length?(bc.length-bmis.length)+' of '+bc.length+' comparable files: the committee named on the cover agrees with the symbol prefix.':'No file could be compared (no known symbol prefix).');
+  h+=li(!nmis.length,nc.length?(nc.length-nmis.length)+' of '+nc.length+' comparable files: the number in the title equals the number in the symbol.':'No file could be compared (no number in the symbol).');
+  h+='</ul>';
+
+  var list=[];
+  rows.forEach(function(r){FIELDS.forEach(function(a){if(!r.f[a[0]].sure)list.push({r:r,k:a[0],l:a[1]});});});
+  h+='<table><caption><span class="mono">FIG.03</span>Values the tool is not sure of ('+list.length+')</caption><thead><tr><th scope="col">File</th><th scope="col">Field</th><th scope="col">Value read</th><th scope="col">Why not sure</th><th scope="col">Page</th></tr></thead><tbody>';
+  if(!list.length)h+='<tr><td colspan="5">Every value passed its checks.</td></tr>';
+  list.forEach(function(x){
+    var f=x.r.f[x.k],pn=pgNum(x.r,f);
+    h+='<tr><th scope="row">'+esc(x.r.file)+'</th><td>'+esc(x.l)+'</td><td>'+(f.v?esc(f.v):'<span class="miss">not found</span>')+'</td><td>'+esc(f.note)+'</td><td>'+(pn!=null?'<button type="button" class="pg" data-act="goto" data-i="'+x.r.i+'" data-field="'+x.k+'" data-k="go-'+x.r.i+'-'+x.k+'">open p.'+pn+'</button>':'<button type="button" class="pg" data-act="goto" data-i="'+x.r.i+'" data-field="'+x.k+'" data-k="go-'+x.r.i+'-'+x.k+'">open row</button>')+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  box.innerHTML=h;
+}
+
+/* ---------- tab 03: method ---------- */
+function renderMethod(){
+  var box=document.getElementById('p2');
+  var h='<h2>Method and export</h2><p class="mono">What each column means and how it was read</p>';
+  h+='<ol class="rules">';
+  h+='<li><b>Symbol.</b> The first string of the form LETTERS/…/… on page 1 that looks like a general comment or recommendation symbol (it contains GC or GR, or is an HRI/GEN or A/NN/NN symbol). Sure only if it sits at the very top and no other candidate competes.</li>';
+  h+='<li><b>Date.</b> The first date of the form "6 November 2025" on page 1. Not sure if it is far down the page or if the cover shows several different dates. If only a year can be found, only the year is shown.</li>';
+  h+='<li><b>Body.</b> The earliest of nine treaty-body names on page 1, compared with the symbol prefix (CCPR, E/C.12, CERD, CEDAW, CRC, CAT, CMW, CRPD, CED). Not sure if they disagree.</li>';
+  h+='<li><b>Type and number.</b> The first "General comment No. N" or "General recommendation No. N" (Roman numerals are converted). Not sure if it disagrees with the number in the symbol.</li>';
+  h+='<li><b>Subject.</b> The title lines that follow the number, up to a blank line or the first heading, with the first letter capitalised. Not sure when the title is very short, very long or cut off.</li>';
+  h+='<li><b>Replaces / updates.</b> Every sentence with replace, supersede, update or revise that names an earlier general comment or recommendation. Not sure when the sentence does not say that this document does the replacing, or when it sits beyond page 3. "None found" means the words were not found; it is not proof.</li>';
+  h+='<li><b>Pages.</b> The number of page records in the file.</li>';
+  h+='</ol>';
+  h+='<p><b>What it leaves out.</b> English text only; scanned pages without a text layer are not read; the PDF files themselves are not shown, only the text the converter produced; a layout the patterns do not know will show as "not found" or "?", never as a guess.</p>';
+  h+='<h2 style="margin-top:20px">Download</h2><p><button type="button" class="btn primary" id="csvBtn2">Download CSV</button> <span class="mono">UTF-8, one row per file, in the current sort order</span></p>';
+  h+='<p class="mono">CSV text (copy from here if the download is blocked)</p><textarea readonly aria-label="CSV text">'+esc(csvText())+'</textarea>';
+  box.innerHTML=h;
+  document.getElementById('csvBtn2').addEventListener('click',download);
+}
+
+/* ---------- header, kpis, tabs ---------- */
+function renderHead(){
+  var years=rows.map(function(r){return +String(r.f.date.iso).slice(0,4);}).filter(function(y){return y>0;});
+  var span=years.length?(Math.min.apply(null,years)===Math.max.apply(null,years)?String(years[0]):Math.min.apply(null,years)+'–'+Math.max.apply(null,years)):'no dates read';
+  document.getElementById('src').textContent='Source: '+(D.source||'UN documents as bare PDF files')+' · n = '+rows.length+' files · dates read: '+span;
+  document.getElementById('lbl').textContent='WORKSHOP_DATA.pdf_meta · '+(D.title||'ten UN documents, PDF text');
+}
+function renderKpis(){
+  var s=stats();
+  document.getElementById('kpis').innerHTML=
+    '<div class="kpi"><b>'+rows.length+'</b><span class="mono">files catalogued</span></div>'+
+    '<div class="kpi"><b>'+s.sure+'</b><span class="mono">of '+s.total+' values read with confidence</span></div>'+
+    '<div class="kpi"><b class="red">'+s.check+'</b><span class="mono">values marked ? to check</span></div>';
+}
+var tabs=[].slice.call(document.querySelectorAll('.tab'));
+function selectTab(j,focus){
+  st.tab=j;
+  tabs.forEach(function(b,k){b.setAttribute('aria-selected',k===j);b.tabIndex=k===j?0:-1;document.getElementById('p'+k).hidden=(k!==j);});
+  if(j===1)renderChecks();
+  if(j===2)renderMethod();
+  if(focus)tabs[j].focus();
+}
+tabs.forEach(function(b,i){
+  b.addEventListener('click',function(){selectTab(i,false);});
+  b.addEventListener('keydown',function(e){
+    var n=tabs.length,j=null;
+    if(e.key==='ArrowRight')j=(i+1)%n;else if(e.key==='ArrowLeft')j=(i-1+n)%n;else if(e.key==='Home')j=0;else if(e.key==='End')j=n-1;
+    if(j!==null){e.preventDefault();selectTab(j,true);}
+  });
+});
+
+function onAct(e){
+  var el=e.target.closest?e.target.closest('[data-act]'):null;
+  if(!el)return;
+  var act=el.getAttribute('data-act'),i=+el.getAttribute('data-i'),fd=el.getAttribute('data-field');
+  if(act==='row'){
+    if(st.open===i){st.open=null;}else{st.open=i;st.field='symbol';st.evi=0;}
+    st.focus='row-'+i;renderTable();
+  }else if(act==='field'){
+    st.open=i;st.field=fd;st.evi=0;st.focus='chip-'+i+'-'+fd;renderTable();
+  }else if(act==='next'){
+    st.evi++;st.focus='next-'+i;renderTable();
+  }else if(act==='goto'){
+    st.open=i;st.field=fd;st.evi=0;selectTab(0,false);st.focus='chip-'+i+'-'+fd;renderTable();
+    var d=document.getElementById('d-'+i);if(d)d.scrollIntoView({block:'start'});
+  }
+}
+document.getElementById('tbl').addEventListener('click',onAct);
+document.getElementById('p1').addEventListener('click',onAct);
+document.getElementById('sortKey').addEventListener('change',function(e){st.key=e.target.value;renderTable();});
+document.getElementById('dirBtn').addEventListener('click',function(e){
+  st.dir=-st.dir;e.target.textContent=st.dir>0?'Ascending':'Descending';renderTable();
+});
+document.getElementById('csvBtn').addEventListener('click',download);
+
+renderHead();renderKpis();renderTable();
+})();
+</script>
+</body>
+</html>
+```

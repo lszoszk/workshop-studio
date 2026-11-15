@@ -321,6 +321,19 @@ async def score(browser, page_html, checks, init, shot_path):
                     return True
             return False
 
+        async def each_view(probe):
+            """probe() on the first view and after clicking each of the app's tabs."""
+            out = [await probe()]
+            for i in range(n_tabs):
+                await tabs.nth(i).click()
+                await page.wait_for_timeout(400)
+                out.append(await probe())
+            if n_tabs:
+                await tabs.nth(0).click()
+                await page.wait_for_timeout(300)
+            return out
+
+        diff_marks = None
         texts = [await page.inner_text("body")]
         for i in range(n_tabs):
             await tabs.nth(i).click()
@@ -385,6 +398,30 @@ async def score(browser, page_html, checks, init, shot_path):
                 await box.press("Enter")
                 await page.wait_for_timeout(1200)
                 res[name] = want["expect"].lower() in (await page.inner_text("body")).lower()
+            elif name.startswith("row_facts"):
+                # {rows: [every row's key], facts: [{row, has: [regex, …]}]}: for each fact, some element that holds its
+                # row's key and no other row's key (a table row, a card) also matches every regex, in any of the app's views
+                js = """(w) => w.facts.map((f) => [...document.querySelectorAll('tr,[role=row],li,article,section,div,dl,details,p')]
+                  .filter((e) => { const t = e.innerText || ''; return t.includes(f.row) && !w.rows.some((r) => r !== f.row && t.includes(r)); })
+                  .some((e) => f.has.every((rx) => new RegExp(rx, 'i').test(e.innerText))))"""
+                seen = [False] * len(want["facts"])
+                for got in await each_view(lambda: page.evaluate(js, want)):
+                    seen = [a or b for a, b in zip(seen, got)]
+                res[name] = all(seen)
+            elif name in ("diff_added", "diff_removed", "diff_not"):
+                # what an app marks as added (<ins>, .added …) and removed (<del>, .removed …), in any of its views
+                if diff_marks is None:
+                    js = """() => { const grab = (sel) => [...document.querySelectorAll(sel)].map((e) => e.innerText || e.textContent || '')
+                      .join(' ').replace(/\\s+/g, ' ').toLowerCase();
+                      return { add: grab('ins, .added, .ins, .insert, .inserted, [data-diff=add], [data-diff=added], [data-change=added]'),
+                               del: grab('del, s, .removed, .del, .deleted, [data-diff=del], [data-diff=removed], [data-change=removed]') }; }"""
+                    diff_marks = {"add": "", "del": ""}
+                    for got in await each_view(lambda: page.evaluate(js)):
+                        diff_marks = {k: diff_marks[k] + " " + got[k] for k in diff_marks}
+                stream = {"diff_added": diff_marks["add"], "diff_removed": diff_marks["del"],
+                          "diff_not": diff_marks["add"] + " " + diff_marks["del"]}[name]
+                hits = [w.lower() in stream for w in want]
+                res[name] = not any(hits) if name == "diff_not" else all(hits)
             elif name in ("calls_studio_ask", "batches_max"):
                 if "calls_studio_ask" not in res:
                     # ask_steps: buttons to press in order (a tab, then the button that sends); else one ask_button
