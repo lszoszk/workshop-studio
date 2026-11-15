@@ -25,9 +25,10 @@ OUT = ROOT / "site" / "slides" / "jagged-frontier.html"
 FAMILY = {"claude": "claude", "claude-api": "claude", "glm-cn": "glm", "glm-eu": "glm", "mistral-l3": "mistral", "mistral": "mistral"}
 MODELS = [("claude", "Claude Sonnet 5.5", "USA"), ("glm", "GLM-5.3", "China"), ("mistral", "Mistral Large 3 and 4", "France")]
 AXES = [   # (the label in the table, the one on the radar, its data and format under it, the task on hover, the requests it counts)
-    ("Dashboard on UN data", "Dashboard", "UHRI · CSV",
-     "A dashboard of one country's UN recommendations: counts, filters, a chart of themes and a table of every record.",
-     ["s7-1-dashboard"]),
+    ("Tools on UN recommendations (UHRI)", "UHRI recommendations", "dashboard and checks · CSV",
+     "A dashboard of one country's UN recommendations (counts, filters, a chart of themes, a table), who recommends what, "
+     "and a check of the UN's labels on ten recommendations.",
+     ["s7-1-dashboard", "s7-2-who-recommends", "s7-3-check-ten"]),
     ("Paragraphs out of a PDF", "PDF \u2192 paragraphs", "General comment 27 · PDF",
      "Turn a General Comment's PDF text into numbered paragraphs that can be checked, cited and reused.",
      ["s7-4-extract", "s7-4-extract-pdf"]),
@@ -40,9 +41,6 @@ AXES = [   # (the label in the table, the one on the radar, its data and format 
     ("Small changes to an app", "Small changes", "a column, a chart, a filter",
      "Add a column, a chart or a filter to an app that already works, without rebuilding it.",
      ["edit-1-column", "edit-2-chart", "edit-3-filter"]),
-    ("Checks on UHRI recommendations", "UHRI recommendations", "UHRI · CSV",
-     "Which States make recommendations to a country, and on which goals; then check the UN's labels on ten recommendations at random.",
-     ["s7-2-who-recommends", "s7-3-check-ten"]),
     ("How two States vote at the HRC", "HRC votes", "recorded votes · CSV",
      "Compare how two States voted at the Human Rights Council, year by year.",
      ["s8-3-voting"]),
@@ -124,7 +122,7 @@ FINDINGS = [
     "<b>Claude Sonnet 5.5</b> built a working app nine times in ten, at about $0.28 per working app; GLM-5.3 almost six times in ten at $0.14, "
     "Mistral five times in ten at $0.10.",
     "<b>The frontier is jagged.</b> GLM-5.3 made every small change work (11 of 11) but fewer than half of the PDF tools; "
-    "Mistral built every check on recommendations (9 of 9) and a third of the PDF tools.",
+    "Mistral built three in four tools on UN recommendations and a third of the PDF tools.",
     "<b>Live, 11 November:</b> GLM-5.3 built the wiki from ten PDFs twice; asked to add a network, it wrote the tab but not the graph. "
     "Claude added it the first time.",
     "Try a model on your own task before you rely on it.",
