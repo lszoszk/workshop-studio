@@ -1,0 +1,265 @@
+{
+ "label": "Venice",
+ "days": [
+  "2026-11-12",
+  "2026-11-13"
+ ],
+ "wall": [
+  {
+   "model": "claude",
+   "request": "v3-wiki-pdfs",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "v3-wiki-pdfs",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-3-voting",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-3-voting",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-3-voting",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-3-voting",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-3-voting",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "glm",
+   "request": "s8-3-voting",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-3-voting",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "glm",
+   "request": "s8-3-voting",
+   "outcome": "partly",
+   "failed": [
+    "controls_min",
+    "table_min_rows"
+   ]
+  },
+  {
+   "model": "glm",
+   "request": "s8-3-voting",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-3-voting",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-3-voting",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-3-voting",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-3-voting",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-3-voting",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-3-voting",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-3-voting",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-1-verbatim",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-1-verbatim",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-1-verbatim",
+   "outcome": "partly",
+   "failed": [
+    "button_matches"
+   ]
+  },
+  {
+   "model": "claude",
+   "request": "s8-1-verbatim",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-1-verbatim",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "glm",
+   "request": "s8-1-verbatim",
+   "outcome": "partly",
+   "failed": [
+    "button_matches",
+    "text_contains_after_search"
+   ]
+  },
+  {
+   "model": "glm",
+   "request": "s8-1-verbatim",
+   "outcome": "partly",
+   "failed": [
+    "button_matches"
+   ]
+  },
+  {
+   "model": "glm",
+   "request": "s8-1-verbatim",
+   "outcome": "partly",
+   "failed": [
+    "button_matches"
+   ]
+  },
+  {
+   "model": "claude",
+   "request": "s8-1-verbatim",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "glm",
+   "request": "s8-1-verbatim",
+   "outcome": "partly",
+   "failed": [
+    "button_matches"
+   ]
+  },
+  {
+   "model": "claude",
+   "request": "s8-1-verbatim",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-1-verbatim",
+   "outcome": "works",
+   "failed": []
+  },
+  {
+   "model": "claude",
+   "request": "s8-1-verbatim",
+   "outcome": "works",
+   "failed": []
+  }
+ ],
+ "builds": [
+  {
+   "model": "claude",
+   "request": "s8-1-verbatim",
+   "new": 5,
+   "error_on_open": 0
+  },
+  {
+   "model": "claude",
+   "request": "s8-3-voting",
+   "new": 6,
+   "error_on_open": 0
+  },
+  {
+   "model": "claude",
+   "request": "v3-wiki-pdfs",
+   "new": 9,
+   "error_on_open": 0
+  },
+  {
+   "model": "glm",
+   "request": "s7-1-dashboard",
+   "new": 1,
+   "error_on_open": 0
+  },
+  {
+   "model": "glm",
+   "request": "s8-1-verbatim",
+   "new": 11,
+   "error_on_open": 5
+  },
+  {
+   "model": "glm",
+   "request": "s8-3-voting",
+   "new": 8,
+   "error_on_open": 0
+  },
+  {
+   "model": "glm",
+   "request": "v3-wiki-pdfs",
+   "new": 1,
+   "error_on_open": 0
+  },
+  {
+   "model": "mistral",
+   "request": "s7-1-dashboard",
+   "new": 1,
+   "error_on_open": 0
+  },
+  {
+   "model": "mistral",
+   "request": "s8-3-voting",
+   "new": 1,
+   "error_on_open": 0
+  }
+ ]
+}
