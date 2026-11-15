@@ -8,9 +8,8 @@ automatic checks), partly (it runs but failed a check) or it broke (an error in 
 service failed and not the model (a 5xx in the stream, an answer in under five seconds) is left out. Each radar axis
 is the share of an app's builds that worked; the bar under each radar is all of a model's builds.
 
-What rooms built (tests/room/*.json, from tools/room_scores.py) goes on the same radars as hollow dots: the share of
-the apps participants sent to the wall that passed the same checks; each card adds how many of the room's new builds
-showed an error as they opened.
+The apps a room sent to the wall (tests/room/*.json, from tools/room_scores.py) count as builds too: they ran the same
+checks. The caption says how many there are and that participants chose which apps to show.
 """
 import json
 import re
@@ -25,14 +24,28 @@ OUT = ROOT / "site" / "slides" / "jagged-frontier.html"
 # bake-off model key -> the model on the slide (GLM-5.3 at Z.AI or in the EU is one model; Mistral is Large 3 and 4)
 FAMILY = {"claude": "claude", "claude-api": "claude", "glm-cn": "glm", "glm-eu": "glm", "mistral-l3": "mistral", "mistral": "mistral"}
 MODELS = [("claude", "Claude Sonnet 5.5", "USA"), ("glm", "GLM-5.3", "China"), ("mistral", "Mistral Large 3 and 4", "France")]
-AXES = [   # (the label in the table and tooltip, the short one on the radar, the requests it counts)
-    ("Dashboard on UN data", "Dashboard", ["s7-1-dashboard"]),
-    ("Paragraphs out of a PDF", "PDF \u2192 paragraphs", ["s7-4-extract", "s7-4-extract-pdf"]),
-    ("Verbatim search", "Verbatim search", ["s8-1-verbatim"]),
-    ("Wiki with checked quotes", "Wiki", ["s8-5-wiki"]),
-    ("Small changes to an app", "Small changes", ["edit-1-column", "edit-2-chart", "edit-3-filter"]),
-    ("Checks on recommendations", "Recommendations", ["s7-2-who-recommends", "s7-3-check-ten"]),
-    ("How two States vote at the HRC", "HRC votes", ["s8-3-voting"]),
+AXES = [   # (the label in the table, the one on the radar, its data and format under it, the task on hover, the requests it counts)
+    ("Dashboard on UN data", "Dashboard", "UHRI · CSV",
+     "A dashboard of one country's UN recommendations: counts, filters, a chart of themes and a table of every record.",
+     ["s7-1-dashboard"]),
+    ("Paragraphs out of a PDF", "PDF \u2192 paragraphs", "General comment 27 · PDF",
+     "Turn a General Comment's PDF text into numbered paragraphs that can be checked, cited and reused.",
+     ["s7-4-extract", "s7-4-extract-pdf"]),
+    ("Verbatim search", "Verbatim search", "General Comments · CSV",
+     "Search the General Comments paragraph by paragraph, find the exact words and copy a correct citation.",
+     ["s8-1-verbatim"]),
+    ("Wiki with checked quotes", "Wiki", "40 pages from 10 PDFs",
+     "A research wiki on neurotechnology and justice, every quotation checked against its source.",
+     ["s8-5-wiki"]),
+    ("Small changes to an app", "Small changes", "a column, a chart, a filter",
+     "Add a column, a chart or a filter to an app that already works, without rebuilding it.",
+     ["edit-1-column", "edit-2-chart", "edit-3-filter"]),
+    ("Checks on UHRI recommendations", "UHRI recommendations", "UHRI · CSV",
+     "Which States make recommendations to a country, and on which goals; then check the UN's labels on ten recommendations at random.",
+     ["s7-2-who-recommends", "s7-3-check-ten"]),
+    ("How two States vote at the HRC", "HRC votes", "recorded votes · CSV",
+     "Compare how two States voted at the Human Rights Council, year by year.",
+     ["s8-3-voting"]),
 ]
 
 
@@ -55,54 +68,41 @@ def builds():
                 continue
             days.add(f.parent.name[:10])
             out.append({"model": FAMILY[r["model"]], "prompt": r["prompt"], "outcome": outcome(r), "cost": r.get("cost") or 0})
-    return out, left_out, sorted(days)
-
-
-def rooms():
-    """Every room's scores, one file a room (tools/room_scores.py); the labels joined for the slide."""
-    rs = [json.loads(f.read_text()) for f in sorted(ROOMS.glob("*.json"))]
-    label = "; ".join(f"{r['label']}, {room_days(r['days'])}" for r in rs)
-    return rs, label
-
-
-def room_days(days):
-    d = [datetime.strptime(x, "%Y-%m-%d") for x in sorted(days)]
-    return f"{d[0].day}–{d[-1].day} {d[-1]:%B %Y}" if len(d) > 1 else f"{d[0].day} {d[0]:%B %Y}"
+    # a room's wall apps, for the requests the bake-off has (no price: the service's bill is not per app)
+    asked, rooms = {b["prompt"] for b in out}, []
+    for f in sorted(ROOMS.glob("*.json")):
+        room = json.loads(f.read_text())
+        mine = [{"model": w["model"], "prompt": w["request"], "outcome": w["outcome"], "cost": 0}
+                for w in room["wall"] if w["request"] in asked and w["model"] in FAMILY.values()]
+        if mine:
+            out += mine
+            rooms.append((room["label"], room["days"], len(mine)))
+    return out, left_out, sorted(days), rooms
 
 
 def main():
-    bs, left_out, days = builds()
-    room_list, room_label = rooms()
+    bs, left_out, days, rooms = builds()
     models = []
     for key, name, origin in MODELS:
         mine = [b for b in bs if b["model"] == key]
         total = {k: sum(1 for b in mine if b["outcome"] == k) for k in ("works", "partly", "broke")}
         axes = []
-        wall = [w for r in room_list for w in r["wall"] if w["model"] == key]
-        news = [b for r in room_list for b in r["builds"] if b["model"] == key]
-        for label, _, prompts in AXES:
+        for *_, prompts in AXES:
             pool = [b for b in mine if b["prompt"] in prompts]
-            room = [w for w in wall if w["request"] in prompts]
-            axes.append({"worked": sum(1 for b in pool if b["outcome"] == "works"), "builds": len(pool),
-                         "room_worked": sum(1 for w in room if w["outcome"] == "works"), "room_apps": len(room),
-                         "room_new": sum(b["new"] for b in news if b["request"] in prompts),
-                         "room_errors": sum(b["error_on_open"] for b in news if b["request"] in prompts)})
-        on_axes = {p for _, _, ps in AXES for p in ps}
-        room = {"apps": sum(1 for w in wall if w["request"] in on_axes),
-                "worked": sum(1 for w in wall if w["request"] in on_axes and w["outcome"] == "works"),
-                "new": sum(b["new"] for b in news if b["request"] in on_axes),
-                "errors": sum(b["error_on_open"] for b in news if b["request"] in on_axes)}
+            axes.append({"worked": sum(1 for b in pool if b["outcome"] == "works"), "builds": len(pool)})
         # what a build costs, on the builds with a price (Claude Code's builds of Sonnet have none), and what a working app costs
         priced = [b for b in mine if b["cost"]]
         spend = sum(b["cost"] for b in priced)
         cost = {"per_build": round(spend / len(priced), 2), "per_working": round(spend / sum(1 for b in priced if b["outcome"] == "works"), 2)}
-        models.append({"id": key, "name": name, "origin": origin, "builds": len(mine), **total, "axes": axes, "cost": cost, "room": room})
-    span = [datetime.strptime(d, "%Y-%m-%d") for d in (days[0], days[-1])]
+        models.append({"id": key, "name": name, "origin": origin, "builds": len(mine), **total, "axes": axes, "cost": cost})
+    span = [datetime.strptime(d, "%Y-%m-%d") for d in (days[0], days[-1])]                      # the bake-off's days
+    tested = sorted(set(days) | {d for _, ds, _ in rooms for d in ds})                              # and the rooms'
     stats = [(f"{len(bs)}", "builds"), (f"{len({b['prompt'] for b in bs})}", "workshop requests"), ("3", "models"),
-             (f"{(span[1] - span[0]).days + 1}", "days of testing")]
-    data = {"axes": [a for a, _, _ in AXES], "short": [b for _, b, _ in AXES], "models": models, "stats": stats, "findings": FINDINGS,
-            "room": room_label, "room_note": ROOM_NOTE.format(room=room_label) if room_list else "",
-            "source": SOURCE.format(n=len(bs), left_out=left_out,
+             (f"{(datetime.strptime(tested[-1], '%Y-%m-%d') - span[0]).days + 1}", "days of testing")]
+    room_text = "".join(ROOM.format(n=n, label=label, days=day_span(d)) for label, d, n in rooms)
+    data = {"axes": [a[0] for a in AXES], "short": [a[1] for a in AXES], "sub": [a[2] for a in AXES], "desc": [a[3] for a in AXES],
+            "models": models, "stats": stats, "findings": FINDINGS,
+            "source": SOURCE.format(n=len(bs) - sum(n for *_, n in rooms), left_out=left_out, rooms=room_text,
                                     span=f"{span[0].day} {span[0]:%B} – {span[1].day} {span[1]:%B %Y}")}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(TEMPLATE.replace("__DATA__", json.dumps(data, ensure_ascii=False)), encoding="utf-8")
@@ -111,37 +111,34 @@ def main():
     for m in models:
         print(f"{m['name']:<24} {m['builds']:>3} builds: {m['works']} works, {m['partly']} partly, {m['broke']} broke |",
               " · ".join(f"{a['worked']}/{a['builds']}" for a in m["axes"]), f"| ${m['cost']['per_build']} a build, ${m['cost']['per_working']} per working app")
-        if room_list:
-            print(f"{'  in the room':<24} wall {m['room']['worked']}/{m['room']['apps']} worked,",
-                  f"{m['room']['errors']} of {m['room']['new']} new builds showed an error |",
-                  " · ".join(f"{a['room_worked']}/{a['room_apps']}" for a in m["axes"]))
     print("->", OUT)
+
+
+def day_span(days):
+    d = [datetime.strptime(x, "%Y-%m-%d") for x in sorted(days)]
+    return f"{d[0].day}–{d[-1].day} {d[-1]:%B %Y}" if len(d) > 1 else f"{d[0].day} {d[0]:%B %Y}"
 
 
 # written by hand: read them against the printed numbers before each run
 FINDINGS = [
-    "<b>Claude Sonnet 5.5</b> built a working app nine times in ten, at about $0.28 per working app; GLM-5.3 six times in ten at $0.14, "
+    "<b>Claude Sonnet 5.5</b> built a working app nine times in ten, at about $0.28 per working app; GLM-5.3 almost six times in ten at $0.14, "
     "Mistral five times in ten at $0.10.",
     "<b>The frontier is jagged.</b> GLM-5.3 made every small change work (11 of 11) but fewer than half of the PDF tools; "
     "Mistral built every check on recommendations (9 of 9) and a third of the PDF tools.",
-    "<b>In the room, Venice:</b> Claude's apps on the wall passed every check 21 times in 22, GLM-5.3's 2 in 7; "
-    "5 of GLM's 20 new builds broke as they opened, none of Claude's 11.",
+    "<b>Live, 11 November:</b> GLM-5.3 built the wiki from ten PDFs twice; asked to add a network, it wrote the tab but not the graph. "
+    "Claude added it the first time.",
     "Try a model on your own task before you rely on it.",
 ]
-ROOM_NOTE = ("Hollow dots: what a room built ({room}). The apps participants sent to the wall, run with the same checks: "
-             "they chose what to show and often changed it first, so this flatters. Under each card, every new build of a "
-             "workshop request in the room's activity log, and how many showed an error as the app opened: no selection, but "
-             "a weaker test. Apps built on a participant's own file are left out (the file never left their computer). "
-             "Three of GLM-5.3's partial wall apps missed only the check for a Copy citation button, which they have: "
-             "the checker can be wrong too.")
 SOURCE = ("Each axis: the share of an app's builds that passed all of its automatic checks (the app runs without an error, "
           "uses the workshop data and shows what was asked). Cost: what the model service charged for a build, averaged over the builds "
           "with a price (Sonnet's builds in Claude Code have none), and the same spend divided by the builds that worked. All {n} bake-off builds, {span}, with every setting tried "
-          "({left_out} builds where the service failed, not the model, are left out). Claude: Sonnet 5.5, in Claude Code or through "
+          "({left_out} builds where the service failed, not the model, are left out){rooms}. Claude: Sonnet 5.5, in Claude Code or through "
           "the API; GLM-5.3 at Z.AI or in the EU; Mistral: Large 3 and Large 4. The requests were written and tuned with Claude. "
           "The term: Dell'Acqua et al., ‘Navigating the Jagged Technological Frontier’, <i>Organization Science</i> (2026), "
           "<a href=\"https://doi.org/10.1287/orsc.2025.21838\">doi:10.1287/orsc.2025.21838</a>.")
 
+ROOM = (", and {n} apps that participants built in {label} ({days}) and sent to the wall, run with the same checks "
+        "(they chose which apps to show)")
 TEMPLATE = (Path(__file__).parent / "jagged_frontier.html").read_text(encoding="utf-8")
 
 if __name__ == "__main__":
