@@ -325,6 +325,12 @@ code, kbd, samp, pre { font-family: var(--mono); }
 .brief-asks { font-size: 12.5px; color: var(--muted); }
 .brief-hint { margin: 0; font-size: 13px; color: var(--muted); }
 .brief-card input:focus-visible, .brief-card textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* the data card, before the brief: the file's counts, "Look inside the file", "Write your brief" */
+.msg.data-card { background: var(--surface); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+.data-card > b { font-size: 16px; }
+.data-card .bsum { font-size: 13px; color: var(--muted); }
+.data-card p { margin: 0; font-size: 14px; }
+.data-card .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 /* "What is in the file" */
 .drawer.inside { width: min(860px, 74%); }
 .drawer.inside .json-view { flex: none; max-height: 34vh; min-height: 8em; }   /* in a column of flex items it would shrink to a line */

@@ -298,8 +298,35 @@ G1HEAD = "Build this app. Follow my brief and the plan; where they differ, the p
 
 
 def g1_started(page):
-    """Geneva has no suggestion buttons: the studio is ready when the brief card, a plan put back after a reload or an app is up."""
-    page.wait_for_function("() => document.getElementById('countryCount').textContent !== '—' && (document.querySelector('.brief-card, #versions [data-v]') || !document.getElementById('planView').hidden)", timeout=20000)
+    """Geneva has no suggestion buttons: the studio is ready when the data card, a plan put back after a reload or an app
+    is up. From the data card, "Write your brief" brings the brief card."""
+    page.wait_for_function("() => document.getElementById('countryCount').textContent !== '—' && (document.querySelector('.data-card, .brief-card, #versions [data-v]') || !document.getElementById('planView').hidden)", timeout=20000)
+    if page.is_visible("#dataNext"):
+        page.click("#dataNext")
+        page.wait_for_selector(".brief-card", timeout=20000)
+
+
+def test_geneva_starts_with_the_data(base_url, browser):
+    """Data before the brief: the chat opens on the file's counts with "Look inside the file", the bar starts with Data,
+    and the brief card waits. Looking inside marks Data and brings the brief card; so does skipping Data."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + G1)
+    page.wait_for_selector(".data-card", timeout=20000)
+    page.wait_for_function("() => /7,304 paragraphs/.test(document.querySelector('.data-card').textContent)", timeout=20000)
+    assert page.locator("#progressSteps li .pl").all_inner_texts()[:2] == ["Data", "Brief"]
+    assert page.locator(".brief-card").count() == 0
+    assert page.locator("#log .msg").nth(0).inner_text().startswith("Hello! Start with the data")   # the greeting, then the card
+    page.click("#dataLook")
+    page.wait_for_selector("#drawer .json-view", timeout=20000)
+    page.wait_for_selector(".brief-card", timeout=20000)
+    assert page.locator("#progressSteps li.done").count() == 1 and not page.is_visible("#dataNext")
+    page.goto(base_url + G1)                                 # a fresh start: skipping Data also brings the brief
+    page.wait_for_selector("#dataNext", timeout=20000)
+    page.click("#progressSteps .pskip")
+    page.wait_for_selector(".brief-card", timeout=20000)
+    assert page.locator("#progressSteps li.done").count() == 1
+    ctx.close()
 
 
 def saved_plan(page, key="guest"):

@@ -67,7 +67,8 @@
   // keepModel: a model that is busy or fails is never swapped for another behind the participant's back: the studio says so
   // and offers Try again or the other model (the server is asked with fallback:false).  ideas: "Suggest three improvements"
   // (three cards, one request) instead of the five review lenses.  signWall: a name may sign what goes on the wall, which is
-  // asked once at 100%.
+  // asked once at 100%.  dataFirst: the chat opens on a card about the data ("Look inside the file"); the brief card
+  // comes under it, and the bar starts with Data.
   const COURSE = {
     full: {
       sessions: ['S7', 'S8'], promptKey: 'session', storeId: 'geneva', roomId: 'full', models: null, country: true,
@@ -96,7 +97,7 @@
       sessions: ['G1'], promptKey: 'geneva', storeId: 'g1', roomId: 'geneva', models: ['claude', 'glm-eu'], country: false,
       advanced: false, wallWithoutAdvanced: true, ignoreLevel: true, ownSession: null, askDirect: false, tour: false, pace: 25,
       files: ['gc'], planBrief: true, event: 'event_geneva', feedbackHint: null, improveSwap: false, courseLink: false, look: false, progress: true, briefCard: true, insideFile: true,
-      keepModel: true, ideas: true, signWall: true,
+      keepModel: true, ideas: true, signWall: true, dataFirst: true,
       defaultModel: 'claude',   // Venice: no error in Claude's 136 builds, GLM's in about one of three; GLM stays a click away
       kit: { steps: [['Session 1', 'g1-verbatim', true], ['At home', 'g-home-hrc', true]], data: ['gc', 'hrc_all'] },
     },
@@ -241,7 +242,10 @@
     if (params.get('from')) await fromGallery(params.get('from'));
     else if (CFG.tour) Tour.startOnce();   // the first visit in this browser
     if (!S.versions.length && !S.talk.length) {
-      if (CFG.briefCard) { if (!S.savedPlan) note('Hello! Write your brief in the card below, then send it. The planner will look at your data and write a plan; you read it, change it if you like, and build from it.'); }
+      if (CFG.briefCard && CFG.dataFirst) {
+        if (!S.savedPlan) note('Hello! Start with the data: look inside the file below. Then write your brief and send it. The planner looks at the data too and writes a plan; you read it, change it if you like, and build from it.');
+        if (DataCard.el && DataCard.el.isConnected) $('log').append(DataCard.el);   // the card under the greeting
+      } else if (CFG.briefCard) { if (!S.savedPlan) note('Hello! Write your brief in the card below, then send it. The planner will look at your data and write a plan; you read it, change it if you like, and build from it.'); }
       else note(`Hello! Ask me anything, or pick a suggestion below. To build an app, first drag a file from <b>Your files</b> into the chat` +
         (countryUsed() ? `: your country is <b>${esc(S.country)}</b>, with ${fmt(S.countryCount)} UN recommendations and observations.` : '.'));
     }
@@ -2524,7 +2528,7 @@
 
   // Send in plan mode: the recorded session plays, then the plan waits on the stage for Build
   async function startPlanning(p, text, files) {
-    Progress.mark(1);
+    Progress.mark(2);
     const PACE = planPace();
     const pack = await loadPack(p);
     const free = freeBrief(p);
@@ -2588,7 +2592,7 @@
           const row = stepEl(steps[i], facts);
           row.classList.add('running');
           m.step(row);
-          if (steps[i].live === 'gc_overview') Progress.mark(2);   // "Data": the counts of their own file are on screen
+          if (steps[i].live === 'gc_overview') Progress.mark(1);   // "Data": the counts of their own file are on screen
           mindShow(`${who} is planning`, where, plain(stage) + row.plainText, clock(), noteText);
           await nap(PACE * 10);
           row.classList.remove('running');
@@ -2972,6 +2976,33 @@
     return '';
   }
 
+  // a course that looks at the data first: a card on the request's file, before the brief. "Look inside the file" opens
+  // the records; it, "Write your brief" or the Data step done or skipped brings the brief card under it.
+  const DataCard = { el: null, next: null };
+  function offerData(p) {
+    if (DataCard.el && DataCard.el.isConnected) return;
+    const el = DataCard.el = document.createElement('div');
+    el.className = 'msg data-card';
+    el.innerHTML = '<b>First, your data</b>' + `<span class="bsum">${esc(fileLabel(p.dataset))}</span>` +
+      '<p class="dc-facts">Counting the file…</p>' +
+      '<p>One record per paragraph: the document symbol, the paragraph number, the committee, the year and the text, word for word. ' +
+      'Look at a few records before you say what to build from them.</p>' +
+      '<div class="row"><button type="button" class="primary" id="dataLook">Look inside the file</button>' +
+      '<button type="button" class="ghost" id="dataNext">Write your brief</button></div>';
+    $('log').append(el);
+    lookFacts(p.dataset).then((f) => {
+      if (f.count) el.querySelector('.dc-facts').innerHTML = `<b>${esc(f.count)} paragraphs</b> from ${esc(f.documents)} documents of ${esc(f.committees)} committees, ${esc(f.years)}.`;
+    }, () => { el.querySelector('.dc-facts').textContent = ''; });
+    DataCard.next = () => {
+      if (!el.isConnected) return;
+      el.querySelector('#dataNext').hidden = true;
+      offerBrief(p);
+    };
+    el.querySelector('#dataLook').onclick = () => { openInside(p.dataset); DataCard.next(); };
+    el.querySelector('#dataNext').onclick = () => DataCard.next();
+    if (S.progress.done[0]) DataCard.next();   // back after a reload, with the data already looked at
+  }
+
   // the card in the chat; created once, where a suggestion would have offered the request
   function offerBrief(p) {
     if (Brief.loading || (Brief.el && Brief.el.isConnected)) return;
@@ -3191,7 +3222,7 @@
     // a course that has the participant write a brief shows its card in the chat, not the suggestion, before the first app
     if (CFG.briefCard && !v && !S.versions.length && !S.planning && !S.savedPlan && !Brief.failed) {
       const b = starters.find((p) => p.planning);
-      if (b) { starters = starters.filter((p) => p !== b); offerBrief(b); }
+      if (b) { starters = starters.filter((p) => p !== b); if (CFG.dataFirst) offerData(b); else offerBrief(b); }
     }
     const group = (label, list, fresh) => {
       if (!list.length) return;
@@ -3650,7 +3681,7 @@
   };
 
   async function openInside(key) {
-    Progress.mark(2);
+    Progress.mark(1);
     const d = await dataParsed(key), r = d.records, f = fileMeta(key), facts = await lookFacts(key);
     openDrawer('What is in the file');
     $('drawer').classList.add('inside');
@@ -3814,13 +3845,13 @@
   /* ---------- the seven steps of the one-session course (the bar under the header) ---------- */
 
   // Steps are done in any order and never undone; each is marked by something the participant did, or skipped.
-  // 1 Brief: a planning session starts.  2 Data: the planner's look at the file is on screen, or "What is in the file" is opened.
+  // 1 Data: "What is in the file" is opened, or the planner's look at the file is on screen.  2 Brief: a planning session starts.
   // 3 Plan read: the plan is on the stage.  4 Plan approved: Build from this plan.
   // 5 App built: a build's preview opened without an app error.  7 Improved: such a build on top of an earlier app.
   // 6 Tested has no hook of its own yet: until the studio reports it, the step's Skip link is the way on.
   const Progress = {
-    LABELS: ['Brief', 'Data', 'Plan read', 'Plan approved', 'App built', 'Tested', 'Improved'],
-    HINTS: ['write your brief and send it', 'look at the data in your files', 'read the plan on the right', 'approve the plan to build it',
+    LABELS: ['Data', 'Brief', 'Plan read', 'Plan approved', 'App built', 'Tested', 'Improved'],
+    HINTS: ['look inside the file', 'write your brief and send it', 'read the plan on the right', 'approve the plan to build it',
       'let the model build the app', 'try the app and test what it says', 'ask for one improvement'],
     fresh: () => ({ done: Array(7).fill(false), skipped: Array(7).fill(false) }),
     // a saved value, checked: seven booleans each
@@ -3921,7 +3952,12 @@
 
   Preview.init();
   wireSplitter();
-  $('progressSteps').addEventListener('click', (e) => { const b = e.target.closest('[data-skip]'); if (b) Progress.skip(Number(b.dataset.skip)); });
+  $('progressSteps').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-skip]');
+    if (!b) return;
+    Progress.skip(Number(b.dataset.skip));
+    if (b.dataset.skip === '1' && DataCard.next) DataCard.next();   // Data skipped: on to the brief
+  });
   $('planClose').onclick = () => { $('planView').hidden = true; };
   $('planEditBtn').onclick = () => shownPlan && beginEdit(shownPlan);
   $('planDone').onclick = () => shownPlan && commitEdit(shownPlan);
