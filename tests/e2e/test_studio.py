@@ -264,6 +264,39 @@ def build_plan(page):
     page.locator(".approve button.primary:not([disabled])").last.click()
 
 
+# Geneva (?course=geneva): the participant writes a brief on a card instead of picking a suggestion
+G1 = "?course=geneva&via=replay&planpace=1&reset=1"
+G1PACK = json.loads((SITE / "data/planning/g1-verbatim.json").read_text())
+G1HEAD = "Build this app. Follow my brief and the plan; where they differ, the plan wins; where both are silent, keep it simple."
+
+
+def g1_started(page):
+    """Geneva has no suggestion buttons: the studio is ready when the brief card, a plan put back after a reload or an app is up."""
+    page.wait_for_function("() => document.getElementById('countryCount').textContent !== '—' && (document.querySelector('.brief-card, #versions [data-v]') || !document.getElementById('planView').hidden)", timeout=20000)
+
+
+def saved_plan(page, key="guest"):
+    """The plan of a free brief as the studio keeps it in this browser (None when there is none)."""
+    return page.evaluate("(k) => { const d = JSON.parse(localStorage.getItem('ws:work:' + k + ':g1:G1') || 'null'); return d ? d.planning : null; }", key)
+
+
+def g1_brief(topic=None, off=(), edits=None):
+    """What the brief card puts in the message box: the included blocks as LABEL, newline, paragraph, with [my topic] filled."""
+    edits = edits or {}
+    text = "\n\n".join(f"{b['label']}\n{edits.get(b['id'], b['text'])}" for b in G1PACK["brief"] if b["id"] not in off)
+    return text.replace("[my topic]", topic or "[my topic]")
+
+
+def g1_plan(page, topic=None):
+    """Name a topic on the brief card, send it and answer the planner's questions with the recommended answers."""
+    if topic:
+        page.fill("#briefTopic", topic)
+    brief = page.input_value("#input")
+    page.click("#sendBtn")
+    plan_through(page)
+    return brief
+
+
 def send(page, title, key=None, n=None):
     """Pick a suggestion, add the file it needs and send it. A workshop app in plan mode plays its
     planning session: the recommended answers, then Build from this plan."""
@@ -1761,12 +1794,13 @@ def test_the_seat_dialog_takes_enter_and_keeps_escape(base_url, browser, fake_ap
 
 def test_geneva_is_one_session(base_url, browser):
     """?course=geneva (4 December): one session, no country picker, two models (Claude first), no Advanced, only the
-    General Comments on the shelf, the seven-step bar, and no tour unasked. Building the Verbatim finder in recorded mode
-    marks Brief, Plan read, Plan approved and App built; a reload keeps them and ?reset=1 clears them."""
+    General Comments on the shelf, the seven-step bar, and no tour unasked. Writing a brief on the card and building the
+    Verbatim finder in recorded mode marks Brief, Data, Plan read, Plan approved and App built; a reload keeps them and
+    ?reset=1 clears them."""
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
-    page.goto(base_url + "?course=geneva&via=replay&planpace=1&reset=1")
-    started(page)
+    page.goto(base_url + G1)
+    g1_started(page)
     assert page.evaluate("document.body.dataset.course") == "geneva"
     assert not page.is_visible("#sessionSwitch") and not page.is_visible("#countryChip") and not page.is_visible("#lookBtn")
     assert page.eval_on_selector_all("#modelSelect option", "os => os.map(o => o.value)") == ["claude", "glm-eu"]
@@ -1776,23 +1810,207 @@ def test_geneva_is_one_session(base_url, browser):
     assert page.get_attribute("#progress", "role") == "progressbar" and page.get_attribute("#progress", "aria-valuenow") == "0"
     assert page.locator("#progressSteps li.done").count() == 0
     assert not page.is_visible(".tour-card")
+    assert page.locator("#suggest button").count() == 0       # the card, not a suggestion, offers the Verbatim finder
     page.click("#progressSteps .pskip")                      # a skip marks the current step (1) as done, once
     assert page.locator("#progressSteps li.done").count() == 1
-    page.goto(base_url + "?course=geneva&via=replay&planpace=1&reset=1")
-    started(page)
+    page.goto(base_url + G1)
+    g1_started(page)
     assert page.locator("#progressSteps li.done").count() == 0
-    send(page, "Verbatim finder for General Comments", "gc", 1)
-    page.wait_for_function("() => document.querySelectorAll('#progressSteps li.done').length === 4", timeout=20000)
+    page.click("#sendBtn")
+    plan_through(page)
+    build_plan(page)
+    built(page, 1)
+    page.wait_for_function("() => document.querySelectorAll('#progressSteps li.done').length === 5", timeout=20000)
     def done():
         return page.eval_on_selector_all("#progressSteps li", "els => els.map(e => e.classList.contains('done'))")
-    assert done() == [True, False, True, True, True, False, False]
-    assert page.get_attribute("#progress", "aria-valuenow") == "4"
+    assert done() == [True, True, True, True, True, False, False]
+    assert page.get_attribute("#progress", "aria-valuenow") == "5"
     page.reload()
-    started(page)
-    assert done() == [True, False, True, True, True, False, False]
-    page.goto(base_url + "?course=geneva&via=replay&planpace=1&reset=1")
-    started(page)
+    g1_started(page)
+    assert done() == [True, True, True, True, True, False, False]
+    page.goto(base_url + G1)
+    g1_started(page)
     assert done() == [False] * 7
+    ctx.close()
+
+
+def test_the_brief_card_fills_the_message_box_and_the_file_is_shown(base_url, browser):
+    """The card "Write your brief" puts the five paragraphs in the message box as they are edited (a block switched off, a
+    topic, a changed paragraph) and attaches the General Comments; a brief that is not the pack's text starts the recorded
+    planning; the planner's first step shows the live counts of the file, "Look inside the file" opens three records as pretty,
+    coloured text with the Hugging Face link, and Brief, Data and Plan read are marked."""
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + G1)
+    g1_started(page)
+    card = page.locator(".brief-card")
+    assert "Write your brief" in card.inner_text() and card.locator(".brief-block").count() == 5
+    assert card.locator(".brief-asks").all_inner_texts() == [b["asks"] for b in G1PACK["brief"]]
+    assert page.input_value("#input") == g1_brief()                       # filled as soon as the card is up
+    assert page.locator("#attach .filechip").count() == 1 and "General Comments" in page.inner_text("#attach")
+    assert page.get_attribute("#briefTopic", "placeholder")
+    card.locator('.brief-block[data-id="before"] input[type=checkbox]').uncheck()
+    assert page.input_value("#input") == g1_brief(off=("before",)) and "BEFORE YOU BUILD" not in page.input_value("#input")
+    page.fill("#briefTopic", "freedom of expression online")
+    extra = G1PACK["brief"][2]["text"] + " Cite only General Comments from 2011 on."
+    page.fill('.brief-block[data-id="limits"] textarea', extra)
+    assert page.input_value("#input") == g1_brief("freedom of expression online", off=("before",), edits={"limits": extra})
+    page.click("#sendBtn")                                                # a changed brief starts the planning
+    page.wait_for_selector(".msg.ask:not(.answered)", timeout=30000)
+    assert page.locator(".msg.user").first.evaluate("e => e.lastChild.textContent").startswith("GOAL AND WHY\nWhen I write a submission on freedom of expression online")
+    gc = json.loads((SITE / "data/gc.json").read_text())["records"]
+    docs = len({(r["symbol"], r["title"]) for r in gc})
+    years = [r["year"] for r in gc]
+    step = page.locator(".plan-msg .step-label").first.inner_text()
+    assert step == (f"Looked at the data: {len(gc):,} paragraphs from {docs} documents of {len({r['committee'] for r in gc})} committees, "
+                    f"{min(years)}–{max(years)}"), step
+    page.locator(".plan-msg .step-pages button", has_text="Look inside the file").click()
+    assert page.inner_text("#drawerTitle") == "What is in the file"
+    view = page.inner_text("#drawerBody")
+    assert f"{len(gc):,} paragraphs" in view and page.locator("#drawerBody pre.json-view").inner_text().count('"symbol"') == 3
+    assert page.locator("#drawerBody pre.json-view .tk-attr").count() >= 30 and page.locator("#drawerBody pre.json-view").inner_text().startswith("[\n  {")
+    assert page.locator("#drawerBody dt").all_inner_texts() == ["id", "symbol", "paragraph", "committee", "year", "title", "short_title", "doc_url", "text", "cited_articles"]
+    assert page.locator('#drawerBody a[href^="https://huggingface.co/datasets/"]').count() == 1 and page.is_visible("#insideCsv")
+    page.click("#drawerClose")
+    plan_through(page)
+    assert "Verbatim finder: freedom of expression online" in page.inner_text("#planDoc")
+    assert page.locator("#planDoc input, #planDoc select, #planDoc textarea, #planDoc [contenteditable]").count() == 0
+    assert page.eval_on_selector_all("#progressSteps li", "els => els.map(e => e.classList.contains('done'))")[:4] == [True, True, True, False]
+    # a brief too short to plan from is turned back
+    page.goto(base_url + G1)
+    g1_started(page)
+    page.fill("#input", "Make me an app.")
+    page.click("#sendBtn")
+    assert "a few more words" in page.locator(".msg.note").last.inner_text() and page.locator(".msg.ask").count() == 0
+    assert not errors, errors
+    ctx.close()
+
+
+def test_skip_to_the_plan_and_a_look_for_each_seat(base_url, browser):
+    """"Skip to the plan" ends the planner's log and its steps at once, so the first question card is up long before a slow
+    replay would show it; a seat's first look is a stable hash of its code, and two codes can start with different looks."""
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    page.goto(base_url + G1.replace("planpace=1", "planpace=60"))
+    g1_started(page)
+    page.click("#sendBtn")
+    page.wait_for_selector(".plan-msg .skip-plan")
+    page.click(".plan-msg .skip-plan")
+    page.wait_for_selector(".msg.ask:not(.answered)", timeout=8000)
+    assert page.locator(".plan-msg .skip-plan").count() == 0 and page.locator(".plan-msg .step").count() == len(G1PACK["steps"])
+    looks = lambda key: page.evaluate("([p, k]) => window.__studioTest.defaultLook(p, k)", [G1PACK, key])
+    assert looks("AAAAAA") == looks("AAAAAA") != looks("BBBBBB")
+    assert {looks(k) for k in ("TEST22", "K7Q2MA", "ABC123", "XYZ789", "AAAAAA", "BBBBBB")} <= {x["id"] for x in G1PACK["looks"]}
+    ctx.close()
+
+
+def test_composePlan_in_the_page_is_the_text_planning_py_composes(base_url, browser):
+    """For the Geneva pack, the page's composePlan gives word for word what tools/planning.py compose() gives, with a topic and
+    each look, and with the pack's defaults."""
+    compose = tool("planning").compose
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    page.goto(base_url + G1)
+    g1_started(page)
+    for topic, look in (("freedom of expression online", "paper"), ("the rights of older persons", "night"), ("a topic with $& and {look} in it", "cards"), (None, None)):
+        got = page.evaluate("([p, t, l]) => window.__studioTest.composePlan(p, {}, {topic: t, look: l})", [G1PACK, topic, look])
+        assert got == compose(G1PACK, {}, "Kenya", topic, look), (topic, look)
+    ctx.close()
+
+
+def test_a_plan_is_edited_by_hand_and_by_chat_and_built(base_url, browser, fake_api):
+    """Live: Edit the plan swaps it for a text box; Done makes v2 "edited by you" (a text without a # heading keeps the box open);
+    the Look menu changes only the look line, as a new version by you; a change by chat then gets the brief, the plan as edited
+    and the line that says the participant edited it, and its answer is v3; Build sends the head line, the brief, the latest plan
+    and the file line, in that order, and the trace says so."""
+    api, calls = fake_api
+    compose = tool("planning").compose
+    plan_of = lambda look: compose(G1PACK, {}, "Colombia", "freedom of expression online", look).split("\n\n", 1)[1]
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + f"?api={api}&course=geneva&planpace=1&reset=1#s=TEST22")
+    g1_started(page)
+    brief = g1_plan(page, "freedom of expression online")
+    first = page.evaluate("([p, k]) => window.__studioTest.defaultLook(p, k)", [G1PACK, "TEST22"])
+    assert page.input_value("#planLook") == first and "v1 · the planner" in page.text_content("#planKicker")
+    # the look: only its line changes, and the plan is the one planning.py composes for that look
+    other = next(x["id"] for x in G1PACK["looks"] if x["id"] != first)
+    page.select_option("#planLook", other)
+    assert "v2 · edited by you" in page.text_content("#planKicker")
+    page.click("#planEditBtn")
+    assert page.input_value("#planEdit") == plan_of(other) and not page.is_visible("#planDoc") and not page.is_enabled("#planLook")
+    # an edit without a heading is not accepted; with one it is v3
+    page.fill("#planEdit", "just a line")
+    page.click("#planDone")
+    assert page.is_visible("#planEditMsg") and page.is_visible("#planEdit")
+    page.fill("#planEdit", plan_of(other).replace("- No translation: English only.", "- No translation: English only.\n- No tracking of any kind."))
+    page.click("#planDone")
+    assert not page.is_visible("#planEdit") and "v3 · edited by you" in page.text_content("#planKicker")
+    assert "No tracking of any kind." in page.inner_text("#planDoc")
+    page.click("#planEditBtn")
+    page.click("#planCancel")                                               # Cancel changes nothing
+    assert "v3 · edited by you" in page.text_content("#planKicker") and page.locator(".approve button.primary:not([disabled])").count() == 1
+    # a change by chat
+    n = len(calls)
+    page.locator(".approve button.ghost").last.click()
+    page.keyboard.type("add a line chart of the records per year.")
+    page.keyboard.press("Enter")
+    page.wait_for_function("() => document.getElementById('planKicker').textContent.startsWith('v4 · changed by')", timeout=15000)
+    asked = calls[-1]["messages"][0]["content"]
+    assert len(calls) == n + 1 and f"My brief:\n{brief}" in asked and "No tracking of any kind." in asked
+    assert "I edited this plan myself; keep my edits and change only what I ask." in asked and "Change the plan: add a line chart" in asked
+    assert asked.index("No tracking") < asked.index("My brief:") < asked.index("I edited this plan myself")
+    assert "changed by" in page.text_content("#planKicker") and "A line chart of the records per year." in page.inner_text("#planDoc")
+    # Build
+    build_plan(page)
+    built(page, 1)
+    sent = calls[-1]["messages"][-1]["content"]
+    latest = "## Context\nThe same dashboard, revised.\n\n## The app, screen by screen\n1. A line chart of the records per year.\n2. The table of records."
+    assert sent.startswith(f"{G1HEAD}\n\nMy brief:\n{brief}\n\nThe plan:\n{latest}\n\n(Attached: General Comments"), sent[:200] + " … " + sent[-300:]
+    assert [sent.index(x) for x in (G1HEAD, "My brief:", brief, "The plan:", latest, "(Attached:")] == sorted(sent.index(x) for x in (G1HEAD, "My brief:", brief, "The plan:", latest, "(Attached:"))
+    work = page.evaluate("JSON.parse(localStorage.getItem('ws:work:TEST22:g1:G1'))")
+    assert any("Your brief and the plan you approved (v4, changed by" in line for line in work["trace"][-1]["sent"]) and work["planning"] is None
+    assert not errors, errors
+    ctx.close()
+
+
+def test_recorded_mode_refuses_an_edit_and_a_reload_keeps_the_plan(base_url, browser):
+    """Without a model the Edit button and the Look menu are off, with the note that changes are made live; a reload puts the
+    latest plan back on the stage with Build and no replay; Start over and ?reset=1 clear it."""
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + G1)
+    g1_started(page)
+    g1_plan(page, "freedom of expression online")
+    assert not page.is_enabled("#planEditBtn") and not page.is_enabled("#planLook")
+    assert "Changes to a plan are made live by your model" in page.inner_text("#planNote")
+    kicker = page.text_content("#planKicker")
+    doc = page.inner_text("#planDoc")
+    assert "Verbatim finder: freedom of expression online" in doc
+    page.reload()
+    g1_started(page)
+    assert page.is_visible("#planView") and page.inner_text("#planDoc") == doc and page.text_content("#planKicker") == kicker
+    assert page.locator(".approve button.primary:not([disabled])").count() == 1 and page.locator(".plan-msg .step").count() == 0
+    assert page.locator(".brief-card").count() == 0
+    build_plan(page)
+    built(page, 1)
+    assert saved_plan(page) is None   # built: the plan is not kept
+    # a second plan, then ?reset=1
+    page.goto(base_url + G1)
+    g1_started(page)
+    g1_plan(page, "the rights of older persons")
+    assert saved_plan(page)["topic"] == "the rights of older persons"
+    page.goto(base_url + G1)
+    g1_started(page)
+    assert page.locator(".brief-card").count() == 1 and not page.is_visible("#planView")
+    assert saved_plan(page) is None
+    assert not errors, errors
     ctx.close()
 
 

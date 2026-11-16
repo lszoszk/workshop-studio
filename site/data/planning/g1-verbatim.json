@@ -266,5 +266,6 @@
    "text": "light grey background #eef0f2, every result on a white card with rounded corners and a coloured left edge for its committee (muted colours, one per committee), sans-serif titles."
   }
  ],
- "free_brief": true
+ "free_brief": true,
+ "topic_default": "the rights of the child"
 }

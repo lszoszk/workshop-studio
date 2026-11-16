@@ -36,6 +36,7 @@
     trace: [],
     busy: false, ctrl: null, dataText: {}, dataParsed: {},
     planMode: true,      // the four workshop apps plan first (the pill above the message box)
+    freeBrief: {},       // request id -> true where its planning pack takes any brief the participant writes (set when the pack loads)
     planning: null,      // the plan being made or waiting to be built
     packs: {},           // planning packages by request id; null where there is none
     own: {},             // the participant's own files (own-files.js), by key: kept in this browser
@@ -57,12 +58,14 @@
   // files: null (the shelf without the Venice-only files), 'session' (what the open session's requests read) or a list.
   // kit: the take-home kit's requests and data.  planBrief: the facilitator's brief button.  event: the key in config.json.
   // feedbackHint, improveSwap, courseLink, look, progress: the feedback box's hint, one way to improve, the course-page
-  // link, the Look inside menu and the seven-step bar.
+  // link, the Look inside menu and the seven-step bar.  briefCard: the participant writes a brief from labelled paragraphs
+  // (a pack with free_brief) instead of picking a suggestion.  insideFile: "Open" on the General Comments shelf card shows
+  // "What is in the file" instead of downloading it.
   const COURSE = {
     full: {
       sessions: ['S7', 'S8'], promptKey: 'session', storeId: 'geneva', roomId: 'full', models: null, country: true,
       advanced: true, wallWithoutAdvanced: false, ignoreLevel: false, ownSession: null, askDirect: true, tour: true, pace: 80,
-      files: null, planBrief: true, event: 'event', feedbackHint: null, improveSwap: false, courseLink: false, look: true, progress: false,
+      files: null, planBrief: true, event: 'event', feedbackHint: null, improveSwap: false, courseLink: false, look: true, progress: false, briefCard: false, insideFile: false,
       kit: {
         steps: [['Session 1', 's7-1-dashboard', true], ['Session 1', 's7-3-quote-check', false], ['Session 1', 's7-1b-ask-data', false],
           ['Session 2', 's7-4-extract', true], ['Session 2', 's7-4b-run-ten', false], ['Session 2', 's7-4c-show-broken', false],
@@ -74,7 +77,7 @@
       sessions: ['V1', 'V2', 'V3'], promptKey: 'venice', storeId: 'venice', roomId: 'venice', models: ['glm-eu', 'claude'], country: true,
       advanced: false, wallWithoutAdvanced: true, ignoreLevel: true, ownSession: 'V3', askDirect: true, tour: true, pace: 20,
       files: 'session', planBrief: false, event: 'event_venice', feedbackHint: 'e.g. I pasted a quotation into Check and nothing happened',
-      improveSwap: true, courseLink: true, look: true, progress: false,
+      improveSwap: true, courseLink: true, look: true, progress: false, briefCard: false, insideFile: false,
       kit: {
         steps: [['Session 1', 's8-1-verbatim', true], ['Session 1', 's8-1b-gc-quote-check', false],
           ['Session 2', 's8-3-voting', true], ['Session 2', 's8-3c-alignment', false],
@@ -85,9 +88,9 @@
     geneva: {
       sessions: ['G1'], promptKey: 'geneva', storeId: 'g1', roomId: 'geneva', models: ['claude', 'glm-eu'], country: false,
       advanced: false, wallWithoutAdvanced: true, ignoreLevel: true, ownSession: null, askDirect: false, tour: false, pace: 25,
-      files: ['gc'], planBrief: true, event: 'event_geneva', feedbackHint: null, improveSwap: false, courseLink: false, look: false, progress: true,
+      files: ['gc'], planBrief: true, event: 'event_geneva', feedbackHint: null, improveSwap: false, courseLink: false, look: false, progress: true, briefCard: true, insideFile: true,
       defaultModel: 'claude',   // Venice: no error in Claude's 136 builds, GLM's in about one of three; GLM stays a click away
-      kit: { steps: [['Session 1', 's8-1-verbatim', true]], data: ['gc'] },
+      kit: { steps: [['Session 1', 'g1-verbatim', true]], data: ['gc'] },
     },
   };
   let CFG = COURSE.full;   // set again at boot, once the course is known
@@ -223,13 +226,15 @@
     $('sendBtn').disabled = false;
     renderFooter();
     renderAll();
+    if (S.savedPlan) resumePlan(S.savedPlan);
     track('open', { route: S.route.type, session: S.session, model: S.model, has_seat: !!S.seatCode, apps: S.versions.length,
       w: innerWidth, ua: /Firefox/.test(navigator.userAgent) ? 'firefox' : /Edg\//.test(navigator.userAgent) ? 'edge' : /Chrome/.test(navigator.userAgent) ? 'chrome' : /Safari/.test(navigator.userAgent) ? 'safari' : 'other' });
     Room.start();
     if (params.get('from')) await fromGallery(params.get('from'));
     else if (CFG.tour) Tour.startOnce();   // the first visit in this browser
     if (!S.versions.length && !S.talk.length) {
-      note(`Hello! Ask me anything, or pick a suggestion below. To build an app, first drag a file from <b>Your files</b> into the chat` +
+      if (CFG.briefCard) { if (!S.savedPlan) note('Hello! Write your brief in the card below, then send it. The planner will look at your data and write a plan; you read it, change it if you like, and build from it.'); }
+      else note(`Hello! Ask me anything, or pick a suggestion below. To build an app, first drag a file from <b>Your files</b> into the chat` +
         (countryUsed() ? `: your country is <b>${esc(S.country)}</b>, with ${fmt(S.countryCount)} UN recommendations and observations.` : '.'));
     }
   }
@@ -732,7 +737,10 @@
   // `plan` is set when the message is a plan on its way to being built
   function submitBuild(text, plan) {
     if (!S.ready || S.busy || !text.trim()) return;
-    if (!plan && S.planning && S.planning.changing) return revisePlan(S.planning, text);
+    if (!plan && S.planning && S.planning.changing) {
+      if (!commitEdit(S.planning)) return;   // a plan being edited by hand is saved first, so the change starts from it
+      return revisePlan(S.planning, text);
+    }
     const p = S.prompts.find((q) => q.id === S.pendingPromptId);
     if (p && p.dataset && !new Set([...attachedBefore(), ...S.draft]).has(p.dataset)) {
       note(`This request needs the file <b>${esc(fileLabel(p.dataset))}</b>. Drag it from <b>Your files</b> into the chat, then send.`);
@@ -740,6 +748,13 @@
       return;
     }
     if (!plan && plannable(p) && S.planMode) {
+      if (freeBrief(p)) {   // the participant's own brief: any text of some length starts the recorded planning
+        const t = text.trim();
+        if (t.length < BRIEF_MIN) { note(`A brief needs a few more words: at least ${BRIEF_MIN} characters, so the planner has something to work from.`); return; }
+        if (t.length > BRIEF_MAX) { note(`That brief is too long: up to ${fmt(BRIEF_MAX)} characters, and it is ${fmt(t.length)}. Shorten it, then send.`); return; }
+        startPlanning(p, t, takeDraft());
+        return true;
+      }
       if (text.trim() !== S.pendingText.trim()) {
         note('Plan mode replays a planning session prepared for this request as it is written. Undo your change, or turn <b>Plan mode</b> off to send your own words to the model.');
         return;
@@ -829,6 +844,7 @@
     const parent = S.freshNext ? null : currentVersion();
     const promptId = S.pendingPromptId;
     const plan = S.planning && S.planning.building ? S.planning : null;
+    const planned = plan && freeBrief(plan.p) ? plan.history[plan.history.length - 1] : null;   // the version a free brief is built from
     S.freshNext = false;
     S.pendingPromptId = null;
     setBusy(true);
@@ -880,7 +896,7 @@
           html = r.html;
           edit = { edits: edits.length, lines: r.lines };
         } else {
-          addTrace({ purpose: 'build', usage, messages, userText: asTyped, parent, files, shelf: hits, images });
+          addTrace({ purpose: 'build', usage, messages, userText: asTyped, parent, files, shelf: hits, images, planned });
           view.retry(`The changes did not fit your app's code (at "${r.failed}"). Asking the model for the whole app instead; this takes longer.`);
           asked = [...messages.map(({ images: _, ...m }) => m), { role: 'assistant', content: text }, { role: 'user', content: WHOLE_FILE }];
           const again = await chat({ purpose: 'build', model, messages: asked, promptId, signal: S.ctrl.signal,
@@ -892,7 +908,7 @@
       }
       if (usage.model_label) view.who(usage.model_label);
       const seconds = usage.seconds || (performance.now() - t0) / 1000;
-      addTrace({ purpose: 'build', usage, messages: asked, userText: asTyped, parent, files, shelf: hits, images: asked === messages ? images : [] });
+      addTrace({ purpose: 'build', usage, messages: asked, userText: asTyped, parent, files, shelf: hits, images: asked === messages ? images : [], planned });
       if (usage.budget_left != null) setBudget(usage.budget_left);
       // what the activity record keeps of a build: never its words or code
       const buildFacts = (kind) => ({ kind, prompt: promptId, model: usage.model || model, asked: model, fell: usage.fallback_from || null,
@@ -984,6 +1000,7 @@
     $('empty').hidden = on || S.versions.length > 0;   // the shelf, until there is an app
     renderSuggest();   // nothing to choose while the model works
     renderTools();
+    renderPlanTools();   // nor a plan to change
   }
 
   /* ---------- questions about the data: a query the browser runs ---------- */
@@ -1559,12 +1576,13 @@
 
   /* ---------- trace: what left this laptop ---------- */
 
-  function addTrace({ purpose, usage, messages, userText, parent, files = [], shelf = [], plan = null, images = [] }) {
+  function addTrace({ purpose, usage, messages, userText, parent, files = [], shelf = [], plan = null, images = [], planned = null }) {
     const sys = purpose === 'build' ? buildSystem() : (S.config.direct_system[purpose] || '');
     const ids = (userText.match(UUID) || []).length;
     const sent = [], kept = [];
     if (purpose === 'build') {
       sent.push(`Your message (${fmt(userText.length)} characters)`);
+      if (planned) sent.push(`Your brief and the plan you approved (v${planned.version}, ${whoOf(planned)}, about ${fmt(words(planText(planned.plan)))} words), both inside your message`);
       if (plan) sent.push(`The plan you asked to change (v${plan.version}, about ${fmt(words(planText(plan.plan)))} words)`);
       if (shelf.length) sent.push(`${shelf.length === 1 ? 'An excerpt' : fmt(shelf.length) + ' excerpts'} from the workshop reference shelf, found by a search on your message: ${shelf.map((h) => h.page.title).join('; ')}`);
       if (images.length) sent.push(`Your ${images.length === 1 ? 'picture' : images.length + ' pictures'} (${images.map((im) => `${im.w}×${im.h}`).join(', ')}): ` +
@@ -1631,7 +1649,7 @@
 
   function openDrawer(title) {
     closeMenu();
-    $('drawer').classList.remove('wide');
+    $('drawer').classList.remove('wide', 'inside');
     $('drawerTitle').textContent = title;
     $('drawer').hidden = false;
   }
@@ -1687,7 +1705,10 @@
         const p = S.prompts.find((q) => q.id === id);
         if (!p) continue;
         const keys = p.dataset ? [p.dataset, ...(fileMeta(p.dataset).also || [])] : [];
-        const req = p.planning ? PLAN_HEAD + '\n\n' + planText(composePlan(await getJSON('data/' + p.planning), {})) : promptText(p);
+        const pack = p.planning ? await getJSON('data/' + p.planning) : null;
+        const plan = pack ? planText(composePlan(pack, {})) : '';
+        // a free-brief pack: the kit shows the brief with the topic's default, then the plan, as Build sends them
+        const req = !pack ? promptText(p) : pack.free_brief ? `${BRIEF_HEAD}\n\nMy brief:\n${pack.problem.replace(/\[my topic\]/g, () => topicDefault(pack))}\n\nThe plan:\n${plan}` : PLAN_HEAD + '\n\n' + plan;
         const fresh = first ? keys : keys.filter((k) => !had.includes(k));   // a follow-up describes only data the conversation lacks
         const text = [first ? sys : '', fresh.length ? Kit.data(S.schema, S.samples, fresh) : '',
           '# The request\n\n' + req + (p.dataset ? '\n\n' + attachLine(p.dataset) : '')].filter(Boolean).join('\n\n---\n\n');
@@ -2023,7 +2044,16 @@
   // the participant's own file, its questions come as cards, and the plan composed from the answers
   // goes on the stage. What follows is live: changes to the plan, and the build.
   const PLAN_HEAD = 'Build this app. Follow the plan below; where it says nothing, keep it simple.';
+  // a free brief: the participant's own words come first, and the plan wins where the two differ
+  const BRIEF_HEAD = 'Build this app. Follow my brief and the plan; where they differ, the plan wins; where both are silent, keep it simple.';
+  const BRIEF_MIN = 40, BRIEF_MAX = 4000;   // characters
   const CHANGE = 'Change the plan: ';
+  const NO_MODEL = 'Changes to a plan are made live by your model, and in recorded mode no model is connected. Build the plan as it is, or ask a facilitator for a seat code.';
+  const freeBrief = (p) => !!(p && S.freeBrief[p.id]);
+  // what Build sends: for a free brief the brief and the plan, for the other requests the plan alone
+  const buildMessage = (pl, h) => freeBrief(pl.p) ? `${BRIEF_HEAD}\n\nMy brief:\n${pl.brief}\n\nThe plan:\n${planText(h.plan)}` : PLAN_HEAD + '\n\n' + planText(h.plan);
+  // who made a plan version, in words
+  const whoOf = (h) => h.by === 'you' ? 'edited by you' : h.by === 'model' ? `changed by ${h.label}` : 'the planner';
   const planPace = () => Math.max(0.2, Number(params.get('planpace')) || CFG.pace);   // seconds the notes take (120 felt slow, 3.11); ?planpace=20 for a rehearsal
   const plannable = (p) => !!(p && p.planning && S.packs[p.id] !== null);
   const defaultOf = (q) => Math.max(0, q.options.findIndex((o) => o.default));
@@ -2034,6 +2064,7 @@
     read: '<svg viewBox="0 0 16 16"><path d="M4 2h5l3 3v9H4z"/><path d="M9 2v3h3M6 9h4M6 11.5h4"/></svg>',
   };
   let shownPlan = null;   // the planning whose plan is on the stage (for its facilitator's brief)
+  let shownH = null;      // the version of it that is shown
 
   // a wait that Stop can cut short
   function wait(ms, signal) {
@@ -2046,7 +2077,10 @@
 
   function loadPack(p) {
     if (S.packs[p.id] === undefined) {
-      S.packs[p.id] = getJSON('data/' + p.planning).catch((e) => {
+      S.packs[p.id] = getJSON('data/' + p.planning).then((pack) => {
+        S.freeBrief[p.id] = !!pack.free_brief;
+        return pack;
+      }, (e) => {
         S.packs[p.id] = null;   // no package: the request goes as written, without plan mode
         throw e;
       });
@@ -2077,21 +2111,41 @@
     $('planModeBtn').setAttribute('aria-pressed', String(S.planMode));
   }
 
-  // the plan from the chosen answers; tools/planning.py compose() writes the same text for the bake-off
-  function composePlan(pack, answers) {
+  // the plan from the chosen answers; tools/planning.py compose() writes the same text for the bake-off.
+  // opts.topic and opts.look (a look's id) fill {topic} and {look} in a free-brief pack: the topic's default and the first look without them
+  function composePlan(pack, answers, opts = {}) {
     const fill = {};
     pack.questions.forEach((q) => {
       const o = q.options[answers[q.id] != null ? answers[q.id] : defaultOf(q)];
       o.fragments.forEach((f) => (fill[f.section] = fill[f.section] || []).push(f.text.trim()));
     });
-    return pack.plan_base.replace(/\{\{([\w.-]+)\}\}/g, (m, id) => (fill[id] || []).join('\n\n'));
+    const looks = pack.looks || [], chosen = looks.find((x) => x.id === opts.look) || looks[0];
+    const topic = opts.topic || pack.topic_default || 'my topic';
+    // function replacements: a topic with "$&" in it stays as typed
+    return pack.plan_base.replace(/\{\{([\w.-]+)\}\}/g, (m, id) => (fill[id] || []).join('\n\n'))
+      .replace(/\{topic\}/g, () => topic).replace(/\{look\}/g, () => (chosen ? `${chosen.label}: ${chosen.text}` : ''));
   }
+  // the look a seat starts with: a stable hash of its code (or, without a seat, of the page's session id), so the room gets a mix
+  function defaultLook(pack, key = S.seatCode || Track.sid) {
+    let h = 2166136261;
+    for (const c of String(key)) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
+    return pack.looks[h % pack.looks.length].id;
+  }
+  const lookText = (pack, id) => { const l = pack.looks.find((x) => x.id === id) || pack.looks[0]; return `${l.label}: ${l.text}`; };
+  window.__studioTest = { composePlan: (pack, answers, opts) => PLAN_HEAD + '\n\n' + planText(composePlan(pack, answers, opts)), defaultLook };   // for tests/e2e
   // what the participant reads and the model receives: their country in place, no runs of empty lines
   const planText = (s) => s.replace(/\{country\}/g, S.country).replace(/\n{3,}/g, '\n\n').trim();
 
   // a "Looked at the data" step marked live is recomputed from the participant's own file
   async function lookFacts(key) {
     const f = { country: S.country };
+    if (key === 'gc') {   // paragraphs, documents (a symbol can hold several), committees and years of the loaded file
+      const r = (await dataParsed('gc')).records, years = r.map((x) => x.year).filter(Boolean);
+      return Object.assign(f, {
+        count: fmt(r.length), documents: fmt(new Set(r.map((x) => x.symbol + '\n' + x.title)).size), committees: fmt(new Set(r.map((x) => x.committee)).size),
+        years: years.length ? `${Math.min(...years)}–${Math.max(...years)}` : 'no years',
+      });
+    }
     if (key !== 'uhri') return f;
     const d = await dataParsed('uhri');
     const years = d.records.map((r) => r.year).filter(Boolean);
@@ -2105,7 +2159,7 @@
 
   // a tool step, as chatbots show them: what was looked at, searched or read
   function stepEl(s, facts = {}) {
-    const fill = (t) => String(t || '').replace(/\{(country|count|years)\}/g, (m, k) => (facts[k] != null ? facts[k] : m));
+    const fill = (t) => String(t || '').replace(/\{(country|count|documents|committees|years)\}/g, (m, k) => (facts[k] != null ? facts[k] : m));
     let detail = fill(s.detail);
     if (s.live === 'uhri_overview' && facts.mechanisms) detail = [detail, facts.mechanisms].filter(Boolean).join(': ');
     const row = document.createElement('div');
@@ -2113,6 +2167,14 @@
     row.innerHTML = `<span class="step-ico" aria-hidden="true">${ICON[s.kind] || ICON.look}</span><div class="step-main">` +
       `<span class="step-label">${esc(fill(s.label))}</span>${detail ? `<span class="step-detail">${esc(detail)}</span>` : ''}<span class="step-pages"></span></div>`;
     row.plainText = '→ ' + fill(s.label) + (detail ? ': ' + detail : '');
+    if (s.live === 'gc_overview') {   // the counts are the participant's own: the button shows the file they come from
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'linkish';
+      b.textContent = 'Look inside the file';
+      b.onclick = () => openInside('gc');
+      row.querySelector('.step-pages').append(b);
+    }
     // the shelf pages it found or read open in the drawer
     const pages = s.pages || (s.results || []).map((id) => ({ id })).concat(s.shelf_id ? [{ id: s.shelf_id, open: true }] : []);
     if (pages.length) {
@@ -2184,12 +2246,16 @@
 
   // Send in plan mode: the recorded session plays, then the plan waits on the stage for Build
   async function startPlanning(p, text, files) {
-    track('plan_open', { prompt: p.id });
     Progress.mark(1);
     const PACE = planPace();
     const pack = await loadPack(p);
+    const free = freeBrief(p);
+    const field = Brief.el && Brief.el.isConnected ? Brief.topic.trim() : '';
+    const pl0 = free ? { brief: text, topic: field || topicFrom(pack, text) || topicDefault(pack), look: defaultLook(pack) } : {};
+    track('plan_open', free ? { prompt: p.id, brief_w: words(text), topic_w: words(pl0.topic), blocks: Brief.el && Brief.el.isConnected ? briefIncluded() : pack.brief.length } : { prompt: p.id });
     retirePlanning('Replaced by a new plan.');
-    const pl = S.planning = { p, pack, files, fresh: S.freshNext, answers: {}, version: 1, plan: '', history: [], cards: [] };
+    const pl = S.planning = Object.assign({ p, pack, files, fresh: S.freshNext, answers: {}, history: [], cards: [] }, pl0);
+    if (free) Brief.sent(true);
     Object.assign(S, { pendingPromptId: null, pendingText: '', freshNext: false });
     setBusy(true);
     $('building').hidden = true;
@@ -2206,7 +2272,18 @@
     const clock = () => { const s = Math.round((performance.now() - t0) / 1000); return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${s % 60} s`; };
     const where = `recorded ${when}, replayed faster than it was written`;
     const noteText = "The planner's log: what it did and why, written for you while this plan was made. The numbers in \"Looked at the data\" are counted now, from your file.";
-    let stage = '';
+    let stage = '', skipping = false;
+    // a recorded log can be cut short: the log and its steps finish at once, the questions are still the participant's
+    const nap = (ms) => skipping ? Promise.resolve() : wait(ms, signal);
+    let skip = null;
+    if (free) {
+      skip = document.createElement('button');
+      skip.type = 'button';
+      skip.className = 'linkish skip-plan';
+      skip.textContent = 'Skip to the plan';
+      skip.onclick = () => { skipping = true; skip.remove(); };
+      m.el.querySelector('.who').after(skip);
+    }
     try {
       const facts = await lookFacts(p.dataset);
       // the notes in parts, cut where a step happened; each step "runs" a moment
@@ -2221,8 +2298,8 @@
         if (part) {
           const seg = m.segment(true);
           for (let n = 0; n < part.length;) {
-            await wait(50, signal);
-            n = Math.min(part.length, n + perTick);
+            await nap(50);
+            n = skipping ? part.length : Math.min(part.length, n + perTick);
             seg.set(part.slice(0, n));
             mindShow(`${who} is planning`, where, plain(stage + part.slice(0, n)), clock(), noteText);
           }
@@ -2233,14 +2310,16 @@
           const row = stepEl(steps[i], facts);
           row.classList.add('running');
           m.step(row);
+          if (steps[i].live === 'gc_overview') Progress.mark(2);   // "Data": the counts of their own file are on screen
           mindShow(`${who} is planning`, where, plain(stage) + row.plainText, clock(), noteText);
-          await wait(PACE * 10, signal);
+          await nap(PACE * 10);
           row.classList.remove('running');
           stage += row.plainText + '\n\n';
         }
       }
       // the questions, one at a time; each answer is the participant's message
       const qs = pack.questions;
+      if (skip) skip.remove();
       m.body(md(`${qs.length === 1 ? 'One question' : 'A few questions'} before I write the plan.`));
       mindShow(`${who} has ${qs.length} question${qs.length === 1 ? '' : 's'} for you`, where, plain(stage), clock(), 'Answer them in the chat on the left, one at a time.');
       for (let i = 0; i < qs.length; i++) {
@@ -2251,10 +2330,10 @@
       // the plan streams onto the stage, like a document in any chatbot
       mindHide();
       const w = planMsg(`${who} · Plan mode`);
-      pl.plan = composePlan(pack, pl.answers);
-      const full = planText(pl.plan);
+      const first = composePlan(pack, pl.answers, { topic: pl.topic, look: pl.look });
+      const full = planText(first);
       const ticks = Math.max(1, Math.round(PACE * 1000 / 8 / 50));
-      showPlan(pl, { version: 1, plan: '' });
+      showPlan(pl, { version: 1, by: 'planner', plan: '' });
       for (let n = 0; n < full.length;) {
         await wait(50, signal);
         n = Math.min(full.length, n + Math.ceil(full.length / ticks));
@@ -2263,7 +2342,7 @@
         w.status(`Writing the plan · ${fmt(words(full.slice(0, n)))} words`);
       }
       w.status('');
-      offerPlan(pl, w, who);
+      offerPlan(pl, w, pushVersion(pl, first, 'planner'));
       showPlan(pl);
       Progress.mark(3);
       w.body(md('The plan is on the right, written from your answers. Read it, then build from it or ask for a change.'));
@@ -2272,6 +2351,8 @@
       $('planView').hidden = true;
       if (S.planning === pl) S.planning = null;
       m.fail(e.name === 'AbortError' ? 'Stopped. Your message is back in the box.' : `The plan could not be shown (${e.message}). Your message is back in the box.`);
+      if (skip) skip.remove();
+      if (free) Brief.sent(false);
       openComposer(text);
       Object.assign(S, { pendingPromptId: p.id, pendingText: text, freshNext: pl.fresh });
       files.forEach((k) => S.draft.add(k));
@@ -2309,17 +2390,132 @@
     });
   }
 
-  // the plan on the stage: a document to read, not a form
+  // one version of a plan, by the planner, by the participant (a direct edit or a new look) or by their model; the latest
+  // is what Build sends and what a change by chat starts from
+  function pushVersion(pl, plan, by, label) {
+    const h = { version: pl.history.length + 1, plan, by };
+    if (label) h.label = label;
+    pl.history.push(h);
+    save();
+    return h;
+  }
+
+  // what the kicker above the plan says: who made the version shown
+  function kickerOf(pl, h, latest) {
+    const t = freeBrief(pl.p) ? `v${h.version} · ${whoOf(h)}`
+      : h.version === 1 ? `Plan · written beforehand by ${pl.pack.planner || 'Claude Fable 5.1'}, with your answers` : `Plan v${h.version} · changed live by ${h.label || h.by}`;
+    return t + (latest ? '' : ' · an earlier version');
+  }
+
+  // the plan on the stage: a document to read; its edit box (planEdit) is a separate element
   function showPlan(pl, h = pl.history[pl.history.length - 1]) {
+    const latest = !pl.history.length || h === pl.history[pl.history.length - 1];
+    if (pl.editing && !latest && !commitEdit(pl)) return;   // opening an older version saves an edit in progress first
     shownPlan = pl;
-    const latest = h === pl.history[pl.history.length - 1];
+    shownH = h;
     $('planTitle').textContent = pl.pack.title || pl.p.title;
-    $('planKicker').textContent = (h.version === 1 ? `Plan · written beforehand by ${pl.pack.planner || 'Claude Fable 5.1'}, with your answers` : `Plan v${h.version} · changed live by ${h.by}`) +
-      (latest ? '' : ' · an earlier version');
     $('planBrief').hidden = !pl.pack.facilitator_brief || !CFG.planBrief;   // written for Geneva's facilitators
-    $('planDoc').innerHTML = md(planText(h.plan));
     $('planView').hidden = false;
+    renderPlanTools();
+    if (pl.editing) return;   // the box stays as it was
+    $('planKicker').textContent = kickerOf(pl, h, latest);
+    $('planDoc').innerHTML = md(planText(h.plan));
     $('planView').querySelector('.plan-scroll').scrollTop = 0;
+  }
+
+  // the look and edit controls under the plan's title: only for a free brief, and only on the latest version, with a live model
+  function renderPlanTools() {
+    const pl = shownPlan, free = !!pl && freeBrief(pl.p), live = !!S.route && S.route.type !== 'replay';
+    $('planTools').hidden = !free;
+    if (!free) return;
+    const latest = !pl.history.length || shownH === pl.history[pl.history.length - 1];
+    const ready = live && !S.busy && latest && pl.history.length > 0;
+    const sel = $('planLook');
+    if (sel.dataset.pack !== pl.p.id) {
+      sel.innerHTML = pl.pack.looks.map((l) => `<option value="${esc(l.id)}">${esc(l.label)}</option>`).join('');
+      sel.dataset.pack = pl.p.id;
+    }
+    sel.value = pl.look;
+    sel.disabled = !ready || !!pl.editing;
+    $('planEditBtn').hidden = !!pl.editing;
+    $('planEditBtn').disabled = !ready;
+    $('planDone').hidden = $('planCancel').hidden = !pl.editing;
+    $('planDone').disabled = $('planCancel').disabled = S.busy;
+    $('planNote').hidden = live;
+    $('planNote').textContent = live ? '' : NO_MODEL;
+  }
+
+  // Edit the plan: the rendered plan gives way to its Markdown in a box, for the participant's own words
+  function beginEdit(pl) {
+    if (S.planning !== pl || S.busy || pl.editing || S.route.type === 'replay') return;
+    const h = pl.history[pl.history.length - 1];
+    pl.editing = true;
+    showPlan(pl, h);
+    $('planEdit').value = planText(h.plan);
+    $('planEditMsg').hidden = true;
+    $('planDoc').hidden = true;
+    $('planEdit').hidden = false;
+    $('planScroll').classList.add('editing');
+    $('planKicker').textContent = `v${h.version} · editing`;
+    renderPlanTools();
+    $('planEdit').focus();
+    $('planEdit').setSelectionRange(0, 0);   // from the top: some browsers put the cursor, and the view, at the end
+    $('planEdit').scrollTop = 0;
+  }
+
+  function endEdit(pl) {
+    pl.editing = false;
+    $('planEdit').hidden = true;
+    $('planEditMsg').hidden = true;
+    $('planDoc').hidden = false;
+    $('planScroll').classList.remove('editing');
+  }
+
+  function cancelEdit(pl) {
+    if (!pl.editing) return;
+    endEdit(pl);
+    showPlan(pl);
+  }
+
+  // Done, or anything that goes on from the plan (Build, a change by chat, an older version): true when the edit is saved or there was none.
+  // A changed text becomes a new version by "you"; it must still start with a heading, or the box stays open.
+  function commitEdit(pl) {
+    if (!pl.editing) return true;
+    const text = $('planEdit').value.trim(), h = pl.history[pl.history.length - 1];
+    if (text === planText(h.plan)) { cancelEdit(pl); return true; }
+    if (!text.startsWith('#')) {
+      $('planEditMsg').hidden = false;
+      $('planEditMsg').textContent = 'A plan starts with a # heading line. Put one back at the top, or choose Cancel to keep the plan as it was.';
+      shownPlan = pl;
+      $('planView').hidden = false;
+      $('planEdit').focus();
+      return false;
+    }
+    endEdit(pl);
+    const next = pushVersion(pl, text, 'you');
+    track('plan_edit', { prompt: pl.p.id, plan_v: next.version, words: words(text) });
+    const m = planMsg('Your edit');
+    m.body(md(`Plan v${next.version} is on the right, with your edits.`));
+    offerPlan(pl, m, next);
+    showPlan(pl);
+    return true;
+  }
+
+  // another look: the plan's Look line changes and the rest stays as it is, whoever wrote it; a new version by "you"
+  function changeLook(pl, id) {
+    if (S.planning !== pl || S.busy || id === pl.look || pl.editing) { renderPlanTools(); return; }
+    const h = pl.history[pl.history.length - 1], was = lookText(pl.pack, pl.look), now = lookText(pl.pack, id);
+    let plan = h.plan;
+    if (plan.includes(was)) plan = plan.replace(was, () => now);
+    else if (/^## Look\b/m.test(plan)) plan = plan.replace(/(^## Look\b[^\n]*\n+)[\s\S]*?(?=\n## |$(?![\s\S]))/m, (m, head) => head + now + '\n');   // the line was edited: its section is replaced
+    else plan = plan.trimEnd() + `\n\n## Look\n\n${now}\n`;
+    pl.look = id;
+    track('plan_look', { look: id });
+    const next = pushVersion(pl, plan, 'you');
+    const m = planMsg('Your edit');
+    m.body(md(`Plan v${next.version} is on the right, with the look changed to **${pl.pack.looks.find((l) => l.id === id).label}**.`));
+    offerPlan(pl, m, next);
+    showPlan(pl);
   }
 
   function showBrief(pl) {
@@ -2330,9 +2526,7 @@
   }
 
   // under a finished plan: the plan as a card that opens on the stage, then Build or Change
-  function offerPlan(pl, m, by) {
-    const h = { version: pl.version, plan: pl.plan, by };
-    pl.history.push(h);
+  function offerPlan(pl, m, h) {
     pl.cards.forEach((c) => c.retire(`Replaced by plan v${h.version}.`));
     const card = document.createElement('button');
     card.type = 'button';
@@ -2353,16 +2547,20 @@
   }
 
   function retirePlanning(why) {
+    S.savedPlan = null;
     if (!S.planning) return;
     S.planning.cards.forEach((c) => c.retire(why));
+    if (S.planning.editing) endEdit(S.planning);
     S.planning = null;
     $('planView').hidden = true;
+    save();   // a plan that was built or replaced is not kept
   }
 
   function buildFromPlan(pl) {
     if (S.planning !== pl || S.busy) return;
+    if (!commitEdit(pl)) return;   // an edit in progress is saved first, and is what gets built
     const h = pl.history[pl.history.length - 1];
-    track('plan_build', { prompt: pl.p.id, changed: pl.pack.questions.filter((q) => pl.answers[q.id] !== defaultOf(q)).length, plan_v: h.version });
+    track('plan_build', { prompt: pl.p.id, changed: pl.pack.questions.filter((q) => pl.answers[q.id] !== defaultOf(q)).length, plan_v: h.version, by: h.by, look: pl.look || null });
     if (S.route.type === 'replay' && (h.version > 1 || pl.pack.questions.some((q) => pl.answers[q.id] !== defaultOf(q)))) {
       note('Recorded mode can build only the plan with the recommended answers: that is the plan the recorded app was built from. ' +
         'Your plan stays on the right to read. To build it, ask a facilitator for a seat code, or start this app again and keep the recommended answers.');
@@ -2370,7 +2568,7 @@
     }
     Progress.mark(4);
     pl.changing = false;
-    const text = PLAN_HEAD + '\n\n' + planText(h.plan);
+    const text = buildMessage(pl, h);
     Object.assign(S, { pendingPromptId: pl.p.id, pendingText: text, freshNext: pl.fresh });
     pl.building = true;
     if (!submitBuild(text, pl)) pl.building = false;
@@ -2379,9 +2577,10 @@
   function changePlan(pl) {
     if (S.planning !== pl || S.busy) return;
     if (S.route.type === 'replay') {
-      note('Changes to a plan are made live by your model, and in recorded mode no model is connected. Build the plan as it is, or ask a facilitator for a seat code.');
+      note(NO_MODEL);
       return;
     }
+    if (!commitEdit(pl)) return;
     pl.changing = true;
     openComposer(CHANGE);
     $('input').setSelectionRange(CHANGE.length, CHANGE.length);
@@ -2406,7 +2605,8 @@
     addUser(text);
     await shelfLoad();
     const hits = shelfSearch(text);
-    const content = `Here is the plan for an app I am about to build (version ${h.version}):\n\n${planText(h.plan)}\n\n${text}\n\n` +
+    const mine = freeBrief(pl.p) ? `My brief:\n${pl.brief}\n\n` + (h.by === 'you' ? 'I edited this plan myself; keep my edits and change only what I ask.\n\n' : '') : '';
+    const content = `Here is the plan for an app I am about to build (version ${h.version}):\n\n${planText(h.plan)}\n\n${mine}${text}\n\n` +
       'Reply with the whole revised plan in Markdown, with the same headings, and nothing else: no code, no comment before or after it.' + shelfBlock(hits);
     const messages = [{ role: 'user', content }];
     const m = planMsg(label);
@@ -2431,7 +2631,7 @@
           if (!plan || performance.now() - painted < 150) return;
           painted = performance.now();
           if (shownPlan !== pl || $('planView').hidden) showPlan(pl);
-          $('planKicker').textContent = `Plan v${h.version + 1} · being changed live by ${label}`;
+          $('planKicker').textContent = freeBrief(pl.p) ? `v${h.version + 1} · being changed by ${label}` : `Plan v${h.version + 1} · being changed live by ${label}`;
           $('planDoc').innerHTML = md(plan);
         },
       });
@@ -2441,18 +2641,20 @@
       m.status('');
       const plan = planOf(reply);
       if (!plan) {   // an answer without a plan: the plan, and its Build button above, stay as they were
+        track('plan_revise', { prompt: pl.p.id, plan_v: h.version, ok: false });
         m.body(md((reply.trim() || 'The model sent back nothing.') + '\n\n*The plan is unchanged.*'));
         showPlan(pl, h);
         return;
       }
-      pl.version = h.version + 1;
-      pl.plan = plan;
-      m.body(md(`Plan v${pl.version} is on the right, with your change.`));
-      offerPlan(pl, m, label);
+      const next = pushVersion(pl, plan, 'model', label);
+      track('plan_revise', { prompt: pl.p.id, plan_v: next.version, ok: true });
+      m.body(md(`Plan v${next.version} is on the right, with your change.`));
+      offerPlan(pl, m, next);
       showPlan(pl);
     } catch (e) {
       if (seg) seg.close();
       m.status('');
+      track('plan_revise', { prompt: pl.p.id, plan_v: h.version, ok: false });
       m.fail(friendly(e));
       pl.changing = true;
       openComposer(text);
@@ -2461,6 +2663,126 @@
       mindHide();
       setBusy(false);
     }
+  }
+
+
+  /* ---------- the brief card: the participant writes a brief from labelled paragraphs (a pack with free_brief) ---------- */
+
+  // The card is a helper for the message box, not a lock: whatever is changed on it is copied into the box as the brief,
+  // and the box can still be edited by hand. Sending the box starts the recorded planning, whatever it says.
+  const Brief = {
+    el: null, pack: null, p: null, loading: false, failed: false, attached: false,
+    topic: '', on: {}, text: {},
+  };
+  const briefIncluded = () => Brief.pack.brief.filter((b) => Brief.on[b.id]).length;
+  // "[my topic]" is the participant's topic, or stays as it is while the topic is empty
+  const briefText = () => Brief.pack.brief.filter((b) => Brief.on[b.id]).map((b) => `${b.label}\n${Brief.text[b.id].trim()}`).join('\n\n')
+    .replace(/\[my topic\]/g, () => Brief.topic.trim() || '[my topic]');
+  const growBox = (t) => { t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; };
+  // the pack names a default topic, or the plan says "my topic"
+  const topicDefault = (pack) => pack.topic_default || 'my topic';
+  const escRe = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  // the topic the participant wrote in place of "[my topic]", read back from the brief when its field is empty
+  function topicFrom(pack, text) {
+    for (const b of pack.brief) {
+      const [a, c] = b.text.split('[my topic]');
+      if (c === undefined) continue;
+      const m = new RegExp(escRe(a.slice(-24)) + '([^\\n]{2,120}?)' + escRe(c.slice(0, 24))).exec(text);
+      if (m && m[1].trim() && m[1].trim() !== '[my topic]') return m[1].trim();
+    }
+    return '';
+  }
+
+  // the card in the chat; created once, where a suggestion would have offered the request
+  function offerBrief(p) {
+    if (Brief.loading || (Brief.el && Brief.el.isConnected)) return;
+    Brief.loading = true;
+    loadPack(p).then((pack) => {
+      Brief.loading = false;
+      if (!pack.free_brief || (Brief.el && Brief.el.isConnected) || S.planning || S.versions.length) { Brief.failed = !pack.free_brief; return; }
+      Object.assign(Brief, { pack, p, topic: '', attached: false, on: {}, text: {} });
+      pack.brief.forEach((b) => { Brief.on[b.id] = true; Brief.text[b.id] = b.text; });
+      const el = Brief.el = document.createElement('details');
+      el.className = 'msg brief-card';
+      el.open = true;
+      el.innerHTML = '<summary><b>Write your brief</b><span class="bsum">Five short paragraphs. Change them, switch one off, name your topic.</span></summary>' +
+        '<div class="brief-body"><label class="brief-topic"><span>My topic</span>' +
+        `<input type="text" id="briefTopic" maxlength="120" autocomplete="off" placeholder="${esc(pack.topic_default || 'e.g. freedom of expression online')}"></label>` +
+        pack.brief.map((b) => `<div class="brief-block" data-id="${esc(b.id)}"><label class="brief-lab"><input type="checkbox" checked><span>${esc(b.label)}</span></label>` +
+          `<textarea rows="2" aria-label="${esc(b.label)}"></textarea><small class="brief-asks">${esc(b.asks || '')}</small></div>`).join('') +
+        '<p class="brief-hint">What you write here appears in the message box below. Send it when it says what you want.</p></div>';
+      el.querySelectorAll('textarea').forEach((t, i) => { t.value = Brief.text[pack.brief[i].id]; });
+      $('log').append(el);
+      el.querySelectorAll('textarea').forEach(growBox);
+      el.addEventListener('input', (e) => {
+        const blk = e.target.closest('.brief-block');
+        if (e.target.id === 'briefTopic') Brief.topic = e.target.value;
+        else if (blk && e.target.tagName === 'TEXTAREA') { Brief.text[blk.dataset.id] = e.target.value; growBox(e.target); }
+        else return;
+        briefFill();
+      });
+      el.addEventListener('change', (e) => {
+        const blk = e.target.closest('.brief-block');
+        if (!blk || e.target.type !== 'checkbox') return;
+        Brief.on[blk.dataset.id] = e.target.checked;
+        blk.classList.toggle('off', !e.target.checked);
+        briefFill();
+      });
+      briefFill();
+      el.scrollIntoView({ block: 'start' });   // from its first line, not its last
+    }, () => { Brief.loading = false; Brief.failed = true; renderSuggest(); });   // no pack: the suggestion is offered as before
+  }
+
+  // the brief goes into the message box, and the box is the request that sending will plan; the file it names comes along once
+  function briefFill() {
+    const text = briefText();
+    S.planMode = true;
+    $('input').value = text;
+    fitInput(112);   // the card is where it is read; the box shows the first lines of what will be sent
+    Object.assign(S, { pendingPromptId: Brief.p.id, pendingText: text, freshNext: false });
+    if (!Brief.attached) {
+      Brief.attached = true;
+      if (Brief.p.dataset) S.draft.add(Brief.p.dataset);
+      renderAttach();
+      renderShelfState();
+    }
+    renderNeeds();
+    renderPlanMode();
+    renderContinuing();
+  }
+
+  // once sent, the card folds up and stops taking changes (it scrolls away with the chat); if the plan fails, it opens again
+  Brief.sent = (on) => {
+    if (!Brief.el) return;
+    Brief.el.classList.toggle('sent', on);
+    Brief.el.querySelector('.brief-body').inert = on;
+    Brief.el.querySelector('.bsum').textContent = on ? 'Sent. Open it to read it again.' : 'Five short paragraphs. Change them, switch one off, name your topic.';
+    Brief.el.querySelector('summary b').textContent = on ? 'Your brief' : 'Write your brief';
+    Brief.el.open = !on;
+  };
+
+  // picking up a plan after a reload: its latest version goes back on the stage with Build and Edit (no replay)
+  async function resumePlan(d) {
+    const p = S.prompts.find((q) => q.id === d.promptId);
+    let pack;
+    try { pack = p && await loadPack(p); } catch (e) { pack = null; }
+    if (!pack || !pack.free_brief || S.planning) { S.savedPlan = null; renderSuggest(); return; }   // nothing to put back: the card is offered
+    const pl = S.planning = { p, pack, files: d.files, fresh: false, answers: d.answers, history: d.history, cards: [], brief: d.brief, topic: d.topic, look: d.look };
+    S.savedPlan = null;
+    const m = planMsg(`${pack.planner || 'Claude Fable 5.1'} · Plan mode`);
+    m.body(md('Your plan is back on the right, as you left it. Read it, then build from it, edit it or ask for a change.'));
+    offerPlan(pl, m, d.history[d.history.length - 1]);
+    showPlan(pl);
+    renderSuggest();
+  }
+
+  // a saved plan, checked: a free brief with its versions
+  function planFrom(d) {
+    const ok = d && typeof d.promptId === 'string' && typeof d.brief === 'string' && typeof d.topic === 'string' && typeof d.look === 'string' &&
+      Array.isArray(d.files) && d.files.every((k) => typeof k === 'string') && d.answers && typeof d.answers === 'object' &&
+      Array.isArray(d.history) && d.history.length > 0 && d.history.every((h, i) => h && h.version === i + 1 && typeof h.plan === 'string' && ['planner', 'you', 'model'].includes(h.by));
+    return ok ? d : null;
   }
 
   /* ---------- the reference shelf: offline copies of good-practice pages, searched on each message ---------- */
@@ -2564,10 +2886,10 @@
   }
 
   // the box grows with what is in it, so a long request can be read before it is sent
-  function fitInput() {
+  function fitInput(max = window.innerHeight * 0.4) {
     const t = $('input');
     t.style.height = 'auto';
-    t.style.height = Math.min(t.scrollHeight + 2, window.innerHeight * 0.4) + 'px';
+    t.style.height = Math.min(t.scrollHeight + 2, max) + 'px';
   }
 
   function renderSuggest() {
@@ -2586,7 +2908,12 @@
     const next = v ? S.prompts.filter((p) => mine(p) && p.builds_on && p.builds_on !== 'any' && !used.has(p.id) && used.has(p.builds_on) && (live || !p.live_only)).slice(0, 2) : [];
     if (v && live) next.push(...S.prompts.filter((p) => p.builds_on === 'any' && !p.lens && p.id !== S.pendingPromptId && (S.advanced || p.level !== 'advanced')));   // "Suggest improvements"
     // Hick's law: Session 8 keeps its three apps in view (PDF, Verbatim finder, wiki); Session 7 has one
-    const starters = S.prompts.filter((p) => mine(p) && !p.builds_on && !built.has(p.id) && (live || !p.live_only)).slice(0, !v || S.session !== 'S7' ? 3 : 1);
+    let starters = S.prompts.filter((p) => mine(p) && !p.builds_on && !built.has(p.id) && (live || !p.live_only)).slice(0, !v || S.session !== 'S7' ? 3 : 1);
+    // a course that has the participant write a brief shows its card in the chat, not the suggestion, before the first app
+    if (CFG.briefCard && !v && !S.versions.length && !S.planning && !S.savedPlan && !Brief.failed) {
+      const b = starters.find((p) => p.planning);
+      if (b) { starters = starters.filter((p) => p !== b); offerBrief(b); }
+    }
     const group = (label, list, fresh) => {
       if (!list.length) return;
       const l = document.createElement('div');
@@ -2975,6 +3302,7 @@
 
   async function openFile(key) {
     if (S.own[key]) return openOwn(key);
+    if (CFG.insideFile && key === 'gc') return openInside(key);
     const f = fileMeta(key);
     if (f.kind === 'pdf') { window.open(f.pdf, '_blank', 'noopener'); return; }
     if (f.kind === 'html') { window.open(f.page, '_blank', 'noopener'); return; }
@@ -3002,6 +3330,11 @@
       $('drawerBody').querySelectorAll('[data-sym]').forEach((b) => { b.onclick = () => openSource(b.dataset.sym, 1); });
       return;
     }
+    return downloadCsv(key);
+  }
+
+  // the whole file as a spreadsheet
+  async function downloadCsv(key) {
     const d = await dataParsed(key);
     const blob = new Blob(['﻿' + csvOf(key, d)], { type: 'text/csv;charset=utf-8' });   // the mark tells Excel it is UTF-8
     const a = document.createElement('a');
@@ -3025,6 +3358,31 @@
       row = (r) => cols.map((c) => (c === 'votes' ? Object.entries(r.votes || {}).map(([k, v]) => `${d.countries[k] || k}: ${word[v] || v}`) : r[c]));
     }
     return [cols.map(cell).join(','), ...d.records.map((r) => row(r).map(cell).join(','))].join('\r\n');
+  }
+
+
+  // "What is in the file": the first records as they are stored, what each field means, where else the data is published,
+  // and the spreadsheet. All from the file already in this browser: no request goes out.
+  const FIELDS = {
+    gc: [['id', 'a code for the paragraph, unique in the file'], ['symbol', 'the UN document symbol, as stored; a few hold two documents'],
+      ['paragraph', 'the paragraph number inside that document'], ['committee', 'the treaty body that adopted it'], ['year', 'the year it was adopted'],
+      ['title', 'the full title of the General Comment'], ['short_title', 'a shorter title, to tell documents apart'], ['doc_url', 'the document at the United Nations'],
+      ['text', 'the paragraph, word for word'], ['cited_articles', 'the treaty articles it cites (often empty)']],
+  };
+
+  async function openInside(key) {
+    Progress.mark(2);
+    const d = await dataParsed(key), r = d.records, f = fileMeta(key), facts = await lookFacts(key);
+    openDrawer('What is in the file');
+    $('drawer').classList.add('inside');
+    $('drawerBody').innerHTML =
+      `<p><b>${esc(facts.count)} paragraphs</b> from ${esc(facts.documents)} documents of ${esc(facts.committees)} committees, ${esc(facts.years)}.</p>` +
+      `<p>The first three, as they are stored: one record per paragraph, one field per line. This is the whole file; your app reads all of it here in your browser.</p>` +
+      `<pre class="json-view">${jsonHtml(r.slice(0, 3))}</pre>` +
+      `<h4>The fields</h4><dl class="fields">${FIELDS[key].map(([n, t]) => `<dt>${esc(n)}</dt><dd>${esc(t)}</dd>`).join('')}</dl>` +
+      (f.from ? `<p class="from">Also published as data: ${f.from.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${l.icon ? `<span class="from-icon" aria-hidden="true">${esc(l.icon)}</span>` : ''}${esc(l.label)}</a>`).join(' · ')}</p>` : '') +
+      `<div class="row"><button type="button" class="ghost" id="insideCsv">Download as CSV</button></div>`;
+    $('insideCsv').onclick = () => downloadCsv(key);
   }
 
   /* ---------- the app, or the code behind it ---------- */
@@ -3177,12 +3535,13 @@
   /* ---------- the seven steps of the one-session course (the bar under the header) ---------- */
 
   // Steps are done in any order and never undone; each is marked by something the participant did, or skipped.
-  // 1 Brief: a planning session starts.  3 Plan read: the plan is on the stage.  4 Plan approved: Build from this plan.
+  // 1 Brief: a planning session starts.  2 Data: the planner's look at the file is on screen, or "What is in the file" is opened.
+  // 3 Plan read: the plan is on the stage.  4 Plan approved: Build from this plan.
   // 5 App built: a build's preview opened without an app error.  7 Improved: such a build on top of an earlier app.
-  // 2 Data and 6 Tested have no hook of their own yet: until the studio reports them, the step's Skip link is the way on.
+  // 6 Tested has no hook of its own yet: until the studio reports it, the step's Skip link is the way on.
   const Progress = {
     LABELS: ['Brief', 'Data', 'Plan read', 'Plan approved', 'App built', 'Tested', 'Improved'],
-    HINTS: ['send the request for the Verbatim finder', 'look at the data in your files', 'read the plan on the right', 'approve the plan to build it',
+    HINTS: ['write your brief and send it', 'look at the data in your files', 'read the plan on the right', 'approve the plan to build it',
       'let the model build the app', 'try the app and test what it says', 'ask for one improvement'],
     fresh: () => ({ done: Array(7).fill(false), skipped: Array(7).fill(false) }),
     // a saved value, checked: seven booleans each
@@ -3227,7 +3586,17 @@
   function save() {
     // the full text sent with each request is not kept: it would fill the browser's storage
     const trace = S.trace.map((t) => Object.assign({}, t, { request: '', at: t.at.toISOString() }));
-    localSet(storeKey(), JSON.stringify({ versions: S.versions, current: S.current, talk: S.talk, trace, progress: S.progress }));
+    localSet(storeKey(), JSON.stringify({ versions: S.versions, current: S.current, talk: S.talk, trace, progress: S.progress, planning: planSaved() }));
+  }
+
+  // the plan of a free brief waits in the browser until it is built or replaced: brief, topic, look, answers and every version.
+  // (After a reload it is put back before anything saves: until then the saved one is kept as it was.)
+  function planSaved() {
+    const pl = S.planning;
+    if (pl && freeBrief(pl.p)) {
+      return pl.history.length ? { promptId: pl.p.id, brief: pl.brief, topic: pl.topic, look: pl.look, answers: pl.answers, files: pl.files, history: pl.history } : S.savedPlan || null;
+    }
+    return S.savedPlan || null;
   }
 
   // the apps, the conversation and the trace in this browser, for every seat; the seat code, the settings and the
@@ -3241,6 +3610,7 @@
 
   function restore() {
     S.progress = Progress.fresh();
+    S.savedPlan = null;
     try {
       // the one conversation of the studio before 11.11.2026 goes to the session opened first
       const legacy = `ws:work:${S.seatCode || 'guest'}`;
@@ -3249,6 +3619,7 @@
       S.progress = Progress.from(d && d.progress);
       if (d && Array.isArray(d.versions)) { S.versions = d.versions; S.current = d.current; }
       if (d && Array.isArray(d.talk)) S.talk = d.talk;
+      S.savedPlan = planFrom(d && d.planning);
       if (d && Array.isArray(d.trace)) S.trace = d.trace.map((t) => Object.assign(t, { at: new Date(t.at) }));
     } catch (e) { /* start clean */ }
   }
@@ -3259,6 +3630,10 @@
   wireSplitter();
   $('progressSteps').addEventListener('click', (e) => { const b = e.target.closest('[data-skip]'); if (b) Progress.skip(Number(b.dataset.skip)); });
   $('planClose').onclick = () => { $('planView').hidden = true; };
+  $('planEditBtn').onclick = () => shownPlan && beginEdit(shownPlan);
+  $('planDone').onclick = () => shownPlan && commitEdit(shownPlan);
+  $('planCancel').onclick = () => shownPlan && cancelEdit(shownPlan);
+  $('planLook').onchange = (e) => shownPlan && changeLook(shownPlan, e.target.value);
   $('planBrief').onclick = () => shownPlan && showBrief(shownPlan);
   $('planModeBtn').onclick = () => { S.planMode = !S.planMode; renderPlanMode(); $('input').focus(); };
   $('composer').addEventListener('submit', (e) => { e.preventDefault(); submitBuild($('input').value); });

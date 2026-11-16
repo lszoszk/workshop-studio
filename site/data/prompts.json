@@ -232,14 +232,34 @@
           "expect": "best interests"
         }
       },
-      "venice": "V1",
-      "geneva": "G1"
+      "venice": "V1"
+    },
+    {
+      "id": "g1-verbatim",
+      "geneva": "G1",
+      "dataset": "gc",
+      "builds_on": null,
+      "title": "Verbatim finder for General Comments",
+      "blurb": "Find exact paragraphs on your topic and copy a correct citation",
+      "prompt": "GOAL AND WHY\nWhen I write a submission on [my topic], I need the exact words of UN treaty bodies' General Comments, with a correct citation. A chatbot's paraphrase is not enough: I have to quote.\n\nBEFORE YOU BUILD\nLook at the attached file and tell me what it contains and what it lacks. Then write a plan. Do not build anything until I approve the plan.\n\nLIMITS\nUse only the attached file. Never shorten or rewrite a paragraph. Nothing leaves my browser.\n\nDONE LOOKS LIKE\nI type a phrase and see every paragraph that contains it, word for word, each with its document symbol and paragraph number. I can copy a ready citation.\n\nCHECK BEFORE YOU FINISH\nShow how many paragraphs were searched. Say what the tool cannot do.",
+      "planning": "planning/g1-verbatim.json",
+      "lesson": "Retrieve, don't generate. The tool can only return paragraphs that exist, with their real symbol and number.",
+      "checks": {
+        "no_console_errors": true,
+        "no_network": true,
+        "uses_workshop_data": true,
+        "search_box": true,
+        "button_matches": "(?i)copy citation|cite",
+        "text_contains_after_search": {
+          "query": "\"best interests\" child",
+          "expect": "best interests"
+        }
+      }
     },
     {
       "id": "s8-1b-gc-quote-check",
       "session": "S8",
       "venice": "V1",
-      "geneva": "G1",
       "minute": null,
       "dataset": "gc",
       "builds_on": "s8-1-verbatim",

@@ -66,7 +66,7 @@ def assemble(pid):
             "steps": steps, "questions": draft["questions"], "plan_base": draft["plan_base"].strip()}
     # a short pack (Geneva, 4.12.2026): the participant writes their own brief from labelled paragraphs, which
     # starts the recorded planning whatever its words; the plan names their topic and one of a few looks
-    for k in ("brief", "looks", "free_brief"):
+    for k in ("brief", "looks", "free_brief", "topic_default"):
         if k in brief or k in draft:
             pack[k] = draft.get(k, brief.get(k))
     problems = check_pack(pack)

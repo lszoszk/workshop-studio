@@ -8,7 +8,7 @@
 <meta name="robots" content="noindex, nofollow">
 <script src="gate.js"></script>
 <script>try { const t = localStorage.getItem('ws:theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
-<link rel="stylesheet" href="studio.css?v=2026-11-16a"></head>
+<link rel="stylesheet" href="studio.css?v=2026-11-16b"></head>
 <body>
 <!-- a phone that scanned the badge's QR code gets this instead of the studio -->
 <div class="handoff" id="handoff" hidden>
@@ -135,8 +135,17 @@
           <button type="button" class="ghost" id="planBrief">Facilitator's brief</button>
           <button type="button" class="ghost" id="planClose">Close</button>
         </div>
-        <div class="plan-scroll">
+        <div class="plan-tools" id="planTools" hidden>
+          <label class="plan-look"><span>Look</span><select id="planLook" aria-label="Look of the app"></select></label>
+          <button type="button" class="ghost" id="planEditBtn">Edit the plan</button>
+          <button type="button" class="primary" id="planDone" hidden>Done</button>
+          <button type="button" class="ghost" id="planCancel" hidden>Cancel</button>
+          <span class="plan-note" id="planNote" hidden></span>
+        </div>
+        <div class="plan-scroll" id="planScroll">
           <article class="plan-doc answer-md" id="planDoc" aria-label="The plan"></article>
+          <p class="plan-warn" id="planEditMsg" role="alert" hidden></p>
+          <textarea class="plan-edit" id="planEdit" spellcheck="false" aria-label="The plan, as text you can change" hidden></textarea>
         </div>
       </div>
       <div class="building" id="building" hidden><span class="pulse"></span><span id="buildingText">Writing code…</span></div>
@@ -193,11 +202,11 @@
   </form>
 </dialog>
 
-<script src="preview-doc.js?v=2026-11-16a"></script>
-<script src="pdf-view.js?v=2026-11-16a"></script>
-<script src="tour.js?v=2026-11-16a"></script>
-<script src="own-files.js?v=2026-11-16a"></script>
-<script src="kit.js?v=2026-11-16a"></script>
-<script src="studio.js?v=2026-11-16a"></script>
+<script src="preview-doc.js?v=2026-11-16b"></script>
+<script src="pdf-view.js?v=2026-11-16b"></script>
+<script src="tour.js?v=2026-11-16b"></script>
+<script src="own-files.js?v=2026-11-16b"></script>
+<script src="kit.js?v=2026-11-16b"></script>
+<script src="studio.js?v=2026-11-16b"></script>
 </body>
 </html>
