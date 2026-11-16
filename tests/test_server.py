@@ -564,7 +564,8 @@ def test_gallery_accepts_un_links_and_inline_scripts(env):
     gid = r.json()["id"]
     items = env.client.get("/studio-api/gallery").json()
     assert items == [{"id": gid, "seat": "ABCDEF", "country": "Switzerland", "title": "Kenya dashboard",
-                      "model": "mistral", "prompt_id": "s7-1-dashboard", "files": [], "created": items[0]["created"]}]
+                      "model": "mistral", "prompt_id": "s7-1-dashboard", "files": [], "name": None, "course": None,
+                      "created": items[0]["created"]}]
     p = env.client.get(f"/studio-api/gallery/{gid}")
     assert p.text == page and p.headers["content-type"].startswith("text/html")
     assert env.client.get("/studio-api/gallery/../../etc").status_code == 404
@@ -941,3 +942,173 @@ def test_the_room_survives_a_restart(env):
     room_admin(env, action="post", text="Break until 15:30")
     again = TestClient(studio.create_app(env.cfg, transport=httpx.MockTransport(env.fake.handler)))
     assert [i["text"] for i in again.get("/studio-api/room?course=venice").json()["items"]] == ["Break until 15:30"]
+
+
+# ── Geneva: names and courses on the wall ──
+def wall_post(env, **kw):
+    d = {"seat": "ABCDEF", "title": "App", "html": "<p>hi</p>"}
+    d.update(kw)
+    return env.client.post("/studio-api/gallery", json=d)
+
+
+def test_a_wall_name_and_course_are_stored_listed_and_filtered(env, caplog):
+    with caplog.at_level(logging.INFO, logger="studio"):
+        a = wall_post(env, name="  Zoë   O’Brien-Müller (ITU) & Co.  ", course="geneva")
+        b = wall_post(env, name="Łukasz Kowalski 2", course="venice")
+        c = wall_post(env, name="   ", course="Not A Slug!")
+        d = wall_post(env, name="Анна 李")
+    assert all(r.status_code == 200 for r in (a, b, c, d))
+    items = {i["id"]: i for i in env.client.get("/studio-api/gallery").json()}
+    assert (items[a.json()["id"]]["name"], items[a.json()["id"]]["course"]) == ("Zoë O’Brien-Müller (ITU) & Co.", "geneva")
+    assert (items[c.json()["id"]]["name"], items[c.json()["id"]]["course"]) == (None, None)
+    assert items[d.json()["id"]]["name"] == "Анна 李" and len(items) == 4
+    only = env.client.get("/studio-api/gallery?course=geneva").json()
+    assert [i["id"] for i in only] == [a.json()["id"]]
+    assert env.client.get("/studio-api/gallery?course=nowhere").json() == []
+    assert "Zoë" not in caplog.text and "Kowalski" not in caplog.text and '"named": true' in caplog.text
+    admin = env.client.get("/studio-api/admin?key=admin-test").text
+    assert "Łukasz Kowalski 2" in admin and "geneva" in admin
+
+
+@pytest.mark.parametrize("name", ["<b>x</b>", "a_b", "https://evil.example", "x\ny", "me@home", 42, ["a"]])
+def test_bad_wall_names_are_refused(env, name):
+    r = wall_post(env, name=name)
+    assert r.status_code == 400 and r.json() == {"code": "bad_name", "error": "Use letters, numbers and spaces in the name"}
+    assert env.client.get("/studio-api/gallery").json() == []
+
+
+def test_a_long_wall_name_is_cut_at_40_characters(env):
+    wall_post(env, name="A" * 60)
+    assert env.client.get("/studio-api/gallery").json()[0]["name"] == "A" * 40
+
+
+# ── Geneva: no silent model swap ──
+def claude_body(**kw):
+    return body(model="claude", **kw)
+
+
+def test_no_fallback_retries_a_429_and_answers_from_claude(env):
+    env.fake.anthropic_replies.extend([429, 200])
+    r = env.client.post("/studio-api/chat", json=claude_body(fallback=False))
+    assert r.status_code == 200 and len(env.fake.anthropic_requests) == 2 and env.fake.requests == []
+    u = next(d for e, d in events(r.text) if e == "usage")
+    assert u["model"] == "claude" and "fallback_from" not in u
+
+
+def test_no_fallback_a_persistent_429_is_model_busy(env, caplog):
+    env.fake.anthropic_replies.extend([429] * 20)
+    with caplog.at_level(logging.INFO, logger="studio"):
+        r = env.client.post("/studio-api/chat", json=claude_body(fallback=False))
+    assert r.status_code == 503 and r.headers["retry-after"] == "30"
+    assert r.json() == {"error": "The model is busy right now. Try again in a minute, or use the other model.", "code": "model_busy"}
+    assert len(env.fake.anthropic_requests) >= 2 and env.fake.requests == []      # retried, and Mistral never asked
+    assert '"status": "busy"' in caplog.text and SECRET not in caplog.text and SECRET not in r.text
+
+
+def test_no_fallback_a_529_overloaded_is_model_busy(env):
+    env.fake.anthropic_replies.extend([529] * 20)
+    r = env.client.post("/studio-api/chat", json=claude_body(fallback=False))
+    assert r.status_code == 503 and r.json()["code"] == "model_busy" and env.fake.requests == []
+
+
+def test_no_fallback_a_500_is_model_failed_without_a_retry(env, caplog):
+    env.fake.anthropic_replies.extend([500, 200])
+    with caplog.at_level(logging.INFO, logger="studio"):
+        r = env.client.post("/studio-api/chat", json=claude_body(fallback=False))
+    assert r.status_code == 502 and "retry-after" not in r.headers
+    assert r.json() == {"error": "The model did not answer. Try again, or use the other model.", "code": "model_failed"}
+    assert len(env.fake.anthropic_requests) == 1 and env.fake.requests == []
+    assert '"status": "failed"' in caplog.text and SECRET not in caplog.text
+
+
+def test_no_fallback_applies_to_glm_too(env):
+    env.fake.stream(status=500)
+    r = env.client.post("/studio-api/chat", json=body(model="glm-eu", fallback=False))
+    assert r.status_code == 502 and r.json()["code"] == "model_failed" and env.fake.anthropic_requests == []
+
+
+def test_fallback_by_default_still_retries_the_429_first(env):
+    env.fake.anthropic_replies.extend([429, 200])        # clears after one retry: Claude answers, no swap
+    u = next(d for e, d in events(env.client.post("/studio-api/chat", json=claude_body()).text) if e == "usage")
+    assert u["model"] == "claude" and len(env.fake.anthropic_requests) == 2 and env.fake.requests == []
+    env.fake.anthropic_requests.clear()
+    env.fake.anthropic_replies.extend([429] * 20)        # persists: now Mistral answers, as before
+    u = next(d for e, d in events(env.client.post("/studio-api/chat", json=claude_body(fallback=True)).text) if e == "usage")
+    assert u["model"] == "mistral" and u["fallback_from"] == "claude" and len(env.fake.anthropic_requests) >= 2
+
+
+# ── Geneva: room progress for the facilitator ──
+def write_events(env, lines):
+    import datetime as dt
+    d = env.cfg.state_dir / "events"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"{dt.date.today().isoformat()}.jsonl").write_text("".join(json.dumps(x) + "\n" for x in lines) + "{cut off")
+
+
+def test_room_progress_counts_distinct_sessions_per_step(env):
+    prog = lambda c="geneva": env.client.get(f"/studio-api/admin/room.json?key=admin-test&course={c}").json()["progress"]
+    assert prog() == {"visits": 0, "steps": {str(n): 0 for n in range(1, 8)}}
+    ev = lambda sid, t, **kw: {"t": t, "sid": sid, **kw}
+    write_events(env, [
+        ev("aaaaaaaa", "progress", step=1, course="geneva"), ev("aaaaaaaa", "progress", step=1, course="geneva"),
+        ev("aaaaaaaa", "progress", step=2, course="geneva"), ev("aaaaaaaa", "progress", step=5, course="geneva"),
+        ev("bbbbbbbb", "progress", step=1, course="geneva"), ev("bbbbbbbb", "progress", step=2, course="geneva"),
+        ev("cccccccc", "open", course="geneva"),                      # in the room, no step yet
+        ev("dddddddd", "progress", step=1, course="venice"),          # another course
+        ev("eeeeeeee", "progress", step=9, course="geneva"),          # no such step
+    ])
+    assert prog() == {"visits": 4, "steps": {"1": 2, "2": 2, "3": 0, "4": 0, "5": 1, "6": 0, "7": 0}}
+    assert prog("venice")["visits"] == 1 and prog("venice")["steps"]["1"] == 1
+    write_events(env, [ev("aaaaaaaa", "progress", step=7, course="geneva")])   # the file changed: the count follows
+    assert prog()["steps"]["7"] == 1 and prog()["visits"] == 1
+
+
+def test_a_progress_event_keeps_its_course_through_the_whitelist(env):
+    r = env.client.post("/studio-api/events", json={"sid": "0123abcd", "events": [
+        {"t": "progress", "step": 3, "secs": 41.5, "course": "geneva"}]})
+    assert r.json()["kept"] == 1
+    assert env.client.get("/studio-api/admin/room.json?key=admin-test&course=geneva").json()["progress"]["steps"]["3"] == 1
+
+
+# ── Geneva: the teaser ──
+VIDEO = bytes(range(256)) * 40
+
+
+def put_teaser(env):
+    d = env.cfg.state_dir / "teaser"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "latest.mp4").write_bytes(VIDEO)
+
+
+def test_no_teaser_is_404(env):
+    for call in (env.client.get, env.client.head):
+        assert call("/studio-api/teaser").status_code == 404
+    assert env.client.get("/studio-api/teaser").json() == {"error": "There is no teaser yet", "code": "no_teaser"}
+
+
+def test_the_teaser_is_served_with_a_version(env):
+    put_teaser(env)
+    r = env.client.get("/studio-api/teaser", headers={"Origin": ORIGIN})
+    assert r.status_code == 200 and r.content == VIDEO and r.headers["content-type"] == "video/mp4"
+    assert r.headers["etag"] and r.headers["last-modified"] and r.headers["cache-control"] == "no-cache"
+    assert r.headers["accept-ranges"] == "bytes"
+    assert r.headers["access-control-allow-origin"] == ORIGIN
+    assert {"etag", "last-modified", "content-range"} <= {h.strip().lower() for h in r.headers["access-control-expose-headers"].split(",")}
+
+
+def test_the_teaser_answers_byte_ranges_for_safari(env):
+    put_teaser(env)
+    r = env.client.get("/studio-api/teaser", headers={"Range": "bytes=100-299"})
+    assert r.status_code == 206 and r.content == VIDEO[100:300]
+    assert r.headers["content-range"] == f"bytes 100-299/{len(VIDEO)}" and r.headers["content-length"] == "200"
+    r = env.client.get("/studio-api/teaser", headers={"Range": "bytes=0-1"})        # Safari's first probe
+    assert r.status_code == 206 and r.content == VIDEO[:2]
+    r = env.client.get("/studio-api/teaser", headers={"Range": f"bytes={len(VIDEO) - 10}-"})
+    assert r.status_code == 206 and r.content == VIDEO[-10:]
+
+
+def test_the_teaser_head_has_the_headers_and_no_body(env):
+    put_teaser(env)
+    r = env.client.head("/studio-api/teaser", headers={"Origin": ORIGIN})
+    assert r.status_code == 200 and r.content == b"" and r.headers["content-length"] == str(len(VIDEO))
+    assert r.headers["etag"] and r.headers["content-type"] == "video/mp4" and r.headers["access-control-allow-origin"] == ORIGIN

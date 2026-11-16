@@ -107,6 +107,12 @@ npx wrangler deploy                             # name studio-api → https://st
   - The free plan allows 1,000 KV writes a day, which is about 500 chats (2 writes each). That is enough for a short outage; for a whole session on route 2, use Workers Paid ($5 a month).
 - Offline check, with no account needed: `node worker/test_worker.mjs`.
 
+## Geneva, 4 December
+
+- Room progress: the facilitator's room page (`/studio-api/admin/room?key=…&course=geneva`) shows a row above the messages, "In the room: 24 · Brief 22 · Data 20 · …", refreshed every 4 s. It counts today's page sessions per step from the `progress` events of the day (`state/events/<day>.jsonl`), so it needs no extra setup; the file is read again only when it grows.
+- Teaser: `GET /studio-api/teaser` serves `state/teaser/latest.mp4` (404 until it exists), with byte ranges for Safari. It is uploaded by `tools/teaser/teaser_watch.py --upload`; to replace it by hand, copy a new file over `state/teaser/latest.mp4` (the `ETag` changes, no restart).
+- In the Geneva course a participant's model is never swapped silently: the front sends `fallback: false`, so a busy or failing model gives "busy" (503) or "did not answer" (502) after up to 20 s of retries, and the participant picks again. In the logs this is `status: busy` or `failed` with the model.
+
 ## Local development
 
 ```bash

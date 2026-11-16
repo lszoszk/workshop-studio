@@ -15,6 +15,8 @@
   header h1 { font: 600 17px/1.2 Georgia, serif; margin: 0; }
   header a { color: var(--red); }
   header .st { color: var(--muted); font-size: 13px; margin-left: auto; }
+  #prog { padding: 6px 16px; border-bottom: 1px solid var(--rule); background: #fff; font-size: 13px; color: var(--muted); }
+  #prog b { color: var(--ink); }
   #log { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
   .m { max-width: 720px; padding: 8px 12px; border: 1px solid var(--rule); border-radius: 8px; background: #fff; overflow-wrap: anywhere; }
   .m.host { align-self: flex-end; background: var(--me); border-color: #ecc8ce; }
@@ -38,6 +40,7 @@
   <span><a href="#" data-course="venice">Venice</a> · <a href="#" data-course="geneva">Geneva</a></span>
   <span class="st" id="st">connecting…</span>
 </header>
+<div id="prog" aria-label="Progress in the room"></div>
 <div id="log" aria-live="polite"><p class="empty">No messages yet.</p></div>
 <form id="f">
   <textarea id="text" maxlength="1000" placeholder="To everyone in the studio: a link, a hint, the time left…" aria-label="Message to the room"></textarea>
@@ -58,6 +61,15 @@
     return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>${tail}`;
   });
   const time = (iso) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // the steps of the studio's route, in the order the front's progress events number them (1 to 7)
+  const STEPS = ['Brief', 'Data', 'Plan read', 'Plan approved', 'App built', 'Tested', 'Improved'];
+  function renderProgress(p) {
+    const row = $('prog');
+    if (!p) { row.hidden = true; return; }
+    row.hidden = false;
+    row.innerHTML = 'In the room: <b>' + Number(p.visits || 0) + '</b>' + STEPS.map((name, i) =>
+      ' · ' + esc(name) + ' <b>' + Number((p.steps || {})[i + 1] || 0) + '</b>').join('');
+  }
   let last = -1, seenGuests = 0, firstLoad = true;
 
   document.querySelectorAll('[data-course]').forEach((a) => {
@@ -91,7 +103,9 @@
 
   async function poll() {
     try {
-      render((await call('GET')).items);
+      const got = await call('GET');
+      renderProgress(got.progress);
+      render(got.items);
       $('st').textContent = 'updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       $('st').className = 'st';
     } catch (e) {

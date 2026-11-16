@@ -42,6 +42,11 @@ Request:
   - `inapp`: a call made by a participant's app through `studio.ask()`. System message: "You are called from inside a data app built in a workshop. Answer only what is asked. If JSON is requested, reply with JSON only, no prose and no code fences." Temperature 0.2, `max_tokens` 8000.
   - `question`: the "Ask the model directly" tool: the user's question goes to the model with no system message and no data. Temperature 0.8, `max_tokens` 1200.
 - The front never sends a system message; the server rejects one with 400.
+- `fallback` (optional boolean, default `true`): `true` is the usual behaviour, a failing model hands over to the fallback in its menu entry. `false` means the participant's model answers or nothing does (the Geneva course sends it, so nobody is answered by a model they did not choose). With `false`, a transient refusal (Anthropic 429 or 529, OpenRouter's in-flight 402) is retried with backoff (0.5, 1, 2, 4, 5 … s, up to 20 s in all), then:
+  - `503 {"error": "The model is busy right now. Try again in a minute, or use the other model.", "code": "model_busy"}` with `Retry-After: 30`;
+  - any other failure before the stream starts → `502 {"error": "The model did not answer. Try again, or use the other model.", "code": "model_failed"}`.
+
+  With `true`, the same Anthropic 429 and 529 are retried first and only then fall back.
 
 Response: `text/event-stream`, no buffering. Events, in order:
 
@@ -73,7 +78,9 @@ The front fails over to the next route only when the request fails before the fi
 
 `POST {"seat", "title", "model", "prompt_id", "html"}` (HTML ≤ 300 kB, no `<script src>` and no external URLs in `src`/`href` except links to `docs.un.org`, `undocs.org`, `uhri.ohchr.org`, `searchlibrary.ohchr.org`) → `{"ok": true, "id": "…"}`.
 
-`GET /gallery` → `[{"id", "seat", "country", "title", "model", "created"}]`, newest first. `GET /gallery/{id}` → the stored HTML (`text/html`). The Worker does not implement the gallery.
+Two optional fields: `name`, the display name the participant chose (spaces collapse, 40 characters at most; letters of any script, digits, spaces and `. , ' ’ - ( ) &`; empty is stored as `null`; anything else → `400 {"code": "bad_name", "error": "Use letters, numbers and spaces in the name"}`), and `course`, a slug `[a-z0-9-]{1,20}` (anything else is stored as `null`). Logs record only whether a name was given.
+
+`GET /gallery` → `[{"id", "seat", "country", "title", "model", "prompt_id", "files", "name", "course", "created"}]`, newest first. `GET /gallery?course=geneva` keeps only that course's pages. `GET /gallery/{id}` → the stored HTML (`text/html`). The Worker does not implement the gallery.
 
 ## `GET /room` and `POST /room`: the room chat
 
@@ -82,6 +89,12 @@ The front fails over to the next route only when the request fails before the fi
 `POST {"course", "text", "seat", "sid"}` (text ≤ 1,000 characters; a seat or the page's session id; 8 messages in 5 minutes per sender) → `{"ok": true, "id"}`: a participant's message to the facilitator. It is never shown to the other participants.
 
 The facilitator reads and writes on `GET /admin/room?key=…&course=…` (a live page; JSON at `/admin/room.json`, actions `post`, `remove` and `clear` on `POST /admin/room`). Messages are kept in `state/room/<course>.json` until the facilitator clears them; logs hold who and how long, never the text. The Worker does not implement the room.
+
+The facilitator's room page also shows progress. The front sends `progress` events (`{"t": "progress", "step": 1–7, "secs", "course"}`) through `POST /events`; `GET /admin/room.json?key=…&course=…` then carries `"progress": {"visits": 24, "steps": {"1": 22, "2": 20, "3": 18, "4": 15, "5": 12, "6": 6, "7": 3}}`: of today's page sessions with an event for that course, how many reached each step.
+
+## `GET /teaser` and `HEAD /teaser`
+
+The teaser video, `state/teaser/latest.mp4` on the server, as `video/mp4` with `ETag`, `Last-Modified`, `Cache-Control: no-cache` and byte ranges (`Range: bytes=…` → `206` with `Content-Range`; Safari will not play a video without them). `404 {"error": "There is no teaser yet", "code": "no_teaser"}` when the file is missing. CORS exposes `ETag` and `Last-Modified`. The Worker does not implement it.
 
 ## Logging
 

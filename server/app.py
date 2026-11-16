@@ -19,9 +19,10 @@ Endpoints (under /studio-api):
   GET  /seat/{code}       country and budget of a seat
   POST /chat              {seat, model, purpose, messages} → text/event-stream
   POST /gallery           {seat, title, model, prompt_id, html} → put a participant's page on the wall
-  GET  /gallery           the list for the wall;  GET /gallery/{id} → the page itself
+  GET  /gallery           the list for the wall (?course= keeps one course's);  GET /gallery/{id} → the page itself
   GET  /room?course=      the facilitator's messages to the room;  POST /room {course, text, seat, sid} → a
                           participant's message to the facilitator (kept in state/room/ until cleared)
+  GET  /teaser            the teaser video (state/teaser/latest.mp4), with byte ranges
   GET  /admin?key=        facilitator page; POST /admin does the actions (not part of the contract)
   GET  /admin/room?key=&course=   the facilitator's live room chat (JSON: /admin/room.json; POST /admin/room)
 
@@ -38,6 +39,7 @@ import os
 import re
 import secrets
 import time
+import unicodedata
 from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -48,7 +50,7 @@ import anthropic
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response, StreamingResponse
 
 import models
 from seats import Seats, normalise
@@ -87,6 +89,10 @@ MAX_IMAGE_CHARS = 2_000_000  # base64 of one image (about 1.5 MB); the studio se
 IMAGE_TYPES = ("image/png", "image/jpeg", "image/webp", "image/gif")
 KEEPALIVE_S = 10             # a silent upstream gets an SSE comment, so nginx and the browser stay awake
 BUSY = "in_flight_budget_exhausted"   # OpenRouter 402 reason: transient, "retry after in-flight requests settle"
+ANTHROPIC_BUSY = ("http_429", "http_529")   # Anthropic rate limit and "overloaded": gone within seconds, so worth a retry
+WALL_NAME_PUNCT = " .,'’-()&"   # besides letters of any script and digits; see wall_name()
+COURSE_SLUG = re.compile(r"[a-z0-9-]{1,20}")
+PROGRESS_STEPS = 7
 # purpose → (temperature, max_tokens); a question's budget holds a reasoning model's thinking (GLM-5.3 thinks
 # for about 1,000 tokens before it answers) as well as the answer
 PURPOSES = {"build": (0.3, 64000), "inapp": (0.2, 8000), "question": (0.8, 4000)}
@@ -186,6 +192,21 @@ def build_system_prompt(data_dir: Path) -> str:
 class Refusal(Exception):
     def __init__(self, status: int, message: str, code: str, headers: dict | None = None):
         self.status, self.message, self.code, self.headers = status, message, code, headers or {}
+
+
+def wall_name(value) -> str | None:
+    """The display name a participant chose for the wall: letters of any script, digits, spaces and . , ' ’ - ( ) &.
+    Spaces collapse and 40 characters are kept; empty is None. Anything else is refused, so no link, tag or sentence
+    of markup fits in a name."""
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise Refusal(400, "Use letters, numbers and spaces in the name", "bad_name")
+    name = re.sub(" +", " ", value.strip())
+    # combining marks (an accent typed as a separate character) belong to the letter before them
+    if not all(c.isalnum() or c in WALL_NAME_PUNCT or unicodedata.category(c).startswith("M") for c in name):
+        raise Refusal(400, "Use letters, numbers and spaces in the name", "bad_name")
+    return name[:40].strip() or None
 
 
 def refuse(e: Refusal) -> JSONResponse:
@@ -305,8 +326,10 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
 
     app = FastAPI(title="Workshop Studio API", version=VERSION, lifespan=lifespan,
                   docs_url=None, redoc_url=None, openapi_url=None)
-    app.add_middleware(CORSMiddleware, allow_origins=cfg.origins, allow_methods=["GET", "POST", "OPTIONS"],
-                       allow_headers=["Content-Type"], max_age=600)
+    app.add_middleware(CORSMiddleware, allow_origins=cfg.origins, allow_methods=["GET", "HEAD", "POST", "OPTIONS"],
+                       allow_headers=["Content-Type", "Range", "If-None-Match", "If-Modified-Since"],
+                       # a page on GitHub Pages reads the teaser's version (ETag, Last-Modified) to know when it changed
+                       expose_headers=["ETag", "Last-Modified", "Content-Length", "Content-Range", "Accept-Ranges"], max_age=600)
     app.state.cfg, app.state.seats, app.state.systems = cfg, seats, systems
 
     def paused() -> bool:
@@ -386,14 +409,17 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
             return None, f"http_{r.status_code}"
         return r, None
 
+    def is_transient(m: models.Model, err: str | None) -> bool:
+        return err == BUSY or (m.api == "anthropic" and err in ANTHROPIC_BUSY)
+
     async def open_with_retry(m: models.Model, messages: list, purpose: str):
-        """open_upstream, retrying OpenRouter's transient in-flight budget 402 with backoff for up to
-        cfg.busy_retry_s (30 people pressing Build at once on a low balance)."""
+        """open_upstream, retrying a transient refusal with backoff for up to cfg.busy_retry_s: OpenRouter's in-flight
+        budget 402 (30 people pressing Build at once on a low balance) and Anthropic's 429 and 529."""
         deadline, delay = time.monotonic() + cfg.busy_retry_s, 0.5
         while True:
             resp, err = await open_upstream(m, messages, purpose)
             remaining = deadline - time.monotonic()
-            if err != BUSY or remaining <= 0:
+            if not is_transient(m, err) or remaining <= 0:
                 return resp, err
             await asyncio.sleep(min(delay, remaining))
             delay = min(delay * 2, 5.0)
@@ -505,17 +531,26 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         t0 = time.monotonic()
         used, (resp, err) = m, await open_with_retry(m, messages, purpose)
         first_error = err
+        # fallback false (the Geneva course): the participant chose this model and gets it or an honest refusal, never
+        # another model's answer under its name
+        swap = d.get("fallback") is not False
         # a busy account is busy for every model; a fallback that cannot read the images would answer without them
-        if resp is None and m.fallback and err != BUSY and (models.MODELS[m.fallback].vision or not messages[-1].get("images")):
+        if resp is None and swap and m.fallback and err != BUSY and (models.MODELS[m.fallback].vision or not messages[-1].get("images")):
             used = models.MODELS[m.fallback]
             resp, err = await open_with_retry(used, messages, purpose)
         if resp is None:
             seconds = round(time.monotonic() - t0, 1)
-            status = "busy" if err == BUSY else "credit" if err == "http_402" else "error"
+            status = "busy" if is_transient(used, err) else "failed" if not swap else "credit" if err == "http_402" else "error"
             seats.record(seat["code"], model=used.key, host=used.host or "", purpose=purpose,
                          latency_ms=int(seconds * 1000), status=status, error=err)
             log_event(event="chat", seat=seat["code"], model=used.key, purpose=purpose, first_error=first_error,
                       seconds=seconds, status=status, error=err)
+            if not swap:
+                if status == "busy":
+                    return JSONResponse({"error": "The model is busy right now. Try again in a minute, or use the other model.",
+                                         "code": "model_busy"}, 503, headers={"Retry-After": "30"})
+                return JSONResponse({"error": "The model did not answer. Try again, or use the other model.",
+                                     "code": "model_failed"}, 502)
             if status == "busy":
                 return JSONResponse({"error": "The model service is busy, try again in a minute", "code": "busy"}, 503,
                                     headers={"Retry-After": "60"})
@@ -562,8 +597,10 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
                               + ". Only links to " + ", ".join(GALLERY_LINK_HOSTS) + " are allowed", "external")
             if sum(1 for i in gallery_items() if i.get("seat") == seat["code"]) >= GALLERY_PER_SEAT:
                 raise Refusal(429, f"This seat has already sent {GALLERY_PER_SEAT} pages to the wall", "gallery_full")
+            name = wall_name(d.get("name"))
         except Refusal as e:
             return refuse(e)
+        course = d.get("course") if isinstance(d.get("course"), str) and COURSE_SLUG.fullmatch(d["course"]) else None
         gid = dt.datetime.now().strftime("%H%M%S") + "-" + secrets.token_hex(4)
         # the country the app ran on (a participant may pick another than the seat's) and the files it was
         # given in the chat, so the wall can run it on the same data
@@ -571,14 +608,14 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         country = country.strip() if isinstance(country, str) and re.fullmatch(r"[^\W\d_][\w .,'()\-]{0,59}", country.strip()) else seat["country"]
         files = [f for f in (d.get("files") or []) if isinstance(f, str) and re.fullmatch(r"[a-z0-9_]{1,30}", f)][:10] \
             if isinstance(d.get("files"), list) else []
-        meta = {"id": gid, "seat": seat["code"], "country": country, "files": files,
+        meta = {"id": gid, "seat": seat["code"], "country": country, "files": files, "name": name, "course": course,
                 "title": str(d.get("title") or "Untitled").strip()[:120],
                 "model": d.get("model") if d.get("model") in models.MODELS else None,
                 "prompt_id": str(d.get("prompt_id") or "")[:60] or None,
                 "created": dt.datetime.now().isoformat(timespec="seconds")}
         (gallery_dir / f"{gid}.html").write_text(page, encoding="utf-8")
         (gallery_dir / f"{gid}.json").write_text(json.dumps(meta, ensure_ascii=False))
-        log_event(event="gallery", seat=seat["code"], id=gid, bytes=len(page.encode("utf-8")))
+        log_event(event="gallery", seat=seat["code"], id=gid, bytes=len(page.encode("utf-8")), named=name is not None)
         return {"ok": True, "id": gid}
 
     # ── feedback from testers: text and the page's own context, never data or an app's code ──
@@ -738,9 +775,9 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         return {"ok": True, "id": item["id"]}
 
     @app.get("/studio-api/gallery")
-    async def gallery_list():
-        keep = ("id", "seat", "country", "title", "model", "prompt_id", "files", "created")
-        return [{k: i.get(k) for k in keep} for i in gallery_items()]
+    async def gallery_list(course: str = ""):
+        keep = ("id", "seat", "country", "title", "model", "prompt_id", "files", "name", "course", "created")
+        return [{k: i.get(k) for k in keep} for i in gallery_items() if not course or i.get("course") == course]
 
     @app.get("/studio-api/gallery/{gid}")
     async def gallery_page(gid: str):
@@ -809,7 +846,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
             + "</td></tr>" for r in s["seats"])
         opts = "".join(f'<option value="{m.key}"{" selected" if m.key == s["default_model"] else ""}>{e(m.label)}</option>'
                        for m in models.MODELS.values())
-        wall = "".join(f"<li>{e(g['created'])} · {e(g['country'])} · {e(g['title'])} "
+        wall = "".join(f"<li>{e(g['created'])} · {e(g['country'])} · {e(g['title'])} · {e(g.get('name') or 'no name')} · {e(g.get('course') or 'no course')} "
                        + form("remove_gallery", "Remove", f'<input type="hidden" name="value" value="{e(g["id"])}">')
                        + "</li>" for g in s["gallery"]) or "<li>empty</li>"
         fb = "".join(f"<li><b>{e(f['created'])}</b> · {e(f.get('label') or f.get('seat') or 'no seat')} · "
@@ -830,6 +867,50 @@ td,th{{border-bottom:1px solid #ddd;padding:4px 8px;text-align:left}}form{{displ
 <th>Last error</th><th></th></tr>{rows}</table><h2>Feedback ({len(s["feedback"])})</h2><ul>{fb}</ul><h2>Wall</h2><ul>{wall}</ul>"""
         return HTMLResponse(body, headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
 
+    # ── room progress: of the page sessions that sent events for the course today, how many reached each step. The
+    # day's file is read again only when it has grown (a participant's page sends every few seconds, the facilitator's
+    # page asks every 4). ──
+    progress_cache = {"key": None, "by_course": {}}
+
+    def room_progress(course: str) -> dict:
+        p = events_dir / f"{dt.date.today().isoformat()}.jsonl"
+        try:
+            st = p.stat()
+        except OSError:
+            st = None
+        key = (str(p), st.st_size, st.st_mtime_ns) if st else (str(p), 0, 0)
+        if progress_cache["key"] != key:
+            seen: dict[str, dict] = {}   # course → {"visits": set of sid, step → set of sid}
+            if st:
+                with p.open(encoding="utf-8") as fh:
+                    for line in fh:
+                        try:
+                            e = json.loads(line)
+                        except ValueError:
+                            continue   # a line cut short by a write in progress
+                        c, sid = e.get("course"), e.get("sid")
+                        if not c or not sid:
+                            continue
+                        got = seen.setdefault(c, {"visits": set(), "steps": defaultdict(set)})
+                        got["visits"].add(sid)
+                        step = e.get("step")
+                        if e.get("t") == "progress" and isinstance(step, (int, float)) and step == int(step) \
+                                and 1 <= step <= PROGRESS_STEPS:
+                            got["steps"][int(step)].add(sid)
+            progress_cache.update(key=key, by_course=seen)
+        got = progress_cache["by_course"].get(course)
+        return {"visits": len(got["visits"]) if got else 0,
+                "steps": {str(n): len(got["steps"][n]) if got else 0 for n in range(1, PROGRESS_STEPS + 1)}}
+
+    # ── the teaser video: one file, put there by tools/teaser/teaser_watch.py --upload. FileResponse answers byte
+    # ranges (206 with Content-Range), which Safari needs before it plays a video, and sets ETag and Last-Modified. ──
+    @app.api_route("/studio-api/teaser", methods=["GET", "HEAD"])
+    async def teaser():
+        p = cfg.state_dir / "teaser" / "latest.mp4"
+        if not p.is_file():
+            return JSONResponse({"error": "There is no teaser yet", "code": "no_teaser"}, 404, headers={"Cache-Control": "no-cache"})
+        return FileResponse(p, media_type="video/mp4", headers={"Cache-Control": "no-cache"})
+
     @app.get("/studio-api/admin/room.json")
     async def admin_room_json(key: str = "", course: str = ""):
         if not admin_ok(key):
@@ -838,7 +919,7 @@ td,th{{border-bottom:1px solid #ddd;padding:4px 8px;text-align:left}}form{{displ
             c = room_course(course)
         except Refusal as e:
             return refuse(e)
-        return JSONResponse({"course": c, "items": room(c)}, headers={"Cache-Control": "no-store"})
+        return JSONResponse({"course": c, "items": room(c), "progress": room_progress(c)}, headers={"Cache-Control": "no-store"})
 
     @app.post("/studio-api/admin/room")
     async def admin_room_post(request: Request):
