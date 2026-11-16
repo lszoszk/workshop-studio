@@ -37,6 +37,7 @@
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --top-h: 56px;
   --foot-h: 34px;
+  --prog-h: 0px;               /* the seven-step bar, only in the one-session course */
   font: 16px/1.5 var(--sans);
   color: var(--ink);
   color-scheme: light;
@@ -111,7 +112,7 @@ a { color: var(--accent); }
 
 /* work area */
 /* --chat-w is the participant's own split, set by dragging the divider (kept in the browser) */
-.work { --chat-default: clamp(340px, 31vw, 440px); display: grid; grid-template-columns: var(--chat-w, var(--chat-default)) 1fr; height: calc(100% - var(--top-h) - var(--foot-h)); }
+.work { --chat-default: clamp(340px, 31vw, 440px); display: grid; grid-template-columns: var(--chat-w, var(--chat-default)) 1fr; height: calc(100% - var(--top-h) - var(--prog-h) - var(--foot-h)); }
 .chat { position: relative; display: flex; flex-direction: column; border-right: 1px solid var(--line); background: var(--panel); min-height: 0; min-width: 0; }
 .splitter { position: absolute; top: 0; right: -5px; bottom: 0; width: 10px; cursor: col-resize; z-index: 6; touch-action: none; }
 .splitter::after { content: ""; position: absolute; top: 0; bottom: 0; left: 4px; width: 2px; background: transparent; transition: background .15s; }
@@ -501,7 +502,7 @@ body.handoff-mode .top, body.handoff-mode .work, body.handoff-mode .foot { displ
 
 /* projector: ?wall=1 shows the app alone */
 body.wall .chat, body.wall .toolbar, body.wall .foot { display: none; }
-body.wall .work { grid-template-columns: 1fr; height: calc(100% - var(--top-h)); }
+body.wall .work { grid-template-columns: 1fr; height: calc(100% - var(--top-h) - var(--prog-h)); }
 
 @media (max-width: 1500px) { .event { display: none; } }
 @media (max-width: 1400px) { .model-pick .lbl { display: none; } .foot-links .tb { display: none; } }
@@ -644,3 +645,25 @@ body.basic.own-ok .fcard.own.adv, body.basic.own-ok .fcard.add-own.adv { display
 .room-err { color: var(--danger); font-size: 14px; }
 .room-empty { color: var(--muted); }
 .room-btn { margin-right: 6px; }
+
+/* the seven steps of the one-session course, under the header: done steps are filled, the current one is marked in red */
+body.with-progress { --prog-h: 40px; }
+body.with-progress .room-strip { top: 104px; }
+.progress { height: var(--prog-h); display: flex; align-items: center; gap: 16px; padding: 0 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.progress ol { list-style: none; margin: 0; padding: 0; display: flex; flex: 1; gap: 6px; min-width: 0; }
+.progress li { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px; background: var(--bg); color: var(--muted); font-size: 13px; white-space: nowrap; }
+.progress li .pn { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--faint); display: grid; place-items: center; font-size: 11px; font-weight: 700; line-height: 1; }
+.progress li .pl { overflow: hidden; text-overflow: ellipsis; }
+.progress li.done { color: var(--ink); background: var(--surface); }
+.progress li.done .pn { background: var(--ok-ink); border-color: var(--ok-ink); color: var(--panel); }
+.progress li.skipped .pn { background: none; border-color: var(--faint); color: var(--faint); }
+.progress li.current { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.progress li.current .pn { border-color: var(--accent); color: var(--accent); }
+.progress .pskip { flex: none; font-size: 12px; font-weight: 500; text-decoration: underline; margin-left: 2px; }
+.progress .pnext { flex: none; font-size: 13px; color: var(--muted); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 1100px) { .progress .pnext { display: none; } }
+@media (max-width: 900px) {
+  .progress li:not(.current) .pl { display: none; }
+  .progress li:not(.current) { flex: none; padding: 4px 6px; }
+  .progress li.current { flex: 1; }
+}

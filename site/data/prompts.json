@@ -232,12 +232,14 @@
           "expect": "best interests"
         }
       },
-      "venice": "V1"
+      "venice": "V1",
+      "geneva": "G1"
     },
     {
       "id": "s8-1b-gc-quote-check",
       "session": "S8",
       "venice": "V1",
+      "geneva": "G1",
       "minute": null,
       "dataset": "gc",
       "builds_on": "s8-1-verbatim",

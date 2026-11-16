@@ -21,7 +21,7 @@ site/data/             data pack, schema.md, samples.json, system_prompt.md, pro
 site/replay/           recorded answers for the no-model fallback
 server/, worker/       the proxy to OpenRouter (VM) and its Cloudflare stand-in
 docs/api-contract.md   the contract between the studio and both servers
-docs/session-plan.md   Sessions 7 and 8 minute by minute: what to click, what to show, what to do when something fails
+docs/archive/session-plan-two-sessions.md   the two-session path (Sessions 7 and 8, course `full`): minute by minute; tag two-sessions-2026-11-15
 tools/build_data.py    rebuilds site/data from UHRI+, the UN Human Rights Database and HRC votes
 tools/bakeoff.py       every model on every workshop prompt, scored in headless Chrome
 tools/make_seats.py    seat codes and printable badge cards (tools/out/, git-ignored)

@@ -9,7 +9,7 @@ window.Tour = (function () {
         'Generative AI does not have to write the text you rely on. Here it writes the tool, which shortens the way to the sources you should take into account: each finding links to the document and paragraph it comes from. Reading those sources and judging them stays with you.',
         'Building such tools is also a way to learn where the models help and where they fail (the so-called jagged frontier), and to keep that skill after the workshop.',
         'Every app can be adjusted: ask for a change in your own words. The tour takes one minute.'] },
-    { at: '#sessionSwitch', get title() { return venice() ? 'Three sessions' : 'Two sessions'; },
+    { at: '#sessionSwitch', onlyIfShown: true, get title() { return venice() ? 'Three sessions' : 'Two sessions'; },
       get text() { return (venice() ? 'Session 1, 2 and 3 offer' : 'Session 1 and Session 2 offer') + ' different apps. Your facilitator will say when to switch.'; } },
     { at: '#countryChip', onlyIfShown: true, title: 'Your country',
       text: 'Its UN recommendations and observations are your first file. Pick another country to run the same app on its records.' },
@@ -24,7 +24,7 @@ window.Tour = (function () {
     { at: '.foot-end', title: 'The gallery, and this tour again',
       text: 'The Gallery at the top shows what different models built from the same plans. Tour, down here, starts this again.' },
   ];
-  const venice = () => document.body.classList.contains('venice');
+  const venice = () => document.body.dataset.course === 'venice';
   let i = 0, root = null, onKey = null, steps = STEPS;   // steps: this run's, without a step whose element is not shown here
 
   const visible = (el) => el && el.offsetParent !== null && el.getBoundingClientRect().width > 0;

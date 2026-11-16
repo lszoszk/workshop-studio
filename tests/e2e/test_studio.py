@@ -1504,7 +1504,7 @@ def test_versions_sit_in_one_menu(base_url, browser, fake_api, tmp_path):
 def test_the_venice_course_has_three_sessions(base_url, browser):
     """?course=venice (the Global Campus): three sessions, one set of data each: the General Comments with the
     Verbatim finder and a quotation checker, the Council votes with the blocs, then the recommendations or one's
-    own idea, with one's own files on the shelf without Advanced. ?course=geneva goes back to two sessions."""
+    own idea, with one's own files on the shelf without Advanced. ?course=full goes back to two sessions."""
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
     page.goto(base_url + "?course=venice&via=replay&planpace=1&country=Kenya")
@@ -1519,7 +1519,7 @@ def test_the_venice_course_has_three_sessions(base_url, browser):
     assert page.is_visible("#shelf .add-own")                                    # own files without Advanced
     send(page, DASHBOARD, "uhri", 1)
     assert "Ask your data a question" in page.inner_text("#suggest") and "Check a quotation" not in page.inner_text("#suggest")
-    page.goto(base_url + "?course=geneva&via=replay&planpace=1&country=Kenya")
+    page.goto(base_url + "?course=full&via=replay&planpace=1&country=Kenya")
     started(page)
     assert page.locator("#sessionSwitch button").count() == 2
     ctx.close()
@@ -1572,11 +1572,11 @@ def test_venice_shows_only_what_its_sessions_use(base_url, browser, tmp_path):
 
 
 def test_the_tour_and_the_country_picker_follow_the_course(base_url, browser):
-    """Geneva keeps two sessions in the tour and the country picker in Session 1, without it in Session 2 (Basic);
+    """The two-session course (full) keeps two sessions in the tour and the country picker in Session 1, without it in Session 2 (Basic);
     Venice's tour says three sessions and skips the country step where the picker is not shown."""
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
-    page.goto(base_url + "?course=geneva&via=replay&planpace=1&country=Kenya&reset=1&advanced=0")
+    page.goto(base_url + "?course=full&via=replay&planpace=1&country=Kenya&reset=1&advanced=0")
     started(page)
     assert page.is_visible("#countryChip")
     page.get_by_role("tab", name="Session 2").click()
@@ -1684,7 +1684,7 @@ def test_venice_session2_adds_the_alignment_map(base_url, browser):
 
 
 def test_venice_sends_to_the_wall_without_advanced(base_url, browser, fake_api):
-    """Venice has no Advanced, so Send to wall is in Save & share for everyone there (Geneva keeps it in Advanced)."""
+    """Venice has no Advanced, so Send to wall is in Save & share for everyone there (the two-session course keeps it in Advanced)."""
     api, _ = fake_api
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
@@ -1696,7 +1696,7 @@ def test_venice_sends_to_the_wall_without_advanced(base_url, browser, fake_api):
     assert page.is_visible("#wallBtn")
     page.click("#wallBtn")
     page.wait_for_function("() => /Sent to the wall/.test(document.getElementById('log').innerText)")
-    page.goto(base_url + f"?course=geneva&api={api}&planpace=1&advanced=0#s=TEST22")
+    page.goto(base_url + f"?course=full&api={api}&planpace=1&advanced=0#s=TEST22")
     started(page)
     send(page, DASHBOARD, "uhri", 1)
     page.click("#keepBtn")
@@ -1757,3 +1757,62 @@ def test_the_seat_dialog_takes_enter_and_keeps_escape(base_url, browser, fake_ap
     started(p2)
     assert p2.inner_text("#routeBadge") == "Recorded answers"
     ctx.close(); ctx2.close()
+
+
+def test_geneva_is_one_session(base_url, browser):
+    """?course=geneva (4 December): one session, no country picker, two models (Claude first), no Advanced, only the
+    General Comments on the shelf, the seven-step bar, and no tour unasked. Building the Verbatim finder in recorded mode
+    marks Brief, Plan read, Plan approved and App built; a reload keeps them and ?reset=1 clears them."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + "?course=geneva&via=replay&planpace=1&reset=1")
+    started(page)
+    assert page.evaluate("document.body.dataset.course") == "geneva"
+    assert not page.is_visible("#sessionSwitch") and not page.is_visible("#countryChip") and not page.is_visible("#lookBtn")
+    assert page.eval_on_selector_all("#modelSelect option", "os => os.map(o => o.value)") == ["claude", "glm-eu"]
+    assert not page.is_visible("#advBtn")
+    assert page.locator("#shelf .fcard[data-key]").evaluate_all("els => els.map(e => e.dataset.key)") == ["gc"]
+    assert page.is_visible("#progress") and page.locator("#progressSteps li").count() == 7
+    assert page.get_attribute("#progress", "role") == "progressbar" and page.get_attribute("#progress", "aria-valuenow") == "0"
+    assert page.locator("#progressSteps li.done").count() == 0
+    assert not page.is_visible(".tour-card")
+    page.click("#progressSteps .pskip")                      # a skip marks the current step (1) as done, once
+    assert page.locator("#progressSteps li.done").count() == 1
+    page.goto(base_url + "?course=geneva&via=replay&planpace=1&reset=1")
+    started(page)
+    assert page.locator("#progressSteps li.done").count() == 0
+    send(page, "Verbatim finder for General Comments", "gc", 1)
+    page.wait_for_function("() => document.querySelectorAll('#progressSteps li.done').length === 4", timeout=20000)
+    def done():
+        return page.eval_on_selector_all("#progressSteps li", "els => els.map(e => e.classList.contains('done'))")
+    assert done() == [True, False, True, True, True, False, False]
+    assert page.get_attribute("#progress", "aria-valuenow") == "4"
+    page.reload()
+    started(page)
+    assert done() == [True, False, True, True, True, False, False]
+    page.goto(base_url + "?course=geneva&via=replay&planpace=1&reset=1")
+    started(page)
+    assert done() == [False] * 7
+    ctx.close()
+
+
+def test_course_parameter_and_the_old_key(base_url, browser):
+    """?course=full and ?course=geneva-full both give the two sessions; the course of the old key (ws:course='geneva',
+    which used to mean the two-session path) is ignored: no parameter gives full, not the one-session course."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    for q in ("?course=full", "?course=geneva-full", "?course=nonsense"):
+        page.goto(base_url + q + "&via=replay&planpace=1")
+        started(page)
+        assert page.locator("#sessionSwitch button").count() == 2 and not page.is_visible("#progress")
+    page.goto(base_url + "?course=venice&via=replay&planpace=1")
+    started(page)
+    page.evaluate("localStorage.setItem('ws:course', 'geneva')")
+    page.goto(base_url + "?via=replay&planpace=1")           # the new key says venice, the old one is not read
+    started(page)
+    assert page.locator("#sessionSwitch button").count() == 3
+    page.evaluate("localStorage.removeItem('ws:course2')")
+    page.goto(base_url + "?via=replay&planpace=1")           # only the old key: the two-session path
+    started(page)
+    assert page.locator("#sessionSwitch button").count() == 2 and page.evaluate("localStorage.getItem('ws:course2')") == "full"
+    ctx.close()

@@ -59,7 +59,7 @@ Run on paper again after the changes of 5 to 11 November: S8 on the PDF and on C
 
 ## Note, 6 November: Session 8 is back on the PDF, on Claude
 
-Session 8's extraction runs on the PDF of GC 27 again, with the two-tab layout of the HTML version, and the studio switches to Claude when a participant picks it (`docs/session-plan.md`, 11:23–11:36). On the PDF, Claude built a working app in 6 of 6 builds (3.1–3.8 minutes), GLM in 5 of 9 (7–11 minutes with the repair), Mistral in 3 of 11. The passes below describe the HTML exercise; for the PDF, a participant who switches back to Mistral or GLM is the new risk, and the gallery's Claude app is the back-up.
+Session 8's extraction runs on the PDF of GC 27 again, with the two-tab layout of the HTML version, and the studio switches to Claude when a participant picks it (`docs/archive/session-plan-two-sessions.md`, 11:23–11:36). On the PDF, Claude built a working app in 6 of 6 builds (3.1–3.8 minutes), GLM in 5 of 9 (7–11 minutes with the repair), Mistral in 3 of 11. The passes below describe the HTML exercise; for the PDF, a participant who switches back to Mistral or GLM is the new risk, and the gallery's Claude app is the back-up.
 
 ## Fourth pass, 4 November, evening: edit mode
 
