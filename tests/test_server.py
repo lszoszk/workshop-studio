@@ -563,9 +563,12 @@ def test_gallery_accepts_un_links_and_inline_scripts(env):
     assert r.status_code == 200 and r.json()["ok"] is True
     gid = r.json()["id"]
     items = env.client.get("/studio-api/gallery").json()
-    assert items == [{"id": gid, "seat": "ABCDEF", "country": "Switzerland", "title": "Kenya dashboard",
+    assert items == [{"id": gid, "who": items[0]["who"], "country": "Switzerland", "title": "Kenya dashboard",
                       "model": "mistral", "prompt_id": "s7-1-dashboard", "files": [], "name": None, "course": None,
                       "created": items[0]["created"]}]
+    assert "ABCDEF" not in env.client.get("/studio-api/gallery").text      # the seat code spends a budget: never public
+    again = post_page(env, page).json()["id"]                               # the same seat, the same "who"
+    assert len({i["who"] for i in env.client.get("/studio-api/gallery").json() if i["id"] in (gid, again)}) == 1
     p = env.client.get(f"/studio-api/gallery/{gid}")
     assert p.text == page and p.headers["content-type"].startswith("text/html")
     assert env.client.get("/studio-api/gallery/../../etc").status_code == 404

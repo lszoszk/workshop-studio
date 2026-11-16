@@ -1,885 +1,917 @@
 {
-  "note": "The workshop requests. Participants see `prompt` (with {country} filled in). `dataset` is the file the request needs from the file shelf; `builds_on` the request it continues (\"any\": any app). tools/bakeoff.py runs every model on every request it can score (not those with \"bakeoff\": false), chaining `builds_on`, and scores the result in headless Chromium against `checks`. `blurb` is the one line under the suggestion; `lesson` is what the facilitator stops the room for. `planning` (the four workshop apps) is the recorded planning session the request opens in plan mode (site/data/planning/<id>.json, tools/planning/FORMAT.md); `prompt` is sent as written when plan mode is off or the package is missing.",
-  "prompts": [
-    {
-      "id": "s7-1-dashboard",
-      "session": "S7",
-      "minute": 15,
-      "dataset": "uhri",
-      "builds_on": null,
-      "title": "Your country's recommendations dashboard",
-      "blurb": "Counts, filters, a chart of themes and a table of every record",
-      "prompt": "Build a dashboard of the UN human rights recommendations and observations addressed to {country}, one question per tab. A header with the country, the number of records and the years. A narrow filter rail on the left: keyword, mechanism, treaty body or mandate, year range and SDG. Tab 01 Overview: how many records each mechanism made, a bar chart of the 10 most frequent themes for the current filter, and, closed until opened, the app's own checks: whether the counts add up. Tab 02 Records: a table of the matching records with date, body, symbol (linked to the UN document) and the first line of the text; clicking a row opens the full text in place. Tab 03 Method & export: how each number is computed, and a download of the current filter as CSV.",
-      "planning": "planning/s7-1-dashboard.json",
-      "lesson": "The model wrote the code once. Every number on the screen is computed by that code, the same way every time, from data the model never saw.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "chart": true,
-        "table_min_rows": 5,
-        "text_contains": [
-          "{country}"
-        ],
-        "controls_min": 4,
-        "links_to": "docs.un.org"
-      },
-      "venice": "V3"
-    },
-    {
-      "id": "s7-3-quote-check",
-      "session": "S7",
-      "minute": 50,
-      "dataset": "uhri",
-      "builds_on": "s7-1-dashboard",
-      "title": "Check a quotation",
-      "blurb": "Paste your own text and check every quotation of a UN recommendation against the data",
-      "prompt": "Add a tab \"Check a quotation\". I paste a passage I wrote (a briefing, a submission, an email) that quotes UN recommendations and observations to {country}. For every quotation in quotation marks (\"…\", “…”, „…”, «…») of five words or more that has a citation within 60 characters of it (a UN document symbol, with or without a paragraph number), check it against the records in the file, with code only: compare words, ignoring case and punctuation; an ellipsis or a bracketed change [ ] splits a quotation into parts, and every part of three words or more must match. Give each quotation one verdict: ✓ correct (the words are in a record of the cited document, at the cited paragraph when one is given; the paragraph number is the number at the start of the record's text, when it has one); ≈ the words are right but the citation is not (show the correct symbol and paragraph, linked to the document); ✗ not in the data (the words are in no record). Never use a model: say on screen that the same text always gets the same verdicts. To try it at once, offer a sample passage built from the file when the tab opens: one correct quotation, one with a wrong paragraph or document, and one that is invented.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "button_matches": "(?i)check",
-        "text_matches": "(?i)not in the data|not found"
-      },
-      "lesson": "A checker that compares words is deterministic: the same text, the same verdict, every time. It can say that a quotation is not in the data; it cannot say whether the sentence around it is a fair reading of the recommendation. That stays with you."
-    },
-    {
-      "id": "s7-1b-ask-data",
-      "session": "S7",
-      "minute": 40,
-      "dataset": "uhri",
-      "builds_on": "s7-1-dashboard",
-      "title": "Ask your data a question",
-      "blurb": "A question the dashboard does not answer: the model writes a query, your browser runs it on every record",
-      "prompt": "Which mechanisms made the recommendations to {country} that mention torture or ill-treatment, and in which years? Answer from the data, not from memory.",
-      "lesson": "The model wrote the query; your browser ran it on every record, and the numbers never left this laptop: the model never saw them. Open the code under the table: it shows what \"mention torture\" meant, and a different choice of words gives different numbers.",
-      "bakeoff": false,
-      "venice": "V3"
-    },
-    {
-      "id": "s7-3-check-ten",
-      "session": "S7",
-      "minute": 50,
-      "dataset": "uhri",
-      "builds_on": "s7-1-dashboard",
-      "title": "Check and correct the labels",
-      "blurb": "Judge the UN's labels on ten records at random, and correct the wrong ones, visibly",
-      "prompt": "In the check of ten records drawn at random (add one on the Check tab if the app has none), let me correct a label I mark wrong or arguable: remove it, or add one from the labels that occur in the data. Keep the UN's own labels; never overwrite them silently. My corrections change every count, chart and filter in the app at once, and show wherever the record shows: a small \"corrected by you\" tag, my label in its own style, and the UN's label struck through beside it. Under the title, one line: \"n labels corrected by you; the UN's own labels are kept\", and a switch \"UN labels / with my corrections\". Let me undo any correction, download my corrections as CSV (symbol, paragraph, the UN's labels, my labels, my mark), and load such a CSV again to restore them.",
-      "lesson": "Validation turns a chart into evidence, and a correction is a claim of your own. Keep the original, mark every change, and let anyone switch back: that is what an audit trail looks like.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "text_matches": "(?i)corrected by you|my corrections",
-        "download": true
-      },
-      "hidden": true,
-      "bakeoff": false
-    },
-    {
-      "id": "s7-2-who-recommends",
-      "session": "S7",
-      "minute": 55,
-      "dataset": "uhri",
-      "builds_on": "s7-1-dashboard",
-      "title": "Who recommends what",
-      "blurb": "Which States make recommendations, and on which goals",
-      "prompt": "Add a tab \"Who recommends what\". For UPR recommendations only, take the recommending State from the parentheses at the end of each recommendation. Show the 15 States that made the most recommendations to {country}, as a bar chart, and a small table of the SDGs each of them raises most. Clicking a State lists its recommendations with symbols. Say how many UPR recommendations had no State in parentheses.",
-      "lesson": "Finding the State is a fixed rule (a text pattern), not a guess. It either matches or it does not, and the app tells you how many did not.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "chart": true,
-        "table_min_rows": 5,
-        "source_matches": "\\(|match|RegExp|/\\\\\\(",
-        "text_matches": "(?i)no (state|recommending)|without|unmatched|not identified"
-      },
-      "level": "advanced"
-    },
-    {
-      "id": "s7-4-extract",
-      "session": "S8",
-      "minute": 10,
-      "dataset": "pdf_text",
-      "builds_on": null,
-      "title": "Paragraphs out of a PDF",
-      "blurb": "Turn a General Comment's PDF text into numbered paragraphs you can check, cite and reuse",
-      "prompt": "Here is a UN document as a PDF converter extracted it, page by page. Build a tool that turns it into its numbered paragraphs (1, 2, 3 …), each with the section heading it sits under, removes the page headers and footers, and checks itself against the reference the file carries. Do not separate the footnotes in this version: flag every paragraph where footnote text may sit. On the left, a card for the document with the paragraphs found next to the number the document really has, and the paragraphs flagged. On the right, two tabs. Tab 01 Result: the counts and how they are computed, a download of the paragraphs as JSON and as Markdown, and, closed until opened, every check the tool ran on itself and the flagged paragraphs. Tab 02 Paragraphs: a table with each paragraph's number, section, page and first line; clicking a row shows the full paragraph and a citation to copy.",
-      "planning": "planning/s7-4-extract.json",
-      "lesson": "The format decides half the work. A PDF keeps everything as text without structure: the paragraphs come back by rule, the footnotes stay mixed in at the foot of each page, and the tool says which paragraphs to check. HTML gives the paragraphs almost for free and loses the footnotes; a Word file keeps the footnotes as structure. A dataset you can trust is made from more than one of them, and checked.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "table_min_rows": 30,
-        "text_contains": [
-          "90",
-          "141"
-        ],
-        "download": true,
-        "text_matches": "(?i)paragraphs? flagged|flagged paragraphs?"
-      },
-      "model": "claude",
-      "model_note": "on this PDF, Mistral and GLM broke more often in our tests (5 November), and Claude built a working app every time"
-    },
-    {
-      "id": "s7-4b-run-ten",
-      "session": "S8",
-      "minute": 22,
-      "dataset": "pdf_ten",
-      "builds_on": "s7-4-extract",
-      "title": "Run it on ten General Comments",
-      "blurb": "The same rules, unchanged, on ten documents of six committees: where do they hold?",
-      "prompt": "Run this app on the ten General Comments I attached, `WORKSHOP_DATA.pdf_ten` (its first document is the one you already have). Use exactly the same pipeline and checks on every document, with no rule changed. In the left rail, a list of the ten documents instead of the one card: each with its symbol, the paragraphs found next to the number in its reference, and its checks passed; clicking one selects it, and tabs 01 and 02 show the selected document. Add a tab 03 All documents: one row per document, in the order of the data, with symbol (linked to its doc_url), committee, year, paragraphs found and expected, first words matching, paragraphs flagged and checks passed; a cell that fails its check is red, and clicking a row selects the document. On that tab, a download of all ten documents' paragraphs as one JSON file (every record with its symbol) and as one Markdown file, a heading per document.",
-      "lesson": "A pipeline that works on one document is a hypothesis about the next. Run it unchanged on ten, let its own checks show where it breaks, and fix the rule, not the result.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "text_contains": [
-          "CEDAW/C/GC/35",
-          "CRC/C/GC/25"
-        ],
-        "download": true
-      }
-    },
-    {
-      "id": "s7-4c-show-broken",
-      "session": "S8",
-      "minute": 32,
-      "dataset": null,
-      "builds_on": "s7-4b-run-ten",
-      "title": "Show what broke the rules",
-      "blurb": "Find the lines a failing document trips on, then hand them to the model to fix the rule",
-      "prompt": "On tab 03, under the table, show the first document whose checks fail: for each check that failed, the lines the rules tripped on, each with its page. Change no rule. Add a button \"Copy for the model\" that copies, as plain text, this request followed by those lines: \"Here are the lines that broke the rules for <symbol>. Change the rule so that this document passes and every document that passed before still passes, and add the change to a list of rule changes on tab 03, with the documents it fixed.\" After a change, the panel moves on to the next document that fails.",
-      "lesson": "The model cannot see your data, so it should not guess a rule. The app shows the lines; you pass them on with Copy for the model; the model writes a rule you can read, run again on every document and undo. Do it two or three times, and read each change: a rule that reads the document better is a fix; a rule that loosens a check until it passes is not.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "button_matches": "(?i)copy for the model"
-      },
-      "bakeoff": false
-    },
-    {
-      "id": "s7-5-second-document",
-      "session": "S8",
-      "minute": 30,
-      "dataset": "pdf_text_2",
-      "builds_on": "s7-4-extract",
-      "title": "Add a second document",
-      "blurb": "Run the same pipeline on another General Comment and compare the two",
-      "prompt": "Add a second document: the Human Rights Committee's general comment No. 32, attached. Run exactly the same pipeline on it, with no rule changed, and give it its own card in the left rail so I can switch between the two documents; every tab and every check works on the selected document. Under the cards, add a small table comparing the two documents: paragraphs found next to the reference, pages flagged and checks passed.",
-      "lesson": "A pipeline that works on one document is a hypothesis about the next. Run it unchanged on a second one, and let its own checks show where the hypothesis breaks.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "text_contains": [
-          "CCPR/C/GC/32",
-          "E/C.12/GC/27"
-        ]
-      },
-      "hidden": true,
-      "bakeoff": false
-    },
-    {
-      "id": "s7-6-model-on-flagged-pages",
-      "session": "S8",
-      "minute": 40,
-      "dataset": "pdf_text_2",
-      "builds_on": "s7-5-second-document",
-      "title": "A model for the pages that fail",
-      "blurb": "Script first; a model reads only the pages the checks flag, and the code checks the model",
-      "prompt": "Add a button \"Check the flagged pages with the model\". For every flagged page, where footnote text may sit inside a paragraph, it sends that page's numbered lines to the model with `studio.ask`, one page per call, and asks only which lines are paragraph text (with the paragraph number), which are footnotes (with their numbers) and which are headers, footers or blank; the model must never retype text. The code cuts the text from those line numbers, takes the footnotes out of the paragraphs and runs the checks again, now also counting the footnotes against the reference. Accept the model's answer for a page only if every line is used exactly once, the footnote numbers continue from the page before, and every footnote mark in the page's paragraphs has its footnote. Also send one page that was not flagged, if there is one, as a control, and distrust the model if it disagrees with the script there. Before it runs, say how many pages will leave the browser; show progress and a Stop button. Then show, for each document, what the script found, what the model changed, and the pages that still need a person.",
-      "lesson": "Rules are cheap, fast and the same every time, but they break on a new layout. A model adapts, but it costs, varies and can be wrong in silence. Let the rules run, let their checks pick the pages for the model, and check the model with the same checks.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "calls_studio_ask": true,
-        "ask_steps": [
-          "Check the flagged pages"
-        ],
-        "text_matches": "(?i)leave the browser|left the browser|sent to the model"
-      },
-      "hidden": true,
-      "bakeoff": false
-    },
-    {
-      "id": "s8-1-verbatim",
-      "session": "S8",
-      "minute": 55,
-      "dataset": "gc",
-      "builds_on": null,
-      "title": "Verbatim finder for General Comments",
-      "blurb": "Find exact paragraphs and copy a correct citation",
-      "prompt": "Build a search tool over the treaty bodies' General Comments, one question per tab. A search box that supports AND, OR, NOT and \"exact phrases\", with filters for committee and year beside it. Tab 01 Overview: the number of hits per committee as a small bar chart. Tab 02 Paragraphs: the matching paragraphs with the search words highlighted, the committee and the General Comment's short title, each with a \"Copy citation\" button that copies e.g. \"CCPR/C/GC/37, para. 12\" and an \"Add to draft\" button. Tab 03 Draft: the paragraphs I collected, to copy or download. Tab 04 Check & method: how matching works. The paragraph text must be shown exactly as it is in the data, never summarised.",
-      "planning": "planning/s8-1-verbatim.json",
-      "lesson": "Retrieve, don't generate. The tool can only return paragraphs that exist, with their real symbol and number.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "chart": true,
-        "search_box": true,
-        "button_matches": "(?i)copy citation|cite",
-        "source_matches": "(?i)\\bnot\\b|\\bor\\b",
-        "text_contains_after_search": {
-          "query": "\"best interests\" AND child",
-          "expect": "best interests"
-        }
-      },
-      "venice": "V1"
-    },
-    {
-      "id": "g1-verbatim",
-      "geneva": "G1",
-      "dataset": "gc",
-      "builds_on": null,
-      "title": "Verbatim finder for General Comments",
-      "blurb": "Find exact paragraphs on your topic and copy a correct citation",
-      "prompt": "GOAL AND WHY\nWhen I write a submission on [my topic], I need the exact words of UN treaty bodies' General Comments, with a correct citation. A chatbot's paraphrase is not enough: I have to quote.\n\nBEFORE YOU BUILD\nLook at the attached file and tell me what it contains and what it lacks. Then write a plan. Do not build anything until I approve the plan.\n\nLIMITS\nUse only the attached file. Never shorten or rewrite a paragraph. Nothing leaves my browser.\n\nDONE LOOKS LIKE\nI type a phrase and see every paragraph that contains it, word for word, each with its document symbol and paragraph number. I can copy a ready citation.\n\nCHECK BEFORE YOU FINISH\nShow how many paragraphs were searched. Say what the tool cannot do.",
-      "planning": "planning/g1-verbatim.json",
-      "lesson": "Retrieve, don't generate. The tool can only return paragraphs that exist, with their real symbol and number.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "search_box": true,
-        "button_matches": "(?i)copy citation|cite",
-        "text_contains_after_search": {
-          "query": "\"best interests\" child",
-          "expect": "best interests"
-        }
-      }
-    },
-    {
-      "id": "s8-1b-gc-quote-check",
-      "session": "S8",
-      "venice": "V1",
-      "minute": null,
-      "dataset": "gc",
-      "builds_on": "s8-1-verbatim",
-      "title": "Check a quotation",
-      "blurb": "Paste your own text and check every quotation of a General Comment against the paragraphs",
-      "prompt": "Add a tab \"Check a quotation\". I paste a passage I wrote (an essay, a submission, a briefing) that quotes General Comments of the treaty bodies. For every quotation in quotation marks (\"…\", “…”, „…”, «…») of five words or more that has a citation within 80 characters of it (a document symbol such as CCPR/C/GC/37, or a short form such as \"General Comment No. 37\" with the committee named nearby, with or without a paragraph number; recognise a symbol by looking for the symbols of the file itself in that text, longest first, since they come in many forms such as A/53/44, E/C.12/GC/27 or CCPR/C/GC/37), check it against the paragraphs in the file, with code only: compare words, ignoring case and punctuation; an ellipsis or a bracketed change [ ] splits a quotation into parts, and every part of three words or more must match. Give each quotation one verdict: ✓ correct (the words are in a paragraph of the cited General Comment, at the cited paragraph when one is given); ≈ the words are right but the citation is not (show the correct General Comment and paragraph, linked to the document); ✗ not in the data (the words are in no paragraph). Never use a model: say on screen that the same text always gets the same verdicts. To try it at once, offer a sample passage built from the file when the tab opens: one correct quotation, one with a wrong paragraph, and one that is invented.",
-      "lesson": "Find it, cite it, check it. The checker compares words, so the same text gets the same verdict every time. It can tell you that a quotation is not in the General Comments; whether your argument reads them fairly stays with you.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "button_matches": "(?i)check",
-        "text_matches": "(?i)not in the data|not found"
-      },
-      "bakeoff": false
-    },
-    {
-      "id": "s8-5-wiki",
-      "session": "S8",
-      "minute": 70,
-      "dataset": "wiki",
-      "builds_on": null,
-      "title": "A research wiki on neurotechnology and justice",
-      "blurb": "A workspace to read the wiki and check every quotation against its source",
-      "prompt": "Build a workspace for reading and checking our research wiki on neurotechnology in the administration of justice, one question per tab. Tab 01 Pages: the pages (sources, concepts, entities, questions) listed by type with a filter, and the index before a page is chosen; a page shows its type, register and status, its body rendered (headings, lists, [[links]] to other pages, contested blocks as cards with the verdict first), and under it Links out, Linked from and Sources. Show every pin where it stands in the sentence: the quote in quotation marks, then a chip with its label that opens the PDF at its page with `studio.openSource(id, page, quote)` (the studio marks the quote on the page), and a mark saying whether the code found the quote in that passage of the library (a quote with \"…\" is several fragments, each found in order). Tab 02 Check: one big number of pins verified by the code, and a lint table: dangling links, orphan pages, pins that fail, sources that differ from the documents pinned, contested cards missing from the tensions register, each with the pages concerned. Tab 03 Record: the log, newest first, the tensions register, and a download of the wiki. No model is called anywhere in this app: every number is counted by its code.",
-      "lesson": "A wiki keeps what an institution knows. Models wrote the pages; the code checks every quotation against its source, and one click opens the page it comes from. A Secretary-General's report, a submission and an article carry different weight, and the wiki shows which is which.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "source_matches": "openSource",
-        "controls_min": 1,
-        "text_matches": "(?i)verified"
-      }
-    },
-    {
-      "id": "s8-6-wiki-map",
-      "session": "S8",
-      "minute": 75,
-      "dataset": "wiki",
-      "builds_on": "s8-5-wiki",
-      "title": "A map of the wiki",
-      "blurb": "See the pages as a graph of their links: hubs, clusters and orphans",
-      "prompt": "Add a tab \"MAP\" that draws the wiki as a graph: one node per page, coloured by its type (source, concept, entity, question), and one line for each [[link]] between two pages. Size each node by the number of pages that link to it. Draw it in plain SVG with a fixed layout computed by the code (no random start), so the map looks the same every time. Hovering a node shows its title and how many links go in and out; clicking it highlights its neighbours and offers \"Open this page\", which shows the page on the pages tab. Under the map, one line: how many pages and links, and the pages no other page links to (orphans), each clickable. Keep everything else as it is.",
-      "lesson": "A map shows the shape of what the wiki knows: the hubs, the clusters and the orphans no page links to. The code draws it from the links the pages already have; no model guesses them.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "button_matches": "(?i)map",
-        "source_matches": "createElementNS|<svg",
-        "text_matches": "(?i)orphan|no (other )?page links"
-      },
-      "level": "advanced"
-    },
-    {
-      "id": "s8-2-ai-inside",
-      "session": "S8",
-      "minute": 75,
-      "dataset": "uhri",
-      "builds_on": "s7-1-dashboard",
-      "title": "A model inside the tool",
-      "blurb": "Let a model tag 50 records, then compare with the UN",
-      "prompt": "Add a button \"Suggest SDGs with AI\" that works on the first 50 records of the current filter. Send them to the model in batches of 25 with `await studio.ask(prompt)`, asking it to return JSON: for each record id, the SDG numbers it would assign. Show a table: record, the UN's SDGs, the AI's SDGs, and whether they agree. At the top: the agreement rate, and a clear notice that these 50 texts were sent to an external model, which one, and that running it again can give different answers. Add a \"Run again\" button that keeps both runs side by side.",
-      "lesson": "Here the model is part of the tool, so the result is probabilistic: run it twice and compare. And the 50 texts left the laptop, unlike everything else in the app.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "calls_studio_ask": true,
-        "batches_max": 25,
-        "text_matches": "(?i)sent to|external|left (the|your)",
-        "button_matches": "(?i)run again"
-      },
-      "level": "advanced"
-    },
-    {
-      "id": "s8-3-voting",
-      "session": "S7",
-      "minute": 0,
-      "dataset": "hrc",
-      "builds_on": null,
-      "title": "How two States vote at the Human Rights Council",
-      "blurb": "Compare two States' votes, year by year",
-      "prompt": "Build a tool to compare how two States vote at the Human Rights Council. Pick two States (only those that were Council members for at least one vote). Show on how many recorded votes both took part, how often they voted the same way, and a timeline by year. List the votes where they differed, with the resolution title, date, both votes and a link. Let me switch between resolutions, amendments, or both. Where the official totals differ from the roll call, show a small warning on that row.",
-      "lesson": "Same data, a different question. The interesting part is the rule you choose: what counts as agreement when one State abstains?",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "chart": true,
-        "controls_min": 2,
-        "table_min_rows": 1
-      },
-      "venice": "V2"
-    },
-    {
-      "id": "s8-3c-alignment",
-      "session": "venice",
-      "venice": "V2",
-      "minute": null,
-      "dataset": "hrc",
-      "builds_on": "s8-3-voting",
-      "title": "Where every State stands",
-      "blurb": "Place every State by how often it votes with each of your two States: the alignment map",
-      "prompt": "Add a tab \"Map\". Place every State on a square chart by how often it votes the same way as the two States I picked: across, its agreement with the first State; up, its agreement with the second (from 0 to 100%, counted on the votes where both took part, with an abstention as a choice of its own). Colour each dot by the State's UN regional group, with a legend, and draw the diagonal where agreement with both is the same. Hovering a dot shows the State, both shares and the number of shared votes; leave out States with fewer than ten shared votes and say how many. Use the same choice of resolutions, amendments or both as the rest of the app. Under the chart, one line on what this map leaves out: texts adopted without a vote.",
-      "lesson": "The map places States by a rule you can say in one sentence. Two dots close together vote alike on these texts; that is not the same as being allies, and texts adopted without a vote are not on the map at all.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "chart": true
-      },
-      "bakeoff": false
-    },
-    {
-      "id": "s8-3b-blocs",
-      "session": "S7",
-      "minute": null,
-      "dataset": "hrc",
-      "builds_on": "s8-3-voting",
-      "title": "Who votes with this State",
-      "blurb": "Rank every State by how often it votes the same way: the blocs, and the rule behind them",
-      "prompt": "Add a tab \"Who votes with\". For the first State I picked, compare its votes with every other State that voted on the same recorded votes: the share of votes where both voted the same way, out of the votes where both took part, counting an abstention as a choice of its own. Show the twenty closest and the twenty furthest States as ranked bars, each with the share and the number of shared votes, and leave out States that shared fewer than ten votes (say so under the chart). Let me switch between resolutions, amendments or both, as in the rest of the app. Under the chart, one line on how this is computed and one on what it leaves out (texts adopted without a vote; what agreement means when one State abstains).",
-      "lesson": "A bloc is a choice of rule: what counts as agreement, which votes count, how few shared votes are too few. The code applies the rule the same way to every State; what the bloc means stays with you.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "chart": true
-      },
-      "bakeoff": false
-    },
-    {
-      "id": "s8-4-briefing-check",
-      "session": "S8",
-      "minute": 75,
-      "dataset": "hrc",
-      "builds_on": null,
-      "title": "Check an AI briefing",
-      "blurb": "Ask a model about a resolution, then check its claims against the vote",
-      "prompt": "Build a briefing checker for Human Rights Council resolutions. Let me pick a resolution from the recorded votes; start with A/HRC/RES/51/27. A button \"Ask AI for a briefing\" asks the model, with `await studio.ask(prompt)`, for a 250-word briefing on that resolution from what it already knows: send only the symbol and the title, none of our data. Put the answer in a text box, where I can also paste a text of my own. A \"Check\" button then finds every checkable claim in the text: the numbers in favour, against and abstaining, the date, the session, and each State said to have voted a certain way. Show a table with the claim as written, what the recorded vote says, and a verdict: matches, wrong, or cannot be checked in this data. Explain that \"cannot be checked\" is not the same as \"wrong\".",
-      "lesson": "A fluent briefing can get the tone right and the numbers wrong, and a checker can be wrong too. Test it first on a text with errors you planted yourself, and keep a third verdict: \"I could not check this here\" is not \"wrong\".",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "calls_studio_ask": true,
-        "button_matches": "(?i)check",
-        "text_contains": [
-          "51/27"
-        ],
-        "text_matches": "(?i)cannot be checked|can.t be checked|not (be )?check|not in (this|the) data"
-      },
-      "level": "advanced"
-    },
-    {
-      "id": "any-improve",
-      "session": "any",
-      "minute": null,
-      "dataset": null,
-      "builds_on": "any",
-      "bakeoff": false,
-      "title": "Suggest improvements",
-      "blurb": "Five ways to review your app: pick one, get five improvements, build the one you choose",
-      "prompt": "Review my app and list five improvements I can choose from.",
-      "lesson": null
-    },
-    {
-      "id": "improve-first-user",
-      "session": "any",
-      "minute": null,
-      "dataset": null,
-      "builds_on": "any",
-      "bakeoff": false,
-      "lens": true,
-      "title": "As a first-time user",
-      "blurb": "Usability: Nielsen's ten heuristics, with a severity for each problem",
-      "prompt": "Review my app as a usability evaluator who has never seen it, using Jakob Nielsen's ten usability heuristics (visibility of what is going on, match with the user's words, user control, consistency, error prevention, recognition rather than recall, flexibility, minimalist design, help with errors, help and documentation). Picture a diplomat or a lawyer at a national human rights institution opening it for the first time. List the five most severe problems, numbered and ordered by severity, each in this form: the heuristic it breaks; where in the app it happens; its severity from 0 (not a problem) to 4 (stops the work), with half a sentence on why; and one fix small enough to make as one change. Do not write code yet: I will tell you which fix to make.",
-      "lesson": null
-    },
-    {
-      "id": "improve-trust",
-      "session": "any",
-      "minute": null,
-      "dataset": null,
-      "builds_on": "any",
-      "bakeoff": false,
-      "lens": true,
-      "title": "Can I trust the numbers?",
-      "blurb": "A data-quality audit: accuracy, completeness, consistency, timeliness",
-      "prompt": "Review my app as a data-quality auditor before a report goes out. Use four dimensions of data quality: accuracy (is each number computed correctly from the records), completeness (what the data or the filters leave out, and whether the app says so), consistency (do the same counts agree across tabs, charts and tables) and timeliness (does the app say how old the data is). List five improvements, numbered, each naming its dimension, saying what a reader could get wrong today and proposing one change that makes it visible or checkable in the app itself: a check, a count shown next to a total, a warning, a note on what is left out. Order them by how much they would mislead a reader. Do not write code yet: I will tell you which one to make.",
-      "lesson": null
-    },
-    {
-      "id": "improve-premortem",
-      "session": "any",
-      "minute": null,
-      "dataset": null,
-      "builds_on": "any",
-      "bakeoff": false,
-      "lens": true,
-      "title": "Pre-mortem",
-      "blurb": "Imagine it already went wrong: Gary Klein's pre-mortem",
-      "prompt": "Run a pre-mortem on my app, the method of the psychologist Gary Klein. Imagine it is six months from now: someone in a ministry or a national human rights institution relied on this app, and it misled them or let them down in front of others. Write the five most likely stories of how that happened, one or two sentences each, as concrete as you can (which number, which screen, which assumption). Then, for each story, one change small enough to make as one change that would have prevented it or made the problem visible in time. Number them and put the most likely first. Do not write code yet: I will tell you which change to make.",
-      "lesson": null
-    },
-    {
-      "id": "improve-interview",
-      "session": "any",
-      "minute": null,
-      "dataset": null,
-      "builds_on": "any",
-      "bakeoff": false,
-      "lens": true,
-      "title": "Ask me first",
-      "blurb": "Jobs to be done: the model interviews you, then suggests",
-      "prompt": "Before you suggest anything, interview me about how I would use this app at work, in the spirit of \"jobs to be done\": what task brings me to it, what I do with what it shows, and what I do today instead. Ask me three short questions, numbered, and stop. When I have answered, list five improvements that serve that task, numbered and ordered by how much time they would save me, each small enough to make as one change, with one sentence on which of my answers it comes from. Do not write code until I choose.",
-      "lesson": null
-    },
-    {
-      "id": "improve-access",
-      "session": "any",
-      "minute": null,
-      "dataset": null,
-      "builds_on": "any",
-      "bakeoff": false,
-      "lens": true,
-      "title": "For every reader",
-      "blurb": "Accessibility: a quick check against WCAG 2.2, level AA",
-      "prompt": "Review my app for accessibility, as a quick check against the Web Content Accessibility Guidelines (WCAG 2.2, level AA), for colleagues who use a keyboard only, a screen reader, a magnifier or a projector at the back of a room: contrast of text and charts, keyboard access and a visible focus, labels on every control, headings and table structure, charts that also say their message in text, and nothing conveyed by colour alone. List the five problems that would stop someone most, numbered, each with the WCAG success criterion it touches, where it is in the app, and one fix small enough to make as one change. Do not write code yet: I will tell you which fix to make.",
-      "lesson": null
-    },
-    {
-      "id": "edit-1-column",
-      "session": "S7",
-      "minute": null,
-      "dataset": "uhri",
-      "builds_on": "s7-1-dashboard",
-      "title": "Add a column",
-      "blurb": "A change of the kind participants ask for, to measure edit mode",
-      "prompt": "In the records table, add a column with the year of each record, and let me sort the table by that column.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "chart": true,
-        "table_min_rows": 5,
-        "text_contains": [
-          "{country}"
-        ],
-        "controls_min": 4,
-        "links_to": "docs.un.org",
-        "text_matches": "(?i)\\byear\\b"
-      },
-      "hidden": true
-    },
-    {
-      "id": "edit-2-chart",
-      "session": "S7",
-      "minute": null,
-      "dataset": "uhri",
-      "builds_on": "s7-1-dashboard",
-      "title": "Add a chart",
-      "blurb": "A change of the kind participants ask for, to measure edit mode",
-      "prompt": "On the overview, add a bar chart of the number of recommendations and observations per year.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "chart": true,
-        "table_min_rows": 5,
-        "text_contains": [
-          "{country}"
-        ],
-        "controls_min": 4,
-        "links_to": "docs.un.org",
-        "text_matches": "(?i)(per|by) year"
-      },
-      "hidden": true
-    },
-    {
-      "id": "edit-3-filter",
-      "session": "S7",
-      "minute": null,
-      "dataset": "uhri",
-      "builds_on": "s7-1-dashboard",
-      "title": "Add a filter",
-      "blurb": "A change of the kind participants ask for, to measure edit mode",
-      "prompt": "Add a filter by the type of document (for example concluding observations, UPR recommendations) to the filters on the left.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "chart": true,
-        "table_min_rows": 5,
-        "text_contains": [
-          "{country}"
-        ],
-        "controls_min": 4,
-        "links_to": "docs.un.org",
-        "text_matches": "(?i)type"
-      },
-      "hidden": true
-    },
-    {
-      "id": "v3-wiki-pdfs",
-      "session": "venice",
-      "venice": "V3",
-      "minute": null,
-      "dataset": "pdfs",
-      "builds_on": null,
-      "title": "From ten PDFs to a wiki",
-      "blurb": "The model reads the PDFs you pick; the code checks every quotation and links the pages",
-      "prompt": "Build a tool that turns the ten PDFs into a small wiki. List the documents with a tick box each, the four shortest ticked to begin with, and a button \"Read with the model\". The button sends the ticked documents to the model one at a time, each with its page numbers marked, and shows the progress. For each document the model names up to six key ideas (for instance \"mental privacy\"), and for each idea one sentence it quotes word for word from the document, with the page. Send the names found so far with each document, so that the model reuses a name for the same idea. The code then checks every quotation against the document's text (ignoring case, punctuation and spacing): a quotation that is not there is marked ✗ and left out of the wiki. The wiki has one page per document and one per idea; an idea's page lists the documents that discuss it, each with its checked quotation and page, and links to the ideas that appear in the same documents. Clicking a page number opens the PDF at that page. Show how many quotations the model gave and how many the code confirmed, and say on screen which parts come from the model and which from the code.",
-      "lesson": "This is the work a wiki needs: a model reads and proposes, the code checks every quotation against the source, and only what passes goes in. Each ✗ is a place where the model put words in a document's mouth.",
-      "live_only": true,
-      "bakeoff": true,
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "button_matches": "(?i)read with the model",
-        "source_matches": "studio\\.ask"
-      }
-    },
-    {
-      "id": "v3-wiki-graph",
-      "session": "venice",
-      "venice": "V3",
-      "minute": null,
-      "dataset": "pdfs",
-      "model": "claude",
-      "model_note": "adding a drawn graph to a large app is a change GLM-5.3 left half done in a test (the tab without the graph)",
-      "builds_on": "v3-wiki-pdfs",
-      "title": "The wiki as a network",
-      "blurb": "Documents and ideas as dots, the checked quotations as lines",
-      "prompt": "Add a tab \"Network\" that draws the wiki as a graph: one dot per document and one per idea, and a line from a document to each idea it discusses (only checked quotations count). Make an idea's dot bigger the more documents discuss it. Lay the graph out the same way every time, with no random start. Hovering a dot shows its name; clicking it opens its wiki page. Under the graph, one line: the ideas that appear in the most documents, and any document that shares no idea with the others. Keep everything else as it is.",
-      "lesson": "The graph shows which ideas hold the documents together. Every line stands on a quotation the code found in the PDF; an idea with one line is one document's idea, not yet the field's.",
-      "live_only": true,
-      "bakeoff": false
-    },
-    {
-      "id": "v3-own-idea",
-      "session": "S8",
-      "venice": "V3",
-      "level": "advanced",
-      "minute": null,
-      "dataset": null,
-      "builds_on": null,
-      "title": "Your own idea",
-      "blurb": "Describe a tool you need: the model asks you three questions first, then builds it",
-      "prompt": "I have an idea for a tool for my own work. Before you build anything, ask me three short questions, numbered, about what I want to find out, which file it should use (from Your files, or one I add) and who will read the result. Stop after the questions. When I have answered, build the tool on the file I attached, and say on screen what it can and cannot answer.\n\nMy idea: ",
-      "lesson": "Asking the questions first is a method of its own: the model learns what you need before it writes anything, and you notice what you had not decided yet.",
-      "live_only": true,
-      "bakeoff": false
-    },
-    {
-      "id": "x-meta-pdfs",
-      "session": "lab",
-      "minute": 0,
-      "dataset": "pdf_meta",
-      "builds_on": null,
-      "hidden": true,
-      "title": "A catalogue of ten PDFs",
-      "blurb": "Read ten bare PDF files and catalogue them: symbol, date, type, number and what each replaces",
-      "prompt": "I have ten UN documents as PDF files, named only doc-01.pdf to doc-10.pdf. Build a tool that reads each file and catalogues it: the document symbol, the date on its cover, the body that issued it, whether it is a general comment or a general recommendation and its number, its subject, the earlier general comments or recommendations it replaces or updates, and its number of pages. Show one row per file in a table I can sort, mark every value the tool is not sure of, and let me open the page a value was read from. Let me download the table as a CSV file.",
-      "lesson": "Cataloguing is the first job with any pile of documents. Every value can be checked against the page it came from.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "table_min_rows": 10,
-        "text_contains": [
-          "CRPD/C/GC/7",
-          "CRC/C/GC/25",
-          "CCPR/C/GC/36",
-          "E/C.12/GC/24",
-          "E/C.12/GC/27",
-          "CCPR/C/GC/34",
-          "CAT/C/GC/4",
-          "CEDAW/C/GC/35",
-          "CCPR/C/GC/32",
-          "E/C.12/GC/25"
-        ],
-        "download": true,
-        "row_facts_dates": {
-          "rows": [
-            "CRPD/C/GC/7",
-            "CRC/C/GC/25",
-            "CCPR/C/GC/36",
-            "E/C.12/GC/24",
-            "E/C.12/GC/27",
-            "CCPR/C/GC/34",
-            "CAT/C/GC/4",
-            "CEDAW/C/GC/35",
-            "CCPR/C/GC/32",
-            "E/C.12/GC/25"
-          ],
-          "facts": [
-            {
-              "row": "CRPD/C/GC/7",
-              "has": [
-                "9\\ November\\ 2018|2018-11-09|0?9/11/2018|0?9\\.11\\.2018|November 0?9,? 2018|0?9 Nov\\.? 2018"
-              ]
-            },
-            {
-              "row": "CRC/C/GC/25",
-              "has": [
-                "2\\ March\\ 2021|2021-03-02|0?2/03/2021|0?2\\.03\\.2021|March 0?2,? 2021|0?2 Mar\\.? 2021"
-              ]
-            },
-            {
-              "row": "CCPR/C/GC/36",
-              "has": [
-                "3\\ September\\ 2019|2019-09-03|0?3/09/2019|0?3\\.09\\.2019|September 0?3,? 2019|0?3 Sep\\.? 2019"
-              ]
-            },
-            {
-              "row": "E/C.12/GC/24",
-              "has": [
-                "10\\ August\\ 2017|2017-08-10|0?10/08/2017|0?10\\.08\\.2017|August 0?10,? 2017|0?10 Aug\\.? 2017"
-              ]
-            },
-            {
-              "row": "E/C.12/GC/27",
-              "has": [
-                "6\\ November\\ 2025|2025-11-06|0?6/11/2025|0?6\\.11\\.2025|November 0?6,? 2025|0?6 Nov\\.? 2025"
-              ]
-            },
-            {
-              "row": "CCPR/C/GC/34",
-              "has": [
-                "12\\ September\\ 2011|2011-09-12|0?12/09/2011|0?12\\.09\\.2011|September 0?12,? 2011|0?12 Sep\\.? 2011"
-              ]
-            },
-            {
-              "row": "CAT/C/GC/4",
-              "has": [
-                "4\\ September\\ 2018|2018-09-04|0?4/09/2018|0?4\\.09\\.2018|September 0?4,? 2018|0?4 Sep\\.? 2018"
-              ]
-            },
-            {
-              "row": "CEDAW/C/GC/35",
-              "has": [
-                "26\\ July\\ 2017|2017-07-26|0?26/07/2017|0?26\\.07\\.2017|July 0?26,? 2017|0?26 Jul\\.? 2017"
-              ]
-            },
-            {
-              "row": "CCPR/C/GC/32",
-              "has": [
-                "23\\ August\\ 2007|2007-08-23|0?23/08/2007|0?23\\.08\\.2007|August 0?23,? 2007|0?23 Aug\\.? 2007"
-              ]
-            },
-            {
-              "row": "E/C.12/GC/25",
-              "has": [
-                "30\\ April\\ 2020|2020-04-30|0?30/04/2020|0?30\\.04\\.2020|April 0?30,? 2020|0?30 Apr\\.? 2020"
-              ]
-            }
-          ]
-        },
-        "row_facts_types": {
-          "rows": [
-            "CRPD/C/GC/7",
-            "CRC/C/GC/25",
-            "CCPR/C/GC/36",
-            "E/C.12/GC/24",
-            "E/C.12/GC/27",
-            "CCPR/C/GC/34",
-            "CAT/C/GC/4",
-            "CEDAW/C/GC/35",
-            "CCPR/C/GC/32",
-            "E/C.12/GC/25"
-          ],
-          "facts": [
-            {
-              "row": "CRPD/C/GC/7",
-              "has": [
-                "comment"
-              ]
-            },
-            {
-              "row": "CRC/C/GC/25",
-              "has": [
-                "comment"
-              ]
-            },
-            {
-              "row": "CCPR/C/GC/36",
-              "has": [
-                "comment"
-              ]
-            },
-            {
-              "row": "E/C.12/GC/24",
-              "has": [
-                "comment"
-              ]
-            },
-            {
-              "row": "E/C.12/GC/27",
-              "has": [
-                "comment"
-              ]
-            },
-            {
-              "row": "CCPR/C/GC/34",
-              "has": [
-                "comment"
-              ]
-            },
-            {
-              "row": "CAT/C/GC/4",
-              "has": [
-                "comment"
-              ]
-            },
-            {
-              "row": "CEDAW/C/GC/35",
-              "has": [
-                "recommendation"
-              ]
-            },
-            {
-              "row": "CCPR/C/GC/32",
-              "has": [
-                "comment"
-              ]
-            },
-            {
-              "row": "E/C.12/GC/25",
-              "has": [
-                "comment"
-              ]
-            }
-          ]
-        },
-        "row_facts_replaces": {
-          "rows": [
-            "CRPD/C/GC/7",
-            "CRC/C/GC/25",
-            "CCPR/C/GC/36",
-            "E/C.12/GC/24",
-            "E/C.12/GC/27",
-            "CCPR/C/GC/34",
-            "CAT/C/GC/4",
-            "CEDAW/C/GC/35",
-            "CCPR/C/GC/32",
-            "E/C.12/GC/25"
-          ],
-          "facts": [
-            {
-              "row": "CCPR/C/GC/36",
-              "has": [
-                "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?14\\b",
-                "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?6\\b"
-              ]
-            },
-            {
-              "row": "CCPR/C/GC/34",
-              "has": [
-                "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?10\\b"
-              ]
-            },
-            {
-              "row": "CAT/C/GC/4",
-              "has": [
-                "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?1\\b"
-              ]
-            },
-            {
-              "row": "CEDAW/C/GC/35",
-              "has": [
-                "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?19\\b"
-              ]
-            },
-            {
-              "row": "CCPR/C/GC/32",
-              "has": [
-                "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?13\\b"
-              ]
-            }
-          ]
-        }
-      }
-    },
-    {
-      "id": "x-versions",
-      "session": "lab",
-      "minute": 0,
-      "dataset": "drafts",
-      "builds_on": null,
-      "hidden": true,
-      "title": "How an article changed",
-      "blurb": "Every draft of an ICCPR article, 1947–1966, with what changed at each stage and the votes behind it",
-      "prompt": "Build a tool that shows how an article of the Covenant changed while it was drafted. Let me pick the article, and open on the first one in the file. Show every stage in date order, from the first draft to the text adopted in 1966, each with its document symbol and date, and with what changed from the stage before: added words marked as added (<ins>) and removed words as removed (<del>). The drafts come from OCR: ignore differences of punctuation, of capital letters and of words broken at a line end (restric- tions). For each stage, list the votes taken since the stage before, by date, with what was voted on, the result and who proposed it. Show which stages changed the text most.",
-      "lesson": "Comparing versions is what lawyers do with every draft. OCR noise is the trap: a careful tool tells a real change from a scanning error.",
-      "checks": {
-        "no_console_errors": true,
-        "no_network": true,
-        "uses_workshop_data": true,
-        "controls_min": 1,
-        "text_contains": [
-          "E/CN.4/669",
-          "A/RES/2200",
-          "E/CN.4/L.201"
-        ],
-        "diff_added": [
-          "democratic society",
-          "safety",
-          "ordre public"
-        ],
-        "diff_removed": [
-          "to ensure"
-        ],
-        "diff_not": [
-          "restric"
-        ]
-      }
+ "note": "The workshop requests. Participants see `prompt` (with {country} filled in). `dataset` is the file the request needs from the file shelf; `builds_on` the request it continues (\"any\": any app). tools/bakeoff.py runs every model on every request it can score (not those with \"bakeoff\": false), chaining `builds_on`, and scores the result in headless Chromium against `checks`. `blurb` is the one line under the suggestion; `lesson` is what the facilitator stops the room for. `planning` (the four workshop apps) is the recorded planning session the request opens in plan mode (site/data/planning/<id>.json, tools/planning/FORMAT.md); `prompt` is sent as written when plan mode is off or the package is missing.",
+ "prompts": [
+  {
+   "id": "s7-1-dashboard",
+   "session": "S7",
+   "minute": 15,
+   "dataset": "uhri",
+   "builds_on": null,
+   "title": "Your country's recommendations dashboard",
+   "blurb": "Counts, filters, a chart of themes and a table of every record",
+   "prompt": "Build a dashboard of the UN human rights recommendations and observations addressed to {country}, one question per tab. A header with the country, the number of records and the years. A narrow filter rail on the left: keyword, mechanism, treaty body or mandate, year range and SDG. Tab 01 Overview: how many records each mechanism made, a bar chart of the 10 most frequent themes for the current filter, and, closed until opened, the app's own checks: whether the counts add up. Tab 02 Records: a table of the matching records with date, body, symbol (linked to the UN document) and the first line of the text; clicking a row opens the full text in place. Tab 03 Method & export: how each number is computed, and a download of the current filter as CSV.",
+   "planning": "planning/s7-1-dashboard.json",
+   "lesson": "The model wrote the code once. Every number on the screen is computed by that code, the same way every time, from data the model never saw.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "chart": true,
+    "table_min_rows": 5,
+    "text_contains": [
+     "{country}"
+    ],
+    "controls_min": 4,
+    "links_to": "docs.un.org"
+   },
+   "venice": "V3"
+  },
+  {
+   "id": "s7-3-quote-check",
+   "session": "S7",
+   "minute": 50,
+   "dataset": "uhri",
+   "builds_on": "s7-1-dashboard",
+   "title": "Check a quotation",
+   "blurb": "Paste your own text and check every quotation of a UN recommendation against the data",
+   "prompt": "Add a tab \"Check a quotation\". I paste a passage I wrote (a briefing, a submission, an email) that quotes UN recommendations and observations to {country}. For every quotation in quotation marks (\"…\", “…”, „…”, «…») of five words or more that has a citation within 60 characters of it (a UN document symbol, with or without a paragraph number), check it against the records in the file, with code only: compare words, ignoring case and punctuation; an ellipsis or a bracketed change [ ] splits a quotation into parts, and every part of three words or more must match. Give each quotation one verdict: ✓ correct (the words are in a record of the cited document, at the cited paragraph when one is given; the paragraph number is the number at the start of the record's text, when it has one); ≈ the words are right but the citation is not (show the correct symbol and paragraph, linked to the document); ✗ not in the data (the words are in no record). Never use a model: say on screen that the same text always gets the same verdicts. To try it at once, offer a sample passage built from the file when the tab opens: one correct quotation, one with a wrong paragraph or document, and one that is invented.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "button_matches": "(?i)check",
+    "text_matches": "(?i)not in the data|not found"
+   },
+   "lesson": "A checker that compares words is deterministic: the same text, the same verdict, every time. It can say that a quotation is not in the data; it cannot say whether the sentence around it is a fair reading of the recommendation. That stays with you."
+  },
+  {
+   "id": "s7-1b-ask-data",
+   "session": "S7",
+   "minute": 40,
+   "dataset": "uhri",
+   "builds_on": "s7-1-dashboard",
+   "title": "Ask your data a question",
+   "blurb": "A question the dashboard does not answer: the model writes a query, your browser runs it on every record",
+   "prompt": "Which mechanisms made the recommendations to {country} that mention torture or ill-treatment, and in which years? Answer from the data, not from memory.",
+   "lesson": "The model wrote the query; your browser ran it on every record, and the numbers never left this laptop: the model never saw them. Open the code under the table: it shows what \"mention torture\" meant, and a different choice of words gives different numbers.",
+   "bakeoff": false,
+   "venice": "V3"
+  },
+  {
+   "id": "s7-3-check-ten",
+   "session": "S7",
+   "minute": 50,
+   "dataset": "uhri",
+   "builds_on": "s7-1-dashboard",
+   "title": "Check and correct the labels",
+   "blurb": "Judge the UN's labels on ten records at random, and correct the wrong ones, visibly",
+   "prompt": "In the check of ten records drawn at random (add one on the Check tab if the app has none), let me correct a label I mark wrong or arguable: remove it, or add one from the labels that occur in the data. Keep the UN's own labels; never overwrite them silently. My corrections change every count, chart and filter in the app at once, and show wherever the record shows: a small \"corrected by you\" tag, my label in its own style, and the UN's label struck through beside it. Under the title, one line: \"n labels corrected by you; the UN's own labels are kept\", and a switch \"UN labels / with my corrections\". Let me undo any correction, download my corrections as CSV (symbol, paragraph, the UN's labels, my labels, my mark), and load such a CSV again to restore them.",
+   "lesson": "Validation turns a chart into evidence, and a correction is a claim of your own. Keep the original, mark every change, and let anyone switch back: that is what an audit trail looks like.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "text_matches": "(?i)corrected by you|my corrections",
+    "download": true
+   },
+   "hidden": true,
+   "bakeoff": false
+  },
+  {
+   "id": "s7-2-who-recommends",
+   "session": "S7",
+   "minute": 55,
+   "dataset": "uhri",
+   "builds_on": "s7-1-dashboard",
+   "title": "Who recommends what",
+   "blurb": "Which States make recommendations, and on which goals",
+   "prompt": "Add a tab \"Who recommends what\". For UPR recommendations only, take the recommending State from the parentheses at the end of each recommendation. Show the 15 States that made the most recommendations to {country}, as a bar chart, and a small table of the SDGs each of them raises most. Clicking a State lists its recommendations with symbols. Say how many UPR recommendations had no State in parentheses.",
+   "lesson": "Finding the State is a fixed rule (a text pattern), not a guess. It either matches or it does not, and the app tells you how many did not.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "chart": true,
+    "table_min_rows": 5,
+    "source_matches": "\\(|match|RegExp|/\\\\\\(",
+    "text_matches": "(?i)no (state|recommending)|without|unmatched|not identified"
+   },
+   "level": "advanced"
+  },
+  {
+   "id": "s7-4-extract",
+   "session": "S8",
+   "minute": 10,
+   "dataset": "pdf_text",
+   "builds_on": null,
+   "title": "Paragraphs out of a PDF",
+   "blurb": "Turn a General Comment's PDF text into numbered paragraphs you can check, cite and reuse",
+   "prompt": "Here is a UN document as a PDF converter extracted it, page by page. Build a tool that turns it into its numbered paragraphs (1, 2, 3 …), each with the section heading it sits under, removes the page headers and footers, and checks itself against the reference the file carries. Do not separate the footnotes in this version: flag every paragraph where footnote text may sit. On the left, a card for the document with the paragraphs found next to the number the document really has, and the paragraphs flagged. On the right, two tabs. Tab 01 Result: the counts and how they are computed, a download of the paragraphs as JSON and as Markdown, and, closed until opened, every check the tool ran on itself and the flagged paragraphs. Tab 02 Paragraphs: a table with each paragraph's number, section, page and first line; clicking a row shows the full paragraph and a citation to copy.",
+   "planning": "planning/s7-4-extract.json",
+   "lesson": "The format decides half the work. A PDF keeps everything as text without structure: the paragraphs come back by rule, the footnotes stay mixed in at the foot of each page, and the tool says which paragraphs to check. HTML gives the paragraphs almost for free and loses the footnotes; a Word file keeps the footnotes as structure. A dataset you can trust is made from more than one of them, and checked.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "table_min_rows": 30,
+    "text_contains": [
+     "90",
+     "141"
+    ],
+    "download": true,
+    "text_matches": "(?i)paragraphs? flagged|flagged paragraphs?"
+   },
+   "model": "claude",
+   "model_note": "on this PDF, Mistral and GLM broke more often in our tests (5 November), and Claude built a working app every time"
+  },
+  {
+   "id": "s7-4b-run-ten",
+   "session": "S8",
+   "minute": 22,
+   "dataset": "pdf_ten",
+   "builds_on": "s7-4-extract",
+   "title": "Run it on ten General Comments",
+   "blurb": "The same rules, unchanged, on ten documents of six committees: where do they hold?",
+   "prompt": "Run this app on the ten General Comments I attached, `WORKSHOP_DATA.pdf_ten` (its first document is the one you already have). Use exactly the same pipeline and checks on every document, with no rule changed. In the left rail, a list of the ten documents instead of the one card: each with its symbol, the paragraphs found next to the number in its reference, and its checks passed; clicking one selects it, and tabs 01 and 02 show the selected document. Add a tab 03 All documents: one row per document, in the order of the data, with symbol (linked to its doc_url), committee, year, paragraphs found and expected, first words matching, paragraphs flagged and checks passed; a cell that fails its check is red, and clicking a row selects the document. On that tab, a download of all ten documents' paragraphs as one JSON file (every record with its symbol) and as one Markdown file, a heading per document.",
+   "lesson": "A pipeline that works on one document is a hypothesis about the next. Run it unchanged on ten, let its own checks show where it breaks, and fix the rule, not the result.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "text_contains": [
+     "CEDAW/C/GC/35",
+     "CRC/C/GC/25"
+    ],
+    "download": true
+   }
+  },
+  {
+   "id": "s7-4c-show-broken",
+   "session": "S8",
+   "minute": 32,
+   "dataset": null,
+   "builds_on": "s7-4b-run-ten",
+   "title": "Show what broke the rules",
+   "blurb": "Find the lines a failing document trips on, then hand them to the model to fix the rule",
+   "prompt": "On tab 03, under the table, show the first document whose checks fail: for each check that failed, the lines the rules tripped on, each with its page. Change no rule. Add a button \"Copy for the model\" that copies, as plain text, this request followed by those lines: \"Here are the lines that broke the rules for <symbol>. Change the rule so that this document passes and every document that passed before still passes, and add the change to a list of rule changes on tab 03, with the documents it fixed.\" After a change, the panel moves on to the next document that fails.",
+   "lesson": "The model cannot see your data, so it should not guess a rule. The app shows the lines; you pass them on with Copy for the model; the model writes a rule you can read, run again on every document and undo. Do it two or three times, and read each change: a rule that reads the document better is a fix; a rule that loosens a check until it passes is not.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "button_matches": "(?i)copy for the model"
+   },
+   "bakeoff": false
+  },
+  {
+   "id": "s7-5-second-document",
+   "session": "S8",
+   "minute": 30,
+   "dataset": "pdf_text_2",
+   "builds_on": "s7-4-extract",
+   "title": "Add a second document",
+   "blurb": "Run the same pipeline on another General Comment and compare the two",
+   "prompt": "Add a second document: the Human Rights Committee's general comment No. 32, attached. Run exactly the same pipeline on it, with no rule changed, and give it its own card in the left rail so I can switch between the two documents; every tab and every check works on the selected document. Under the cards, add a small table comparing the two documents: paragraphs found next to the reference, pages flagged and checks passed.",
+   "lesson": "A pipeline that works on one document is a hypothesis about the next. Run it unchanged on a second one, and let its own checks show where the hypothesis breaks.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "text_contains": [
+     "CCPR/C/GC/32",
+     "E/C.12/GC/27"
+    ]
+   },
+   "hidden": true,
+   "bakeoff": false
+  },
+  {
+   "id": "s7-6-model-on-flagged-pages",
+   "session": "S8",
+   "minute": 40,
+   "dataset": "pdf_text_2",
+   "builds_on": "s7-5-second-document",
+   "title": "A model for the pages that fail",
+   "blurb": "Script first; a model reads only the pages the checks flag, and the code checks the model",
+   "prompt": "Add a button \"Check the flagged pages with the model\". For every flagged page, where footnote text may sit inside a paragraph, it sends that page's numbered lines to the model with `studio.ask`, one page per call, and asks only which lines are paragraph text (with the paragraph number), which are footnotes (with their numbers) and which are headers, footers or blank; the model must never retype text. The code cuts the text from those line numbers, takes the footnotes out of the paragraphs and runs the checks again, now also counting the footnotes against the reference. Accept the model's answer for a page only if every line is used exactly once, the footnote numbers continue from the page before, and every footnote mark in the page's paragraphs has its footnote. Also send one page that was not flagged, if there is one, as a control, and distrust the model if it disagrees with the script there. Before it runs, say how many pages will leave the browser; show progress and a Stop button. Then show, for each document, what the script found, what the model changed, and the pages that still need a person.",
+   "lesson": "Rules are cheap, fast and the same every time, but they break on a new layout. A model adapts, but it costs, varies and can be wrong in silence. Let the rules run, let their checks pick the pages for the model, and check the model with the same checks.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "calls_studio_ask": true,
+    "ask_steps": [
+     "Check the flagged pages"
+    ],
+    "text_matches": "(?i)leave the browser|left the browser|sent to the model"
+   },
+   "hidden": true,
+   "bakeoff": false
+  },
+  {
+   "id": "s8-1-verbatim",
+   "session": "S8",
+   "minute": 55,
+   "dataset": "gc",
+   "builds_on": null,
+   "title": "Verbatim finder for General Comments",
+   "blurb": "Find exact paragraphs and copy a correct citation",
+   "prompt": "Build a search tool over the treaty bodies' General Comments, one question per tab. A search box that supports AND, OR, NOT and \"exact phrases\", with filters for committee and year beside it. Tab 01 Overview: the number of hits per committee as a small bar chart. Tab 02 Paragraphs: the matching paragraphs with the search words highlighted, the committee and the General Comment's short title, each with a \"Copy citation\" button that copies e.g. \"CCPR/C/GC/37, para. 12\" and an \"Add to draft\" button. Tab 03 Draft: the paragraphs I collected, to copy or download. Tab 04 Check & method: how matching works. The paragraph text must be shown exactly as it is in the data, never summarised.",
+   "planning": "planning/s8-1-verbatim.json",
+   "lesson": "Retrieve, don't generate. The tool can only return paragraphs that exist, with their real symbol and number.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "chart": true,
+    "search_box": true,
+    "button_matches": "(?i)copy citation|cite",
+    "source_matches": "(?i)\\bnot\\b|\\bor\\b",
+    "text_contains_after_search": {
+     "query": "\"best interests\" AND child",
+     "expect": "best interests"
     }
-  ]
+   },
+   "venice": "V1"
+  },
+  {
+   "id": "g1-verbatim",
+   "geneva": "G1",
+   "dataset": "gc",
+   "builds_on": null,
+   "title": "Verbatim finder for General Comments",
+   "blurb": "Find exact paragraphs on your topic and copy a correct citation",
+   "prompt": "GOAL AND WHY\nWhen I write a submission on [my topic], I need the exact words of UN treaty bodies' General Comments, with a correct citation. A chatbot's paraphrase is not enough: I have to quote.\n\nBEFORE YOU BUILD\nLook at the attached file and tell me what it contains and what it lacks. Then write a plan. Do not build anything until I approve the plan.\n\nLIMITS\nUse only the attached file. Never shorten or rewrite a paragraph. Nothing leaves my browser.\n\nDONE LOOKS LIKE\nI type a phrase and see every paragraph that contains it, word for word, each with its document symbol and paragraph number. I can copy a ready citation.\n\nCHECK BEFORE YOU FINISH\nShow how many paragraphs were searched. Say what the tool cannot do.",
+   "planning": "planning/g1-verbatim.json",
+   "lesson": "Retrieve, don't generate. The tool can only return paragraphs that exist, with their real symbol and number.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "search_box": true,
+    "button_matches": "(?i)copy citation|cite",
+    "text_contains_after_search": {
+     "query": "\"best interests\" child",
+     "expect": "best interests"
+    }
+   }
+  },
+  {
+   "id": "s8-1b-gc-quote-check",
+   "session": "S8",
+   "venice": "V1",
+   "minute": null,
+   "dataset": "gc",
+   "builds_on": "s8-1-verbatim",
+   "title": "Check a quotation",
+   "blurb": "Paste your own text and check every quotation of a General Comment against the paragraphs",
+   "prompt": "Add a tab \"Check a quotation\". I paste a passage I wrote (an essay, a submission, a briefing) that quotes General Comments of the treaty bodies. For every quotation in quotation marks (\"…\", “…”, „…”, «…») of five words or more that has a citation within 80 characters of it (a document symbol such as CCPR/C/GC/37, or a short form such as \"General Comment No. 37\" with the committee named nearby, with or without a paragraph number; recognise a symbol by looking for the symbols of the file itself in that text, longest first, since they come in many forms such as A/53/44, E/C.12/GC/27 or CCPR/C/GC/37), check it against the paragraphs in the file, with code only: compare words, ignoring case and punctuation; an ellipsis or a bracketed change [ ] splits a quotation into parts, and every part of three words or more must match. Give each quotation one verdict: ✓ correct (the words are in a paragraph of the cited General Comment, at the cited paragraph when one is given); ≈ the words are right but the citation is not (show the correct General Comment and paragraph, linked to the document); ✗ not in the data (the words are in no paragraph). Never use a model: say on screen that the same text always gets the same verdicts. To try it at once, offer a sample passage built from the file when the tab opens: one correct quotation, one with a wrong paragraph, and one that is invented.",
+   "lesson": "Find it, cite it, check it. The checker compares words, so the same text gets the same verdict every time. It can tell you that a quotation is not in the General Comments; whether your argument reads them fairly stays with you.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "button_matches": "(?i)check",
+    "text_matches": "(?i)not in the data|not found"
+   },
+   "bakeoff": false
+  },
+  {
+   "id": "s8-5-wiki",
+   "session": "S8",
+   "minute": 70,
+   "dataset": "wiki",
+   "builds_on": null,
+   "title": "A research wiki on neurotechnology and justice",
+   "blurb": "A workspace to read the wiki and check every quotation against its source",
+   "prompt": "Build a workspace for reading and checking our research wiki on neurotechnology in the administration of justice, one question per tab. Tab 01 Pages: the pages (sources, concepts, entities, questions) listed by type with a filter, and the index before a page is chosen; a page shows its type, register and status, its body rendered (headings, lists, [[links]] to other pages, contested blocks as cards with the verdict first), and under it Links out, Linked from and Sources. Show every pin where it stands in the sentence: the quote in quotation marks, then a chip with its label that opens the PDF at its page with `studio.openSource(id, page, quote)` (the studio marks the quote on the page), and a mark saying whether the code found the quote in that passage of the library (a quote with \"…\" is several fragments, each found in order). Tab 02 Check: one big number of pins verified by the code, and a lint table: dangling links, orphan pages, pins that fail, sources that differ from the documents pinned, contested cards missing from the tensions register, each with the pages concerned. Tab 03 Record: the log, newest first, the tensions register, and a download of the wiki. No model is called anywhere in this app: every number is counted by its code.",
+   "lesson": "A wiki keeps what an institution knows. Models wrote the pages; the code checks every quotation against its source, and one click opens the page it comes from. A Secretary-General's report, a submission and an article carry different weight, and the wiki shows which is which.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "source_matches": "openSource",
+    "controls_min": 1,
+    "text_matches": "(?i)verified"
+   }
+  },
+  {
+   "id": "s8-6-wiki-map",
+   "session": "S8",
+   "minute": 75,
+   "dataset": "wiki",
+   "builds_on": "s8-5-wiki",
+   "title": "A map of the wiki",
+   "blurb": "See the pages as a graph of their links: hubs, clusters and orphans",
+   "prompt": "Add a tab \"MAP\" that draws the wiki as a graph: one node per page, coloured by its type (source, concept, entity, question), and one line for each [[link]] between two pages. Size each node by the number of pages that link to it. Draw it in plain SVG with a fixed layout computed by the code (no random start), so the map looks the same every time. Hovering a node shows its title and how many links go in and out; clicking it highlights its neighbours and offers \"Open this page\", which shows the page on the pages tab. Under the map, one line: how many pages and links, and the pages no other page links to (orphans), each clickable. Keep everything else as it is.",
+   "lesson": "A map shows the shape of what the wiki knows: the hubs, the clusters and the orphans no page links to. The code draws it from the links the pages already have; no model guesses them.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "button_matches": "(?i)map",
+    "source_matches": "createElementNS|<svg",
+    "text_matches": "(?i)orphan|no (other )?page links"
+   },
+   "level": "advanced"
+  },
+  {
+   "id": "s8-2-ai-inside",
+   "session": "S8",
+   "minute": 75,
+   "dataset": "uhri",
+   "builds_on": "s7-1-dashboard",
+   "title": "A model inside the tool",
+   "blurb": "Let a model tag 50 records, then compare with the UN",
+   "prompt": "Add a button \"Suggest SDGs with AI\" that works on the first 50 records of the current filter. Send them to the model in batches of 25 with `await studio.ask(prompt)`, asking it to return JSON: for each record id, the SDG numbers it would assign. Show a table: record, the UN's SDGs, the AI's SDGs, and whether they agree. At the top: the agreement rate, and a clear notice that these 50 texts were sent to an external model, which one, and that running it again can give different answers. Add a \"Run again\" button that keeps both runs side by side.",
+   "lesson": "Here the model is part of the tool, so the result is probabilistic: run it twice and compare. And the 50 texts left the laptop, unlike everything else in the app.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "calls_studio_ask": true,
+    "batches_max": 25,
+    "text_matches": "(?i)sent to|external|left (the|your)",
+    "button_matches": "(?i)run again"
+   },
+   "level": "advanced"
+  },
+  {
+   "id": "s8-3-voting",
+   "session": "S7",
+   "minute": 0,
+   "dataset": "hrc",
+   "builds_on": null,
+   "title": "How two States vote at the Human Rights Council",
+   "blurb": "Compare two States' votes, year by year",
+   "prompt": "Build a tool to compare how two States vote at the Human Rights Council. Pick two States (only those that were Council members for at least one vote). Show on how many recorded votes both took part, how often they voted the same way, and a timeline by year. List the votes where they differed, with the resolution title, date, both votes and a link. Let me switch between resolutions, amendments, or both. Where the official totals differ from the roll call, show a small warning on that row.",
+   "lesson": "Same data, a different question. The interesting part is the rule you choose: what counts as agreement when one State abstains?",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "chart": true,
+    "controls_min": 2,
+    "table_min_rows": 1
+   },
+   "venice": "V2"
+  },
+  {
+   "id": "s8-3c-alignment",
+   "session": "venice",
+   "venice": "V2",
+   "minute": null,
+   "dataset": "hrc",
+   "builds_on": "s8-3-voting",
+   "title": "Where every State stands",
+   "blurb": "Place every State by how often it votes with each of your two States: the alignment map",
+   "prompt": "Add a tab \"Map\". Place every State on a square chart by how often it votes the same way as the two States I picked: across, its agreement with the first State; up, its agreement with the second (from 0 to 100%, counted on the votes where both took part, with an abstention as a choice of its own). Colour each dot by the State's UN regional group, with a legend, and draw the diagonal where agreement with both is the same. Hovering a dot shows the State, both shares and the number of shared votes; leave out States with fewer than ten shared votes and say how many. Use the same choice of resolutions, amendments or both as the rest of the app. Under the chart, one line on what this map leaves out: texts adopted without a vote.",
+   "lesson": "The map places States by a rule you can say in one sentence. Two dots close together vote alike on these texts; that is not the same as being allies, and texts adopted without a vote are not on the map at all.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "chart": true
+   },
+   "bakeoff": false
+  },
+  {
+   "id": "s8-3b-blocs",
+   "session": "S7",
+   "minute": null,
+   "dataset": "hrc",
+   "builds_on": "s8-3-voting",
+   "title": "Who votes with this State",
+   "blurb": "Rank every State by how often it votes the same way: the blocs, and the rule behind them",
+   "prompt": "Add a tab \"Who votes with\". For the first State I picked, compare its votes with every other State that voted on the same recorded votes: the share of votes where both voted the same way, out of the votes where both took part, counting an abstention as a choice of its own. Show the twenty closest and the twenty furthest States as ranked bars, each with the share and the number of shared votes, and leave out States that shared fewer than ten votes (say so under the chart). Let me switch between resolutions, amendments or both, as in the rest of the app. Under the chart, one line on how this is computed and one on what it leaves out (texts adopted without a vote; what agreement means when one State abstains).",
+   "lesson": "A bloc is a choice of rule: what counts as agreement, which votes count, how few shared votes are too few. The code applies the rule the same way to every State; what the bloc means stays with you.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "chart": true
+   },
+   "bakeoff": false
+  },
+  {
+   "id": "s8-4-briefing-check",
+   "session": "S8",
+   "minute": 75,
+   "dataset": "hrc",
+   "builds_on": null,
+   "title": "Check an AI briefing",
+   "blurb": "Ask a model about a resolution, then check its claims against the vote",
+   "prompt": "Build a briefing checker for Human Rights Council resolutions. Let me pick a resolution from the recorded votes; start with A/HRC/RES/51/27. A button \"Ask AI for a briefing\" asks the model, with `await studio.ask(prompt)`, for a 250-word briefing on that resolution from what it already knows: send only the symbol and the title, none of our data. Put the answer in a text box, where I can also paste a text of my own. A \"Check\" button then finds every checkable claim in the text: the numbers in favour, against and abstaining, the date, the session, and each State said to have voted a certain way. Show a table with the claim as written, what the recorded vote says, and a verdict: matches, wrong, or cannot be checked in this data. Explain that \"cannot be checked\" is not the same as \"wrong\".",
+   "lesson": "A fluent briefing can get the tone right and the numbers wrong, and a checker can be wrong too. Test it first on a text with errors you planted yourself, and keep a third verdict: \"I could not check this here\" is not \"wrong\".",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "calls_studio_ask": true,
+    "button_matches": "(?i)check",
+    "text_contains": [
+     "51/27"
+    ],
+    "text_matches": "(?i)cannot be checked|can.t be checked|not (be )?check|not in (this|the) data"
+   },
+   "level": "advanced"
+  },
+  {
+   "id": "any-improve",
+   "session": "any",
+   "minute": null,
+   "dataset": null,
+   "builds_on": "any",
+   "bakeoff": false,
+   "title": "Suggest improvements",
+   "blurb": "Five ways to review your app: pick one, get five improvements, build the one you choose",
+   "prompt": "Review my app and list five improvements I can choose from.",
+   "lesson": null
+  },
+  {
+   "id": "g1-improve",
+   "geneva": "G1",
+   "session": "any",
+   "minute": null,
+   "dataset": null,
+   "builds_on": "any",
+   "bakeoff": false,
+   "hidden": true,
+   "live_only": true,
+   "title": "Suggest three improvements",
+   "blurb": "Three ideas, each from a different point of view. You choose which one to build.",
+   "prompt": "Look at my app as it is now and propose exactly three alternative improvements to it. Each comes from a different perspective, one idea per perspective, in this order:\n\n{perspectives}\n\nFor each idea give:\n- \"title\": at most eight words.\n- \"perspective\": the id of its perspective, as given above.\n- \"what\": what it changes in the app, in one or two sentences.\n- \"why\": why it matters, in one sentence.\n- \"request\": the exact change request I could send you to build it, in one or two sentences, starting with \"Add\" (or \"Change\" if it alters something that exists), and clear without the rest of this message.\n\nAnswer with one JSON code block in this shape and no other code block; one short sentence before it is fine:\n\n```json\n{\"ideas\": [{\"title\": \"...\", \"perspective\": \"...\", \"what\": \"...\", \"why\": \"...\", \"request\": \"...\"}]}\n```\n\nDo not write any code for the app and do not change it yet: I will choose which idea to build. The three ideas must differ from each other, and each must be one change that a single request can make.",
+   "lesson": null
+  },
+  {
+   "id": "g-home-hrc",
+   "geneva": "home",
+   "dataset": "hrc_all",
+   "builds_on": null,
+   "title": "At home: a dashboard of Human Rights Council texts, 2006–2026",
+   "blurb": "The same method on other data, in your own chatbot. Replace [my topic] with yours and send it. The chatbot answers with a plan first: change it, or write “The plan is approved: build it”. Then paste its answer under 2.",
+   "prompt": "GOAL AND WHY\nI follow the Human Rights Council for my work on [my topic]. I want to see how the Council acted on texts about my topic from 2006 to 2026: how many it adopted, how many without a vote, and, where there was a recorded vote, how States and regional groups voted.\n\nBEFORE YOU BUILD\nLook at the attached file and tell me what it contains and what it lacks. Then write a short plan, with the decisions you need from me (for instance, which words in a title count as my topic). Do not build anything until I approve the plan.\n\nLIMITS\nUse only the attached file. Count with code, never estimate. A text adopted without a vote has no votes by State: never invent them. Nothing leaves my browser.\n\nDONE LOOKS LIKE\nOne page with a box for my topic's words, matched in the titles. First, the number of texts per year, split into adopted without a vote and adopted by a recorded vote. Second, for the recorded votes only, the share of Yes, No and Abstain in each regional group. Third, the list of matching texts, each with its symbol linked to the document.\n\nCHECK BEFORE YOU FINISH\nShow how many texts were searched and how many matched, and which words matched. Say what the dashboard cannot show (for instance, texts on my topic whose title does not use my words).",
+   "lesson": "Plan first, then build, on data you can check: the same brief works with any chatbot.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "chart": true
+   },
+   "bakeoff": false
+  },
+  {
+   "id": "improve-first-user",
+   "session": "any",
+   "minute": null,
+   "dataset": null,
+   "builds_on": "any",
+   "bakeoff": false,
+   "lens": true,
+   "title": "As a first-time user",
+   "blurb": "Usability: Nielsen's ten heuristics, with a severity for each problem",
+   "prompt": "Review my app as a usability evaluator who has never seen it, using Jakob Nielsen's ten usability heuristics (visibility of what is going on, match with the user's words, user control, consistency, error prevention, recognition rather than recall, flexibility, minimalist design, help with errors, help and documentation). Picture a diplomat or a lawyer at a national human rights institution opening it for the first time. List the five most severe problems, numbered and ordered by severity, each in this form: the heuristic it breaks; where in the app it happens; its severity from 0 (not a problem) to 4 (stops the work), with half a sentence on why; and one fix small enough to make as one change. Do not write code yet: I will tell you which fix to make.",
+   "lesson": null
+  },
+  {
+   "id": "improve-trust",
+   "session": "any",
+   "minute": null,
+   "dataset": null,
+   "builds_on": "any",
+   "bakeoff": false,
+   "lens": true,
+   "title": "Can I trust the numbers?",
+   "blurb": "A data-quality audit: accuracy, completeness, consistency, timeliness",
+   "prompt": "Review my app as a data-quality auditor before a report goes out. Use four dimensions of data quality: accuracy (is each number computed correctly from the records), completeness (what the data or the filters leave out, and whether the app says so), consistency (do the same counts agree across tabs, charts and tables) and timeliness (does the app say how old the data is). List five improvements, numbered, each naming its dimension, saying what a reader could get wrong today and proposing one change that makes it visible or checkable in the app itself: a check, a count shown next to a total, a warning, a note on what is left out. Order them by how much they would mislead a reader. Do not write code yet: I will tell you which one to make.",
+   "lesson": null
+  },
+  {
+   "id": "improve-premortem",
+   "session": "any",
+   "minute": null,
+   "dataset": null,
+   "builds_on": "any",
+   "bakeoff": false,
+   "lens": true,
+   "title": "Pre-mortem",
+   "blurb": "Imagine it already went wrong: Gary Klein's pre-mortem",
+   "prompt": "Run a pre-mortem on my app, the method of the psychologist Gary Klein. Imagine it is six months from now: someone in a ministry or a national human rights institution relied on this app, and it misled them or let them down in front of others. Write the five most likely stories of how that happened, one or two sentences each, as concrete as you can (which number, which screen, which assumption). Then, for each story, one change small enough to make as one change that would have prevented it or made the problem visible in time. Number them and put the most likely first. Do not write code yet: I will tell you which change to make.",
+   "lesson": null
+  },
+  {
+   "id": "improve-interview",
+   "session": "any",
+   "minute": null,
+   "dataset": null,
+   "builds_on": "any",
+   "bakeoff": false,
+   "lens": true,
+   "title": "Ask me first",
+   "blurb": "Jobs to be done: the model interviews you, then suggests",
+   "prompt": "Before you suggest anything, interview me about how I would use this app at work, in the spirit of \"jobs to be done\": what task brings me to it, what I do with what it shows, and what I do today instead. Ask me three short questions, numbered, and stop. When I have answered, list five improvements that serve that task, numbered and ordered by how much time they would save me, each small enough to make as one change, with one sentence on which of my answers it comes from. Do not write code until I choose.",
+   "lesson": null
+  },
+  {
+   "id": "improve-access",
+   "session": "any",
+   "minute": null,
+   "dataset": null,
+   "builds_on": "any",
+   "bakeoff": false,
+   "lens": true,
+   "title": "For every reader",
+   "blurb": "Accessibility: a quick check against WCAG 2.2, level AA",
+   "prompt": "Review my app for accessibility, as a quick check against the Web Content Accessibility Guidelines (WCAG 2.2, level AA), for colleagues who use a keyboard only, a screen reader, a magnifier or a projector at the back of a room: contrast of text and charts, keyboard access and a visible focus, labels on every control, headings and table structure, charts that also say their message in text, and nothing conveyed by colour alone. List the five problems that would stop someone most, numbered, each with the WCAG success criterion it touches, where it is in the app, and one fix small enough to make as one change. Do not write code yet: I will tell you which fix to make.",
+   "lesson": null
+  },
+  {
+   "id": "edit-1-column",
+   "session": "S7",
+   "minute": null,
+   "dataset": "uhri",
+   "builds_on": "s7-1-dashboard",
+   "title": "Add a column",
+   "blurb": "A change of the kind participants ask for, to measure edit mode",
+   "prompt": "In the records table, add a column with the year of each record, and let me sort the table by that column.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "chart": true,
+    "table_min_rows": 5,
+    "text_contains": [
+     "{country}"
+    ],
+    "controls_min": 4,
+    "links_to": "docs.un.org",
+    "text_matches": "(?i)\\byear\\b"
+   },
+   "hidden": true
+  },
+  {
+   "id": "edit-2-chart",
+   "session": "S7",
+   "minute": null,
+   "dataset": "uhri",
+   "builds_on": "s7-1-dashboard",
+   "title": "Add a chart",
+   "blurb": "A change of the kind participants ask for, to measure edit mode",
+   "prompt": "On the overview, add a bar chart of the number of recommendations and observations per year.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "chart": true,
+    "table_min_rows": 5,
+    "text_contains": [
+     "{country}"
+    ],
+    "controls_min": 4,
+    "links_to": "docs.un.org",
+    "text_matches": "(?i)(per|by) year"
+   },
+   "hidden": true
+  },
+  {
+   "id": "edit-3-filter",
+   "session": "S7",
+   "minute": null,
+   "dataset": "uhri",
+   "builds_on": "s7-1-dashboard",
+   "title": "Add a filter",
+   "blurb": "A change of the kind participants ask for, to measure edit mode",
+   "prompt": "Add a filter by the type of document (for example concluding observations, UPR recommendations) to the filters on the left.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "chart": true,
+    "table_min_rows": 5,
+    "text_contains": [
+     "{country}"
+    ],
+    "controls_min": 4,
+    "links_to": "docs.un.org",
+    "text_matches": "(?i)type"
+   },
+   "hidden": true
+  },
+  {
+   "id": "v3-wiki-pdfs",
+   "session": "venice",
+   "venice": "V3",
+   "minute": null,
+   "dataset": "pdfs",
+   "builds_on": null,
+   "title": "From ten PDFs to a wiki",
+   "blurb": "The model reads the PDFs you pick; the code checks every quotation and links the pages",
+   "prompt": "Build a tool that turns the ten PDFs into a small wiki. List the documents with a tick box each, the four shortest ticked to begin with, and a button \"Read with the model\". The button sends the ticked documents to the model one at a time, each with its page numbers marked, and shows the progress. For each document the model names up to six key ideas (for instance \"mental privacy\"), and for each idea one sentence it quotes word for word from the document, with the page. Send the names found so far with each document, so that the model reuses a name for the same idea. The code then checks every quotation against the document's text (ignoring case, punctuation and spacing): a quotation that is not there is marked ✗ and left out of the wiki. The wiki has one page per document and one per idea; an idea's page lists the documents that discuss it, each with its checked quotation and page, and links to the ideas that appear in the same documents. Clicking a page number opens the PDF at that page. Show how many quotations the model gave and how many the code confirmed, and say on screen which parts come from the model and which from the code.",
+   "lesson": "This is the work a wiki needs: a model reads and proposes, the code checks every quotation against the source, and only what passes goes in. Each ✗ is a place where the model put words in a document's mouth.",
+   "live_only": true,
+   "bakeoff": true,
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "button_matches": "(?i)read with the model",
+    "source_matches": "studio\\.ask"
+   }
+  },
+  {
+   "id": "v3-wiki-graph",
+   "session": "venice",
+   "venice": "V3",
+   "minute": null,
+   "dataset": "pdfs",
+   "model": "claude",
+   "model_note": "adding a drawn graph to a large app is a change GLM-5.3 left half done in a test (the tab without the graph)",
+   "builds_on": "v3-wiki-pdfs",
+   "title": "The wiki as a network",
+   "blurb": "Documents and ideas as dots, the checked quotations as lines",
+   "prompt": "Add a tab \"Network\" that draws the wiki as a graph: one dot per document and one per idea, and a line from a document to each idea it discusses (only checked quotations count). Make an idea's dot bigger the more documents discuss it. Lay the graph out the same way every time, with no random start. Hovering a dot shows its name; clicking it opens its wiki page. Under the graph, one line: the ideas that appear in the most documents, and any document that shares no idea with the others. Keep everything else as it is.",
+   "lesson": "The graph shows which ideas hold the documents together. Every line stands on a quotation the code found in the PDF; an idea with one line is one document's idea, not yet the field's.",
+   "live_only": true,
+   "bakeoff": false
+  },
+  {
+   "id": "v3-own-idea",
+   "session": "S8",
+   "venice": "V3",
+   "level": "advanced",
+   "minute": null,
+   "dataset": null,
+   "builds_on": null,
+   "title": "Your own idea",
+   "blurb": "Describe a tool you need: the model asks you three questions first, then builds it",
+   "prompt": "I have an idea for a tool for my own work. Before you build anything, ask me three short questions, numbered, about what I want to find out, which file it should use (from Your files, or one I add) and who will read the result. Stop after the questions. When I have answered, build the tool on the file I attached, and say on screen what it can and cannot answer.\n\nMy idea: ",
+   "lesson": "Asking the questions first is a method of its own: the model learns what you need before it writes anything, and you notice what you had not decided yet.",
+   "live_only": true,
+   "bakeoff": false
+  },
+  {
+   "id": "x-meta-pdfs",
+   "session": "lab",
+   "minute": 0,
+   "dataset": "pdf_meta",
+   "builds_on": null,
+   "hidden": true,
+   "title": "A catalogue of ten PDFs",
+   "blurb": "Read ten bare PDF files and catalogue them: symbol, date, type, number and what each replaces",
+   "prompt": "I have ten UN documents as PDF files, named only doc-01.pdf to doc-10.pdf. Build a tool that reads each file and catalogues it: the document symbol, the date on its cover, the body that issued it, whether it is a general comment or a general recommendation and its number, its subject, the earlier general comments or recommendations it replaces or updates, and its number of pages. Show one row per file in a table I can sort, mark every value the tool is not sure of, and let me open the page a value was read from. Let me download the table as a CSV file.",
+   "lesson": "Cataloguing is the first job with any pile of documents. Every value can be checked against the page it came from.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "table_min_rows": 10,
+    "text_contains": [
+     "CRPD/C/GC/7",
+     "CRC/C/GC/25",
+     "CCPR/C/GC/36",
+     "E/C.12/GC/24",
+     "E/C.12/GC/27",
+     "CCPR/C/GC/34",
+     "CAT/C/GC/4",
+     "CEDAW/C/GC/35",
+     "CCPR/C/GC/32",
+     "E/C.12/GC/25"
+    ],
+    "download": true,
+    "row_facts_dates": {
+     "rows": [
+      "CRPD/C/GC/7",
+      "CRC/C/GC/25",
+      "CCPR/C/GC/36",
+      "E/C.12/GC/24",
+      "E/C.12/GC/27",
+      "CCPR/C/GC/34",
+      "CAT/C/GC/4",
+      "CEDAW/C/GC/35",
+      "CCPR/C/GC/32",
+      "E/C.12/GC/25"
+     ],
+     "facts": [
+      {
+       "row": "CRPD/C/GC/7",
+       "has": [
+        "9\\ November\\ 2018|2018-11-09|0?9/11/2018|0?9\\.11\\.2018|November 0?9,? 2018|0?9 Nov\\.? 2018"
+       ]
+      },
+      {
+       "row": "CRC/C/GC/25",
+       "has": [
+        "2\\ March\\ 2021|2021-03-02|0?2/03/2021|0?2\\.03\\.2021|March 0?2,? 2021|0?2 Mar\\.? 2021"
+       ]
+      },
+      {
+       "row": "CCPR/C/GC/36",
+       "has": [
+        "3\\ September\\ 2019|2019-09-03|0?3/09/2019|0?3\\.09\\.2019|September 0?3,? 2019|0?3 Sep\\.? 2019"
+       ]
+      },
+      {
+       "row": "E/C.12/GC/24",
+       "has": [
+        "10\\ August\\ 2017|2017-08-10|0?10/08/2017|0?10\\.08\\.2017|August 0?10,? 2017|0?10 Aug\\.? 2017"
+       ]
+      },
+      {
+       "row": "E/C.12/GC/27",
+       "has": [
+        "6\\ November\\ 2025|2025-11-06|0?6/11/2025|0?6\\.11\\.2025|November 0?6,? 2025|0?6 Nov\\.? 2025"
+       ]
+      },
+      {
+       "row": "CCPR/C/GC/34",
+       "has": [
+        "12\\ September\\ 2011|2011-09-12|0?12/09/2011|0?12\\.09\\.2011|September 0?12,? 2011|0?12 Sep\\.? 2011"
+       ]
+      },
+      {
+       "row": "CAT/C/GC/4",
+       "has": [
+        "4\\ September\\ 2018|2018-09-04|0?4/09/2018|0?4\\.09\\.2018|September 0?4,? 2018|0?4 Sep\\.? 2018"
+       ]
+      },
+      {
+       "row": "CEDAW/C/GC/35",
+       "has": [
+        "26\\ July\\ 2017|2017-07-26|0?26/07/2017|0?26\\.07\\.2017|July 0?26,? 2017|0?26 Jul\\.? 2017"
+       ]
+      },
+      {
+       "row": "CCPR/C/GC/32",
+       "has": [
+        "23\\ August\\ 2007|2007-08-23|0?23/08/2007|0?23\\.08\\.2007|August 0?23,? 2007|0?23 Aug\\.? 2007"
+       ]
+      },
+      {
+       "row": "E/C.12/GC/25",
+       "has": [
+        "30\\ April\\ 2020|2020-04-30|0?30/04/2020|0?30\\.04\\.2020|April 0?30,? 2020|0?30 Apr\\.? 2020"
+       ]
+      }
+     ]
+    },
+    "row_facts_types": {
+     "rows": [
+      "CRPD/C/GC/7",
+      "CRC/C/GC/25",
+      "CCPR/C/GC/36",
+      "E/C.12/GC/24",
+      "E/C.12/GC/27",
+      "CCPR/C/GC/34",
+      "CAT/C/GC/4",
+      "CEDAW/C/GC/35",
+      "CCPR/C/GC/32",
+      "E/C.12/GC/25"
+     ],
+     "facts": [
+      {
+       "row": "CRPD/C/GC/7",
+       "has": [
+        "comment"
+       ]
+      },
+      {
+       "row": "CRC/C/GC/25",
+       "has": [
+        "comment"
+       ]
+      },
+      {
+       "row": "CCPR/C/GC/36",
+       "has": [
+        "comment"
+       ]
+      },
+      {
+       "row": "E/C.12/GC/24",
+       "has": [
+        "comment"
+       ]
+      },
+      {
+       "row": "E/C.12/GC/27",
+       "has": [
+        "comment"
+       ]
+      },
+      {
+       "row": "CCPR/C/GC/34",
+       "has": [
+        "comment"
+       ]
+      },
+      {
+       "row": "CAT/C/GC/4",
+       "has": [
+        "comment"
+       ]
+      },
+      {
+       "row": "CEDAW/C/GC/35",
+       "has": [
+        "recommendation"
+       ]
+      },
+      {
+       "row": "CCPR/C/GC/32",
+       "has": [
+        "comment"
+       ]
+      },
+      {
+       "row": "E/C.12/GC/25",
+       "has": [
+        "comment"
+       ]
+      }
+     ]
+    },
+    "row_facts_replaces": {
+     "rows": [
+      "CRPD/C/GC/7",
+      "CRC/C/GC/25",
+      "CCPR/C/GC/36",
+      "E/C.12/GC/24",
+      "E/C.12/GC/27",
+      "CCPR/C/GC/34",
+      "CAT/C/GC/4",
+      "CEDAW/C/GC/35",
+      "CCPR/C/GC/32",
+      "E/C.12/GC/25"
+     ],
+     "facts": [
+      {
+       "row": "CCPR/C/GC/36",
+       "has": [
+        "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?14\\b",
+        "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?6\\b"
+       ]
+      },
+      {
+       "row": "CCPR/C/GC/34",
+       "has": [
+        "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?10\\b"
+       ]
+      },
+      {
+       "row": "CAT/C/GC/4",
+       "has": [
+        "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?1\\b"
+       ]
+      },
+      {
+       "row": "CEDAW/C/GC/35",
+       "has": [
+        "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?19\\b"
+       ]
+      },
+      {
+       "row": "CCPR/C/GC/32",
+       "has": [
+        "(?:no\\.?|gc|gr|comments?|recommendations?)\\s*(?:no\\.?\\s*)?13\\b"
+       ]
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "x-versions",
+   "session": "lab",
+   "minute": 0,
+   "dataset": "drafts",
+   "builds_on": null,
+   "hidden": true,
+   "title": "How an article changed",
+   "blurb": "Every draft of an ICCPR article, 1947–1966, with what changed at each stage and the votes behind it",
+   "prompt": "Build a tool that shows how an article of the Covenant changed while it was drafted. Let me pick the article, and open on the first one in the file. Show every stage in date order, from the first draft to the text adopted in 1966, each with its document symbol and date, and with what changed from the stage before: added words marked as added (<ins>) and removed words as removed (<del>). The drafts come from OCR: ignore differences of punctuation, of capital letters and of words broken at a line end (restric- tions). For each stage, list the votes taken since the stage before, by date, with what was voted on, the result and who proposed it. Show which stages changed the text most.",
+   "lesson": "Comparing versions is what lawyers do with every draft. OCR noise is the trap: a careful tool tells a real change from a scanning error.",
+   "checks": {
+    "no_console_errors": true,
+    "no_network": true,
+    "uses_workshop_data": true,
+    "controls_min": 1,
+    "text_contains": [
+     "E/CN.4/669",
+     "A/RES/2200",
+     "E/CN.4/L.201"
+    ],
+    "diff_added": [
+     "democratic society",
+     "safety",
+     "ordre public"
+    ],
+    "diff_removed": [
+     "to ensure"
+    ],
+    "diff_not": [
+     "restric"
+    ]
+   }
+  }
+ ]
 }

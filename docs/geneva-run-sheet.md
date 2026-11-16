@@ -11,6 +11,8 @@ Draft status: the times below are planned, not yet measured; measure them at the
 - [ ] **Keys and money** (see `server/RUNBOOK.md`): the OpenRouter key "zajecia" and the Anthropic key "garage-research" are enabled; the studio is resumed on the admin page; `STUDIO_ANTHROPIC_CAP` raised to about $150; the OpenRouter balance at least $100 and the key's own limit at least $150.
 - [ ] **Default model** on the admin page: Claude Sonnet 5.5 (the course already starts on it; the admin setting covers requests that name no model).
 - [ ] **Certificate**: `echo | openssl s_client -connect 150.254.115.204:443 2>/dev/null | openssl x509 -noout -enddate` shows a date after 4 December (certbot renews it twice a day; check anyway).
+- [x] **Trial builds, Sonnet** (17.11, in Claude Code, no API): one app per look (paper, night, UN blue, newsprint, index cards), each 6/6 on the bake-off checks (`tests/bakeoff/2026-11-17-g1-looks-*`); the paper build is the recorded app behind **Load a working version**.
+- [ ] **Trial builds, GLM**: the same five prompts through the API once the keys are on.
 - [ ] **Load test**: 30 builds at once on Sonnet (about $10), then 5 on GLM; note the times here.
 - [ ] **Seat cards** printed with the QR code to `?course=geneva` and the seat code; budget per seat $8.
 - [ ] **Room chat**: the facilitator's page `…/studio-api/admin/room?key=…&course=geneva` open on your phone or laptop; test one message to the room.

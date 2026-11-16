@@ -1,0 +1,363 @@
+I built the verbatim finder on one screen: type words or put a phrase in quotation marks, and every matching paragraph appears word for word on a white card with its symbol, paragraph number and a "Copy citation" button. The number of paragraphs searched is always shown at the top, and the limits of the tool are listed at the bottom.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verbatim finder: General Comments</title>
+<style>
+[hidden]{display:none!important}
+:root{--bg:#eef0f2;--card:#fff;--ink:#1c2227;--soft:#4f5a63;--rule:#d5d9dd;--accent:#1f4e79;--mark:#ffe58a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 56px}
+.mono{font:11.5px/1.4 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--soft)}
+h1{font-size:30px;line-height:1.2;margin:4px 0 6px;font-weight:700}
+.src{margin:0 0 18px;color:var(--soft)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.search{background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--rule)}
+.search label{display:block;margin-bottom:6px}
+.search input{width:100%;font:inherit;font-size:18px;padding:12px 14px;border:2px solid #9aa4ad;border-radius:8px;background:#fff;color:var(--ink)}
+.search input:focus{border-color:var(--accent)}
+.examples{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+button{font:inherit;font-size:15px;cursor:pointer;border-radius:8px;border:1px solid #9aa4ad;background:#fff;color:var(--ink);padding:7px 12px}
+button:hover{background:#f3f5f7}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:#17405f}
+button[disabled]{cursor:default;color:var(--soft);background:#e6e9ec}
+.hint{margin:10px 0 0;color:var(--soft);font-size:14px}
+.status{display:flex;flex-wrap:wrap;gap:6px 24px;align-items:baseline;margin:20px 0 4px}
+.big{font-size:44px;line-height:1;font-weight:700;letter-spacing:-.01em}
+.status .lab{color:var(--soft);font-size:15px}
+.how{margin:2px 0 16px;color:var(--soft);font-size:14px}
+.cards{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.card{background:var(--card);border-radius:12px;border-left:8px solid var(--c,#8a949c);padding:14px 18px 14px 16px;box-shadow:0 1px 2px rgba(20,30,40,.08)}
+.card .top{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.card .com{color:var(--c-ink,var(--soft));font-weight:700}
+.card h3{margin:2px 0 0;font-size:17px;line-height:1.3;font-weight:700}
+.card .cite{margin:4px 0 10px;color:var(--soft)}
+.card .cite a{color:var(--accent);font-weight:600}
+.card .txt{margin:0 0 12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.card .acts{display:flex;flex-wrap:wrap;gap:8px}
+mark{background:var(--mark);color:inherit;padding:0 1px;border-radius:2px}
+.fn{color:var(--soft);font-size:.8em;vertical-align:super}
+.more{margin:16px 0 0;text-align:center}
+.empty{background:var(--card);border-radius:12px;padding:18px;border:1px solid var(--rule)}
+.draft{margin-top:36px;background:var(--card);border-radius:12px;padding:16px;border:1px solid var(--rule)}
+.draft h2{font-size:20px;margin:2px 0 4px}
+.draft ol{margin:12px 0;padding-left:22px}
+.draft li{margin-bottom:12px}
+.draft .dtxt{white-space:pre-wrap;overflow-wrap:anywhere;margin:2px 0}
+.draft .dcite{font-weight:600}
+.draft .row{display:flex;gap:8px;flex-wrap:wrap}
+.limits{margin-top:28px;font-size:15px}
+.limits summary{cursor:pointer;font-weight:600}
+.limits ul{margin:8px 0 0;padding-left:20px;color:var(--soft)}
+.limits li{margin-bottom:4px}
+.live{position:absolute;left:-9999px}
+@media (max-width:560px){.big{font-size:36px}h1{font-size:25px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mono">WORKSHOP_DATA.gc · General Comments</div>
+    <h1>Verbatim finder</h1>
+    <p class="src" id="srcline">Loading the data…</p>
+  </header>
+
+  <section class="search" aria-label="Search">
+    <label for="q" class="mono">Search the paragraphs</label>
+    <input id="q" type="search" autocomplete="off" placeholder='e.g. "persons with disabilities"'>
+    <div class="examples" id="examples">
+      <span class="mono">Try</span>
+    </div>
+    <p class="hint">Words without quotes: all must appear, in any order, "child" also finds "children". Words in quotation marks: exactly together, whole words.</p>
+  </section>
+
+  <section aria-live="polite" class="status" id="status">
+    <div><span class="big" id="nSearched">0</span> <span class="lab">paragraphs searched</span></div>
+    <div hidden id="matchBox"><span class="big" id="nMatch">0</span> <span class="lab" id="matchLab">paragraphs match</span></div>
+  </section>
+  <p class="how" id="how">How this is computed: your search is compared with the full text of every paragraph in the file, by this page's code, in your browser. Nothing is sent anywhere.</p>
+
+  <ol class="cards" id="results"></ol>
+  <div class="more" id="moreBox" hidden><button id="moreBtn" type="button">Show 50 more</button></div>
+
+  <section class="draft" id="draft" aria-label="Draft list">
+    <div class="mono">Your draft</div>
+    <h2>Quotes for your submission</h2>
+    <p class="hint" id="draftEmpty" style="margin-top:0">Empty. Press "Add to draft" on a result. The list is kept only while this page stays open.</p>
+    <ol id="draftList"></ol>
+    <div class="row" id="draftActs" hidden>
+      <button type="button" class="primary" id="copyAll">Copy all</button>
+      <button type="button" id="dl">Download (.txt)</button>
+    </div>
+  </section>
+
+  <details class="limits">
+    <summary>What this tool cannot do</summary>
+    <ul>
+      <li>It does not summarise, paraphrase or look for synonyms: it finds only the words you typed. "Disabled" will not find "disability".</li>
+      <li>It searches only the attached General Comments file: no concluding observations, no case law, no other sources.</li>
+      <li>It is English only and does not translate.</li>
+      <li>It matches letters, not meaning: a dash or hyphen written differently from yours ("non-discrimination" or "non discrimination") is a different word. Apostrophe shape and capital letters are ignored.</li>
+      <li>Footnote marks such as [[fn:12]] are shown as stored but are not searched, so a phrase interrupted by a footnote mark is not found as one phrase.</li>
+      <li>The file may not hold every paragraph of every document. Before you quote, open the symbol link and compare the paragraph with the original.</li>
+      <li>"Copy citation" gives the symbol and paragraph number only. For a symbol that holds several documents or titles, it adds the short title.</li>
+    </ul>
+  </details>
+</div>
+<div class="live" id="live" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  var D = (window.WORKSHOP_DATA && window.WORKSHOP_DATA.gc) || null;
+  var records = (D && Array.isArray(D.records)) ? D.records : [];
+  var PAGE = 50;
+  var $ = function(id){ return document.getElementById(id); };
+  var q = $('q'), results = $('results'), live = $('live');
+
+  var FN = /\[\[fn:\d+\]\]/g;
+  function straight(s){ return String(s == null ? '' : s).replace(/[‘’ʼ`´]/g, "'").replace(/[“”„]/g, '"'); }
+  function esc(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  // Prepare once: normalised search text (same length as the stored text), citation info
+  var titlesBySymbol = {}, committees = [];
+  records.forEach(function(r){
+    r._s = straight(r.text).replace(FN, function(m){ return new Array(m.length + 1).join(' '); });
+    var k = r.symbol || '';
+    (titlesBySymbol[k] = titlesBySymbol[k] || {})[r.short_title || r.title || ''] = 1;
+    if (r.committee && committees.indexOf(r.committee) < 0) committees.push(r.committee);
+  });
+  committees.sort();
+  var PAL = [['#5b7fa6','#34536f'],['#a0674f','#7a4a36'],['#6f9a74','#41653f'],['#9a6f9e','#6e476f'],['#b59a4a','#7a6720'],['#4f9a9a','#2f6b6b'],['#a65b6e','#7a3347'],['#7f8a52','#575f2e'],['#8a7ab0','#5a4b86'],['#b0805a','#80552f'],['#6b8fb5','#3d5f86'],['#9a9a9a','#575757']];
+  function colourFor(c){
+    var i = committees.indexOf(c);
+    return PAL[(i < 0 ? 0 : i) % PAL.length];
+  }
+  function multi(r){
+    var t = titlesBySymbol[r.symbol || ''] || {};
+    return Object.keys(t).length > 1 || /[–—]/.test(r.symbol || '');
+  }
+  function citation(r){
+    var c = (r.symbol || '(no symbol)') + ', para. ' + r.paragraph;
+    if (multi(r) && r.short_title) c += ' (' + r.short_title + ')';
+    return c;
+  }
+
+  // Header
+  var docs = {};
+  records.forEach(function(r){ docs[r.symbol] = 1; });
+  $('nSearched').textContent = records.length.toLocaleString('en');
+  $('srcline').textContent = records.length
+    ? 'Source: ' + (D.source || D.title || 'General Comments') + ' · ' + records.length.toLocaleString('en') + ' paragraphs · ' + Object.keys(docs).length + ' symbols · ' + (function(){
+        var ys = records.map(function(r){return r.year;}).filter(function(y){return typeof y === 'number';});
+        return ys.length ? Math.min.apply(null, ys) + '–' + Math.max.apply(null, ys) : 'years not stated';
+      })()
+    : 'The General Comments file is not attached: drag it from "Your files" into the chat, then run the app again.';
+
+  // Examples
+  [['"persons with disabilities"'], ['"reasonable accommodation"'], ['disability discrimination']].forEach(function(e){
+    var b = document.createElement('button');
+    b.type = 'button'; b.textContent = e[0];
+    b.addEventListener('click', function(){ q.value = e[0]; run(); q.focus(); });
+    $('examples').appendChild(b);
+  });
+
+  // Parsing and matching
+  var LB = '(?<![\\p{L}\\p{N}])';
+  function parse(text){
+    var s = straight(text), terms = [], m, re = /"([^"]+)"|"?([^\s"]+)"?/g;
+    while ((m = re.exec(s))) {
+      if (m[1] !== undefined) {
+        var w = m[1].trim().split(/\s+/).filter(Boolean);
+        if (w.length) terms.push({ phrase: true, src: w.join(' '), re: '(?:' + LB + w.map(esc).join('\\s+') + '(?![\\p{L}\\p{N}]))' });
+      } else if (m[2]) {
+        terms.push({ phrase: false, src: m[2], re: '(?:' + LB + esc(m[2]) + ')' });
+      }
+    }
+    return terms;
+  }
+  var current = { terms: [], tests: [], hl: null, hits: [], shown: 0 };
+
+  function run(){
+    var terms = parse(q.value);
+    current.terms = terms; current.hits = []; current.shown = 0;
+    results.textContent = '';
+    $('moreBox').hidden = true;
+    if (!records.length) { $('matchBox').hidden = true; return; }
+    if (!terms.length) {
+      $('matchBox').hidden = true;
+      $('how').textContent = 'How this is computed: your search is compared with the full text of every paragraph in the file, by this page\'s code, in your browser. Nothing is sent anywhere.';
+      return;
+    }
+    var tests = terms.map(function(t){ return new RegExp(t.re, 'iu'); });
+    current.hl = new RegExp(terms.map(function(t){ return t.re; }).join('|'), 'giu');
+    for (var i = 0; i < records.length; i++) {
+      var s = records[i]._s, ok = true;
+      for (var j = 0; j < tests.length; j++) { if (!tests[j].test(s)) { ok = false; break; } }
+      if (ok) current.hits.push(records[i]);
+    }
+    var n = current.hits.length;
+    $('matchBox').hidden = false;
+    $('nMatch').textContent = n.toLocaleString('en');
+    $('matchLab').textContent = n === 1 ? 'paragraph matches' : 'paragraphs match';
+    $('how').textContent = 'How this is computed: ' + records.length.toLocaleString('en') + ' paragraphs searched; kept those containing ' +
+      terms.map(function(t){ return (t.phrase ? 'the phrase "' : 'the word "') + t.src + '"'; }).join(' and ') +
+      (terms.length > 1 ? ' (all of them)' : '') + '. Results are in the order of the file.';
+    if (!n) {
+      var li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = 'No paragraph matches. 0 of ' + records.length.toLocaleString('en') + ' paragraphs contain what you typed. Try fewer words, or the singular form of a word. This tool does not look for synonyms.';
+      results.appendChild(li);
+      live.textContent = '0 paragraphs match.';
+      return;
+    }
+    renderMore();
+    live.textContent = n + (n === 1 ? ' paragraph matches.' : ' paragraphs match.');
+  }
+
+  function addPlain(parent, str){
+    var last = 0, m, re = new RegExp(FN.source, 'g');
+    while ((m = re.exec(str))) {
+      if (m.index > last) parent.appendChild(document.createTextNode(str.slice(last, m.index)));
+      var sp = document.createElement('span'); sp.className = 'fn'; sp.textContent = m[0];
+      parent.appendChild(sp); last = m.index + m[0].length;
+    }
+    if (last < str.length) parent.appendChild(document.createTextNode(str.slice(last)));
+  }
+  function highlighted(parent, r){
+    var s = r._s, text = String(r.text == null ? '' : r.text), ranges = [], m, re = new RegExp(current.hl.source, 'giu');
+    while ((m = re.exec(s))) { if (m[0].length === 0) { re.lastIndex++; continue; } ranges.push([m.index, m.index + m[0].length]); }
+    ranges.sort(function(a, b){ return a[0] - b[0]; });
+    var merged = [];
+    ranges.forEach(function(x){
+      var l = merged[merged.length - 1];
+      if (l && x[0] <= l[1]) l[1] = Math.max(l[1], x[1]); else merged.push([x[0], x[1]]);
+    });
+    var pos = 0;
+    merged.forEach(function(x){
+      if (x[0] > pos) addPlain(parent, text.slice(pos, x[0]));
+      var mk = document.createElement('mark'); mk.textContent = text.slice(x[0], x[1]); parent.appendChild(mk);
+      pos = x[1];
+    });
+    if (pos < text.length) addPlain(parent, text.slice(pos));
+  }
+
+  var inDraft = {};
+  function card(r){
+    var col = colourFor(r.committee);
+    var li = document.createElement('li');
+    li.className = 'card';
+    li.style.setProperty('--c', col[0]); li.style.setProperty('--c-ink', col[1]);
+
+    var top = document.createElement('div'); top.className = 'top';
+    var com = document.createElement('span'); com.className = 'mono com'; com.textContent = r.committee || 'Committee not stated';
+    top.appendChild(com);
+    var h = document.createElement('h3'); h.textContent = r.short_title || r.title || '(no title)';
+    li.appendChild(top); li.appendChild(h);
+
+    var cite = document.createElement('p'); cite.className = 'cite';
+    if (r.doc_url) {
+      var a = document.createElement('a'); a.href = r.doc_url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = r.symbol || r.doc_url;
+      cite.appendChild(a);
+    } else cite.appendChild(document.createTextNode(r.symbol || '(no symbol)'));
+    cite.appendChild(document.createTextNode(' · para. ' + r.paragraph + (r.year ? ' · ' + r.year : '')));
+    li.appendChild(cite);
+
+    var p = document.createElement('p'); p.className = 'txt';
+    highlighted(p, r);
+    li.appendChild(p);
+
+    var acts = document.createElement('div'); acts.className = 'acts';
+    var cb = document.createElement('button'); cb.type = 'button'; cb.className = 'primary'; cb.textContent = 'Copy citation';
+    cb.addEventListener('click', function(){ copy(citation(r), cb, 'Copy citation'); });
+    var ab = document.createElement('button'); ab.type = 'button';
+    function setAdd(){ ab.textContent = inDraft[r.id] ? 'Added to draft' : 'Add to draft'; ab.disabled = !!inDraft[r.id]; }
+    setAdd();
+    ab.addEventListener('click', function(){ addDraft(r); setAdd(); });
+    acts.appendChild(cb); acts.appendChild(ab);
+    li.appendChild(acts);
+    li._setAdd = setAdd;
+    return li;
+  }
+
+  function renderMore(){
+    var from = current.shown, to = Math.min(from + PAGE, current.hits.length);
+    var frag = document.createDocumentFragment();
+    for (var i = from; i < to; i++) frag.appendChild(card(current.hits[i]));
+    results.appendChild(frag);
+    current.shown = to;
+    var left = current.hits.length - to;
+    $('moreBox').hidden = left <= 0;
+    if (left > 0) $('moreBtn').textContent = 'Show ' + Math.min(PAGE, left) + ' more (' + left.toLocaleString('en') + ' not yet shown)';
+  }
+  $('moreBtn').addEventListener('click', renderMore);
+
+  // Clipboard
+  function copy(text, btn, label){
+    function done(ok){
+      if (btn) { btn.textContent = ok ? 'Copied' : 'Copy failed, select the text by hand'; setTimeout(function(){ btn.textContent = label; }, 1800); }
+      live.textContent = ok ? 'Copied to the clipboard.' : 'Copying failed.';
+    }
+    function fallback(){
+      var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta); done(ok);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function(){ done(true); }, fallback);
+    else fallback();
+  }
+
+  // Draft
+  var draft = [];
+  function entryText(d){ return d.cite + '\n' + d.text; }
+  function renderDraft(){
+    var ol = $('draftList'); ol.textContent = '';
+    draft.forEach(function(d, i){
+      var li = document.createElement('li');
+      var c = document.createElement('div'); c.className = 'dcite'; c.textContent = d.cite;
+      var t = document.createElement('div'); t.className = 'dtxt'; t.textContent = d.text;
+      var rm = document.createElement('button'); rm.type = 'button'; rm.textContent = 'Remove';
+      rm.addEventListener('click', function(){
+        draft.splice(i, 1); delete inDraft[d.id]; renderDraft();
+        Array.prototype.forEach.call(results.children, function(el){ if (el._setAdd) el._setAdd(); });
+      });
+      li.appendChild(c); li.appendChild(t); li.appendChild(rm);
+      ol.appendChild(li);
+    });
+    $('draftEmpty').hidden = draft.length > 0;
+    $('draftActs').hidden = draft.length === 0;
+  }
+  function addDraft(r){
+    if (inDraft[r.id]) return;
+    inDraft[r.id] = true;
+    draft.push({ id: r.id, cite: citation(r), text: String(r.text == null ? '' : r.text) });
+    renderDraft();
+    live.textContent = 'Added to draft. ' + draft.length + ' in the list.';
+  }
+  $('copyAll').addEventListener('click', function(){
+    copy(draft.map(entryText).join('\n\n'), $('copyAll'), 'Copy all');
+  });
+  $('dl').addEventListener('click', function(){
+    var blob = new Blob([draft.map(entryText).join('\n\n') + '\n'], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = 'draft-quotes.txt';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  });
+
+  var timer = null;
+  q.addEventListener('input', function(){ clearTimeout(timer); timer = setTimeout(run, 150); });
+  q.addEventListener('keydown', function(e){ if (e.key === 'Enter') { clearTimeout(timer); run(); } });
+  renderDraft();
+  run();
+})();
+</script>
+</body>
+</html>
+```

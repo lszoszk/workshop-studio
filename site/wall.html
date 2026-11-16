@@ -40,6 +40,7 @@
   .cap { padding: 12px 14px 14px; }
   .cap b { display: block; font: 400 19px/1.25 var(--serif); margin-bottom: 4px; }
   .cap span { font: 12px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .cap .by { font-style: normal; text-transform: none; letter-spacing: 0; font-size: 14px; }   /* a name keeps its capitals */
   .cap .own { display: block; margin-top: 6px; font: italic 13px/1.35 var(--serif); letter-spacing: 0; text-transform: none; }
   .empty { padding: 90px 24px; text-align: center; }
   .empty b { display: block; font: 400 30px/1.2 var(--serif); margin-bottom: 8px; }
@@ -60,7 +61,7 @@
   <main class="tiles" id="tiles"></main>
   <p class="empty" id="empty" hidden><b>Nothing on the wall yet.</b><span>In the studio, <b>Send to wall</b> puts your app here.</span></p>
 </div>
-<script src="preview-doc.js?v=2026-11-16b"></script>
+<script src="preview-doc.js?v=2026-11-17a"></script>
 <script>
 (async function () {
   const W = 1280, H = 800;   // the size an app is drawn at before it is scaled into its tile
@@ -70,7 +71,9 @@
     text('config.json').then(JSON.parse), text('data/index.json').then(JSON.parse),
     text('vendor/chart.umd.min.js'), text('runtime.js')]);
   // on localhost, ?api= points the page at a local test server, as in the studio
-  const api = new URLSearchParams(location.search).get('api');
+  const qs = new URLSearchParams(location.search), api = qs.get('api');
+  // ?course=geneva: this course's wall, with only each person's newest app (the server's "who" key, one per seat, is used for that and never shown)
+  const course = /^[a-z0-9-]{1,20}$/.test(qs.get('course') || '') ? qs.get('course') : null;
   const local = (h) => h === 'localhost' || h === '127.0.0.1';
   const testApi = api && local(location.hostname) && local(new URL(api).hostname) ? api.replace(/\/$/, '') : null;
   const bases = testApi ? [testApi] : config.routes.filter((r) => r.type === 'server').map((r) => r.base);
@@ -128,7 +131,12 @@
   async function refresh() {
     let items = null, base = null;
     for (const b of bases) {
-      try { items = await text(b + '/gallery').then(JSON.parse); base = b; break; } catch (e) { /* the next server */ }
+      try { items = await text(b + '/gallery' + (course ? '?course=' + encodeURIComponent(course) : '')).then(JSON.parse); base = b; break; } catch (e) { /* the next server */ }
+    }
+    if (items && course) {
+      const newest = {};
+      items.forEach((i) => { const k = i.who || i.id, at = (i.created || '') + i.id; if (!newest[k] || at > newest[k].at) newest[k] = { at, id: i.id }; });
+      items = items.filter((i) => newest[i.who || i.id].id === i.id);
     }
     if (!items) { document.getElementById('stamp').textContent = 'The server is not answering; trying again.'; return; }
     const tiles = document.getElementById('tiles');
@@ -142,7 +150,7 @@
       a.className = 'tile';
       a.href = 'gallery/view.html?wall=' + encodeURIComponent(item.id) + (testApi ? '&api=' + encodeURIComponent(testApi) : '');
       a.innerHTML = `<div class="thumb"><span class="wait">Drawing…</span></div>
-        <div class="cap"><b>${esc(item.title)}</b><span>${esc(item.country)} · ${esc(m)} · ${esc((item.created || '').slice(11, 16))}</span>${ownFile(item) ? `<span class="own">${OWN_NOTE}</span>` : ''}</div>`;
+        <div class="cap"><b>${esc(item.title)}</b><span>${course ? (item.name ? `<i class="by">by ${esc(item.name)}</i> · ` : '') : esc(item.country) + ' · '}${esc(m)} · ${esc((item.created || '').slice(11, 16))}</span>${ownFile(item) ? `<span class="own">${OWN_NOTE}</span>` : ''}</div>`;
       a._job = { tile: a, item, base };
       tiles.prepend(a);
       fit(a.querySelector('.thumb'));

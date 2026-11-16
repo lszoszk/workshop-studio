@@ -707,3 +707,43 @@ body.with-progress .room-strip { top: 104px; }
   .progress li:not(.current) { flex: none; padding: 4px 6px; }
   .progress li.current { flex: 1; }
 }
+
+/* Geneva: the test card (step 6), three improvement ideas (step 7), the choice after a busy model, signing the wall */
+.msg.test-card { display: flex; flex-direction: column; gap: 8px; background: var(--surface); border: 1px solid var(--line); }
+.test-card > b { font-size: 16px; }
+.test-card .tsum { font-size: 13px; color: var(--muted); margin-top: -4px; }
+.test-card .tline { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; font-size: 15px; line-height: 1.4; }
+.test-card .tline input { margin: 3px 0 0; accent-color: var(--accent); flex: none; }
+.test-card .tnote { display: flex; flex-direction: column; gap: 4px; margin-top: 2px; }
+.test-card .tnote span { font: 600 12px/1.3 var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--faint); }
+.test-card .tnote input { width: 100%; padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); font-size: 15px; }
+.test-card .tdone { margin: 0; font-size: 14px; color: var(--ok-ink); font-weight: 600; }
+.test-card input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.msg.ideas { display: flex; flex-direction: column; gap: 10px; background: transparent; padding: 0; }
+.ideas .ihead { margin: 0; font-size: 15px; }
+.ideas .idea { display: flex; flex-direction: column; gap: 5px; padding: 11px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.ideas .ipersp { align-self: flex-start; font: 600 11.5px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 2px 9px; }
+.ideas .ititle { font-size: 16px; line-height: 1.3; }
+.ideas .idea p { margin: 0; font-size: 14.5px; line-height: 1.45; }
+.ideas .iwhy { color: var(--muted); }
+.ideas .ireq { padding: 6px 9px; border-left: 3px solid var(--line); background: var(--bg); font-size: 13.5px !important; }
+.ideas .ireq span { display: block; font: 600 11px/1.3 var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--faint); margin-bottom: 2px; }
+.ideas .irow, .ideas .imore, .choice, .signcard .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 4px; }
+.ideas .irow .linkish { margin-left: auto; font-size: 14px; }
+.ideas .imore .ghost { font-size: 14px; padding: 5px 11px; }
+.ideas .idea.built { border-color: var(--ok-ink); }
+.ideas .idea.folded > :not(.ititle):not(.irow), .ideas .idea.folded .ipersp { display: none; }
+.ideas .idea.folded .ititle { color: var(--muted); font-weight: 500; }
+.ideas .idea.folded .irow > :not(.linkish) { display: none; }
+.ideas.old .idea:not(.built), .ideas.old .imore { display: none; }
+.ideas.old .ihead { color: var(--muted); font-size: 13px; }
+.ideas.old .idea .irow { display: none; }
+.choice button { font-size: 14px; padding: 6px 12px; }
+.signcard { display: flex; flex-direction: column; gap: 6px; }
+.signcard input { width: 100%; padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); font-size: 15px; }
+.signcard .err { margin: 0; color: var(--danger); font-size: 14px; }
+/* the dialog's field is a name, not a code: the seat dialog's capitals and spacing do not apply */
+#wallDialog label { display: block; margin-top: 12px; font: 600 12px/1.3 var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--faint); }
+#wallDialog input { font-size: 16px; letter-spacing: normal; text-transform: none; margin: 6px 0 8px; }
+#wallDialog .row { flex-direction: row-reverse; margin-top: 10px; }   /* Send to wall is first in the markup (Enter presses it) and stays on the right */

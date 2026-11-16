@@ -774,10 +774,18 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         log_event(event="room", course=c, seat=item["seat"], chars=len(text))
         return {"ok": True, "id": item["id"]}
 
+    # "who": one short key for every page of a seat, so the wall can keep each person's newest app. Never the seat code,
+    # which spends that seat's budget; the key changes when the server restarts.
+    who_salt = secrets.token_bytes(16)
+
+    def who_key(seat):
+        return hmac.new(who_salt, seat.encode(), "sha256").hexdigest()[:10] if isinstance(seat, str) else None
+
     @app.get("/studio-api/gallery")
     async def gallery_list(course: str = ""):
-        keep = ("id", "seat", "country", "title", "model", "prompt_id", "files", "name", "course", "created")
-        return [{k: i.get(k) for k in keep} for i in gallery_items() if not course or i.get("course") == course]
+        keep = ("id", "country", "title", "model", "prompt_id", "files", "name", "course", "created")
+        return [{**{k: i.get(k) for k in keep}, "who": who_key(i.get("seat"))}
+                for i in gallery_items() if not course or i.get("course") == course]
 
     @app.get("/studio-api/gallery/{gid}")
     async def gallery_page(gid: str):

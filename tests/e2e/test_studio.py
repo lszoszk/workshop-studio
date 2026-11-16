@@ -16,6 +16,7 @@ reference shelf's excerpts going out with a message.
 """
 import functools
 import http.server
+import urllib.parse
 import importlib.util
 import json
 import re
@@ -73,6 +74,10 @@ APP_FORM = ("Here is the checker.\n```html\n<!doctype html><html><head><title>Fo
             "<script>document.getElementById('f').addEventListener('submit', (e) => { e.preventDefault(); document.getElementById('out').textContent = 'checked'; });"
             "document.getElementById('g').addEventListener('submit', () => { document.getElementById('out2').textContent = 'ran'; });"
             "</script></body></html>\n```")
+# Geneva's Verbatim finder (it needs no country file) and a change to it; the "ideas" the fake model proposes ask for the second
+APP_G1 = ("The finder.\n```html\n<!doctype html><html><head><title>Verbatim finder</title></head><body><h1 id=c>Verbatim finder</h1>"
+          "<script>document.getElementById('c').textContent += ' ready';</script></body></html>\n```")
+APP_G1_HINT = APP_G1.replace("Verbatim finder</title>", "Verbatim finder with hints</title>").replace("ready", "ready, with hints")
 PLAN_V2 = ("Here is the revised plan.\n\n```markdown\n## Context\nThe same dashboard, revised.\n\n"
            "## The app, screen by screen\n1. A line chart of the records per year.\n2. The table of records.\n```")
 
@@ -86,7 +91,7 @@ ROOM_IN = []    # what participants wrote to the facilitator (POST /room)
 @pytest.fixture(scope="module")
 def fake_api():
     """A stand-in for the studio server (docs/api-contract.md): one seat, canned answers, a wall."""
-    calls, wall = [], []
+    calls, wall, busy_asks = [], [], []
 
     class H(http.server.BaseHTTPRequestHandler):
         def log_message(self, *a):
@@ -109,8 +114,9 @@ def fake_api():
                 body = {"seat": "TEST22", "country": "Colombia", "budget_total": 8, "budget_left": 7.5, "disabled": False}
             elif "/room?" in self.path:
                 body = {"items": ROOM}
-            elif self.path.endswith("/gallery"):
-                body = [{k: v for k, v in w.items() if k != "html"} for w in reversed(wall)]
+            elif urllib.parse.urlparse(self.path).path.endswith("/gallery"):
+                course = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("course", [None])[0]
+                body = [{k: v for k, v in w.items() if k != "html"} for w in reversed(wall) if not course or w.get("course") == course]
             elif "/gallery/" in self.path:
                 page = next((w["html"] for w in wall if self.path.endswith("/" + w["id"])), None)
                 if page is None:
@@ -125,8 +131,13 @@ def fake_api():
         def do_POST(self):
             req = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
             if self.path.endswith("/gallery"):
+                name = req.get("name")
+                if name is not None and not re.fullmatch(r"[\w .,'’()&-]{1,40}", name):   # the server's rule: 40 characters, no markup
+                    self.head(400, "application/json")
+                    return self.wfile.write(json.dumps({"code": "bad_name", "error": "Use up to 40 letters, digits and spaces for the name."}).encode())
                 gid = f"1200{len(wall):02d}-{len(wall):08x}"
-                wall.append({"id": gid, "seat": req.get("seat"), "country": req.get("country") or "Colombia", "title": req.get("title"),
+                wall.append({"id": gid, "who": "w-" + str(req.get("seat"))[::-1], "country": req.get("country") or "Colombia", "title": req.get("title"),
+                             "name": name, "course": req.get("course"),
                              "model": req.get("model"), "prompt_id": req.get("prompt_id"), "files": req.get("files") or [],
                              "created": "2026-12-04T10:4%d:00" % len(wall), "html": req["html"]})
                 self.head(200, "application/json")
@@ -145,9 +156,25 @@ def fake_api():
                 return self.wfile.write(json.dumps({"ok": True, "id": "f1"}).encode())
             calls.append(req)
             last = req["messages"][-1]["content"]
+            if req.get("fallback") is False and "busy please" in last:   # the 1st, 3rd... such request: the model is busy
+                busy_asks.append(1)
+                if len(busy_asks) % 2:
+                    self.head(503, "application/json")
+                    return self.wfile.write(json.dumps({"code": "model_busy", "error": "The model is busy right now. Try again in a minute, or use the other model."}).encode())
             self.head(200, "text/event-stream")
             events = []
-            if req["purpose"] == "build" and "how are you" in last.lower():
+            if "exactly three alternative improvements" in last:   # the g1-improve request: one idea for each perspective it names
+                ids = re.findall(r"^- (\w+): ", last, re.M)
+                ideas = [{"title": f"Idea about {i}", "perspective": i, "what": f"It changes something for {i}.", "why": f"It matters for {i}.",
+                          "request": f"Add a hint about {i}."} for i in ids]
+                events.append({"delta": "Here are three ideas.\n```json\n" + json.dumps({"ideas": ideas}) + "\n```"})
+            elif req["purpose"] == "build" and "Add a hint about" in last:
+                events.append({"delta": APP_G1_HINT})
+            elif req["purpose"] == "build" and last.startswith(G1HEAD):
+                events.append({"delta": APP_G1})
+            elif req["purpose"] == "build" and "busy please" in last:
+                events.append({"delta": APP_G1_HINT})
+            elif req["purpose"] == "build" and "how are you" in last.lower():
                 events.append({"delta": "I'm well, thank you! Ask me anything, or drag a file into the chat to build an app."})
             elif req["purpose"] == "build" and "how should a bar chart" in last.lower():
                 events.append({"delta": "Sort the bars, label them directly and start the axis at zero."})
@@ -1834,6 +1861,36 @@ def test_geneva_is_one_session(base_url, browser):
     ctx.close()
 
 
+def test_geneva_kit_has_my_brief_and_the_home_dashboard(base_url, browser, tmp_path):
+    """The Geneva take-home kit, named for the course and with no country: first the participant's own brief and plan
+    as they built them (their topic), then "At home": the Human Rights Council dashboard on the 2006–2026 file, a new
+    conversation with [my topic] left for them to fill in."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900}, accept_downloads=True)
+    page = ctx.new_page()
+    page.goto(base_url + G1)
+    g1_started(page)
+    g1_plan(page, "freedom of expression")
+    build_plan(page)
+    built(page, 1)
+    page.click("#takeHomeBtn")
+    with page.expect_download(timeout=60000) as dl:
+        page.click("#kitBtn")
+    kit = tmp_path / dl.value.suggested_filename
+    dl.value.save_as(kit)
+    assert kit.name == "garage-research-kit-geneva.html"
+    p = ctx.new_page()
+    p.goto(kit.as_uri())
+    assert p.locator(".req").count() == 2 and "KENYA" not in p.inner_text("#kicker").upper()
+    mine, home = (p.locator(".req textarea").nth(i).input_value() for i in (0, 1))
+    assert G1HEAD in mine and "freedom of expression" in mine and "The plan:" in mine and "WORKSHOP_DATA.gc" in mine
+    assert "Reference shelf excerpts (offline copies)" not in mine        # the studio's shelf stays in the studio
+    assert "AT HOME" in p.inner_text("#reqs").upper() and "You are helping a participant" in home
+    assert "WORKSHOP_DATA.hrc_all" in home and "[my topic]" in home and "Do not build anything until I approve the plan" in home
+    p.click("[data-app='0']")                                             # their Verbatim finder, on the kit's data
+    p.frame_locator(".stage iframe").locator("body").first.wait_for(timeout=20000)
+    ctx.close()
+
+
 def test_the_brief_card_fills_the_message_box_and_the_file_is_shown(base_url, browser):
     """The card "Write your brief" puts the five paragraphs in the message box as they are edited (a block switched off, a
     topic, a changed paragraph) and attaches the General Comments; a brief that is not the pack's text starts the recorded
@@ -2033,4 +2090,245 @@ def test_course_parameter_and_the_old_key(base_url, browser):
     page.goto(base_url + "?via=replay&planpace=1")           # only the old key: the two-session path
     started(page)
     assert page.locator("#sessionSwitch button").count() == 2 and page.evaluate("localStorage.getItem('ws:course2')") == "full"
+    ctx.close()
+
+
+# ---- Geneva: the test card, three ideas, the busy model, the question about the wall, the wall with names ----
+
+def g1_app(browser, base_url, api, width=1440, height=900):
+    """A Geneva participant with a seat: brief, plan and the first Verbatim finder built by the fake model (steps 1 to 5)."""
+    ctx = browser.new_context(viewport={"width": width, "height": height})
+    page = ctx.new_page()
+    page.goto(base_url + f"?api={api}&course=geneva&planpace=1&reset=1#s=TEST22")
+    g1_started(page)
+    g1_plan(page)
+    build_plan(page)
+    built(page, 1)
+    page.wait_for_function("() => document.querySelectorAll('#progressSteps li.done').length === 5", timeout=20000)
+    return ctx, page
+
+
+def steps_done(page):
+    return page.eval_on_selector_all("#progressSteps li", "els => els.map(e => e.classList.contains('done'))")
+
+
+def events_since(page, n):
+    """The activity records sent from this page: the page is hidden (about:blank), so the queue goes out."""
+    import time
+    page.goto("about:blank")
+    for _ in range(50):
+        if len(EVENTS) > n:
+            break
+        time.sleep(0.1)
+    return [e for batch in EVENTS[n:] for e in batch["events"]]
+
+
+def test_the_test_card_marks_step_6_and_survives_a_reload(base_url, browser, fake_api):
+    """After the first finder opens without an error a card asks for three checks; the third marks Tested, the note stays in
+    the browser, and a reload brings the card back as it was left."""
+    api, _ = fake_api
+    n = len(EVENTS)
+    ctx, page = g1_app(browser, base_url, api)
+    page.wait_for_selector(".test-card")
+    assert "Test your app" in page.inner_text(".test-card")
+    texts = page.locator(".test-card .tline").all_inner_texts()
+    assert texts == ["I searched a phrase I know and it appears word for word", "I opened the source of one result and the paragraph is the same",
+                     "I pasted a copied citation and it has the symbol and the paragraph number"]
+    assert "one thing i would change" in page.inner_text(".test-card").lower() and steps_done(page)[5] is False
+    page.locator(".test-card .tline input").nth(0).check()
+    page.locator(".test-card .tline input").nth(1).check()
+    assert steps_done(page)[5] is False
+    page.fill(".test-card .tnote input", "show the year of each result")
+    page.locator(".test-card .tline input").nth(2).check()
+    assert steps_done(page) == [True] * 6 + [False] and page.get_attribute("#progress", "aria-valuenow") == "6"
+    page.reload()
+    g1_started(page)
+    page.wait_for_selector(".test-card")
+    assert page.locator(".test-card .tline input:checked").count() == 3 and page.input_value(".test-card .tnote input") == "show the year of each result"
+    assert steps_done(page) == [True] * 6 + [False]
+    evs = events_since(page, n)
+    assert any(e["t"] == "test_done" and e["n"] == 3 for e in evs)
+    assert any(e["t"] == "progress" and e["step"] == 6 and e["course"] == "geneva" for e in evs)
+    assert "show the year" not in json.dumps(EVENTS[n:])
+    ctx.close()
+
+
+def test_three_ideas_become_cards_and_one_builds(base_url, browser, fake_api):
+    """"Suggest three improvements" replaces the five lenses: one request, three of eight perspectives, three cards. Not this folds
+    one, Edit first and My own idea fill the box, Three other ideas asks again with three other perspectives, Build this sends the
+    idea's request as a change and marks Improved."""
+    api, calls = fake_api
+    n = len(EVENTS)
+    ctx, page = g1_app(browser, base_url, api)
+    chips = page.locator("#suggest button").all_inner_texts()
+    assert any("Suggest three improvements" in c for c in chips) and not any(c.startswith("Suggest improvements") for c in chips)
+    page.locator("#suggest button", has_text="Suggest three improvements").click()
+    page.wait_for_selector(".msg.ideas .idea")
+    assert page.locator(".msg.ideas .idea").count() == 3
+    ask = calls[-1]["messages"][-1]["content"]
+    first = re.findall(r"^- (\w+): ", ask, re.M)
+    assert len(first) == 3 and len(set(first)) == 3 and set(first) <= {"first_user", "trust", "premortem", "access", "hurry", "citation", "language", "judge"}
+    assert "exactly three alternative improvements" in ask and "Do not write any code for the app" in ask and "{perspectives}" not in ask
+    assert calls[-1]["fallback"] is False
+    card = page.locator(".msg.ideas .idea")
+    assert card.nth(0).locator(".ititle").inner_text() == f"Idea about {first[0]}" and "Add a hint about" in card.nth(0).inner_text()
+    assert [b.inner_text() for b in card.nth(0).locator("button").all()] == ["Build this", "Edit first", "Not this"]
+    assert steps_done(page)[6] is False
+    # Not this folds a card; Edit first puts its request in the box
+    card.nth(2).locator("[data-a=no]").click()
+    assert "folded" in card.nth(2).get_attribute("class")
+    card.nth(1).locator("[data-a=edit]").click()
+    assert page.input_value("#input") == f"Add a hint about {first[1]}."
+    page.fill("#input", "")
+    # My own idea: the note from the test card, after "Change the app: "
+    page.fill(".test-card .tnote input", "show the year of each result")
+    page.click(".msg.ideas [data-a=own]")
+    assert page.input_value("#input") == "Change the app: show the year of each result"
+    page.fill("#input", "")
+    # Three other ideas: three other perspectives, and the first set is set aside
+    page.click(".msg.ideas:not(.old) [data-a=more]")
+    page.wait_for_selector(".msg.ideas.old")
+    page.wait_for_function("() => document.querySelectorAll('.msg.ideas:not(.old) .idea').length === 3")
+    second = re.findall(r"^- (\w+): ", calls[-1]["messages"][-1]["content"], re.M)
+    assert len(second) == 3 and not set(second) & set(first), (first, second)
+    # Build this: the request goes as a change to the app on the stage
+    page.locator(".msg.ideas:not(.old) .idea").nth(0).locator("[data-a=build]").click()
+    built(page, 2)
+    sent = calls[-1]["messages"][-1]["content"]
+    assert sent.startswith(f"Add a hint about {second[0]}.") and len(calls[-1]["messages"]) > 2   # the earlier app goes with it: a change, not a new app
+    page.wait_for_function("() => document.querySelectorAll('#progressSteps li.done').length === 6", timeout=20000)
+    assert steps_done(page) == [True] * 5 + [False, True]
+    evs = events_since(page, n)
+    assert any(e["t"] == "ideas_shown" and e["n"] == 3 for e in evs) and len([e for e in evs if e["t"] == "ideas_shown"]) == 2
+    assert any(e["t"] == "idea_built" and e["perspective"] == second[0] for e in evs)
+    assert "show the year" not in json.dumps(EVENTS[n:]) and "Add a hint" not in json.dumps(EVENTS[n:])
+    ctx.close()
+
+
+def test_a_busy_model_is_never_swapped_silently(base_url, browser, fake_api):
+    """In Geneva a chat request says fallback:false; a busy model's own message shows with Try again and Use GLM-5.3. Use switches
+    the menu and resends to that model; Try again resends to the same one. The other courses send no such field."""
+    api, calls = fake_api
+    n = len(EVENTS)
+    ctx, page = g1_app(browser, base_url, api)
+    assert page.input_value("#modelSelect") == "claude"
+    page.fill("#input", "Please change the title, busy please")
+    page.click("#sendBtn")
+    page.wait_for_selector(".msg.err .choice")
+    err = page.inner_text(".msg.err")
+    assert "The model is busy right now. Try again in a minute, or use the other model." in err
+    assert [b.inner_text() for b in page.locator(".msg.err .choice button").all()] == ["Try again", "Use GLM-5.3 (run in the EU)"]
+    assert calls[-1]["fallback"] is False and calls[-1]["model"] == "claude"
+    page.click(".msg.err .choice [data-c=other]")
+    built(page, 2)
+    assert page.input_value("#modelSelect") == "glm-eu" and calls[-1]["model"] == "glm-eu" and calls[-1]["messages"][-1]["content"].startswith("Please change the title, busy please")
+    assert page.locator(".msg.err").count() == 0 and page.locator("#log .msg.user", has_text="busy please").count() == 1   # the failed turn gave way
+    page.fill("#input", "Please change the colour, busy please")
+    page.click("#sendBtn")
+    page.wait_for_selector(".msg.err .choice")
+    page.click(".msg.err .choice [data-c=again]")
+    built(page, 3)
+    assert calls[-1]["model"] == "glm-eu" and "colour" in calls[-1]["messages"][-1]["content"]
+    evs = events_since(page, n)
+    assert [e["choice"] for e in evs if e["t"] == "model_retry"] == ["other", "again"]
+    ctx.close()
+
+
+def test_the_other_courses_keep_the_model_swap(base_url, browser, fake_api):
+    api, calls = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + f"?api={api}&planpace=1#s=TEST22")
+    started(page)
+    add_file(page, "uhri")
+    page.fill("#input", "Build a counter")
+    page.click("#sendBtn")
+    built(page, 1)
+    assert "fallback" not in calls[-1]
+    ctx.close()
+
+
+def test_at_100_percent_the_room_is_asked_once_and_a_name_signs_the_app(base_url, browser, fake_api):
+    """When the seventh step is done the first time, "Show it to the room?" opens: a bad name is refused with the server's words
+    and the dialog stays; a good one goes to the server with the course; it is never offered again. Send to wall in Save & share
+    asks for the name in a small card in the chat."""
+    api, _ = fake_api
+    n = len(EVENTS)
+    ctx, page = g1_app(browser, base_url, api)
+    for i in range(3):
+        page.locator(".test-card .tline input").nth(i).check()
+    page.fill("#input", "Add a hint about speed.")
+    page.click("#sendBtn")
+    built(page, 2)
+    page.wait_for_selector("#wallDialog[open]")
+    assert steps_done(page) == [True] * 7
+    d = page.inner_text("#wallDialog")
+    assert "Show it to the room?" in d and "Your app goes on the wall on the projector, and it may appear in the short film at the end of the session." in d
+    assert page.get_attribute("#wallName", "maxlength") == "40" and page.get_attribute("#wallName", "placeholder") == "Your name, or a name for your app"
+    assert [b.inner_text() for b in page.locator("#wallDialog button").all()] == ["Send to wall", "Not now"]
+    page.fill("#wallName", "Ana <b>")
+    page.click("#wallSend")
+    page.wait_for_selector("#wallErr:not([hidden])")
+    assert "Use up to 40 letters" in page.inner_text("#wallErr") and page.is_visible("#wallDialog")
+    page.fill("#wallName", "Ana M.")
+    page.press("#wallName", "Enter")                  # Enter sends, as the first button of the form does
+    page.wait_for_function("() => !document.getElementById('wallDialog').open")
+    page.wait_for_function("() => /Sent to the wall/.test(document.getElementById('log').innerText)")
+    mine = json.loads(urllib.request.urlopen(api + "/gallery?course=geneva").read())
+    assert mine[0]["name"] == "Ana M." and mine[0]["course"] == "geneva" and mine[0]["title"] == "Verbatim finder with hints"
+    # once only: another change does not open it again
+    page.fill("#input", "Add a hint about colour.")
+    page.click("#sendBtn")
+    built(page, 3)
+    page.wait_for_timeout(1200)
+    assert not page.is_visible("#wallDialog")
+    assert page.evaluate("JSON.parse(localStorage.getItem('ws:work:TEST22:g1:G1')).wallAsked") is True
+    # Save & share: the name is asked in the chat, and an empty one sends it unsigned
+    page.click("#keepBtn")
+    page.click("#wallBtn")
+    page.wait_for_selector(".signcard")
+    assert page.input_value(".signcard input") == "Ana M."          # last time's, as a convenience
+    page.fill(".signcard input", "")
+    page.click(".signcard button[type=submit]")
+    page.wait_for_function("() => document.querySelectorAll('#log .msg.note').length > 0 && (document.getElementById('log').innerText.match(/Sent to the wall/g) || []).length === 2")
+    mine = json.loads(urllib.request.urlopen(api + "/gallery?course=geneva").read())
+    assert mine[0]["name"] in (None, "")
+    evs = events_since(page, n)
+    assert any(e["t"] == "wall_dlg" and e["named"] == 1 for e in evs) and "Ana" not in json.dumps(EVENTS[n:])
+    ctx.close()
+
+
+def test_the_geneva_wall_shows_names_and_each_seats_newest_app(base_url, browser, fake_api):
+    """?course=geneva asks the server for that course only and shows each seat's newest app, as "title · by Name · model · time";
+    the seat itself is never on screen; the plain wall still shows the country."""
+    api, _ = fake_api
+    def post(seat, title, name=None, course="geneva"):
+        html = f"<!doctype html><html><head><title>{title}</title></head><body><h1>{title}</h1></body></html>"
+        body = {"seat": seat, "title": title, "model": "claude", "country": "Kenya", "html": html, "files": [], "course": course}
+        if name:
+            body["name"] = name
+        urllib.request.urlopen(urllib.request.Request(api + "/gallery", method="POST", headers={"Content-Type": "application/json"}, data=json.dumps(body).encode())).read()
+    post("SEATAA", "Old app", "Ana")
+    post("SEATBB", "Unsigned app")
+    post("SEATAA", "New app", "Ana")
+    post("SEATCC", "Other course app", "Cy", course="full")
+    expected = len({w["who"] for w in json.loads(urllib.request.urlopen(api + "/gallery?course=geneva").read())})
+    ctx = browser.new_context(viewport={"width": 1280, "height": 800})
+    page = ctx.new_page()
+    page.goto(base_url + f"wall.html?api={api}&course=geneva")
+    page.wait_for_function(f"() => document.querySelectorAll('.tile').length === {expected}")
+    titles = page.locator(".tile .cap b").all_text_contents()
+    assert "New app" in titles and "Unsigned app" in titles and "Old app" not in titles and "Other course app" not in titles, titles
+    cap = page.locator(".tile", has_text="New app").locator(".cap")
+    assert re.fullmatch(r"by Ana · Claude Sonnet 5\.5 · \d\d:\d\d", cap.locator("span").first.text_content()), cap.text_content()
+    assert " · " in page.locator(".tile", has_text="Unsigned app").locator(".cap span").first.text_content()
+    assert "by " not in page.locator(".tile", has_text="Unsigned app").locator(".cap span").first.text_content()
+    assert "SEATAA" not in page.inner_text("body") and "Kenya" not in page.inner_text("#tiles")
+    page.locator(".tile", has_text="New app").click()
+    page.wait_for_url("**/gallery/view.html?wall=*")
+    page.wait_for_selector(".bar b")
+    assert "New app" in page.inner_text(".bar") and "by Ana" in page.inner_text(".bar")
+    page.goto(base_url + f"wall.html?api={api}")
+    page.wait_for_function("() => document.querySelectorAll('.tile').length >= 5")
+    assert "KENYA" in page.locator(".tile", has_text="Old app").locator(".cap span").first.inner_text().upper()
     ctx.close()

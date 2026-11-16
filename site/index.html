@@ -8,7 +8,7 @@
 <meta name="robots" content="noindex, nofollow">
 <script src="gate.js"></script>
 <script>try { const t = localStorage.getItem('ws:theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
-<link rel="stylesheet" href="studio.css?v=2026-11-16b"></head>
+<link rel="stylesheet" href="studio.css?v=2026-11-17a"></head>
 <body>
 <!-- a phone that scanned the badge's QR code gets this instead of the studio -->
 <div class="handoff" id="handoff" hidden>
@@ -188,6 +188,21 @@
   </form>
 </dialog>
 
+<dialog id="wallDialog">
+  <form method="dialog" id="wallForm">
+    <h2>Show it to the room?</h2>
+    <p>Your app goes on the wall on the projector, and it may appear in the short film at the end of the session.</p>
+    <label for="wallName">Sign it (optional)</label>
+    <input id="wallName" maxlength="40" autocomplete="off" placeholder="Your name, or a name for your app">
+    <p class="err" id="wallErr" hidden></p>
+    <div class="row">
+      <!-- Send to wall comes first in the markup: the first submit button of a form is the one Enter presses -->
+      <button value="send" class="primary" id="wallSend">Send to wall</button>
+      <button value="no" class="ghost" id="wallNo">Not now</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="feedbackDialog">
   <form method="dialog" id="feedbackForm">
     <h2>Tell us what happened</h2>
@@ -202,11 +217,11 @@
   </form>
 </dialog>
 
-<script src="preview-doc.js?v=2026-11-16b"></script>
-<script src="pdf-view.js?v=2026-11-16b"></script>
-<script src="tour.js?v=2026-11-16b"></script>
-<script src="own-files.js?v=2026-11-16b"></script>
-<script src="kit.js?v=2026-11-16b"></script>
-<script src="studio.js?v=2026-11-16b"></script>
+<script src="preview-doc.js?v=2026-11-17a"></script>
+<script src="pdf-view.js?v=2026-11-17a"></script>
+<script src="tour.js?v=2026-11-17a"></script>
+<script src="own-files.js?v=2026-11-17a"></script>
+<script src="kit.js?v=2026-11-17a"></script>
+<script src="studio.js?v=2026-11-17a"></script>
 </body>
 </html>

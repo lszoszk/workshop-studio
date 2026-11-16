@@ -43,6 +43,9 @@
     advanced: false,     // Basic shows one path through the exercises; Advanced (footer) shows the rest
     course: 'full',      // 'geneva' (?course=geneva, one session), 'venice' (?course=venice) or 'full': see COURSE
     progress: { done: Array(7).fill(false), skipped: Array(7).fill(false) },   // the seven steps of the one-session course
+    test: { shown: false, checks: [false, false, false], note: '' },   // the "Test your app" card (step 6); kept with the work
+    wallAsked: false,    // "Show it to the room?" was opened once, at 100%; kept with the work, never asked twice
+    lastLenses: [],      // the three perspectives of the previous "Suggest three improvements"
   };
   // Everything that differs between the courses lives here, so no other code asks which course it is.
   //   full:   the two-session Geneva path of before (S7, S8), the whole shelf, Advanced
@@ -61,6 +64,10 @@
   // link, the Look inside menu and the seven-step bar.  briefCard: the participant writes a brief from labelled paragraphs
   // (a pack with free_brief) instead of picking a suggestion.  insideFile: "Open" on the General Comments shelf card shows
   // "What is in the file" instead of downloading it.
+  // keepModel: a model that is busy or fails is never swapped for another behind the participant's back: the studio says so
+  // and offers Try again or the other model (the server is asked with fallback:false).  ideas: "Suggest three improvements"
+  // (three cards, one request) instead of the five review lenses.  signWall: a name may sign what goes on the wall, which is
+  // asked once at 100%.
   const COURSE = {
     full: {
       sessions: ['S7', 'S8'], promptKey: 'session', storeId: 'geneva', roomId: 'full', models: null, country: true,
@@ -89,8 +96,9 @@
       sessions: ['G1'], promptKey: 'geneva', storeId: 'g1', roomId: 'geneva', models: ['claude', 'glm-eu'], country: false,
       advanced: false, wallWithoutAdvanced: true, ignoreLevel: true, ownSession: null, askDirect: false, tour: false, pace: 25,
       files: ['gc'], planBrief: true, event: 'event_geneva', feedbackHint: null, improveSwap: false, courseLink: false, look: false, progress: true, briefCard: true, insideFile: true,
+      keepModel: true, ideas: true, signWall: true,
       defaultModel: 'claude',   // Venice: no error in Claude's 136 builds, GLM's in about one of three; GLM stays a click away
-      kit: { steps: [['Session 1', 'g1-verbatim', true]], data: ['gc'] },
+      kit: { steps: [['Session 1', 'g1-verbatim', true], ['At home', 'g-home-hrc', true]], data: ['gc', 'hrc_all'] },
     },
   };
   let CFG = COURSE.full;   // set again at boot, once the course is known
@@ -452,7 +460,7 @@
       res = await fetch(r.base + '/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seat: S.seatCode, model: o.model, purpose: o.purpose, messages: o.messages }),
+        body: JSON.stringify({ seat: S.seatCode, model: o.model, purpose: o.purpose, messages: o.messages, ...(CFG.keepModel ? { fallback: false } : {}) }),
         signal: o.signal,
       });
     } catch (e) {
@@ -462,7 +470,8 @@
     if (!res.ok) {
       let j = {};
       try { j = await res.json(); } catch (e) { /* not JSON */ }
-      throw Object.assign(new Error(j.error || `server error ${res.status}`), { status: res.status, code: j.code, failover: res.status >= 500 && res.status !== 503 });
+      throw Object.assign(new Error(j.error || `server error ${res.status}`), { status: res.status, code: j.code,
+        failover: res.status >= 500 && res.status !== 503 && j.code !== 'model_failed' });   // model_failed: the participant chooses, not a silent switch of route
     }
     return readSSE(res, o, (ev, j) => (ev === 'usage' ? { usage: j } : ev === 'error' ? { error: j.error || 'The model stopped' } : { delta: j.delta, reasoning: j.reasoning }));
   }
@@ -736,7 +745,7 @@
   // every message goes through here, so a request is never lost or silently changed;
   // `plan` is set when the message is a plan on its way to being built
   function submitBuild(text, plan) {
-    if (!S.ready || S.busy || !text.trim()) return;
+    if (!S.ready || S.busy || !text.trim() || text.trim() === CHANGE_APP.trim()) return;   // the prefix of "My own idea", with nothing after it
     if (!plan && S.planning && S.planning.changing) {
       if (!commitEdit(S.planning)) return;   // a plan being edited by hand is saved first, so the change starts from it
       return revisePlan(S.planning, text);
@@ -834,6 +843,7 @@
     if (e.status === 429) return 'Too many messages from this seat in a short time. Wait a minute, then send again.';
     if (e.status === 403) return 'This seat code is not active. Ask a facilitator.';
     if (/too long/i.test(m)) return 'This conversation has become too long for the model. Start a new app with a clearer request.';
+    if (e.code === 'model_busy' || e.code === 'model_failed') return m;   // the choice (Try again, the other model) sits under it
     if (e.status === 503) return (m || 'The model service is busy') + '. Your message is back in the box.';
     return `The model could not finish (${m}). Your message is back in the box: send it again.`;
   }
@@ -868,6 +878,7 @@
     };
     setView('app');
     addUser(userText, files, images);
+    const userEl = $('log').lastElementChild;
     const view = addAssistantLive();
     if (hits.length) view.step(shelfStep(hits));
     const t0 = performance.now();
@@ -963,7 +974,8 @@
       });
       S.versions.push(v);
       S.current = v.n;
-      S.watch = { n: v.n, err: false, improves: !!parent && !v.fix && !opts.auto };   // steps 5 and 7, once its preview is up
+      // steps 5 and 7, once its preview is up; first: the first Verbatim finder, which brings the test card
+      S.watch = { n: v.n, err: false, improves: !!parent && !v.fix && !opts.auto, first: promptId === 'g1-verbatim' && !S.versions.slice(0, -1).some((x) => x.promptId === 'g1-verbatim') };
       track('build', Object.assign(buildFacts('app'), { ver: v.n, lines: html.split('\n').length, edit: !!edit, whole: asked !== messages, auto: !!opts.auto }));
       if (plan) retirePlanning(`Built as v${v.n}.`);
       view.done(v);
@@ -977,8 +989,9 @@
       await showVersion(v);
     } catch (e) {
       track('build_fail', { prompt: promptId, model, code: e.name === 'AbortError' ? 'stopped' : String(e.code || e.status || (e.failover ? 'no_route' : 'error')) });
-      view.fail('', friendly(e));
+      const box = view.fail('', friendly(e));
       giveBack();
+      if (CFG.keepModel && TROUBLE.has(e.code)) modelChoice(box, [userEl, box.parentElement], () => (plan ? buildFromPlan(plan) : submitBuild(userText)));
     } finally {
       setBusy(false);
       if (S.pendingRepair) { const m = S.pendingRepair; S.pendingRepair = null; autoRepair(m); }
@@ -1176,7 +1189,7 @@
     if (m.type === 'studio:ready' && S.watch && S.watch.n === S.current && Preview.owns(e.source)) {   // the new version's scripts ran: any error came first
       const w = S.watch;
       S.watch = null;
-      if (!w.err) { const had5 = S.progress.done[4]; Progress.mark(5); if (w.improves && had5) Progress.mark(7); }
+      if (!w.err) { const had5 = S.progress.done[4]; Progress.mark(5); if (w.improves && had5) Progress.mark(7); if (w.first) TestCard.open(); }
     }
     if (m.type === 'studio:ready' && Run3.waiting && e.source === Run3.frame.contentWindow) return Run3.got({ fp: m.fingerprint, shown: m.shown || { picks: [] } });
     const fromTab = tabs.has(e.source);
@@ -1707,8 +1720,11 @@
         const keys = p.dataset ? [p.dataset, ...(fileMeta(p.dataset).also || [])] : [];
         const pack = p.planning ? await getJSON('data/' + p.planning) : null;
         const plan = pack ? planText(composePlan(pack, {})) : '';
-        // a free-brief pack: the kit shows the brief with the topic's default, then the plan, as Build sends them
-        const req = !pack ? promptText(p) : pack.free_brief ? `${BRIEF_HEAD}\n\nMy brief:\n${pack.problem.replace(/\[my topic\]/g, () => topicDefault(pack))}\n\nThe plan:\n${plan}` : PLAN_HEAD + '\n\n' + plan;
+        // a free-brief pack: the participant's own brief and plan, as their latest build of it sent them (without any
+        // shelf excerpts); before a build, the brief with the topic's default and the plan
+        const mine = pack && pack.free_brief && [...S.versions].reverse().find((v) => v.promptId === id && (v.sent || '').startsWith(BRIEF_HEAD));
+        const req = !pack ? promptText(p) : mine ? mine.sent.split('\n\nReference shelf excerpts (offline copies)\n')[0]
+          : pack.free_brief ? `${BRIEF_HEAD}\n\nMy brief:\n${pack.problem.replace(/\[my topic\]/g, () => topicDefault(pack))}\n\nThe plan:\n${plan}` : PLAN_HEAD + '\n\n' + plan;
         const fresh = first ? keys : keys.filter((k) => !had.includes(k));   // a follow-up describes only data the conversation lacks
         const text = [first ? sys : '', fresh.length ? Kit.data(S.schema, S.samples, fresh) : '',
           '# The request\n\n' + req + (p.dataset ? '\n\n' + attachLine(p.dataset) : '')].filter(Boolean).join('\n\n---\n\n');
@@ -1729,11 +1745,11 @@
       const used = [...new Set(leaves.flatMap(({ v, vs }) => chainOf(v, vs).flatMap((x) => x.files || [])).filter((k) => S.own[k] || S.index.datasets[k]))];
       const datasets = {};
       for (const k of new Set([...CFG.kit.data, ...used])) datasets[k] = await dataParsed(k);
-      const html = Kit.page(await getText('kit/kit.html'), { chart: S.chart, runtime: S.runtime, datasets, meta: { country: S.country, built }, steps, apps });
+      const html = Kit.page(await getText('kit/kit.html'), { chart: S.chart, runtime: S.runtime, datasets, meta: { country: CFG.country ? S.country : '', built }, steps, apps });
       const blob = new Blob([html], { type: 'text/html' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `garage-research-kit-${slugOf(S.country)}.html`;
+      a.download = `garage-research-kit-${CFG.country ? slugOf(S.country) : S.course}.html`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
       track('kit', { mb: Math.round(blob.size / 1e5) / 10, apps: apps.length });
@@ -1746,21 +1762,278 @@
     }
   }
 
-  async function sendToWall() {
-    const v = currentVersion();
-    if (!v || S.route.type !== 'server') return;
+  // The wall takes the app on the stage, with the country and the files it ran on; in Geneva also a name to sign it with and
+  // the course, so the room's wall shows this course and each person's newest app. The seat code is for that grouping only
+  // and is never shown.
+  async function postWall(v, name) {
     track('wall', { prompt: v.promptId || null });
     try {
       const res = await fetch(S.route.base + '/gallery', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ seat: S.seatCode, title: titleOf(v.html), model: v.model, prompt_id: v.promptId, html: v.html,
-          country: S.country, files: [...new Set(chainOf(v).flatMap((x) => x.files || []))] }),
+          country: S.country, files: [...new Set(chainOf(v).flatMap((x) => x.files || []))],
+          ...(CFG.signWall ? { course: CFG.roomId, ...(name ? { name } : {}) } : {}) }),
       });
       const j = await res.json().catch(() => ({}));
-      note(res.ok ? 'Sent to the wall.' : esc(j.error || 'The wall did not accept it.'));
+      return res.ok ? { ok: true } : { ok: false, code: j.code, error: j.error || 'The wall did not accept it.' };
     } catch (e) {
-      note('The wall is not reachable right now.');
+      return { ok: false, error: 'The wall is not reachable right now.' };
     }
+  }
+
+  async function sendToWall() {
+    const v = currentVersion();
+    if (!v || S.route.type !== 'server') return;
+    let err = '';
+    for (;;) {
+      const name = CFG.signWall ? await askName(err) : '';
+      if (name === null) return;   // Cancel
+      const r = await postWall(v, name);
+      if (r.code === 'bad_name') { err = r.error; continue; }   // the same question again, with the server's words
+      if (r.ok && name) localSet('ws:wallname', name);
+      note(r.ok ? 'Sent to the wall.' : esc(r.error));
+      return;
+    }
+  }
+
+  // "Sign it": a small card in the chat; a name is optional, Enter sends, Escape or Cancel does not
+  function askName(err) {
+    return new Promise((resolve) => {
+      const d = document.createElement('form');
+      d.className = 'msg note signcard';
+      d.innerHTML = '<b>Sign it?</b> <span>Your name, or a name for your app. Leave it empty to send it unsigned.</span>' +
+        '<input type="text" maxlength="40" autocomplete="off" aria-label="Sign it (optional)" placeholder="Your name, or a name for your app">' +
+        `<p class="err" ${err ? '' : 'hidden'}></p><div class="row"><button type="submit" class="primary">Send to wall</button><button type="button" class="ghost">Cancel</button></div>`;
+      d.querySelector('.err').textContent = err || '';
+      const input = d.querySelector('input');
+      input.value = localGet('ws:wallname') || '';
+      const done = (v) => { d.remove(); resolve(v); };
+      d.onsubmit = (e) => { e.preventDefault(); done(input.value.trim()); };
+      d.querySelector('.ghost').onclick = () => done(null);
+      d.onkeydown = (e) => { if (e.key === 'Escape') done(null); };
+      $('log').append(d);
+      scrollLog();
+      input.focus();
+    });
+  }
+
+  // At 100%: "Show it to the room?" (once; Send to wall in Save & share stays)
+  function wallDialog() {
+    const d = $('wallDialog');
+    $('wallName').value = localGet('ws:wallname') || '';
+    $('wallErr').hidden = true;
+    d.returnValue = '';
+    d.showModal();
+    $('wallName').focus();
+  }
+  $('wallForm').onsubmit = async (e) => {
+    if (e.submitter !== $('wallSend')) return;   // Not now closes the dialog as it is
+    e.preventDefault();
+    const v = currentVersion(), name = $('wallName').value.trim();
+    if (!v) return $('wallDialog').close('no');
+    $('wallSend').disabled = true;
+    const r = await postWall(v, name);
+    $('wallSend').disabled = false;
+    if (!r.ok) { $('wallErr').textContent = r.error; $('wallErr').hidden = false; return; }   // bad_name too: it stays open, with the server's words
+    track('wall_dlg', { named: name ? 1 : 0 });
+    if (name) localSet('ws:wallname', name);
+    $('wallDialog').close('sent');
+    note('Sent to the wall. Look at the projector.');
+  };
+
+  // A model that is busy or that fails is never swapped for another without saying so: the server's own words, then
+  // Try again or the other model (the menu changes with it). The failed turn gives way to the new one.
+  const TROUBLE = new Set(['model_busy', 'model_failed']);
+  function modelChoice(box, gone, resend) {
+    const other = CFG.models.find((m) => m !== S.model);
+    const row = document.createElement('div');
+    row.className = 'choice';
+    row.innerHTML = '<button type="button" class="primary" data-c="again">Try again</button>' +
+      (other ? `<button type="button" class="ghost" data-c="other">Use ${esc(S.config.models[other].label)}</button>` : '');
+    box.append(row);
+    scrollLog();
+    row.onclick = (e) => {
+      const b = e.target.closest('button');
+      if (!b || S.busy) return;
+      track('model_retry', { choice: b.dataset.c });
+      if (b.dataset.c === 'other') {
+        track('model', { from: S.model, to: other, by: 'busy' });
+        S.model = other;
+        localSet('ws:model', S.model);
+        $('modelSelect').value = S.model;
+        renderBadge();
+      }
+      gone.forEach((el) => el.remove());
+      resend();
+    };
+  }
+
+  /* ---------- Geneva: the test card (step 6) and three improvement ideas (step 7) ---------- */
+
+  const CHANGE_APP = 'Change the app: ';
+  const TESTS = ['I searched a phrase I know and it appears word for word',
+    'I opened the source of one result and the paragraph is the same',
+    'I pasted a copied citation and it has the symbol and the paragraph number'];
+
+  // The card sits under the first Verbatim finder, once it has opened without an error; what is ticked is kept with the work.
+  const TestCard = {
+    el: null,
+    open() {
+      if (!CFG.progress || S.test.shown) return;
+      S.test.shown = true;
+      save();
+      this.add();
+    },
+    // (re)made from the saved state, after the given message or at the end of the chat
+    add(after) {
+      if (!CFG.progress || !S.test.shown) return;
+      if (this.el) this.el.remove();
+      const el = this.el = document.createElement('div');
+      el.className = 'msg test-card';
+      el.innerHTML = '<b>Test your app</b><span class="tsum">Try it on something you know. Tick a line when it is true.</span>' +
+        TESTS.map((t, i) => `<label class="tline"><input type="checkbox" data-i="${i}"${S.test.checks[i] ? ' checked' : ''}><span>${esc(t)}</span></label>`).join('') +
+        '<label class="tnote"><span>One thing I would change (optional)</span><input type="text" maxlength="200" autocomplete="off" placeholder="e.g. show the year next to each result"></label>' +
+        '<p class="tdone" hidden>All three are true. Next: ask for one improvement.</p>';
+      el.querySelector('.tnote input').value = S.test.note;
+      const sync = () => { el.querySelector('.tdone').hidden = !S.test.checks.every(Boolean); };
+      el.addEventListener('change', (e) => {
+        const i = e.target.dataset.i;
+        if (i == null) return;
+        S.test.checks[Number(i)] = e.target.checked;
+        if (S.test.checks.every(Boolean) && !S.progress.done[5]) { track('test_done', { n: 3 }); Progress.mark(6); }   // the note's words never leave the browser
+        save();
+        sync();
+      });
+      el.querySelector('.tnote input').addEventListener('input', (e) => { S.test.note = e.target.value; save(); });
+      sync();
+      if (after) after.after(el); else { $('log').append(el); scrollLog(); }
+    },
+  };
+
+  // eight perspectives; each time three of them are drawn, never the three just shown
+  const LENSES = [
+    { id: 'first_user', label: 'A first-time user', ask: "a first-time user, judged by Nielsen's usability heuristics: is it clear what the app does, what is happening and what to do next" },
+    { id: 'trust', label: 'Can I trust the results?', ask: 'can I trust the results: data quality, meaning accuracy, completeness, consistency, and whether the app says what it leaves out' },
+    { id: 'premortem', label: 'A pre-mortem', ask: 'a pre-mortem (Gary Klein): imagine the app failed badly in front of a room, say what went wrong, and propose what would have prevented it' },
+    { id: 'access', label: 'Accessibility', ask: 'accessibility, judged by WCAG 2.2: keyboard use, contrast, text size, labels and focus' },
+    { id: 'hurry', label: 'A colleague in a hurry', ask: 'a colleague in a hurry: speed, and the fewest clicks from opening the app to a usable answer' },
+    { id: 'citation', label: 'A careful drafter', ask: 'a careful drafter: citation precision, the symbol and the paragraph number exactly right and easy to copy' },
+    { id: 'language', label: 'Another language', ask: 'someone working in another language: a French or Spanish speaker reading English results, and what helps them find and check a passage' },
+    { id: 'judge', label: 'A sceptical judge', ask: 'a sceptical judge: could a quotation, shown without its context, mislead a reader' },
+  ];
+  function pickLenses() {
+    let pool = LENSES.filter((l) => !S.lastLenses.includes(l.id));
+    if (pool.length < 3) pool = LENSES.slice();
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    S.lastLenses = pool.slice(0, 3).map((l) => l.id);
+    return S.lastLenses.slice();
+  }
+
+  // the model's JSON block, or bare JSON; null when there is none to read
+  function parseIdeas(text, ids) {
+    const found = [];
+    const fence = /```(?:json)?[ \t]*\n?([\s\S]*?)```/gi;
+    let m;
+    while ((m = fence.exec(text))) found.push(m[1]);
+    const a = text.indexOf('{'), b = text.lastIndexOf('}');
+    if (a >= 0 && b > a) found.push(text.slice(a, b + 1));
+    const cut = (x, n) => String(x || '').trim().slice(0, n);
+    for (const raw of found) {
+      try {
+        const j = JSON.parse(raw.trim());
+        const list = (Array.isArray(j) ? j : (j && j.ideas) || []).filter((x) => x && typeof x.title === 'string' && typeof x.request === 'string' && x.title.trim() && x.request.trim());
+        if (list.length) return list.slice(0, 3).map((x, i) => ({ title: cut(x.title, 90), what: cut(x.what, 420), why: cut(x.why, 320), request: cut(x.request, 700),
+          perspective: ids.includes(x.perspective) ? x.perspective : ids[i] || ids[0] }));
+      } catch (e) { /* the next candidate */ }
+    }
+    return null;
+  }
+
+  async function suggestIdeas(ids) {
+    const v = currentVersion(), p = S.prompts.find((q) => q.id === 'g1-improve');
+    if (!v || !p || S.busy || !S.ready) return;
+    ids = ids || pickLenses();
+    const content = p.prompt.replace('{perspectives}', ids.map((id) => { const l = LENSES.find((x) => x.id === id); return `- ${l.id}: ${l.ask}`; }).join('\n'));
+    const model = S.model;
+    setBusy(true);
+    addUser('Suggest three improvements');
+    const userEl = $('log').lastElementChild;
+    const d = document.createElement('div');
+    d.className = 'msg assistant';
+    d.innerHTML = `<div class="who">${esc(S.config.models[model].label)}</div><div class="summary">Looking at your app from three points of view…</div>`;
+    $('log').append(d);
+    scrollLog();
+    const t0 = performance.now();
+    const say = () => { $('buildingText').textContent = `Looking at your app · ${Math.round((performance.now() - t0) / 1000)} s`; };
+    say();
+    const tick = setInterval(say, 1000);
+    S.ctrl = new AbortController();
+    try {
+      const { text, usage } = await chat({ purpose: 'build', model, messages: buildMessages(v, content), promptId: p.id, signal: S.ctrl.signal });
+      if (usage.budget_left != null) setBudget(usage.budget_left);
+      d.remove();
+      const ideas = parseIdeas(text, ids);
+      track('ideas_shown', { n: ideas ? ideas.length : 0 });
+      if (ideas) showIdeas(ideas);
+      else {
+        const t = document.createElement('div');
+        t.className = 'msg assistant';
+        t.innerHTML = `<div class="who">${esc(usage.model_label || S.config.models[model].label)}</div><div class="summary answer-md">${md(text.trim() || 'The model sent back nothing.')}</div>`;
+        $('log').append(t);
+        note('The ideas did not come back as three cards, so they are shown as the model wrote them. Read them, then write your own change in the box, or ask again.');
+        openComposer(CHANGE_APP);
+      }
+    } catch (e) {
+      d.querySelector('.summary').remove();
+      const box = document.createElement('div');
+      box.className = 'msg err';
+      box.textContent = e.name === 'AbortError' ? 'Stopped.' : TROUBLE.has(e.code) ? e.message : `The model could not finish (${e.message}). Try again.`;
+      d.append(box);
+      if (CFG.keepModel && TROUBLE.has(e.code)) modelChoice(box, [userEl, d], () => suggestIdeas(ids));
+    } finally {
+      clearInterval(tick);
+      setBusy(false);
+    }
+  }
+
+  function showIdeas(ideas) {
+    const label = (id) => (LENSES.find((l) => l.id === id) || { label: id }).label;
+    $('log').querySelectorAll('.ideas:not(.old)').forEach((g) => { g.classList.add('old'); g.querySelector('.ihead').textContent = 'Earlier ideas, set aside.'; });
+    const g = document.createElement('div');
+    g.className = 'msg ideas';
+    g.innerHTML = '<p class="ihead"><b>Three ideas.</b> Each looks at your app from a different point of view. Build one, change it first, or skip it.</p>' +
+      ideas.map((x, i) => `<div class="idea" data-i="${i}"><span class="ipersp">${esc(label(x.perspective))}</span><b class="ititle">${esc(x.title)}</b>` +
+        `<p class="iwhat">${esc(x.what)}</p><p class="iwhy"><i>Why it matters:</i> ${esc(x.why)}</p><p class="ireq"><span>Request</span>${esc(x.request)}</p>` +
+        '<div class="irow"><button type="button" class="primary" data-a="build">Build this</button><button type="button" class="ghost" data-a="edit">Edit first</button>' +
+        '<button type="button" class="linkish" data-a="no">Not this</button></div></div>').join('') +
+      '<div class="imore"><button type="button" class="ghost" data-a="own">My own idea</button><button type="button" class="ghost" data-a="more">Three other ideas</button></div>';
+    g.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-a]');
+      if (!b || b.closest('.old')) return;
+      const card = b.closest('.idea'), x = card && ideas[Number(card.dataset.i)];
+      if (b.dataset.a === 'build') {
+        if (S.busy) return note('Wait until the model has finished, then press <b>Build this</b> again.');
+        const keep = $('input').value;   // what was being written stays
+        track('idea_built', { perspective: x.perspective });
+        card.classList.add('built');
+        b.textContent = 'Sent';
+        b.disabled = true;
+        if (submitBuild(x.request) && keep.trim() && keep !== CHANGE_APP) { $('input').value = keep; fitInput(); }
+      } else if (b.dataset.a === 'edit') {
+        openComposer(x.request);
+        $('input').setSelectionRange(x.request.length, x.request.length);
+      } else if (b.dataset.a === 'no') {
+        card.classList.toggle('folded');
+        b.textContent = card.classList.contains('folded') ? 'Show it again' : 'Not this';
+      } else if (b.dataset.a === 'own') {
+        openComposer(CHANGE_APP + S.test.note.trim());
+        $('input').setSelectionRange($('input').value.length, $('input').value.length);
+      } else if (b.dataset.a === 'more') {
+        suggestIdeas();
+      }
+    });
+    $('log').append(g);
+    g.scrollIntoView({ block: 'start' });
   }
 
   /* ---------- chat column ---------- */
@@ -1881,6 +2154,7 @@
         e.className = 'msg err';
         e.textContent = err;
         d.append(e);
+        return e;
       },
       // an answer in words: rendered as text, no code card
       answer(t) {
@@ -1972,6 +2246,7 @@
   function renderLog() {
     $('log').innerHTML = '';
     const items = S.versions.map((v) => ({ at: v.created, v })).concat(S.talk.map((t) => ({ at: t.created, t })));
+    let carded = false;   // the test card goes under the first Verbatim finder
     items.sort((x, y) => x.at - y.at).forEach(({ v, t }) => {
       const turn = v || t;
       addUser(turn.user, turn.files || []);
@@ -1993,7 +2268,9 @@
         if (t.query) d.querySelector('.summary').after(queryCard(t));
       }
       $('log').append(d);
+      if (v && !carded && v.promptId === 'g1-verbatim') { carded = true; TestCard.add(d); }
     });
+    if (!carded) TestCard.add();   // a step skipped without such an app: at the end
   }
 
   const promptText = (p) => p.prompt.replace(/\{country\}/g, S.country);
@@ -2004,6 +2281,7 @@
     track('pick', { prompt: p.id, plan: plannable(p) && S.planMode });
     if (p.id === 'any-improve' && CFG.improveSwap) p = S.prompts.find((q) => q.id === 'improve-trust') || p;   // one way, not five
     if (p.id === 'any-improve') return showLenses();
+    if (p.id === 'g1-improve') return suggestIdeas();
     preferModel(p);
     if (plannable(p)) return openPlanning(p, fresh);
     openComposer(promptText(p));
@@ -2906,7 +3184,8 @@
     // a next step continues this app; it may bring a file of its own (a second document to add)
     // a step with no recorded answer (prompts.json "live_only") is offered only when a model is on the line
     const next = v ? S.prompts.filter((p) => mine(p) && p.builds_on && p.builds_on !== 'any' && !used.has(p.id) && used.has(p.builds_on) && (live || !p.live_only)).slice(0, 2) : [];
-    if (v && live) next.push(...S.prompts.filter((p) => p.builds_on === 'any' && !p.lens && p.id !== S.pendingPromptId && (S.advanced || p.level !== 'advanced')));   // "Suggest improvements"
+    // "Suggest improvements" (or, where the course has them, "Suggest three improvements": its request is Geneva's)
+    if (v && live) next.push(...S.prompts.filter((p) => p.builds_on === 'any' && !p.lens && !p.geneva === !CFG.ideas && p.id !== S.pendingPromptId && (S.advanced || p.level !== 'advanced')));
     // Hick's law: Session 8 keeps its three apps in view (PDF, Verbatim finder, wiki); Session 7 has one
     let starters = S.prompts.filter((p) => mine(p) && !p.builds_on && !built.has(p.id) && (live || !p.live_only)).slice(0, !v || S.session !== 'S7' ? 3 : 1);
     // a course that has the participant write a brief shows its card in the chat, not the suggestion, before the first app
@@ -3552,16 +3831,25 @@
     mark(n) {
       if (!CFG.progress || S.progress.done[n - 1]) return;
       S.progress.done[n - 1] = true;
-      track('progress', { step: n, secs: Math.round((performance.now() - Track.t0) / 1000) });
+      track('progress', { step: n, secs: Math.round((performance.now() - Track.t0) / 1000), course: S.course });
       save();
       this.render();
+      this.allDone();
     },
     skip(n) {
       if (!CFG.progress || S.progress.done[n - 1]) return;
       S.progress.done[n - 1] = S.progress.skipped[n - 1] = true;
-      track('progress_skip', { step: n });
+      track('progress_skip', { step: n, course: S.course });
       save();
       this.render();
+      this.allDone();
+    },
+    // all seven, the first time: "Show it to the room?" (only where there is a wall to send to)
+    allDone() {
+      if (!CFG.signWall || S.wallAsked || !S.progress.done.every(Boolean) || !S.route || S.route.type !== 'server' || !currentVersion()) return;
+      S.wallAsked = true;
+      save();
+      setTimeout(wallDialog, 500);   // the finished app is on the stage first
     },
     render() {
       if (!CFG.progress) return;
@@ -3586,7 +3874,7 @@
   function save() {
     // the full text sent with each request is not kept: it would fill the browser's storage
     const trace = S.trace.map((t) => Object.assign({}, t, { request: '', at: t.at.toISOString() }));
-    localSet(storeKey(), JSON.stringify({ versions: S.versions, current: S.current, talk: S.talk, trace, progress: S.progress, planning: planSaved() }));
+    localSet(storeKey(), JSON.stringify({ versions: S.versions, current: S.current, talk: S.talk, trace, progress: S.progress, test: S.test, wallAsked: S.wallAsked, planning: planSaved() }));
   }
 
   // the plan of a free brief waits in the browser until it is built or replaced: brief, topic, look, answers and every version.
@@ -3605,11 +3893,13 @@
     try {
       Object.keys(localStorage).filter((k) => k.startsWith('ws:work:')).forEach((k) => localStorage.removeItem(k));
     } catch (e) { /* private mode */ }
-    Object.assign(S, { versions: [], current: null, talk: [], trace: [], progress: Progress.fresh() });
+    Object.assign(S, { versions: [], current: null, talk: [], trace: [], progress: Progress.fresh(), test: { shown: false, checks: [false, false, false], note: '' }, wallAsked: false });
   }
 
   function restore() {
     S.progress = Progress.fresh();
+    S.test = { shown: false, checks: [false, false, false], note: '' };
+    S.wallAsked = false;
     S.savedPlan = null;
     try {
       // the one conversation of the studio before 11.11.2026 goes to the session opened first
@@ -3617,6 +3907,9 @@
       if (!localGet(storeKey()) && localGet(legacy)) { localSet(storeKey(), localGet(legacy)); localStorage.removeItem(legacy); }
       const d = JSON.parse(localGet(storeKey()) || 'null');
       S.progress = Progress.from(d && d.progress);
+      const t = d && d.test;
+      if (t && t.shown === true && Array.isArray(t.checks) && t.checks.length === 3 && t.checks.every((x) => typeof x === 'boolean')) S.test = { shown: true, checks: t.checks, note: String(t.note || '').slice(0, 200) };
+      S.wallAsked = !!(d && d.wallAsked);
       if (d && Array.isArray(d.versions)) { S.versions = d.versions; S.current = d.current; }
       if (d && Array.isArray(d.talk)) S.talk = d.talk;
       S.savedPlan = planFrom(d && d.planning);

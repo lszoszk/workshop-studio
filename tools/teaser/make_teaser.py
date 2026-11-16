@@ -77,13 +77,13 @@ def filter_wall(wall, days=(), course=None):
 
 
 def candidates(items, max_apps):
-    """Newest per seat first (one app per person, and not the same title twice), then newest overall; own_* apps skipped."""
+    """Newest per person ("who") first (one app per person, and not the same title twice), then newest overall; own_* apps skipped."""
     items = sorted((i for i in items if not any(str(k).startswith("own_") for k in i.get("files") or [])),
                    key=lambda i: i.get("created") or "", reverse=True)
     seen, titles, first, rest = set(), set(), [], []
     for i in items:
-        if i.get("seat") not in seen and i.get("title") not in titles:
-            seen.add(i.get("seat")); titles.add(i.get("title")); first.append(i)
+        if i.get("who") not in seen and i.get("title") not in titles:
+            seen.add(i.get("who")); titles.add(i.get("title")); first.append(i)
         else:
             rest.append(i)
     return first + rest
@@ -483,7 +483,7 @@ def make(a) -> Path:
     wall = filter_wall(fetch_wall(), a.day, a.course)
     if not wall:
         sys.exit("no apps on the wall for these filters")
-    people = len({i.get("seat") for i in wall})   # a count only; the codes themselves are never kept
+    people = len({i.get("who") for i in wall})   # "who": one key per seat, never the seat code
     log(f"wall: {len(wall)} apps from {people} people match")
     cands = candidates(wall, a.max_apps)
     with http() as c:

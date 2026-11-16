@@ -80,7 +80,7 @@ The front fails over to the next route only when the request fails before the fi
 
 Two optional fields: `name`, the display name the participant chose (spaces collapse, 40 characters at most; letters of any script, digits, spaces and `. , ' ’ - ( ) &`; empty is stored as `null`; anything else → `400 {"code": "bad_name", "error": "Use letters, numbers and spaces in the name"}`), and `course`, a slug `[a-z0-9-]{1,20}` (anything else is stored as `null`). Logs record only whether a name was given.
 
-`GET /gallery` → `[{"id", "seat", "country", "title", "model", "prompt_id", "files", "name", "course", "created"}]`, newest first. `GET /gallery?course=geneva` keeps only that course's pages. `GET /gallery/{id}` → the stored HTML (`text/html`). The Worker does not implement the gallery.
+`GET /gallery` → `[{"id", "who", "country", "title", "model", "prompt_id", "files", "name", "course", "created"}]`, newest first. `who` is the same short key for every page of one seat (never the seat code, which spends the seat's budget; it changes when the server restarts). `GET /gallery?course=geneva` keeps only that course's pages. `GET /gallery/{id}` → the stored HTML (`text/html`). The Worker does not implement the gallery.
 
 ## `GET /room` and `POST /room`: the room chat
 
