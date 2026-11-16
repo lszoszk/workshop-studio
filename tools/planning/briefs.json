@@ -24,6 +24,73 @@
       "dataset": "wiki",
       "problem": "Our team keeps losing track of what each report says about neurotechnology in the justice system. Build us a research wiki we can ask questions of, add new reports to, and trust: every quote checked against its source.",
       "facilitator_brief": "The wiki is already compiled from nine sources (WORKSHOP_DATA.wiki), following Karpathy's LLM-wiki pattern as kept in a book project: source, concept, entity and question pages, verified pins that open the PDF page, registers and contested claims. The app is the team's workspace for it: read and navigate, Ask the wiki and file good answers back, Ingest the waiting source A/HRC/57/61 with a human approving each change, and Lint. The model drafts; the code verifies every quotation."
+    },
+    "g1-verbatim": {
+      "title": "Verbatim finder for General Comments",
+      "dataset": "gc",
+      "problem": "GOAL AND WHY\nWhen I write a submission on [my topic], I need the exact words of UN treaty bodies' General Comments, with a correct citation. A chatbot's paraphrase is not enough: I have to quote.\n\nBEFORE YOU BUILD\nLook at the attached file and tell me what it contains and what it lacks. Then write a plan. Do not build anything until I approve the plan.\n\nLIMITS\nUse only the attached file. Never shorten or rewrite a paragraph. Nothing leaves my browser.\n\nDONE LOOKS LIKE\nI type a phrase and see every paragraph that contains it, word for word, each with its document symbol and paragraph number. I can copy a ready citation.\n\nCHECK BEFORE YOU FINISH\nShow how many paragraphs were searched. Say what the tool cannot do.",
+      "facilitator_brief": "A search tool over every General Comment paragraph of the treaty bodies, for one participant's topic: it retrieves, it never generates. A plan short enough to read and debate in pairs in three minutes.",
+      "free_brief": true,
+      "topic_default": "the rights of the child",
+      "brief": [
+        {
+          "id": "goal",
+          "label": "GOAL AND WHY",
+          "text": "When I write a submission on [my topic], I need the exact words of UN treaty bodies' General Comments, with a correct citation. A chatbot's paraphrase is not enough: I have to quote.",
+          "asks": "What are we trying to accomplish, and why?"
+        },
+        {
+          "id": "before",
+          "label": "BEFORE YOU BUILD",
+          "text": "Look at the attached file and tell me what it contains and what it lacks. Then write a plan. Do not build anything until I approve the plan.",
+          "asks": "What interim outputs do I need to follow your progress?"
+        },
+        {
+          "id": "limits",
+          "label": "LIMITS",
+          "text": "Use only the attached file. Never shorten or rewrite a paragraph. Nothing leaves my browser.",
+          "asks": "Where are the limits of the delegated authority?"
+        },
+        {
+          "id": "done",
+          "label": "DONE LOOKS LIKE",
+          "text": "I type a phrase and see every paragraph that contains it, word for word, each with its document symbol and paragraph number. I can copy a ready citation.",
+          "asks": "What does \"done\" look like? What specific outputs do I need?"
+        },
+        {
+          "id": "check",
+          "label": "CHECK BEFORE YOU FINISH",
+          "text": "Show how many paragraphs were searched. Say what the tool cannot do.",
+          "asks": "What should you check before telling me you're finished?"
+        }
+      ],
+      "looks": [
+        {
+          "id": "paper",
+          "label": "Paper and ink",
+          "text": "warm off-white background #f4f0e8, near-black text #1d1b18, thin rules #d9d2c3, one deep red accent #9b2335, serif titles and big numbers."
+        },
+        {
+          "id": "night",
+          "label": "Night desk",
+          "text": "dark slate background #1b1f24, light text #e8e6e1, rules #3a4048, one amber accent #e0a33a, serif titles; text contrast at least 4.5:1."
+        },
+        {
+          "id": "unblue",
+          "label": "UN blue",
+          "text": "white background, dark ink #1a2a3a, light blue-grey panels #eef4f8, one UN blue accent #009edb for the active tab, buttons and highlights, sans-serif titles."
+        },
+        {
+          "id": "newsprint",
+          "label": "Newsprint",
+          "text": "off-white background #fbfaf7, black text, thick black rule under the title, uppercase condensed sans-serif headings, matched words highlighted in yellow #ffe066."
+        },
+        {
+          "id": "cards",
+          "label": "Index cards",
+          "text": "light grey background #eef0f2, every result on a white card with rounded corners and a coloured left edge for its committee (muted colours, one per committee), sans-serif titles."
+        }
+      ]
     }
   }
 }

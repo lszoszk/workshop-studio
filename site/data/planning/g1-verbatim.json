@@ -1,0 +1,270 @@
+{
+ "id": "g1-verbatim",
+ "title": "Verbatim finder for General Comments",
+ "dataset": "gc",
+ "problem": "GOAL AND WHY\nWhen I write a submission on [my topic], I need the exact words of UN treaty bodies' General Comments, with a correct citation. A chatbot's paraphrase is not enough: I have to quote.\n\nBEFORE YOU BUILD\nLook at the attached file and tell me what it contains and what it lacks. Then write a plan. Do not build anything until I approve the plan.\n\nLIMITS\nUse only the attached file. Never shorten or rewrite a paragraph. Nothing leaves my browser.\n\nDONE LOOKS LIKE\nI type a phrase and see every paragraph that contains it, word for word, each with its document symbol and paragraph number. I can copy a ready citation.\n\nCHECK BEFORE YOU FINISH\nShow how many paragraphs were searched. Say what the tool cannot do.",
+ "facilitator_brief": "A search tool over every General Comment paragraph of the treaty bodies, for one participant's topic: it retrieves, it never generates. A plan short enough to read and debate in pairs in three minutes.",
+ "planner": "Claude Fable 5.1",
+ "recorded": "2026-11-16",
+ "notes": "Your brief asks for a retrieval tool, not a writing tool: the exact words of General Comments on your topic, with a citation a reader can check, and nothing leaving your browser. I take the facilitator's line as the rule: the tool retrieves, it never generates.\n\n The file holds 7,304 paragraphs, each with a symbol, paragraph number, committee, year, title, link and text; only `cited_articles` is often empty. There are 159 symbols but 188 titles, so some symbols hold more than one document.  Ten committees, very unevenly: CRC 2,091 paragraphs, CEDAW 1,306, CESCR 1,222, down to CED with 56. A topic outside the CRC's field will have fewer hits; that is the file, not the tool.  \"best interests\" gives 641 matches, and the lines show curly apostrophes (child’s): matching must treat ’ and ' alike, and the app must count paragraphs, not occurrences, so its number will be lower.  The list of symbols shows five joint General Comments with two symbols in one field (CMW/C/GC/7–CERD/C/GC/38) and annual reports such as A/48/18 that hold several General Recommendations. The citation must copy the symbol as stored and add the short title where a symbol is shared.   The Dag Hammarskjöld Library says no single citation style is prescribed; a good citation carries the symbol, the pinpoint, the title and the date. So the fields stay separate and I ask you which form to copy.\n\nI decided on one screen, no filters, three example searches and a draft list. I leave three things to you: what counts as a match, how the citation reads, and what a result shows first. Debate them; a wrong default costs you a quotation.",
+ "steps": [
+  {
+   "at": 263,
+   "kind": "look",
+   "label": "Looked at the data: {count} paragraphs from {documents} documents of {committees} committees, {years}",
+   "detail": "General Comments and General Recommendations, paragraph by paragraph",
+   "live": "gc_overview"
+  },
+  {
+   "at": 495,
+   "kind": "look",
+   "label": "Looked at the data: the values of committee in gc",
+   "detail": "10 distinct values of committee"
+  },
+  {
+   "at": 682,
+   "kind": "look",
+   "label": "Looked at the data: every match of /best interests/ in gc",
+   "detail": "641 matches of /best interests/"
+  },
+  {
+   "at": 883,
+   "kind": "look",
+   "label": "Looked at the data: the values of symbol in gc",
+   "detail": "159 distinct values of symbol"
+  },
+  {
+   "at": 1166,
+   "kind": "search",
+   "label": "Searched the reference shelf: \"how to cite a UN document symbol and paragraph\"",
+   "detail": "5 results",
+   "results": [
+    "dhl-how-to-cite-a-un-document",
+    "dhl-un-document-symbols",
+    "claude-cookbook-citations",
+    "govuk-content-guidance-clear-language",
+    "wcag22-non-text-content"
+   ]
+  },
+  {
+   "at": 1167,
+   "kind": "read",
+   "label": "Read: Dag Hammarskjöld Library, Ask DAG: how should I cite a UN document? (summary)",
+   "detail": "https://ask.un.org/faq/401380",
+   "shelf_id": "dhl-how-to-cite-a-un-document"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "header": "Matching",
+   "question": "What counts as a match for what you type?",
+   "options": [
+    {
+     "label": "Exact phrase",
+     "description": "The whole box is one phrase, found word for word in that order; nothing else counts.",
+     "fragments": [
+      {
+       "section": "q1",
+       "text": "Matching: the whole box is one phrase, found exactly as typed, in that order (surrounding quotation marks dropped). Ignore only case and apostrophe shape (’ or '). Highlight the phrase."
+      },
+      {
+       "section": "q1.decision",
+       "text": "Exact phrase: the whole box, word for word."
+      }
+     ]
+    },
+    {
+     "label": "Words and phrases",
+     "description": "Every word you type must appear somewhere; quotation marks keep a phrase together.",
+     "default": true,
+     "fragments": [
+      {
+       "section": "q1",
+       "text": "Matching: every word must appear in the paragraph, any order; quoted words together, word for word. Ignore case and apostrophe shape (’ or '); child finds children. Highlight matches."
+      },
+      {
+       "section": "q1.decision",
+       "text": "Words and phrases: all words anywhere, quoted phrases together."
+      }
+     ]
+    },
+    {
+     "label": "AND, OR, NOT",
+     "description": "Boolean search with operators, brackets and quoted phrases, for precise queries.",
+     "fragments": [
+      {
+       "section": "q1",
+       "text": "Matching: AND, OR, NOT between terms, quotation marks for phrases, brackets to group; a space means AND. Ignore case and apostrophe shape (’ or '); child finds children. Highlight matches; one example query under the box."
+      },
+      {
+       "section": "q1.decision",
+       "text": "AND, OR, NOT: Boolean operators, brackets, quoted phrases."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "header": "Citation",
+   "question": "What should \"Copy citation\" put on your clipboard?",
+   "options": [
+    {
+     "label": "Short",
+     "description": "Symbol and paragraph only, e.g. CCPR/C/GC/37, para. 12.",
+     "default": true,
+     "fragments": [
+      {
+       "section": "q2",
+       "text": "copies `symbol`, para. `paragraph`, e.g. CCPR/C/GC/37, para. 12, with the `short_title` added when the symbol holds several titles."
+      },
+      {
+       "section": "q2.decision",
+       "text": "Short: symbol and paragraph number."
+      }
+     ]
+    },
+    {
+     "label": "Full",
+     "description": "Committee name, title, year, paragraph and symbol, as in a formal footnote.",
+     "fragments": [
+      {
+       "section": "q2",
+       "text": "copies the committee's full name (CCPR: Human Rights Committee; CAT-OP: Subcommittee on Prevention of Torture), `title` (`year`), para. `paragraph`, `symbol`."
+      },
+      {
+       "section": "q2.decision",
+       "text": "Full: committee, title (year), para. N, symbol."
+      }
+     ]
+    },
+    {
+     "label": "Quote + citation",
+     "description": "The paragraph in quotation marks followed by the short citation, ready to paste.",
+     "fragments": [
+      {
+       "section": "q2",
+       "text": "copies the full `text` in quotation marks, then `symbol`, para. `paragraph`, with the `short_title` added when the symbol holds several titles."
+      },
+      {
+       "section": "q2.decision",
+       "text": "Quote and citation: the paragraph in quotation marks, then symbol and paragraph."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "header": "Results",
+   "question": "What should a result show first?",
+   "options": [
+    {
+     "label": "Paragraphs",
+     "description": "One list of matching paragraphs in the file's order, matches highlighted.",
+     "default": true,
+     "fragments": [
+      {
+       "section": "q3",
+       "text": "one list in the file's order, the number of matching paragraphs above."
+      },
+      {
+       "section": "q3.decision",
+       "text": "Paragraphs: one list in the file's order."
+      }
+     ]
+    },
+    {
+     "label": "By document",
+     "description": "Grouped under each General Comment, closed until clicked, with its number of hits.",
+     "fragments": [
+      {
+       "section": "q3",
+       "text": "grouped by document: a heading with `short_title`, `symbol` and hit count, closed until clicked, the paragraphs beneath."
+      },
+      {
+       "section": "q3.decision",
+       "text": "By document: grouped under each General Comment, with hit counts."
+      }
+     ]
+    },
+    {
+     "label": "Newest first",
+     "description": "Sorted by year, most recent General Comment first, the year shown on each result.",
+     "fragments": [
+      {
+       "section": "q3",
+       "text": "one list sorted by `year`, newest first, then `symbol` and `paragraph`, the year shown first on each result."
+      },
+      {
+       "section": "q3.decision",
+       "text": "Newest first: sorted by year, most recent first."
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "plan_base": "# Verbatim finder: {topic}\n\n## What you asked for\n\nYou need the exact words of General Comments on {topic}, with a citation a reader can check: from the attached file only, never summarised; nothing leaves your browser.\n\n## What I found in the file\n\n- About 7,300 paragraphs from ten committees, 1972–2026, every field filled.\n- Uneven: CRC about 2,100 paragraphs, CED about 60.\n- Trap: a `symbol` is not always one document: A/48/18 holds seven General Recommendations; five joint General Comments carry two symbols in one field (CMW/C/GC/7–CERD/C/GC/38).\n- `text` keeps curly apostrophes (child’s) and footnote marks like [[fn:12]]; \"best interests\" occurs 641 times.\n\n## What the tool will do\n\nOne screen: a search box, three example searches about {topic} as buttons, and \"N paragraphs searched\" always visible (count `records`).\n\n{{q1}}\n\nResults: {{q3}} Each result: `committee`, `short_title`, `symbol` linked to `doc_url`, para. `paragraph`, the full `text` as stored, and two buttons. \"Copy citation\" {{q2}} \"Add to draft\" puts it in a draft list below (\"Copy all\", \"Download\"). No match: say so, show 0.\n\n## Your decisions\n\n- Matching. {{q1.decision}}\n- Citation. {{q2.decision}}\n- Results. {{q3.decision}}\n\n## Look\n\n{look}\n\n## What it will not do\n\n- No summaries, paraphrase or synonyms: only the words you typed.\n- No other sources: no concluding observations, no case law.\n- No translation: English only.\n\n## How you can check it\n\n1. Search, in quotation marks, a phrase you know: it appears in a result word for word, apostrophes included.\n2. Click a result's symbol (`doc_url`) and compare the paragraph with the original.\n3. Click \"Copy citation\", paste it into any document: symbol and paragraph number as the result showed them.",
+ "brief": [
+  {
+   "id": "goal",
+   "label": "GOAL AND WHY",
+   "text": "When I write a submission on [my topic], I need the exact words of UN treaty bodies' General Comments, with a correct citation. A chatbot's paraphrase is not enough: I have to quote.",
+   "asks": "What are we trying to accomplish, and why?"
+  },
+  {
+   "id": "before",
+   "label": "BEFORE YOU BUILD",
+   "text": "Look at the attached file and tell me what it contains and what it lacks. Then write a plan. Do not build anything until I approve the plan.",
+   "asks": "What interim outputs do I need to follow your progress?"
+  },
+  {
+   "id": "limits",
+   "label": "LIMITS",
+   "text": "Use only the attached file. Never shorten or rewrite a paragraph. Nothing leaves my browser.",
+   "asks": "Where are the limits of the delegated authority?"
+  },
+  {
+   "id": "done",
+   "label": "DONE LOOKS LIKE",
+   "text": "I type a phrase and see every paragraph that contains it, word for word, each with its document symbol and paragraph number. I can copy a ready citation.",
+   "asks": "What does \"done\" look like? What specific outputs do I need?"
+  },
+  {
+   "id": "check",
+   "label": "CHECK BEFORE YOU FINISH",
+   "text": "Show how many paragraphs were searched. Say what the tool cannot do.",
+   "asks": "What should you check before telling me you're finished?"
+  }
+ ],
+ "looks": [
+  {
+   "id": "paper",
+   "label": "Paper and ink",
+   "text": "warm off-white background #f4f0e8, near-black text #1d1b18, thin rules #d9d2c3, one deep red accent #9b2335, serif titles and big numbers."
+  },
+  {
+   "id": "night",
+   "label": "Night desk",
+   "text": "dark slate background #1b1f24, light text #e8e6e1, rules #3a4048, one amber accent #e0a33a, serif titles; text contrast at least 4.5:1."
+  },
+  {
+   "id": "unblue",
+   "label": "UN blue",
+   "text": "white background, dark ink #1a2a3a, light blue-grey panels #eef4f8, one UN blue accent #009edb for the active tab, buttons and highlights, sans-serif titles."
+  },
+  {
+   "id": "newsprint",
+   "label": "Newsprint",
+   "text": "off-white background #fbfaf7, black text, thick black rule under the title, uppercase condensed sans-serif headings, matched words highlighted in yellow #ffe066."
+  },
+  {
+   "id": "cards",
+   "label": "Index cards",
+   "text": "light grey background #eef0f2, every result on a white card with rounded corners and a coloured left edge for its committee (muted colours, one per committee), sans-serif titles."
+  }
+ ],
+ "free_brief": true
+}

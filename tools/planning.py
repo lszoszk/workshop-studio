@@ -30,6 +30,9 @@ def step_label(e):
             "find": f'every match of /{e.get("arg")}/', "raw": "the raw text"}.get(e["cmd"], e["cmd"])
     if e["dataset"] == "uhri" and e["cmd"] == "overview":
         return "Looked at the data: {country}, {count} records, {years}", "UN recommendations and observations"
+    if e["dataset"] == "gc" and e["cmd"] == "overview":   # recounted by the studio from the file (live "gc_overview")
+        return "Looked at the data: {count} paragraphs from {documents} documents of {committees} committees, {years}", \
+            "General Comments and General Recommendations, paragraph by paragraph"
     if e["cmd"] == "raw" and e["dataset"] == "html_doc":
         return f"Looked at the data: the raw HTML in {e['dataset']}", e.get("summary", "")
     target = f'{e["dataset"]}' + (f' ({e["doc"]})' if e.get("doc") else f', page {e["page"]}' if e["cmd"] == "raw" else "")
@@ -49,6 +52,8 @@ def assemble(pid):
         s = {"at": len(notes), "kind": e["kind"], "label": label, "detail": detail}
         if e["kind"] == "look" and e["dataset"] == "uhri" and e["cmd"] == "overview":
             s["live"] = "uhri_overview"
+        if e["kind"] == "look" and e["dataset"] == "gc" and e["cmd"] == "overview":
+            s["live"] = "gc_overview"
         if e["kind"] == "read":
             s["shelf_id"] = e["id"]
         if e["kind"] == "search":
@@ -56,9 +61,14 @@ def assemble(pid):
         steps.append(s)
         notes += after
     pack = {"id": pid, "title": brief["title"], "dataset": brief["dataset"], "problem": brief["problem"],
-            "facilitator_brief": brief["facilitator_brief"], "planner": "Claude Fable 5.1",
+            "facilitator_brief": brief["facilitator_brief"], "planner": draft.get("planner", "Claude Fable 5.1"),
             "recorded": draft.get("recorded", "2026-11-02"), "notes": re.sub(r"[ \t]+\n", "\n", notes).strip(),
             "steps": steps, "questions": draft["questions"], "plan_base": draft["plan_base"].strip()}
+    # a short pack (Geneva, 4.12.2026): the participant writes their own brief from labelled paragraphs, which
+    # starts the recorded planning whatever its words; the plan names their topic and one of a few looks
+    for k in ("brief", "looks", "free_brief"):
+        if k in brief or k in draft:
+            pack[k] = draft.get(k, brief.get(k))
     problems = check_pack(pack)
     if problems:
         sys.exit(f"{pid}:\n- " + "\n- ".join(problems))
@@ -69,14 +79,19 @@ def assemble(pid):
           f"default plan {words} words -> site/data/planning/{pid}.json")
 
 
-def compose(pack, answers, country="Kenya"):
-    """answers: {question id: option index (0-based)}; defaults where missing."""
+def compose(pack, answers, country="Kenya", topic=None, look=None):
+    """answers: {question id: option index (0-based)}; defaults where missing. topic: the participant's topic
+    from their brief ({topic}); look: the id of one of the pack's looks ({look}; the first when missing)."""
     fill = {}
     for q in pack["questions"]:
         i = answers.get(q["id"], next(k for k, o in enumerate(q["options"]) if o.get("default")))
         for f in q["options"][i]["fragments"]:
             fill.setdefault(f["section"], []).append(f["text"].strip())
     body = SLOT.sub(lambda m: "\n\n".join(fill.get(m.group(1), [])), pack["plan_base"])
+    looks = pack.get("looks") or []
+    chosen = next((x for x in looks if x["id"] == look), looks[0] if looks else None)
+    body = body.replace("{topic}", topic or pack.get("topic_default", "my topic"))
+    body = body.replace("{look}", f'{chosen["label"]}: {chosen["text"]}' if chosen else "")
     body = re.sub(r"\n{3,}", "\n\n", body.replace("{country}", country)).strip()
     return PLAN_HEAD + "\n\n" + body
 
@@ -84,8 +99,9 @@ def compose(pack, answers, country="Kenya"):
 def check_pack(pack):
     out = []
     qs = pack["questions"]
-    if not 4 <= len(qs) <= 5:
-        out.append(f"{len(qs)} questions (want 4–5)")
+    want = (3, 4) if pack.get("free_brief") else (4, 5)   # a short pack asks 3–4, the long ones 4–5
+    if not want[0] <= len(qs) <= want[1]:
+        out.append(f"{len(qs)} questions (want {want[0]}–{want[1]})")
     ids = [q["id"] for q in qs]
     if len(set(ids)) != len(ids):
         out.append("duplicate question ids")
@@ -111,6 +127,14 @@ def check_pack(pack):
         if SLOT.search(text):
             out.append(f"answers {combo}: slots left in the plan")
             break
+    if pack.get("free_brief"):
+        if not pack.get("brief") or not all({"id", "label", "text"} <= set(b) for b in pack["brief"]):
+            out.append("a free-brief pack needs brief paragraphs with id, label and text")
+        if "{look}" in pack["plan_base"] and len(pack.get("looks") or []) < 2:
+            out.append("the plan names {look} but the pack has fewer than two looks")
+        for look in pack.get("looks") or []:
+            if "{" in compose(pack, {}, look=look["id"]).replace("{{", ""):
+                out.append(f"look {look['id']}: a placeholder is left in the plan")
     return out
 
 
