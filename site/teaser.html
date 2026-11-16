@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teaser</title>
+<style>
+  :root { --bg: #000; --ink: #9da7b3; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: var(--bg); overflow: hidden; }
+  body { display: grid; place-items: center; font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; color: var(--ink); cursor: pointer; }
+  video { width: 100vw; height: 100vh; object-fit: contain; background: #000; display: none; }
+  #quiet { position: absolute; inset: 0; display: grid; place-items: center; font-size: 18px; letter-spacing: .02em; }
+  #hint { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); padding: 8px 16px; border-radius: 999px; background: rgba(22,27,34,.92); border: 1px solid #30363d; color: #e6edf3; font-size: 15px; display: none; }
+  #sound { position: absolute; right: 18px; top: 14px; font-size: 14px; color: #9da7b3; opacity: .8; display: none; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<video id="v" playsinline muted preload="auto"></video>
+<div id="quiet" hidden>The teaser is not ready yet</div>
+<div id="hint">New version: click to reload</div>
+<div id="sound">Muted: click for sound</div>
+<script>
+(function () {
+  "use strict";
+  var q = new URLSearchParams(location.search);
+  var SRC = q.get("src") || "https://150.254.115.204/studio-api/teaser";
+  var v = document.getElementById("v"), quiet = document.getElementById("quiet"), hint = document.getElementById("hint"), sound = document.getElementById("sound");
+  var tag = null, pending = null, loaded = false, unmuted = false, newer = false;
+
+  function stamp(res) { return res.headers.get("ETag") || res.headers.get("Last-Modified") || (res.headers.get("Content-Length") || "") ; }
+
+  // HEAD request: the version of the video the server holds now ("" when the server gives no hint)
+  function head() {
+    return fetch(SRC, { method: "HEAD", cache: "no-store" }).then(function (r) { if (!r.ok) throw new Error(r.status); return stamp(r); });
+  }
+
+  function load(version) {
+    // a changing query string makes the browser fetch the new file rather than the cached one
+    var sep = SRC.indexOf("?") < 0 ? "?" : "&";
+    v.src = SRC + sep + "v=" + Date.now();
+    v.loop = false;
+    tag = version; newer = false; hint.style.display = "none";
+    v.play().catch(function () {});
+  }
+
+  v.addEventListener("loadeddata", function () { loaded = true; quiet.hidden = true; v.style.display = "block"; sound.style.display = unmuted ? "none" : "block"; });
+  v.addEventListener("error", function () { if (!loaded) quiet.hidden = false; });
+
+  function check() {
+    head().then(function (version) {
+      if (!loaded) { load(version); return; }
+      if (version && tag && version !== tag) { newer = true; pending = version; hint.style.display = "block"; }
+    }).catch(function () { if (!loaded) quiet.hidden = false; });
+  }
+
+  function fullscreen() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function () {});
+  }
+
+  document.addEventListener("click", function () {
+    if (newer) { load(pending); return; }
+    if (!unmuted) { unmuted = true; v.muted = false; sound.style.display = "none"; }
+    if (v.ended) { v.currentTime = 0; v.play().catch(function () {}); }
+    fullscreen();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "f" || e.key === "F") { e.preventDefault(); fullscreen(); }
+    else if (e.key === " ") { e.preventDefault(); if (v.ended) v.currentTime = 0; v.paused ? v.play() : v.pause(); }
+    else if (e.key === "r" || e.key === "R") { v.currentTime = 0; v.play(); }
+  });
+
+  quiet.hidden = true;
+  check();
+  setInterval(check, 30000);
+})();
+</script>
+</body>
+</html>
