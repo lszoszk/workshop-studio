@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verbatim finder — General Comments</title>
+<style>
+  :root{
+    --ink:#1a2a3a; --accent:#009edb; --panel:#eef4f8; --rule:#c9d6e0;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:#fff;color:var(--ink);font:16px/1.55 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  header{border-bottom:2px solid var(--ink);padding:24px 32px 16px}
+  .kicker{font:600 11px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+  h1{font-size:26px;margin:0 0 6px;letter-spacing:-.01em}
+  .meta{font-size:13.5px;color:#5a6b7a;margin:0}
+  main{max-width:960px;margin:0 auto;padding:24px 32px 64px}
+  .searchrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  #q{flex:1 1 340px;font:inherit;padding:10px 12px;border:1.5px solid var(--ink);border-radius:4px}
+  #q:focus{outline:2px solid var(--accent);outline-offset:1px}
+  button{font:inherit;cursor:pointer;border-radius:4px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);padding:9px 14px}
+  button:hover{background:var(--panel)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.primary:hover{background:#007bb8}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .examples{margin:10px 0 4px;display:flex;gap:8px;flex-wrap:wrap}
+  .examples button{font-size:13px;padding:5px 10px;border-color:var(--rule);color:#3a4d5e}
+  .hint{font-size:12.5px;color:#5a6b7a;margin:6px 0 0}
+  .countline{margin:18px 0 6px;font-size:14px}
+  .countline b{font-size:20px;font-weight:700}
+  mark{background:#cdeaf8;color:inherit;padding:0 1px}
+  .result{border-top:1px solid var(--rule);padding:16px 0}
+  .rhead{display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;font-size:13px}
+  .rhead .committee{font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:11.5px;color:var(--accent)}
+  .rhead a{color:var(--ink);text-decoration:underline;text-underline-offset:2px}
+  .rhead .para{color:#5a6b7a}
+  .rtitle{font-size:13.5px;color:#3a4d5e;margin:2px 0 6px}
+  .rtext{margin:0;white-space:pre-wrap}
+  .ractions{margin-top:10px;display:flex;gap:8px}
+  .ractions button{font-size:13px;padding:5px 10px}
+  .ok{color:#0a7d33;font-size:13px}
+  #draft{margin-top:40px;border-top:2px solid var(--ink);padding-top:16px}
+  #draft h2{font-size:18px;margin:0 0 4px}
+  .draftitem{border-top:1px solid var(--rule);padding:10px 0;font-size:14px}
+  .draftitem .cite{font-weight:600}
+  .draftitem p{margin:4px 0 0;font-size:13.5px;color:#3a4d5e}
+  .limits{margin-top:48px;background:var(--panel);padding:14px 18px;border-radius:4px;font-size:13.5px}
+  .limits h2{font-size:14px;margin:0 0 6px;text-transform:uppercase;letter-spacing:.08em}
+  .limits ul{margin:0;padding-left:18px}
+</style>
+</head>
+<body>
+<header>
+  <p class="kicker">WORKSHOP_DATA.gc · verbatim quotes only</p>
+  <h1>Verbatim finder: General Comments</h1>
+  <p class="meta" id="meta"></p>
+</header>
+<main>
+  <div class="searchrow">
+    <input id="q" type="search" placeholder='Type words, or a "phrase in quotes" — e.g. water sanitation' aria-label="Search paragraphs">
+    <button class="primary" id="go">Search</button>
+  </div>
+  <div class="examples" id="examples" aria-label="Example searches"></div>
+  <p class="hint">All words must appear in the paragraph, in any order; words in "quotation marks" must appear together, word for word. Case and apostrophe shape (’ or ') are ignored; <i>child</i> finds <i>children</i>. Literal match, not synonyms.</p>
+  <p class="countline"><b id="nresults">0</b> matching paragraphs · <span id="nsearched"></span> paragraphs searched</p>
+  <div id="results" aria-live="polite"></div>
+
+  <section id="draft" hidden>
+    <h2>Your draft (<span id="draftcount">0</span>)</h2>
+    <p class="hint" style="margin-top:0">Added citations and quotes, in the order you added them.</p>
+    <div class="searchrow" style="margin-bottom:12px">
+      <button id="copyall">Copy all</button>
+      <button id="download">Download (.txt)</button>
+      <button id="cleardraft">Clear</button>
+    </div>
+    <div id="draftlist"></div>
+  </section>
+
+  <div class="limits">
+    <h2>What this tool cannot do</h2>
+    <ul>
+      <li>No summaries, paraphrase or synonyms: it finds only the words you typed.</li>
+      <li>No other sources: General Comments only — no concluding observations, no case law.</li>
+      <li>No translation: English only.</li>
+    </ul>
+  </div>
+</main>
+<script>
+(function(){
+  const gc = window.WORKSHOP_DATA.gc;
+  const recs = gc.records || [];
+  document.getElementById('meta').textContent =
+    (gc.title || 'General Comments') + ' · ' + recs.length.toLocaleString() +
+    ' paragraphs · source: ' + (gc.source || 'UN treaty bodies');
+  document.getElementById('nsearched').textContent = recs.length.toLocaleString();
+
+  // symbols that hold several titles: citation then adds the short title
+  const titlesBySymbol = {};
+  for (const r of recs){
+    (titlesBySymbol[r.symbol] = titlesBySymbol[r.symbol] || new Set()).add(r.short_title || r.title || '');
+  }
+  const multiTitle = {};
+  for (const s in titlesBySymbol) multiTitle[s] = titlesBySymbol[s].size > 1;
+
+  const norm = s => s
+    .replace(/[\u2018\u2019\u02BC`]/g, "'")
+    .replace(/\u201C|\u201D/g, '"')
+    .replace(/\u2013|\u2014/g, '-')
+    .toLowerCase();
+
+  function parseQuery(q){
+    const terms = [];
+    const re = /"([^"]+)"|(\S+)/g;
+    let m;
+    while ((m = re.exec(q)) !== null){
+      if (m[1] !== undefined) terms.push({phrase:true, raw:m[1]});
+      else terms.push({phrase:false, raw:m[2]});
+    }
+    return terms;
+  }
+  function esc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+
+  function matches(text, terms){
+    const t = norm(text);
+    for (const term of terms){
+      if (term.phrase){
+        if (!t.includes(norm(term.raw))) return false;
+      } else {
+        // word as prefix: child finds children
+        const w = norm(term.raw).replace(/[^\p{L}\p{N}'-]/gu,'');
+        if (!w) continue;
+        const re = new RegExp('(^|[^\\p{L}\\p{N}])' + esc(w), 'u');
+        if (!re.test(t)) return false;
+      }
+    }
+    return true;
+  }
+  function highlight(text, terms){
+    let html = '';
+    const patterns = [];
+    for (const term of terms){
+      if (term.phrase){
+        const p = norm(term.raw).trim();
+        if (p) patterns.push({re:new RegExp(esc(p),'gi'), len:p.length});
+      } else {
+        const w = norm(term.raw).replace(/[^\p{L}\p{N}'-]/gu,'');
+        if (w) patterns.push({re:new RegExp('(^|[^\\p{L}\\p{N}])(' + esc(w) + '[\\p{L}\\p{N}\u2019\']*)','giu'), len:0, pre:2});
+      }
+    }
+    // build on the normalised copy but slice the original: same length after norm of quotes
+    const n = norm(text);
+    const marks = new Array(text.length).fill(false);
+    for (const p of patterns){
+      p.re.lastIndex = 0;
+      let m;
+      while ((m = p.re.exec(n)) !== null){
+        const start = m.index + (m[1] && m[1].length && p.pre ? m[1].length : 0);
+        const end = p.pre ? m.index + m[0].length : m.index + m[0].length;
+        for (let i = Math.max(0,start); i < Math.min(text.length, end); i++) marks[i] = true;
+        p.re.lastIndex = m.index + m[0].length;
+      }
+    }
+    for (let i = 0; i < text.length; i++){
+      if (marks[i] && (i === 0 || !marks[i-1])) html += '<mark>';
+      html += htmlEsc(text[i]);
+      if (marks[i] && (i === text.length-1 || !marks[i+1])) html += '</mark>';
+    }
+    return html;
+  }
+  function htmlEsc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  function citation(r){
+    let c = r.symbol + ', para. ' + r.paragraph;
+    if (multiTitle[r.symbol] && r.short_title) c += ' (' + r.short_title + ')';
+    return c;
+  }
+
+  const resultsEl = document.getElementById('results');
+  const nresEl = document.getElementById('nresults');
+  let lastTerms = [];
+
+  function run(){
+    const q = document.getElementById('q').value.trim();
+    lastTerms = q ? parseQuery(q) : [];
+    const found = [];
+    if (lastTerms.length){
+      for (const r of recs){
+        if (matches(r.text || '', lastTerms)) found.push(r);
+      }
+    }
+    nresEl.textContent = found.length.toLocaleString();
+    if (!lastTerms.length){
+      resultsEl.innerHTML = '<p class="hint">Type a phrase to search ' + recs.length.toLocaleString() + ' paragraphs, word for word.</p>';
+      return;
+    }
+    if (!found.length){
+      resultsEl.innerHTML = '<p class="hint">No paragraph contains all of those words. 0 matches — try fewer words, or check the spelling (literal match, not synonyms).</p>';
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    const cap = 200;
+    const shown = found.slice(0, cap);
+    shown.forEach(function(r, i){
+      const div = document.createElement('div');
+      div.className = 'result';
+      const cite = citation(r);
+      div.innerHTML =
+        '<div class="rhead">' +
+          '<span class="committee">' + htmlEsc(r.committee || '') + '</span>' +
+          '<a href="' + htmlEsc(r.doc_url || '') + '" target="_blank" rel="noopener">' + htmlEsc(r.symbol) + '</a>' +
+          '<span class="para">para. ' + htmlEsc(String(r.paragraph)) + '</span>' +
+        '</div>' +
+        '<p class="rtitle">' + htmlEsc(r.short_title || r.title || '') + '</p>' +
+        '<p class="rtext">' + highlight(r.text || '', lastTerms) + '</p>' +
+        '<div class="ractions">' +
+          '<button data-act="cite" data-i="' + i + '">Copy citation</button>' +
+          '<button data-act="add" data-i="' + i + '">Add to draft</button>' +
+          '<span class="ok" hidden></span>' +
+        '</div>';
+      frag.appendChild(div);
+    });
+    resultsEl.innerHTML = '';
+    resultsEl.appendChild(frag);
+    if (found.length > cap){
+      const p = document.createElement('p');
+      p.className = 'hint';
+      p.textContent = 'Showing the first ' + cap + ' of ' + found.length.toLocaleString() + ' matches, in the file\'s order.';
+      resultsEl.appendChild(p);
+    }
+    resultsEl._found = shown;
+  }
+
+  // draft
+  const draft = [];
+  const draftSec = document.getElementById('draft');
+  function renderDraft(){
+    document.getElementById('draftcount').textContent = draft.length;
+    draftSec.hidden = draft.length === 0;
+    const list = document.getElementById('draftlist');
+    list.innerHTML = draft.map(function(d){
+      return '<div class="draftitem"><span class="cite">' + htmlEsc(d.cite) + '</span><p>' + htmlEsc(d.text) + '</p></div>';
+    }).join('');
+  }
+  function draftText(){
+    return draft.map(function(d){return d.cite + '\n\n' + d.text;}).join('\n\n---\n\n');
+  }
+  document.getElementById('copyall').addEventListener('click', function(){
+    navigator.clipboard.writeText(draftText()).then(function(){
+      const b = document.getElementById('copyall');
+      const old = b.textContent; b.textContent = 'Copied'; setTimeout(function(){b.textContent = old;}, 1500);
+    });
+  });
+  document.getElementById('download').addEventListener('click', function(){
+    const blob = new Blob([draftText()], {type:'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'verbatim-draft.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  document.getElementById('cleardraft').addEventListener('click', function(){draft.length = 0; renderDraft();});
+
+  resultsEl.addEventListener('click', function(e){
+    const btn = e.target.closest('button[data-act]');
+    if (!btn || !resultsEl._found) return;
+    const r = resultsEl._found[+btn.dataset.i];
+    const ok = btn.parentElement.querySelector('.ok');
+    if (btn.dataset.act === 'cite'){
+      navigator.clipboard.writeText(citation(r)).then(function(){
+        ok.textContent = 'Citation copied'; ok.hidden = false;
+        setTimeout(function(){ok.hidden = true;}, 1500);
+      });
+    } else {
+      draft.push({cite: citation(r), text: r.text});
+      renderDraft();
+      ok.textContent = 'Added to draft'; ok.hidden = false;
+      setTimeout(function(){ok.hidden = true;}, 1500);
+    }
+  });
+
+  document.getElementById('go').addEventListener('click', run);
+  document.getElementById('q').addEventListener('keydown', function(e){if (e.key === 'Enter') run();});
+
+  // example searches about the right to water and sanitation
+  const examples = ['"water and sanitation"', '"safe drinking water"', '"right to water"'];
+  const exWrap = document.getElementById('examples');
+  examples.forEach(function(ex){
+    const b = document.createElement('button');
+    b.textContent = ex;
+    b.addEventListener('click', function(){
+      document.getElementById('q').value = ex;
+      run();
+    });
+    exWrap.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>

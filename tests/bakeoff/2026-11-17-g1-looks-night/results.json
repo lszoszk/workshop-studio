@@ -20,5 +20,28 @@
   "cost": 0,
   "look": "night",
   "topic": "freedom of expression online"
+ },
+ {
+  "model": "glm-eu",
+  "label": "GLM-5.3 (run in the EU) · through the studio",
+  "prompt": "g1-verbatim",
+  "passed": 4,
+  "total": 6,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "search_box": true,
+   "text_contains_after_search": false,
+   "button_matches": false
+  },
+  "errors": [
+   "Cannot set properties of null (setting 'textContent')"
+  ],
+  "network": [],
+  "lines": 279,
+  "seconds": 16.4,
+  "cost": 0.023585,
+  "look": "night"
  }
 ]

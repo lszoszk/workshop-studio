@@ -12,7 +12,7 @@ Draft status: the times below are planned, not yet measured; measure them at the
 - [ ] **Default model** on the admin page: Claude Sonnet 5.5 (the course already starts on it; the admin setting covers requests that name no model).
 - [ ] **Certificate**: `echo | openssl s_client -connect 150.254.115.204:443 2>/dev/null | openssl x509 -noout -enddate` shows a date after 4 December (certbot renews it twice a day; check anyway).
 - [x] **Trial builds, Sonnet** (17.11, in Claude Code, no API): one app per look (paper, night, UN blue, newsprint, index cards), each 6/6 on the bake-off checks (`tests/bakeoff/2026-11-17-g1-looks-*`); the paper build is the recorded app behind **Load a working version**.
-- [ ] **Trial builds, GLM**: the same five prompts through the API once the keys are on.
+- [x] **Trial builds, GLM** (17.11, through the live studio, one seat): 17–20 s and $0.02–0.06 each; four of five 6/6, the night look 4/6 (a script error as it opens: "Cannot set properties of null", the kind the studio sends back once by itself). Both models keep footnote marks such as `[[fn:42]]` in the text as stored, as the plan asks; worth a word in the room ("the marks are the file's, not an error").
 - [ ] **Load test**: 30 builds at once on Sonnet (about $10), then 5 on GLM; note the times here.
 - [ ] **Seat cards** printed with the QR code to `?course=geneva` and the seat code; budget per seat $8.
 - [ ] **Room chat**: the facilitator's page `…/studio-api/admin/room?key=…&course=geneva` open on your phone or laptop; test one message to the room.

@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verbatim finder — torture and ill-treatment</title>
+<style>
+  :root{
+    --bg:#fbfaf7; --ink:#000; --rule:#000; --hl:#ffe066;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,"Times New Roman",serif;padding:0 24px 60px}
+  header{border-bottom:4px solid var(--rule);padding:28px 0 18px}
+  .kicker{font:700 12px/1 "Arial Narrow",Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;margin:0 0 6px}
+  h1{font:700 34px/1.15 "Arial Narrow",Arial,sans-serif;text-transform:uppercase;letter-spacing:.02em;margin:0 0 8px}
+  .meta{font:14px/1.5 Georgia,serif;margin:0}
+  .meta a{color:var(--ink)}
+  .countline{font:700 13px/1 "Arial Narrow",Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;margin:14px 0 0}
+  .countline b{font-size:20px;letter-spacing:0}
+  main{max-width:900px;margin:0 auto}
+  .searchrow{display:flex;gap:10px;margin:22px 0 8px;flex-wrap:wrap}
+  #q{flex:1;min-width:260px;font:20px Georgia,serif;padding:10px 12px;border:2px solid var(--ink);background:#fff}
+  #q:focus{outline:3px solid #9b2335;outline-offset:1px}
+  button{font:700 13px/1 "Arial Narrow",Arial,sans-serif;letter-spacing:.1em;text-transform:uppercase;border:2px solid var(--ink);background:#fff;padding:10px 14px;cursor:pointer}
+  button:hover{background:#000;color:#fff}
+  button:focus-visible{outline:3px solid #9b2335;outline-offset:2px}
+  .examples{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0}
+  .examples button{border-width:1px;padding:6px 10px;font-size:12px}
+  .hint{font:italic 14px Georgia,serif;color:#444;margin:10px 0 0}
+  .resultcount{font:700 15px/1.3 "Arial Narrow",Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase;margin:26px 0 10px;border-top:1px solid var(--ink);padding-top:14px}
+  .result{border-top:1px solid #999;padding:16px 0 18px}
+  .rhead{font:700 13px/1.5 "Arial Narrow",Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase}
+  .rhead a{color:var(--ink)}
+  mark{background:var(--hl);padding:0 1px}
+  .rtext{margin:10px 0 12px;white-space:pre-wrap}
+  .rbtns{display:flex;gap:8px;flex-wrap:wrap}
+  .rbtns button{padding:6px 10px;font-size:12px}
+  .draft{border-top:4px solid var(--rule);margin-top:40px;padding-top:16px}
+  .draft h2{font:700 18px/1.2 "Arial Narrow",Arial,sans-serif;text-transform:uppercase;letter-spacing:.08em;margin:0 0 10px}
+  .draft ul{list-style:none;padding:0;margin:0 0 12px}
+  .draft li{border-top:1px solid #999;padding:8px 0;font-size:14px}
+  .draft li .cite{font-weight:700}
+  .limits{border-top:1px solid var(--ink);margin-top:44px;padding-top:14px;font:14px/1.6 Georgia,serif;color:#333}
+  .limits h2{font:700 14px/1 "Arial Narrow",Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);margin:0 0 8px}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <p class="kicker">Verbatim finder</p>
+  <h1>General Comments on torture and ill-treatment</h1>
+  <p class="meta" id="meta"></p>
+  <p class="countline"><b id="nSearched">0</b> paragraphs searched · <span id="nMatch">0</span> matching</p>
+</header>
+<main>
+  <div class="searchrow">
+    <input id="q" type="search" placeholder='Type words, or "a phrase in quotes"' aria-label="Search words or quoted phrase">
+    <button id="go">Search</button>
+  </div>
+  <div class="examples" id="examples"></div>
+  <p class="hint">Every word must appear in the paragraph, in any order; words in "quotation marks" must appear together, word for word. Case and apostrophe shape (’ or ') are ignored; a word finds its longer forms (child finds children). Literal match, not synonyms.</p>
+  <p class="resultcount" id="resultcount"></p>
+  <div id="results"></div>
+
+  <section class="draft" id="draftSec" hidden>
+    <h2>Your draft</h2>
+    <ul id="draftList"></ul>
+    <div class="rbtns">
+      <button id="copyAll">Copy all</button>
+      <button id="download">Download (.txt)</button>
+      <button id="clearDraft">Clear</button>
+    </div>
+  </section>
+
+  <section class="limits">
+    <h2>What this tool cannot do</h2>
+    <p>It searches only the attached file of General Comments, paragraph by paragraph — no concluding observations, no case law, no other sources. It finds only the words you type: no summaries, paraphrase or synonyms. English only, no translation. Nothing leaves your browser. A symbol is not always one document: some symbols hold several General Comments, and five joint General Comments carry two symbols in one field — the citation shows the title when a symbol holds several.</p>
+  </section>
+</main>
+<script>
+(function(){
+  const gc = WORKSHOP_DATA.gc;
+  const records = gc.records || [];
+  document.getElementById('meta').textContent =
+    (gc.source ? gc.source + ' · ' : '') + (records.length) + ' paragraphs · ' +
+    (records.length ? Math.min(...records.map(r=>r.year||9999)) + '–' + Math.max(...records.map(r=>r.year||0)) : '');
+  document.getElementById('nSearched').textContent = records.length;
+
+  // how many distinct titles per symbol (to know when to add short_title)
+  const titlesBySymbol = {};
+  records.forEach(r=>{
+    if(!titlesBySymbol[r.symbol]) titlesBySymbol[r.symbol] = new Set();
+    titlesBySymbol[r.symbol].add(r.title || r.short_title || '');
+  });
+
+  const norm = s => s
+    .replace(/[\u2018\u2019\u02BC']/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .toLowerCase();
+
+  // tokenize query: quoted phrases kept together, other words separate
+  function parseQuery(q){
+    const phrases = [], words = [];
+    const re = /"([^"]+)"|(\S+)/g;
+    let m;
+    while((m = re.exec(q)) !== null){
+      if(m[1] !== undefined) phrases.push(norm(m[1]).trim());
+      else {
+        const w = norm(m[2]).replace(/^[^\w]+|[^\w]+$/g,'');
+        if(w) words.push(w);
+      }
+    }
+    return {phrases, words};
+  }
+
+  // word match with simple prefix growth (child finds children)
+  function wordInText(word, tokens){
+    return tokens.some(t => t.startsWith(word));
+  }
+
+  function highlight(text, parsed){
+    // build regex of things to highlight
+    const parts = [];
+    parsed.phrases.forEach(p=>{
+      const esc = p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/'/g,"['\u2018\u2019]");
+      parts.push(esc);
+    });
+    parsed.words.forEach(w=>{
+      const esc = w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/'/g,"['\u2018\u2019]");
+      parts.push('\\b' + esc + '\\w*');
+    });
+    if(!parts.length) return escapeHtml(text);
+    const re = new RegExp('(' + parts.join('|') + ')','gi');
+    return escapeHtml(text).replace(re,'<mark>$1</mark>');
+  }
+  function escapeHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function search(q){
+    const parsed = parseQuery(q);
+    const out = [];
+    if(!parsed.phrases.length && !parsed.words.length) return out;
+    for(const r of records){
+      const t = norm(r.text || '');
+      const tokens = t.match(/[\w'’]+/g) || [];
+      let ok = true;
+      for(const p of parsed.phrases){
+        const pn = p.replace(/'/g,"'");
+        // phrase must appear contiguously (allow either apostrophe)
+        const re = new RegExp(pn.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/'/g,"['\u2018\u2019]"));
+        if(!re.test(t)){ ok = false; break; }
+      }
+      if(ok) for(const w of parsed.words){
+        if(!wordInText(w, tokens)){ ok = false; break; }
+      }
+      if(ok) out.push(r);
+    }
+    return out;
+  }
+
+  function citation(r){
+    const multi = titlesBySymbol[r.symbol] && titlesBySymbol[r.symbol].size > 1;
+    return r.symbol + ', para. ' + r.paragraph + (multi ? ' (' + r.short_title + ')' : '');
+  }
+
+  const draft = [];
+  const resultsEl = document.getElementById('results');
+  const countEl = document.getElementById('resultcount');
+  const nMatchEl = document.getElementById('nMatch');
+
+  function render(q){
+    const parsed = parseQuery(q);
+    const hits = search(q);
+    nMatchEl.textContent = hits.length;
+    if(!q.trim()){
+      countEl.textContent = 'Type a phrase to begin';
+      resultsEl.innerHTML = '';
+      return;
+    }
+    countEl.textContent = hits.length + ' matching paragraph' + (hits.length===1?'':'s') +
+      ' · shown in the file\'s order';
+    if(!hits.length){
+      resultsEl.innerHTML = '<p class="rtext">No paragraph in the file contains every word you typed. Try fewer words, or remove quotation marks.</p>';
+      return;
+    }
+    resultsEl.innerHTML = '';
+    hits.forEach(r=>{
+      const div = document.createElement('div');
+      div.className = 'result';
+      const multi = titlesBySymbol[r.symbol] && titlesBySymbol[r.symbol].size > 1;
+      div.innerHTML =
+        '<p class="rhead">' + escapeHtml(r.committee || '') +
+        ' · <a href="' + escapeHtml(r.doc_url || '#') + '" target="_blank" rel="noopener">' + escapeHtml(r.symbol) + '</a>' +
+        ' · para. ' + escapeHtml(String(r.paragraph)) +
+        (multi ? ' · ' + escapeHtml(r.short_title) : '') +
+        '</p>' +
+        '<p class="rtext">' + highlight(r.text || '', parsed) + '</p>' +
+        '<div class="rbtns">' +
+        '<button data-act="cite">Copy citation</button>' +
+        '<button data-act="add">Add to draft</button>' +
+        '</div>';
+      div.querySelector('[data-act="cite"]').addEventListener('click',function(){
+        copyText(citation(r), this);
+      });
+      div.querySelector('[data-act="add"]').addEventListener('click',function(){
+        addToDraft(r);
+      });
+      resultsEl.appendChild(div);
+    });
+  }
+
+  function copyText(txt, btn){
+    const done = () => { if(btn){ const old = btn.textContent; btn.textContent = 'Copied'; setTimeout(()=>btn.textContent = old, 1200);} };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done, done);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = txt; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); }catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  }
+
+  const draftSec = document.getElementById('draftSec');
+  const draftList = document.getElementById('draftList');
+  function addToDraft(r){
+    draft.push(r);
+    renderDraft();
+  }
+  function renderDraft(){
+    draftSec.hidden = draft.length === 0;
+    draftList.innerHTML = '';
+    draft.forEach((r,i)=>{
+      const li = document.createElement('li');
+      li.innerHTML = '<span class="cite">' + escapeHtml(citation(r)) + '</span><br>' +
+        escapeHtml((r.text||'').slice(0,200)) + ((r.text||'').length>200?'…':'') +
+        ' <button data-i="'+i+'" style="font-size:11px;padding:2px 6px">Remove</button>';
+      li.querySelector('button').addEventListener('click',function(){
+        draft.splice(i,1); renderDraft();
+      });
+      draftList.appendChild(li);
+    });
+  }
+  document.getElementById('copyAll').addEventListener('click',function(){
+    copyText(draft.map(r=>citation(r)).join('\n'), this);
+  });
+  document.getElementById('download').addEventListener('click',function(){
+    const txt = draft.map(r=>citation(r) + '\n\n' + r.text).join('\n\n---\n\n');
+    const blob = new Blob([txt],{type:'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'verbatim-draft.txt';
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+  document.getElementById('clearDraft').addEventListener('click',function(){
+    draft.length = 0; renderDraft();
+  });
+
+  const input = document.getElementById('q');
+  let timer = null;
+  input.addEventListener('input',()=>{
+    clearTimeout(timer);
+    timer = setTimeout(()=>render(input.value), 200);
+  });
+  input.addEventListener('keydown',e=>{ if(e.key==='Enter') render(input.value); });
+  document.getElementById('go').addEventListener('click',()=>render(input.value));
+
+  // example searches about torture and ill-treatment
+  const examples = ['"torture or cruel, inhuman"', '"mental suffering"', 'interrogation methods'];
+  const exWrap = document.getElementById('examples');
+  examples.forEach(ex=>{
+    const b = document.createElement('button');
+    b.textContent = ex;
+    b.addEventListener('click',()=>{ input.value = ex; render(ex); });
+    exWrap.appendChild(b);
+  });
+
+  render('');
+})();
+</script>
+</body>
+</html>

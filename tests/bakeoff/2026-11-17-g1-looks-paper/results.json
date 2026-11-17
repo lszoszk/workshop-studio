@@ -20,5 +20,26 @@
   "cost": 0,
   "look": "paper",
   "topic": "the rights of the child"
+ },
+ {
+  "model": "glm-eu",
+  "label": "GLM-5.3 (run in the EU) · through the studio",
+  "prompt": "g1-verbatim",
+  "passed": 6,
+  "total": 6,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "search_box": true,
+   "text_contains_after_search": true,
+   "button_matches": true
+  },
+  "errors": [],
+  "network": [],
+  "lines": 264,
+  "seconds": 16.2,
+  "cost": 0.023162,
+  "look": "paper"
  }
 ]

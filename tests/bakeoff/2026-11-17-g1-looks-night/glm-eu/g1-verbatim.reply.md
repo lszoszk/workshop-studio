@@ -1,0 +1,285 @@
+Here's the verbatim finder, built exactly to the plan: night-desk look, phrase search with quoted phrases, full text with highlighted matches, copyable citations, and a draft list — all in your browser.
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verbatim finder — General Comments</title>
+<style>
+  :root{
+    --bg:#1b1f24; --ink:#e8e6e1; --rule:#3a4048; --accent:#e0a33a; --dim:#a9a49a;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.55 -apple-system,"Segoe UI",system-ui,sans-serif;padding:0 0 60px}
+  .wrap{max-width:900px;margin:0 auto;padding:0 24px}
+  header{border-bottom:1px solid var(--rule);padding:28px 0 18px;margin-bottom:24px}
+  .mono{font:11px/1.5 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--dim)}
+  h1{font:400 34px/1.2 Georgia,"Times New Roman",serif;margin:8px 0 6px;color:var(--ink)}
+  h1 em{color:var(--accent);font-style:normal}
+  .sub{color:var(--dim);font-size:14px}
+  .searchbar{display:flex;gap:10px;align-items:stretch;margin:18px 0 10px}
+  #q{flex:1;background:#232830;border:1px solid var(--rule);color:var(--ink);
+    padding:12px 14px;font:16px/1.4 inherit;border-radius:3px}
+  #q:focus{outline:2px solid var(--accent);outline-offset:1px}
+  button{font:13px/1.3 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.05em;
+    background:#232830;color:var(--ink);border:1px solid var(--rule);
+    padding:10px 14px;border-radius:3px;cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  button.primary{background:var(--accent);color:#1b1f24;border-color:var(--accent);font-weight:700}
+  .examples{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
+  .examples button{font-size:12px;padding:6px 10px}
+  .hint{color:var(--dim);font-size:13px;margin:10px 0 0}
+  .hint b{color:var(--ink);font-weight:600}
+  mark{background:var(--accent);color:#1b1f24;padding:0 1px;border-radius:2px}
+  .count{font:400 44px/1 Georgia,serif;margin:26px 0 2px}
+  .count small{font:12px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.1em;
+    color:var(--dim);display:block;margin-top:6px;text-transform:uppercase}
+  .result{border-top:1px solid var(--rule);padding:18px 0}
+  .rhead{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;margin-bottom:8px}
+  .rhead .mono{color:var(--accent)}
+  .rhead a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--accent)}
+  .rhead a:hover{color:var(--accent)}
+  .rtitle{font:400 17px/1.3 Georgia,serif;color:var(--ink);margin:0 0 8px}
+  .rtext{white-space:pre-wrap;margin:0 0 12px;color:var(--ink)}
+  .racts{display:flex;gap:8px;flex-wrap:wrap}
+  .racts button{padding:6px 10px;font-size:12px}
+  .nomatch{border-top:1px solid var(--rule);padding:22px 0;color:var(--dim)}
+  .draft{margin-top:44px;border-top:2px solid var(--rule);padding-top:18px}
+  .draft h2{font:400 24px/1.2 Georgia,serif;margin:6px 0 12px}
+  .draft .item{border-top:1px solid var(--rule);padding:12px 0}
+  .draft .cite{font:15px/1.5 Georgia,serif;margin:0 0 6px}
+  .draft .quote{color:var(--dim);font-size:14px;margin:0 0 8px;white-space:pre-wrap}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:var(--accent);color:#1b1f24;padding:8px 16px;border-radius:3px;
+    font:13px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.05em}
+  .limits{margin-top:44px;border-top:1px solid var(--rule);padding-top:16px;
+    color:var(--dim);font-size:14px}
+  .limits h2{font:400 20px/1.2 Georgia,serif;color:var(--ink);margin:0 0 8px}
+  .limits ul{margin:0;padding-left:20px}
+  .limits li{margin:4px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mono">WORKSHOP_DATA.GC · GENERAL COMMENTS, PARAGRAPH BY PARAGRAPH</div>
+    <h1>Verbatim finder: <em>freedom of expression online</em></h1>
+    <div class="sub" id="srcLine"></div>
+  </header>
+
+  <div class="mono">SEARCH — ALL WORDS ANYWHERE · "QUOTED WORDS" TOGETHER · LITERAL, NOT SYNONYMS</div>
+  <div class="searchbar">
+    <input id="q" type="search" placeholder='e.g. internet "freedom of expression" — press Enter'
+      aria-label="Search paragraphs">
+    <button class="primary" id="go">SEARCH</button>
+  </div>
+  <div class="examples" id="examples"></div>
+  <p class="hint">Every word must appear in the paragraph, any order; words in quotation marks must appear
+    together, word for word. Case and apostrophe shape (’ or ') are ignored; <b>child</b> finds
+    <b>children</b>. Nothing leaves your browser.</p>
+
+  <div id="results" hidden>
+    <div class="count" id="nMatches">0<small id="nLabel"></small></div>
+    <div id="list"></div>
+  </div>
+  <div id="nomatch" class="nomatch" hidden></div>
+
+  <section class="draft" id="draftSec" hidden>
+    <div class="mono">DRAFT</div>
+    <h2>Your draft</h2>
+    <div class="racts" style="margin-bottom:14px">
+      <button id="copyAll">COPY ALL</button>
+      <button id="download">DOWNLOAD (.TXT)</button>
+      <button id="clearDraft">CLEAR</button>
+    </div>
+    <div id="draftList"></div>
+  </section>
+
+  <section class="limits">
+    <h2>What this tool cannot do</h2>
+    <ul>
+      <li>No summaries, paraphrase or synonyms: it finds only the words you typed.</li>
+      <li>No other sources: no concluding observations, no case law — General Comments only.</li>
+      <li>No translation: English only.</li>
+      <li>A symbol is not always one document (e.g. A/48/18 holds seven General Recommendations;
+        joint General Comments carry two symbols in one field): the citation shows the symbol
+        and paragraph number exactly as the file stores them.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const GC = WORKSHOP_DATA.gc;
+document.getElementById('srcLine').textContent =
+  (GC.title || 'General Comments') + ' · ' + GC.count + ' paragraphs · ' +
+  (GC.source || 'UN treaty bodies') +
+  ' · years ' + Math.min(...GC.records.map(r=>r.year||9999)) + '–' +
+  Math.max(...GC.records.map(r=>r.year||0));
+
+const EXAMPLES = [
+  '"freedom of expression" internet',
+  'online expression',
+  '"social media" expression'
+];
+const exWrap = document.getElementById('examples');
+EXAMPLES.forEach(t=>{
+  const b=document.createElement('button');
+  b.textContent=t;
+  b.addEventListener('click',()=>{document.getElementById('q').value=t;run();});
+  exWrap.appendChild(b);
+});
+
+// --- normalisation: case, apostrophe shape, footnote marks, hyphenation ---
+const norm = s => s
+  .replace(/\[\[fn:\d+\]\]/g,' ')
+  .replace(/[\u2018\u2019\u02BC`]/g,"'")
+  .replace(/[\u201C\u201D]/g,'"')
+  .toLowerCase();
+
+// build search terms: quoted phrases vs bare words
+function parse(q){
+  const phrases=[], words=[];
+  const re=/"([^"]+)"/g; let m,rest=q;
+  while((m=re.exec(q))!==null){ if(m[1].trim()) phrases.push(m[1].trim()); }
+  rest=q.replace(re,' ');
+  rest.split(/[^\p{L}\p{N}'’-]+/u).forEach(w=>{
+    w=w.replace(/^[-']+|[-']+$/g,'');
+    if(w) words.push(w);
+  });
+  return {phrases,words};
+}
+// word-boundary-aware prefix match: child finds children
+function esc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
+function wordRegex(w){
+  const n=norm(w).replace(/'/g,"['’‘`]");
+  return new RegExp('(^|[^\\p{L}\\p{N}])('+n+')(\\p{L}*)','gu');
+}
+function phraseRegex(p){
+  // allow apostrophe variants inside the phrase
+  const n=norm(p).replace(/'/g,"['’‘`]").replace(/"/g,'["“”]*');
+  return new RegExp('(^|[^\\p{L}\\p{N}])('+n+')','gu');
+}
+function matches(rec,terms){
+  const t=norm(rec.text);
+  for(const p of terms.phrases){
+    const re=phraseRegex(p); re.lastIndex=0;
+    if(!re.test(t)) return false;
+  }
+  for(const w of terms.words){
+    const re=wordRegex(w); re.lastIndex=0;
+    if(!re.test(t)) return false;
+  }
+  return true;
+}
+// highlight: wrap every matched word/phrase occurrence in <mark>
+function highlight(text,terms){
+  let html=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const all=[...terms.phrases.map(phraseRegex),...terms.words.map(wordRegex)];
+  all.forEach(re=>{
+    html=html.replace(re,(m,pre,hit,suf)=>pre+'⟪⟫'+hit+'⟪/⟫'+(suf||''));
+  });
+  html=html.replace(/⟪⟫/g,'<mark>').replace(/⟪\/⟫/g,'</mark>');
+  return html;
+}
+
+const draft=[];
+function citation(r){
+  // add short_title when the symbol holds several titles in the file
+  const sameSym=GC.records.filter(x=>x.symbol===r.symbol);
+  const multi=new Set(sameSym.map(x=>x.title)).size>1;
+  return multi ? r.symbol+', para. '+r.paragraph+' ('+r.short_title+')'
+               : r.symbol+', para. '+r.paragraph;
+}
+function toast(msg){
+  const t=document.createElement('div');t.className='toast';t.textContent=msg;
+  document.body.appendChild(t);setTimeout(()=>t.remove(),1600);
+}
+function copyText(txt,msg){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>toast(msg),()=>fallbackCopy(txt,msg));
+  } else fallbackCopy(txt,msg);
+}
+function fallbackCopy(txt,msg){
+  const ta=document.createElement('textarea');ta.value=txt;
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');toast(msg);}catch(e){toast('COPY FAILED — SELECT MANUALLY');}
+  ta.remove();
+}
+
+function resultNode(r,terms){
+  const div=document.createElement('div');div.className='result';
+  const head=document.createElement('div');head.className='rhead';
+  head.innerHTML='<span class="mono">'+r.committee+'</span>'+
+    '<a href="'+r.doc_url+'" target="_blank" rel="noopener">'+r.symbol+'</a>'+
+    '<span class="mono">PARA. '+r.paragraph+'</span>'+
+    '<span class="mono">'+r.year+'</span>';
+  const t=document.createElement('p');t.className='rtitle';t.textContent=r.short_title;
+  const body=document.createElement('p');body.className='rtext';
+  body.innerHTML=highlight(r.text,terms);
+  const acts=document.createElement('div');acts.className='racts';
+  const c=document.createElement('button');c.textContent='COPY CITATION';
+  c.addEventListener('click',()=>copyText(citation(r),'CITATION COPIED'));
+  const a=document.createElement('button');a.textContent='ADD TO DRAFT';
+  a.addEventListener('click',()=>{draft.push(r);renderDraft();toast('ADDED TO DRAFT');});
+  acts.append(c,a);
+  div.append(head,t,body,acts);
+  return div;
+}
+
+function run(){
+  const q=document.getElementById('q').value;
+  const terms=parse(q);
+  const hasTerms=terms.phrases.length||terms.words.length;
+  const res=document.getElementById('results'),nm=document.getElementById('nomatch'),
+        list=document.getElementById('list');
+  list.innerHTML='';nm.hidden=true;res.hidden=true;
+  if(!hasTerms)return;
+  const found=GC.records.filter(r=>matches(r,terms));
+  document.getElementById('nMatches').textContent=found.length;
+  document.getElementById('nLabel').textContent='MATCHING PARAGRAPHS OF '+GC.count+' SEARCHED · ALL WORDS, ANY ORDER · QUOTED WORDS TOGETHER';
+  res.hidden=false;
+  if(!found.length){
+    nm.hidden=false;
+    nm.textContent='No paragraph contains every word you typed'+(terms.phrases.length?' (or your quoted phrase, word for word)':'')+'. Try fewer words, or remove quotation marks.';
+    return;
+  }
+  found.forEach(r=>list.appendChild(resultNode(r,terms)));
+}
+
+function renderDraft(){
+  const sec=document.getElementById('draftSec'),list=document.getElementById('draftList');
+  sec.hidden=draft.length===0;list.innerHTML='';
+  draft.forEach((r,i)=>{
+    const d=document.createElement('div');d.className='item';
+    const c=document.createElement('p');c.className='cite';c.textContent=citation(r);
+    const qt=document.createElement('p');qt.className='quote';
+    qt.textContent='“'+r.text+'”';
+    const rm=document.createElement('button');rm.textContent='REMOVE';
+    rm.addEventListener('click',()=>{draft.splice(i,1);renderDraft();});
+    d.append(c,qt,rm);list.appendChild(d);
+  });
+}
+document.getElementById('go').addEventListener('click',run);
+document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')run();});
+document.getElementById('copyAll').addEventListener('click',()=>{
+  copyText(draft.map(r=>citation(r)+'\n“'+r.text+'”').join('\n\n'),'DRAFT COPIED');
+});
+document.getElementById('clearDraft').addEventListener('click',()=>{draft.length=0;renderDraft();});
+document.getElementById('download').addEventListener('click',()=>{
+  const txt=draft.map(r=>citation(r)+'\n“'+r.text+'”').join('\n\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
+  a.download='verbatim-draft.txt';a.click();URL.revokeObjectURL(a.href);
+});
+</script>
+</body>
+</html>
+```
+
+**How to check it, as the plan promised:** search a phrase you know in quotation marks — it appears word for word with apostrophes intact; click any symbol to compare with the original at `doc_url`; "Copy citation" gives `symbol, para. N` (with the short title added when one symbol holds several documents). The count of paragraphs searched is always shown above the results, and the "cannot do" section at the bottom states the limits.
