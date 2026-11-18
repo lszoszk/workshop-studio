@@ -28,7 +28,7 @@ h1 { font: 600 40px/1.15 Georgia, "Times New Roman", serif; margin: 6px 0 10px; 
 .step { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; padding: 28px 0; border-top: 1px solid var(--rule); }
 .step:first-of-type { margin-top: 24px; }
 .shot { margin: 0; }
-.shot img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); background: #fff; }
+.shot img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: contain; border: 1px solid var(--rule); background: #e9e3d7; }
 .num { font: 600 13px ui-monospace, Menlo, Consolas, monospace; color: var(--red); letter-spacing: .06em; }
 .step h2 { font: 600 26px/1.2 Georgia, serif; margin: 2px 0 10px; }
 .lab { font: 600 11px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 12px 0 2px; }
@@ -144,7 +144,7 @@ footer { padding-top: 24px; padding-bottom: 48px; border-top: 1px solid var(--ru
   const plain = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d.textContent; };
 
   $('steps').innerHTML = STEPS.map((s, i) => `<section class="step" id="${s.img}">
-    <figure class="shot"><img src="img/${s.img}.png" alt="${s.title}: ${plain(s.cap).replace(/"/g, '&quot;')}" loading="lazy" width="2880" height="1800"></figure>
+    <figure class="shot"><img src="img/${s.img}.png" alt="${s.title}: ${plain(s.cap).replace(/"/g, '&quot;')}" decoding="async" width="2880" height="1800"></figure>
     <div><div class="num">STEP ${i + 1} OF ${STEPS.length}</div><h2>${s.title}</h2>
       <div class="lab">Caption</div><p class="cap">${s.cap}</p>
       <div class="lab">What I do and why</div><p class="what">${s.what}</p>
