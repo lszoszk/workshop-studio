@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Garage Research, step by step</title>
+<!-- Screenshots of the Geneva session (4 December 2026) for the co-trainers' slides: what participants see at each step,
+     and what the facilitator does and why. The pictures are made by tools/step_by_step.py; rerun it after a change to the
+     studio. Copy image puts the PNG on the clipboard (paste into PowerPoint, Keynote or Google Slides). -->
+<style>
+:root { --bg: #f4f0e8; --ink: #1d1b18; --muted: #5d574f; --rule: #d9d2c3; --red: #9b2335; --surface: #fffdf8; --focus: #e07a1f; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+a { color: var(--red); }
+header, main, footer { max-width: 1240px; margin: 0 auto; padding: 0 20px; }
+header { padding-top: 36px; padding-bottom: 8px; }
+.kicker { font: 600 12px/1.3 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font: 600 40px/1.15 Georgia, "Times New Roman", serif; margin: 6px 0 10px; }
+.lead { max-width: 820px; font-size: 18px; margin: 0 0 12px; }
+.how { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 14px 0 0; padding: 12px 16px; border: 1px solid var(--rule); background: var(--surface); font-size: 15px; }
+.how b { font-weight: 600; }
+.arc { margin: 18px 0 6px; font: 600 14px/1.5 ui-monospace, Menlo, Consolas, monospace; color: var(--red); }
+.why { max-width: 820px; margin: 18px 0 0; padding: 14px 18px; border-left: 3px solid var(--red); background: var(--surface); }
+.why h2 { font: 600 20px/1.3 Georgia, serif; margin: 0 0 4px; }
+.why p { margin: 0; }
+.tools { margin: 16px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.step { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; padding: 28px 0; border-top: 1px solid var(--rule); }
+.step:first-of-type { margin-top: 24px; }
+.shot { margin: 0; }
+.shot img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); background: #fff; }
+.num { font: 600 13px ui-monospace, Menlo, Consolas, monospace; color: var(--red); letter-spacing: .06em; }
+.step h2 { font: 600 26px/1.2 Georgia, serif; margin: 2px 0 10px; }
+.lab { font: 600 11px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 12px 0 2px; }
+.cap { margin: 0; font-size: 17px; }
+.what { margin: 0; color: var(--ink); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+button, .dl { font: 600 14px system-ui, sans-serif; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); cursor: pointer; text-decoration: none; }
+button.primary { background: var(--red); border-color: var(--red); color: #fff; }
+button:focus-visible, .dl:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+.done { color: #1e6b3a !important; border-color: #1e6b3a !important; background: #e9f4ec !important; }
+.mark { display: inline-block; padding: 0 4px; border: 2px solid var(--focus); border-radius: 3px; }
+.trouble { padding: 28px 0 32px; border-top: 1px solid var(--rule); }
+.trouble h2 { font: 600 30px/1.2 Georgia, serif; margin: 2px 0 10px; }
+.trouble ol { max-width: 980px; margin: 8px 0 0; padding-left: 26px; }
+.trouble li { margin: 0 0 10px; }
+.trouble li b { font-weight: 600; }
+footer { padding-top: 24px; padding-bottom: 48px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 14px; }
+@media (max-width: 860px) { .step { grid-template-columns: 1fr; } h1 { font-size: 32px; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">Garage Research · AI for Human Rights Professionals · Geneva Human Rights Hub · 4 December 2026</div>
+  <h1>The studio session, step by step</h1>
+  <p class="lead">What participants will see in the studio, one screenshot per step, and what I do at each step and why. In the session every participant builds one small tool, a Verbatim finder for the General Comments of the UN treaty bodies, by working with an AI model the way one works with a capable colleague.</p>
+  <div class="how">
+    <span><b>Copy image</b> puts the screenshot on your clipboard: paste it into PowerPoint, Keynote or Google Slides.</span>
+    <span><b>Copy caption</b> copies the one-line description.</span>
+    <span>The <span class="mark">orange frame</span> marks what to point at.</span>
+    <span>Each picture is 2880 × 1800 px.</span>
+  </div>
+  <p class="arc">data → brief → plan → change the plan → build → test → improve → wall → film</p>
+  <div class="why">
+    <h2>Before the first step: why we build</h2>
+    <p>Uploading a document to a chatbot gives you a paraphrase that you cannot cite and cannot check. A small tool built on clean data gives you the exact words with their source (the document symbol and the paragraph number), every time. In the session participants see both, and they leave with a tool of their own.</p>
+  </div>
+  <div class="tools"><button type="button" id="copyAll">Copy all captions</button></div>
+</header>
+<main id="steps"></main>
+<section class="trouble" id="when-something-goes-wrong">
+  <div class="num">FOR THE FACILITATORS IN THE ROOM</div>
+  <h2>When something goes wrong</h2>
+  <p class="lead">The most frequent problems from our test builds and from the room in Venice (12–13 November 2026, about 30 participants), with what to do. The studio never changes a participant's model by itself, so most fixes are one click by the participant.</p>
+  <ol id="troubleList">
+    <li><b>"Recorded answers" in the top right corner, and "Edit the plan" is grey.</b> The participant has no seat code, so the studio replays recorded answers. Open the link from the QR code on the seat card again (in Venice, a quarter of the first day's visits started this way).</li>
+    <li><b>"The studio is paused by the facilitator."</b> Ask me to resume the studio; it is paused before and after the session.</li>
+    <li><b>"The model did not answer. Try again, or use the other model."</b> Press Try again once. If several people see it at the same time, tell me: it is a key or a provider problem, and the other model usually still works.</li>
+    <li><b>"The model is busy right now."</b> Too many requests at once. Wait a minute and press Try again, or switch to the other model with the button under the message.</li>
+    <li><b>An error in red as the app opens</b> (for instance "Cannot set properties of null"). The studio sends it back to the model once by itself; then press Ask the model to fix it, and after two failed fixes, Load a working version. In Venice almost all such errors came from GLM-5.3 (33 of 93 builds, against 2 of 136 for Claude Sonnet).</li>
+    <li><b>The model answers in words, and no app appears.</b> Type: "Please build the app now: the whole app in one html code block." (GLM does this now and then.)</li>
+    <li><b>A paragraph in the app repeats or garbles its own text.</b> A bug in the app, not in the data, which is exactly what the test card is for: compare the paragraph with its source and ask for a fix ("Show each paragraph exactly as stored; only highlight the matches").</li>
+    <li><b>Two apps give different numbers for the same search</b> (for instance 279 and 286). Each follows its own plan: whether "child" also finds "children", whether quotation marks keep a phrase together. Look at the line "How this is computed" and at the participant's answer to "What counts as a match".</li>
+    <li><b>Marks such as [[fn:42]] in the text.</b> Not an error: the footnote numbers as the file stores them.</li>
+    <li><b>Someone is stuck on a step.</b> Every step of the bar has Skip, and the recorded planning has Skip to the plan, so nobody misses the build or the wall. In Venice the first app took 6 to 12 minutes with a plan; the short plan should cut that.</li>
+    <li><b>The page was reloaded.</b> The brief, the plan and the progress come back in the same browser; another browser or device starts from the beginning.</li>
+    <li><b>Safari, or a small laptop screen.</b> Both work (in Venice three visits in four were in Safari, and two thirds of the screens were narrower than 1440 px). If the app is cramped, Close the plan or open the app in a New tab.</li>
+  </ol>
+  <div class="tools"><button type="button" id="copyTrouble">Copy the list</button></div>
+</section>
+<footer>
+  Prepared by <a href="https://lszoszk.github.io/">Łukasz Szoszkiewicz</a> (Adam Mickiewicz University, Poznań). The studio: <a href="https://lszoszk.github.io/workshop-studio/">lszoszk.github.io/workshop-studio</a>. The data: <a href="https://huggingface.co/datasets/lszoszk/treaty-bodies-general-comments">treaty-bodies-general-comments on Hugging Face</a>, from the <a href="https://lszoszk.github.io/generalcomments/">UN Human Rights Database</a>.
+  Screenshots taken in November 2026; the studio may change slightly before the session.
+</footer>
+<script>
+(function () {
+  'use strict';
+  // one step: its picture, a caption for a slide, and what I do there and why
+  const STEPS = [
+    { img: '01-data-card', title: 'First, the data',
+      cap: 'The studio opens on the data: 7,304 paragraphs of the General Comments of the UN treaty bodies, one record per paragraph. The bar at the top follows the seven steps of the session.',
+      what: 'I explain why we take structured data from <a href="https://huggingface.co/datasets/lszoszk/treaty-bodies-general-comments">Hugging Face</a> rather than PDFs, since a paragraph with its symbol and number is what makes an exact quotation possible. Therefore, participants look at the data before they ask the model for anything.' },
+    { img: '02-inside-the-file', title: 'Look inside the file',
+      cap: 'The first records as they are stored, what each field means, and where the same data is published.',
+      what: 'We read one record together (symbol, paragraph, committee, year, text). Moreover, I say what the file does not contain, for instance concluding observations or case law.' },
+    { img: '03-brief', title: 'Write the brief',
+      cap: 'A prompt as a brief: five labelled paragraphs (goal and why, before you build, limits, done looks like, check before you finish), each one switched on or off and rewritten, with the participant\'s own topic.',
+      what: 'I explain what a prompt is, following Ethan Mollick\'s questions for delegating work (<a href="https://www.oneusefulthing.org/p/management-as-ai-superpower">Management as AI superpower</a>), and the one rule of the session (plan first). Thus, the model looks at the data and proposes a plan before it writes any code, which gives participants more say, a better result and no rabbit hole at the start.' },
+    { img: '04-planner-and-decision', title: 'The planner looks, then asks',
+      cap: 'A recorded planning session (Claude Fable 5.1) looks at the file and at a small reference shelf, then asks three decisions: what counts as a match, how a citation reads, what a result shows first.',
+      what: 'Participants answer in pairs and argue about the defaults, since a wrong default costs a quotation. In this context, I stress that the decisions stay with people (Mollick, <a href="https://www.oneusefulthing.org/p/agency-and-agents">Agency and Agents</a>).' },
+    { img: '05-plan', title: 'Read the plan',
+      cap: 'The plan, about 380 words: what you asked for, what I found in the file, what the tool will do, your decisions, the look of the app, what it will not do, how you can check it.',
+      what: 'Pairs read the whole plan and discuss it before anything is built. It is short on purpose, so that everybody can read it to the end.' },
+    { img: '06-edit-the-plan', title: 'Change the plan',
+      cap: 'Two ways to change it: edit the plan directly (Edit the plan) or ask in the chat ("Change the plan: …"). Both lead to the build.',
+      what: 'I show one change made by hand; participants make their own, or change the look of their app (five looks, one given to each seat at random).' },
+    { img: '07-building', title: 'Build',
+      cap: 'The model writes the app from the brief and the plan, live. The menu offers Claude Sonnet 5.5 (the default) or GLM-5.3 run in the EU.',
+      what: 'I describe the difference between the two models honestly (a US model with no zero data retention and an open-weights Chinese model run in the EU, which made more errors in our tests). At the same time, I use the waiting time for the <a href="https://doi.org/10.1287/orsc.2025.21838">jagged frontier</a> (no model is best at everything, so one has to test it on one\'s own task).' },
+    { img: '08-the-app', title: 'The app',
+      cap: 'Each participant gets their own Verbatim finder: type a phrase and see every paragraph that contains it, word for word, with its symbol, paragraph number and a Copy citation button.',
+      what: 'We look at two or three apps on the projector. Although they look different, they do the same thing on the same data.' },
+    { img: '09-test-your-app', title: 'Test the app',
+      cap: 'Three checks to tick (a phrase found word for word, one paragraph compared with its source, a copied citation with symbol and paragraph number) and one thing to change.',
+      what: 'Pairs test the app on something they know well, and each person writes down one change they would make.' },
+    { img: '10-three-ideas', title: 'Three ideas',
+      cap: '"Suggest three improvements": the model proposes three alternatives, each from a different point of view (for instance a first-time user, a careful drafter, a sceptical judge). Build this, Edit first, Not this, or one\'s own idea.',
+      what: 'Participants choose, edit or reject the ideas. However, the point is judgement, and nobody has to take the first suggestion, or any of them.' },
+    { img: '11-show-it-to-the-room', title: 'Show it to the room?',
+      cap: 'When all seven steps are done, the studio asks whether to send the app to the wall, signed with a name if the participant wishes.',
+      what: 'Sending is optional, and so is the name.' },
+    { img: '12-the-wall', title: 'The wall',
+      cap: 'The apps sent to the wall, on the projector (here: apps built in Venice in November 2026).',
+      what: 'Two or three participants say what they found and what they checked.' },
+    { img: '13-teaser', title: 'The film',
+      cap: 'At the end, a 30-second film made from the room\'s apps while they worked (here a frame from a test version made from the Venice apps).',
+      what: 'I play it full screen to close the session.' },
+    { img: '14-take-home-kit', title: 'The take-home kit',
+      cap: 'One file to take home: the participant\'s brief, plan and app, the data, and "At home": a brief for a dashboard of Human Rights Council texts, 2006–2026, to build with one\'s own chatbot.',
+      what: 'Participants download it before they leave, since the studio is closed after the session.' },
+  ];
+  const $ = (id) => document.getElementById(id);
+  const plain = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d.textContent; };
+
+  $('steps').innerHTML = STEPS.map((s, i) => `<section class="step" id="${s.img}">
+    <figure class="shot"><img src="img/${s.img}.png" alt="${s.title}: ${plain(s.cap).replace(/"/g, '&quot;')}" loading="lazy" width="2880" height="1800"></figure>
+    <div><div class="num">STEP ${i + 1} OF ${STEPS.length}</div><h2>${s.title}</h2>
+      <div class="lab">Caption</div><p class="cap">${s.cap}</p>
+      <div class="lab">What I do and why</div><p class="what">${s.what}</p>
+      <div class="row"><button type="button" class="primary" data-copy-img="${i}">Copy image</button>
+        <button type="button" data-copy-cap="${i}">Copy caption</button>
+        <a class="dl" href="img/${s.img}.png" download="${String(i + 1).padStart(2, '0')}-${s.img.slice(3)}.png">Download</a></div></div>
+  </section>`).join('');
+
+  function flash(btn, text) {
+    const was = btn.textContent;
+    btn.textContent = text;
+    btn.classList.add('done');
+    setTimeout(() => { btn.textContent = was; btn.classList.remove('done'); }, 1600);
+  }
+
+  async function copyImage(i, btn) {
+    const src = `img/${STEPS[i].img}.png`;
+    try {
+      // Safari wants the promise itself in the ClipboardItem, not the blob it resolves to
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': fetch(src).then((r) => r.blob()) })]);
+      flash(btn, 'Copied');
+    } catch (e) {
+      flash(btn, 'Not allowed here: use Download');
+    }
+  }
+
+  async function copyText(text, btn) {
+    try { await navigator.clipboard.writeText(text); flash(btn, 'Copied'); } catch (e) { flash(btn, 'Not allowed here'); }
+  }
+
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.copyImg) copyImage(Number(b.dataset.copyImg), b);
+    else if (b.dataset.copyCap) copyText(plain(STEPS[Number(b.dataset.copyCap)].cap), b);
+    else if (b.id === 'copyTrouble') copyText([...document.querySelectorAll('#troubleList li')].map((li, i) => `${i + 1}. ${li.textContent.trim()}`).join('\n'), b);
+    else if (b.id === 'copyAll') copyText(STEPS.map((s, i) => `${i + 1}. ${s.title}: ${plain(s.cap)}`).join('\n'), b);
+  });
+})();
+</script>
+</body>
+</html>
