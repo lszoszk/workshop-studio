@@ -58,7 +58,7 @@ footer { padding-top: 24px; padding-bottom: 48px; border-top: 1px solid var(--ru
     <span><b>Copy image</b> puts the screenshot on your clipboard: paste it into PowerPoint, Keynote or Google Slides.</span>
     <span><b>Copy caption</b> copies the one-line description.</span>
     <span>The <span class="mark">orange frame</span> marks what to point at.</span>
-    <span>Each picture is 2880 × 1800 px.</span>
+    <span>The page shows small previews; Copy image and Download give the full picture (2880 × 1800 px).</span>
   </div>
   <p class="arc">data → brief → plan → change the plan → build → test → improve → wall → film</p>
   <div class="why">
@@ -144,7 +144,7 @@ footer { padding-top: 24px; padding-bottom: 48px; border-top: 1px solid var(--ru
   const plain = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d.textContent; };
 
   $('steps').innerHTML = STEPS.map((s, i) => `<section class="step" id="${s.img}">
-    <figure class="shot"><img src="img/${s.img}.png" alt="${s.title}: ${plain(s.cap).replace(/"/g, '&quot;')}" decoding="async" width="2880" height="1800"></figure>
+    <figure class="shot"><img src="web/${s.img}.jpg" alt="${s.title}: ${plain(s.cap).replace(/"/g, '&quot;')}" decoding="async" width="2880" height="1800"></figure>
     <div><div class="num">STEP ${i + 1} OF ${STEPS.length}</div><h2>${s.title}</h2>
       <div class="lab">Caption</div><p class="cap">${s.cap}</p>
       <div class="lab">What I do and why</div><p class="what">${s.what}</p>

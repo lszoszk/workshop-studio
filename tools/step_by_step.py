@@ -166,6 +166,16 @@ def main():
                         str(OUT / "13-teaser.png")], check=True)
         print("saved 13-teaser", flush=True)
 
+    # light previews for the page (Copy image and Download take the full PNG)
+    from PIL import Image
+    web = OUT.parent / "web"
+    web.mkdir(exist_ok=True)
+    for png in sorted(OUT.glob("*.png")):
+        im = Image.open(png).convert("RGB")
+        im.thumbnail((1440, 1440))
+        im.save(web / (png.stem + ".jpg"), "JPEG", quality=82, optimize=True, progressive=True)
+    print("previews in", web, flush=True)
+
 
 if __name__ == "__main__":
     main()
