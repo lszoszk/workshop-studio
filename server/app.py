@@ -59,6 +59,8 @@ VERSION = "2026-11-01"
 HERE = Path(__file__).resolve().parent
 ROOM_PAGE = (HERE / "room_page.html").read_text(encoding="utf-8")   # the facilitator's live room chat
 OPENROUTER = "https://openrouter.ai/api/v1"
+ANTHROPIC_MODELS = "https://api.anthropic.com/v1/models"   # the free call that checks a pasted Claude key
+KEY_KINDS = {"openrouter": ("sk-or-", "OpenRouter"), "anthropic": ("sk-ant-", "Claude (Anthropic)")}   # prefix, name
 ORIGINS = "https://lszoszk.github.io,http://localhost:8766,http://127.0.0.1:8766"
 GALLERY_LINK_HOSTS = ("docs.un.org", "undocs.org", "uhri.ohchr.org", "searchlibrary.ohchr.org",
                       "www.gov.pl", "gov.pl")   # gov.pl: the GAAR Council PDFs (Poznan, 19.11.2026)
@@ -312,6 +314,30 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
     room_dir = cfg.state_dir / "room"
     room_dir.mkdir(parents=True, exist_ok=True)
     systems = {"build": build_system_prompt(cfg.data_dir), "inapp": INAPP_SYSTEM, "question": None}
+    # ── model keys pasted on the admin page. Each is checked with one free call before it is kept; it then wins over the
+    # key in the server's .env. They live in state/keys.json (mode 600, never in git or the image) and are never sent
+    # back: the page shows their last four characters. A pasted Claude key also sends Claude straight to Anthropic. ──
+    keys_file = cfg.state_dir / "keys.json"
+    try:
+        pasted = json.loads(keys_file.read_text())
+        pasted = {k: v for k, v in pasted.items() if k in KEY_KINDS and isinstance(v, dict) and isinstance(v.get("key"), str)}
+    except (OSError, ValueError, AttributeError):
+        pasted = {}
+
+    def keys_write() -> None:
+        tmp = keys_file.with_suffix(".tmp")
+        with os.fdopen(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as fh:
+            json.dump(pasted, fh)
+        os.replace(tmp, keys_file)
+
+    def or_key() -> str:
+        return pasted["openrouter"]["key"] if "openrouter" in pasted else cfg.api_key
+
+    def an_key() -> str:
+        return pasted["anthropic"]["key"] if "anthropic" in pasted else cfg.anthropic_key
+
+    def routed(m: models.Model) -> models.Model:
+        return models.CLAUDE_DIRECT if m.key == "claude" and "anthropic" in pasted else m
     client = httpx.AsyncClient(transport=transport, timeout=httpx.Timeout(10.0, read=180.0),
                                limits=httpx.Limits(max_connections=100, max_keepalive_connections=20))
     # no retries here: a failure goes to the model's fallback at once, as on OpenRouter
@@ -349,11 +375,11 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         return s
 
     def headers() -> dict:
-        return {"Authorization": f"Bearer {cfg.api_key}", "HTTP-Referer": "https://lszoszk.github.io/workshop-studio/",
+        return {"Authorization": f"Bearer {or_key()}", "HTTP-Referer": "https://lszoszk.github.io/workshop-studio/",
                 "X-Title": "Workshop Studio"}
 
     async def open_anthropic(m: models.Model, messages: list, purpose: str):
-        if not cfg.anthropic_key:
+        if not an_key():
             return None, "no_anthropic_key"
         if seats.spent_on(m.key, "anthropic") >= cfg.anthropic_cap:
             return None, "anthropic_cap"
@@ -370,7 +396,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
                   "thinking": {"type": "adaptive", "display": "summarized"}, "output_config": {"effort": effort}}
         if systems[purpose]:
             params["system"] = [{"type": "text", "text": systems[purpose], "cache_control": {"type": "ephemeral"}}]
-        manager = claude.messages.stream(**params)
+        manager = claude.with_options(api_key=an_key()).messages.stream(**params)
         try:
             stream = await manager.__aenter__()
         except anthropic.APIStatusError as e:   # the body is not read: it may quote the prompt
@@ -508,6 +534,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
             if purpose not in PURPOSES:
                 raise Refusal(400, 'purpose must be "build", "inapp" or "question"', "purpose")
             m = models.MODELS.get(d.get("model") or default_model())
+            m = m and routed(m)
             if not m:
                 raise Refusal(400, "This model is not on the menu", "model")
             messages = clean_messages(d.get("messages"))
@@ -537,7 +564,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         swap = d.get("fallback") is not False
         # a busy account is busy for every model; a fallback that cannot read the images would answer without them
         if resp is None and swap and m.fallback and err != BUSY and (models.MODELS[m.fallback].vision or not messages[-1].get("images")):
-            used = models.MODELS[m.fallback]
+            used = routed(models.MODELS[m.fallback])
             resp, err = await open_with_retry(used, messages, purpose)
         if resp is None:
             seconds = round(time.monotonic() - t0, 1)
@@ -823,7 +850,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         return {"ok": True, "version": VERSION, "route": "vm", "default_model": default_model(),
                 "models": list(models.MODELS), "accepting": not paused(),
                 # beyond the contract, for the facilitator:
-                "build": cfg.build, "balance_usd": balance["value"], "key_configured": bool(cfg.api_key),
+                "build": cfg.build, "balance_usd": balance["value"], "key_configured": bool(or_key()),
                 "seats": {"total": len(all_seats), "enabled": sum(1 for s in all_seats if not s["disabled"]),
                           "active_10min": seats.active_count(10)}}
 
@@ -834,7 +861,29 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
     def admin_state() -> dict:
         return {"paused": paused(), "default_model": default_model(), "spent_today": round(seats.spent_today(), 4),
                 "daily_budget": cfg.daily_budget, "balance_usd": balance["value"], "seats": seats.all(),
-                "gallery": gallery_items(), "feedback": feedback_items()[:200]}
+                "gallery": gallery_items(), "feedback": feedback_items()[:200], "keys": keys_state()}
+
+    def keys_state() -> dict:   # where each key comes from and its last four characters; never the key
+        out = {}
+        for kind in KEY_KINDS:
+            if kind in pasted:
+                out[kind] = {"source": "admin", "ends": pasted[kind]["key"][-4:], "at": pasted[kind].get("at")}
+            else:
+                k = cfg.api_key if kind == "openrouter" else cfg.anthropic_key
+                out[kind] = {"source": "server" if k else None, "ends": k[-4:] if k else None, "at": None}
+        return out
+
+    async def check_key(kind: str, key: str) -> str | None:
+        """None when the service accepts the key (one free call: OpenRouter's key info, Anthropic's model list)."""
+        name = KEY_KINDS[kind][1]
+        try:
+            if kind == "openrouter":
+                r = await client.get(f"{OPENROUTER}/key", headers={"Authorization": f"Bearer {key}"}, timeout=10.0)
+            else:
+                r = await client.get(ANTHROPIC_MODELS, headers={"x-api-key": key, "anthropic-version": "2023-06-01"}, timeout=10.0)
+        except httpx.HTTPError as e:
+            return f"{name} could not be reached ({type(e).__name__}); the key was not saved"
+        return None if r.status_code == 200 else f"{name} refused the key (HTTP {r.status_code}); it was not saved"
 
     def admin_page(key: str, note: str = "") -> HTMLResponse:
         s, e = admin_state(), htmlmod.escape
@@ -862,6 +911,18 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
                      f"{e(f['context'].get('app', ''))}<br>{e(f['text'])}<br><small>{e(' · '.join('%s: %s' % kv for kv in f['context'].items()))}</small></li>"
                      for f in s["feedback"]) or "<li>none yet</li>"
         bal = "unknown" if s["balance_usd"] is None else f"${s['balance_usd']:.2f}"
+
+        def key_row(kind: str, what: str) -> str:
+            st = s["keys"][kind]
+            now = (f"pasted here{' on ' + e(st['at']) + ' UTC' if st['at'] else ''} · ends …{e(st['ends'])}" if st["source"] == "admin"
+                   else f"the server's file · ends …{e(st['ends'])}" if st["source"] == "server" else "none")
+            remove = form("clear_key", "Remove", f'<input type="hidden" name="kind" value="{kind}">') if st["source"] == "admin" else ""
+            return (f"<tr><td><b>{e(KEY_KINDS[kind][1])}</b><br><small>{e(what)}</small></td><td>{now}</td><td>"
+                    + form("set_key", "Save and check", f'<input type="hidden" name="kind" value="{kind}">',
+                           f'<input type="password" name="value" size="28" autocomplete="off" spellcheck="false" placeholder="{KEY_KINDS[kind][0]}…">')
+                    + f" {remove}</td></tr>")
+        keys = (key_row("openrouter", "GLM-5.3, Mistral, and Claude when no Claude key is pasted (through Amazon Bedrock)")
+                + key_row("anthropic", "Claude Sonnet straight to Anthropic"))
         body = f"""<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>Studio admin</title><style>body{{font:14px system-ui;margin:16px}}table{{border-collapse:collapse}}
 td,th{{border-bottom:1px solid #ddd;padding:4px 8px;text-align:left}}form{{display:inline}}tr.off{{opacity:.5}}
@@ -872,7 +933,10 @@ td,th{{border-bottom:1px solid #ddd;padding:4px 8px;text-align:left}}form{{displ
 {form('resume' if s['paused'] else 'pause', 'Resume all seats' if s['paused'] else 'Kill switch: pause all seats')}
 <span>Spent today ${s['spent_today']:.2f} / ${s['daily_budget']:.0f} · OpenRouter balance {bal} · times in UTC</span>
 {form('default_model', 'Set default model', fields=f'<select name="value">{opts}</select>')}</div>
-<table><tr><th>Seat</th><th>Label</th><th>Country</th><th>Spent / budget</th><th>Req</th><th>Err</th><th>Last request</th>
+<h2>Model keys</h2><p>A key pasted here is checked with one free call, then used instead of the key in the server's file.
+It stays on the server and is never shown again, only its last four characters. Remove goes back to the server's file.</p>
+<table><tr><th>Service</th><th>In use</th><th></th></tr>{keys}</table>
+<h2>Seats</h2><table><tr><th>Seat</th><th>Label</th><th>Country</th><th>Spent / budget</th><th>Req</th><th>Err</th><th>Last request</th>
 <th>Last error</th><th></th></tr>{rows}</table><h2>Feedback ({len(s["feedback"])})</h2><ul>{fb}</ul><h2>Wall</h2><ul>{wall}</ul>"""
         return HTMLResponse(body, headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
 
@@ -1001,7 +1065,7 @@ td,th{{border-bottom:1px solid #ddd;padding:4px 8px;text-align:left}}form{{displ
         if not admin_ok(key):
             return refuse(Refusal(403, "Wrong admin key", "admin"))
         action, seat, value = f.get("action"), normalise(f.get("seat", "")), str(f.get("value", ""))
-        ok = True
+        ok, note, kind = True, None, f.get("kind")
         if action in ("disable", "enable"):
             ok = seats.set_disabled(seat, action == "disable")
         elif action == "budget":
@@ -1020,11 +1084,28 @@ td,th{{border-bottom:1px solid #ddd;padding:4px 8px;text-align:left}}form{{displ
             if ok:
                 for ext in ("json", "html"):
                     (gallery_dir / f"{value}.{ext}").unlink(missing_ok=True)
+        elif action == "set_key" and kind in KEY_KINDS:
+            value = value.strip()
+            note = (None if value.startswith(KEY_KINDS[kind][0]) and 20 <= len(value) <= 300 and value.isprintable() and " " not in value
+                    else f"That does not look like a {KEY_KINDS[kind][1]} key (it starts with {KEY_KINDS[kind][0]}); nothing was saved")
+            note = note or await check_key(kind, value)
+            ok = note is None
+            if ok:
+                pasted[kind] = {"key": value, "at": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M")}
+                keys_write()
+                balance["at"] = 0.0   # the balance is read again with the new key
+                note = f"{KEY_KINDS[kind][1]} key saved and checked (ends …{value[-4:]})"
+        elif action == "clear_key" and kind in KEY_KINDS:
+            ok = pasted.pop(kind, None) is not None
+            if ok:
+                keys_write()
+                balance["at"] = 0.0
+                note = f"{KEY_KINDS[kind][1]} key removed; the server's file is used again"
         else:
             ok = False
-        log_event(event="admin", action=action, seat=seat or None, ok=ok)
+        log_event(event="admin", action=action, seat=seat or None, kind=kind if action in ("set_key", "clear_key") else None, ok=ok)
         if wants_json:
-            return JSONResponse({"ok": ok} | admin_state(), 200 if ok else 400)
-        return admin_page(key, f"{action}: {'done' if ok else 'nothing changed'}")
+            return JSONResponse({"ok": ok} | ({"note": note} if note else {}) | admin_state(), 200 if ok else 400)
+        return admin_page(key, note or f"{action}: {'done' if ok else 'nothing changed'}")
 
     return app

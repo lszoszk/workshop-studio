@@ -53,8 +53,9 @@ MODELS: dict[str, Model] = {m.key: m for m in [
     # 19.11.2026: back on OpenRouter (Amazon Bedrock, US, zero data retention): the Anthropic Console key on the server
     # answered 401, and a direct call through OpenRouter worked. To go straight to Anthropic again, restore
     # Model("claude", "claude-sonnet-5-5", "anthropic", ..., api="anthropic", zdr=False, ...) with a valid key.
-    Model("claude", "anthropic/claude-sonnet-5.5", "amazon-bedrock/us-east-1", "Claude Sonnet 5.5", "Anthropic", "US",
-          2.0, 10.0, fallback="mistral", reasoning="medium", edit_reasoning="low",
+    # (without a pasted Claude key; with one, CLAUDE_DIRECT below)
+    Model("claude", "anthropic/claude-sonnet-5.5", "amazon-bedrock/us-east-1", "Claude Sonnet 5.5", "Amazon Bedrock", "US",
+          2.2, 11.0, fallback="mistral", reasoning="medium", edit_reasoning="low",
           worker_id="anthropic/claude-sonnet-5.5", worker_host="amazon-bedrock/us-east-1", vision=True),
     Model("glm-cn", "z-ai/glm-5.3", "z-ai", "GLM-5.3 (developer's service)", "Z.AI", "CN",
           1.4, 4.4, fallback="glm-eu", reasoning="medium", edit_reasoning="low"),
@@ -63,6 +64,12 @@ MODELS: dict[str, Model] = {m.key: m for m in [
     Model("fast", "deepseek/deepseek-v4.1-flash", None, "DeepSeek V4.1 Flash", "any ZDR host", None,
           0.45, 1.8, fallback="mistral"),     # the dearest ZDR endpoint, so an estimate never undercharges
 ]}
+
+# Claude straight to Anthropic (no zero data retention on this route): used instead of MODELS["claude"] while a Claude
+# key pasted on the admin page is in force (app.py routed()); its spend stops at STUDIO_ANTHROPIC_CAP
+CLAUDE_DIRECT = Model("claude", "claude-sonnet-5-5", "anthropic", "Claude Sonnet 5.5", "Anthropic", "US",
+                      2.0, 10.0, fallback="mistral", reasoning="medium", api="anthropic", zdr=False, edit_reasoning="low",
+                      worker_id="anthropic/claude-sonnet-5.5", worker_host="amazon-bedrock/us-east-1", vision=True)
 
 # GLM-5.3 run in the EU since 11.11.2026 (Łukasz), with Claude second: Mistral's first dashboard broke half the time
 # (GLM's five times of six worked); the PDF exercise switches to Claude itself (prompts.json "model")

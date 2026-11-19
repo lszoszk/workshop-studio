@@ -14,6 +14,7 @@ Host `amuvmuser@150.254.115.204` (Arrakis), next to echr-api (8000), uhri-api (8
 
 ## What the server guarantees
 
+- **Keys pasted on the admin page** (Model keys, 19.11.2026): an OpenRouter or a Claude key pasted there is checked with one free call, kept in `server/state/keys.json` (mode 600) and used instead of the key in `server/.env`; the page shows only its last four characters, and Remove goes back to `.env`. A pasted Claude key sends Claude straight to Anthropic (no zero data retention; spend capped by `STUDIO_ANTHROPIC_CAP`); without one, Claude goes through OpenRouter (Amazon Bedrock, US, zero data retention).
 - **The key stays on the server.** `OPENROUTER_API_KEY` is read from `server/.env` on the VM. `deploy.sh` creates that file once from `~/.env` on the laptop, with mode 600. The key is never in git and never in the image.
 - **Seat codes, not IPs.** The whole room shares one NAT address, so nothing is limited per IP. Each seat has a budget (default **$8**), a rate limit (**20 requests / 5 minutes**) and a disabled flag. There is also a global daily budget (default **$200**).
 - **Pinned hosts with Zero Data Retention** (`models.py`). Every request sends `zdr: true`. The four pinned entries also send `only: [host], allow_fallbacks: false`:

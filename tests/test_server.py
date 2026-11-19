@@ -63,12 +63,17 @@ class FakeOpenRouter:
     def __init__(self):
         self.replies, self.requests, self.credit_calls = [], [], 0
         self.anthropic_replies, self.anthropic_requests = [], []
+        self.keys_used = []   # the key each model request carried: OpenRouter's Authorization, Anthropic's x-api-key
 
     def stream(self, *parts, status=200, error=None):
         self.replies.append((status, list(parts) if status == 200 else error))
         return self
 
     async def handler(self, request: httpx.Request):
+        if request.method == "GET" and request.url.path in ("/v1/models", "/api/v1/key"):   # the check of a pasted key
+            key = request.headers.get("x-api-key") or request.headers.get("authorization", "")
+            return httpx.Response(401 if "BAD" in key else 200, json={"data": []})
+        self.keys_used.append(request.headers.get("x-api-key") or request.headers.get("authorization"))
         if request.url.host == "api.anthropic.com":
             self.anthropic_requests.append(json.loads(request.content))
             status = self.anthropic_replies.pop(0) if self.anthropic_replies else 200
@@ -97,6 +102,9 @@ class FakeOpenRouter:
 @pytest.fixture
 def env(tmp_path):
     fake = FakeOpenRouter()
+    # a Claude key pasted on the admin page: Claude goes straight to Anthropic, as most Claude tests below expect
+    (tmp_path / "state").mkdir()
+    (tmp_path / "state" / "keys.json").write_text(json.dumps({"anthropic": {"key": "sk-ant-test", "at": "2026-11-19 12:00"}}))
     cfg = studio.Config(api_key="sk-test", anthropic_key="sk-ant-test", anthropic_cap=15.0, admin_key="admin-test", state_dir=tmp_path / "state",
                         data_dir=ROOT / "site" / "data", seats_csv=None, seat_budget=8.0, daily_budget=100.0,
                         rate_limit=20, rate_window=300, origins=studio.ORIGINS.split(","), build="test",
@@ -232,6 +240,7 @@ def test_menu_matches_the_contract():
 
 
 def test_every_request_is_pinned_with_zdr(env):
+    env.client.post("/studio-api/admin", data={"key": "admin-test", "action": "clear_key", "kind": "anthropic"})   # Claude too
     for m in models.MODELS.values():
         if m.api == "anthropic":                        # not OpenRouter: test_claude_goes_straight_to_anthropic
             continue
@@ -1115,3 +1124,48 @@ def test_the_teaser_head_has_the_headers_and_no_body(env):
     r = env.client.head("/studio-api/teaser", headers={"Origin": ORIGIN})
     assert r.status_code == 200 and r.content == b"" and r.headers["content-length"] == str(len(VIDEO))
     assert r.headers["etag"] and r.headers["content-type"] == "video/mp4" and r.headers["access-control-allow-origin"] == ORIGIN
+
+
+def test_model_keys_pasted_on_the_admin_page(env):
+    """A key pasted on the admin page is checked, kept in state/keys.json (mode 600), used instead of the server's own and
+    never sent back; a bad or refused key is not kept; Remove goes back to the server's key."""
+    post = lambda **f: env.client.post("/studio-api/admin", data={"key": "admin-test", **f})
+    new = "sk-or-v1-" + "a" * 40 + "WXYZ"
+    r = post(action="set_key", kind="openrouter", value=new)
+    assert "OpenRouter key saved and checked (ends …WXYZ)" in r.text and new not in r.text
+    state = env.client.get("/studio-api/admin?key=admin-test&format=json").json()
+    assert state["keys"]["openrouter"] == {"source": "admin", "ends": "WXYZ", "at": state["keys"]["openrouter"]["at"]} and new not in json.dumps(state)
+    keys_file = env.dir / "state" / "keys.json"
+    assert oct(keys_file.stat().st_mode & 0o777) == "0o600" and new in keys_file.read_text()
+    env.client.post("/studio-api/chat", json=body(model="glm-eu"))
+    assert env.fake.keys_used[-1] == f"Bearer {new}"
+    # refused by the service, or not a key at all: nothing changes
+    assert "refused the key (HTTP 401)" in post(action="set_key", kind="openrouter", value="sk-or-v1-BAD" + "b" * 30).text
+    assert "does not look like a OpenRouter key" in post(action="set_key", kind="openrouter", value="hello").text
+    assert env.client.get("/studio-api/admin?key=admin-test&format=json").json()["keys"]["openrouter"]["ends"] == "WXYZ"
+    # Remove: the server's own key again
+    assert "removed" in post(action="clear_key", kind="openrouter").text
+    env.client.post("/studio-api/chat", json=body(model="glm-eu"))
+    assert env.fake.keys_used[-1] == "Bearer sk-test"
+    assert env.client.get("/studio-api/admin?key=admin-test&format=json").json()["keys"]["openrouter"]["source"] == "server"
+
+
+def test_claude_goes_through_openrouter_without_a_pasted_claude_key(env):
+    post = lambda **f: env.client.post("/studio-api/admin", data={"key": "admin-test", **f})
+    assert "removed" in post(action="clear_key", kind="anthropic").text
+    r = env.client.post("/studio-api/chat", json=body(model="claude"))
+    assert r.status_code == 200 and not env.fake.anthropic_requests
+    assert env.fake.requests[-1]["model"] == "anthropic/claude-sonnet-5.5" and env.fake.requests[-1]["provider"]["only"] == ["amazon-bedrock/us-east-1"]
+    # a Claude key pasted again: straight to Anthropic, with that key
+    claude_key = "sk-ant-api03-" + "c" * 40 + "QRST"
+    assert "saved and checked (ends …QRST)" in post(action="set_key", kind="anthropic", value=claude_key).text
+    env.client.post("/studio-api/chat", json=body(model="claude"))
+    assert len(env.fake.anthropic_requests) == 1 and env.fake.keys_used[-1] == claude_key
+
+
+def test_a_pasted_key_survives_a_restart(env):
+    post = lambda **f: env.client.post("/studio-api/admin", data={"key": "admin-test", **f})
+    post(action="set_key", kind="openrouter", value="sk-or-v1-" + "d" * 40 + "LMNO")
+    again = studio.create_app(env.cfg, transport=httpx.MockTransport(env.fake.handler))
+    TestClient(again).post("/studio-api/chat", json=body(model="glm-eu"))
+    assert env.fake.keys_used[-1].endswith("LMNO")
