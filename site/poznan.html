@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Opinie Rady PUO · zbudowane na żywo</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  html, body { margin: 0; height: 100%; background: #f7f5f0; color: #1d2433; font: 15px/1.4 -apple-system, "Helvetica Neue", Arial, sans-serif; }
+  body { display: flex; flex-direction: column; }
+  .bar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 8px max(14px, env(safe-area-inset-right)) 8px max(14px, env(safe-area-inset-left)); background: #1d2433; color: #f7f5f0; }
+  .bar b { font-weight: 700; }
+  .bar a { color: #ffd166; margin-left: auto; }
+  #frame { flex: 1; width: 100%; border: 0; background: #fff; }
+  #msg { padding: 28px 16px; text-align: center; font-size: 17px; }
+</style>
+<script src="preview-doc.js"></script>
+</head>
+<body>
+<div class="bar"><span><b>Opinie Rady PUO</b> · zbudowane na żywo · Forum Podatkowe UAM, 19.11.2026</span><a href="">Odśwież</a></div>
+<div id="msg">Wczytuję aplikację…</div>
+<iframe id="frame" title="Aplikacja zbudowana na żywo" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" hidden></iframe>
+<script>
+/* The phones' copy of the app built live in the studio's Poznań course: the newest app sent with "Na telefony (QR)"
+   (or ?id=<wall id>), run on the GAAR Council's data from data/poznan/, the same files the studio attached. */
+(async function () {
+  const msg = document.getElementById('msg');
+  const text = (u) => fetch(u, { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(u + ': ' + r.status); return r.text(); });
+  try {
+    const config = JSON.parse(await text('config.json'));
+    const bases = config.routes.filter((r) => r.type === 'server').map((r) => r.base);
+    const want = new URLSearchParams(location.search).get('id') || '';
+    let item = null, base = null;
+    for (const b of bases) {
+      try {
+        const list = JSON.parse(await text(b + '/gallery?course=poznan'));
+        item = want ? list.find((i) => i.id === want) : list[0];
+        base = b;
+        if (item) break;
+      } catch (e) { /* the next server */ }
+    }
+    if (!item) { msg.textContent = 'Aplikacja jeszcze powstaje. Odśwież stronę za chwilę.'; return; }
+    const [html, chart, runtime] = await Promise.all([text(base + '/gallery/' + item.id), text('vendor/chart.umd.min.js'), text('runtime.js')]);
+    const m = html.match(/<!-- poznan-files: (\{[^}]*\}) -->/);
+    const names = m ? JSON.parse(m[1]) : {};
+    // the shape the studio gives an app for a JSON file of one's own (own-files.js): { dataset, title, source, count, records }
+    const dataText = async (k) => {
+      const name = names[k] || 'punkty.json', records = JSON.parse(await text('data/poznan/' + name));
+      return PreviewDoc.escapeScript(JSON.stringify({ dataset: k, title: name, source: 'Uchwały Rady PUO z gov.pl (opracowanie)', count: records.length, records }));
+    };
+    const frame = document.getElementById('frame');
+    frame.srcdoc = PreviewDoc.forFrame(await PreviewDoc.build(html, { chart, runtime, dataText, files: Object.keys(names) }));
+    frame.hidden = false; msg.hidden = true;
+    document.title = (item.title || 'Opinie Rady PUO') + ' · zbudowane na żywo';
+  } catch (e) {
+    msg.textContent = 'Nie udało się wczytać aplikacji. Odśwież stronę za chwilę.';
+  }
+})();
+window.addEventListener('message', (e) => {   // there is no model here: an app's own question gets a polite no
+  const m = e.data || {};
+  if (m.type === 'studio:ask' && e.source) e.source.postMessage({ type: 'studio:answer', id: m.id, error: 'Na telefonie nie ma modelu.' }, '*');
+});
+</script>
+</body>
+</html>

@@ -60,7 +60,8 @@ HERE = Path(__file__).resolve().parent
 ROOM_PAGE = (HERE / "room_page.html").read_text(encoding="utf-8")   # the facilitator's live room chat
 OPENROUTER = "https://openrouter.ai/api/v1"
 ORIGINS = "https://lszoszk.github.io,http://localhost:8766,http://127.0.0.1:8766"
-GALLERY_LINK_HOSTS = ("docs.un.org", "undocs.org", "uhri.ohchr.org", "searchlibrary.ohchr.org")
+GALLERY_LINK_HOSTS = ("docs.un.org", "undocs.org", "uhri.ohchr.org", "searchlibrary.ohchr.org",
+                      "www.gov.pl", "gov.pl")   # gov.pl: the GAAR Council PDFs (Poznan, 19.11.2026)
 GALLERY_MAX_BYTES = 300_000
 GALLERY_PER_SEAT = 20
 FEEDBACK_MAX_CHARS = 3000

@@ -108,7 +108,7 @@
       sessions: ['P1'], promptKey: 'poznan', storeId: 'poznan', roomId: 'poznan', models: ['claude'], country: false,
       advanced: false, wallWithoutAdvanced: true, ignoreLevel: true, ownSession: 'P1', askDirect: false, tour: false, pace: 20,
       files: [], planBrief: false, event: 'event_poznan', feedbackHint: null, improveSwap: false, courseLink: false, look: false, progress: false, briefCard: false, insideFile: false,
-      keepModel: true, defaultModel: 'claude', seat: 'KM7KD4',
+      keepModel: true, defaultModel: 'claude', seat: 'KM7KD4', phones: true,
       preload: [['data/poznan/uchwaly.json', 'uchwaly.json'], ['data/poznan/punkty.json', 'punkty.json']],
       request: 'Zbuduj aplikację „Opinie Rady PUO”: przegląd i wyszukiwarkę uchwał Rady do Spraw Przeciwdziałania Unikaniu Opodatkowania (2019–2026). Cały interfejs po polsku.\n\nDane: dwa dołączone pliki. uchwaly.json to 74 uchwały (id, nr, date, outcome, scheme_type_name, tax, taxpayer_type, pdf_url…), punkty.json to 5613 fragmentów ich tekstu (doc_id wskazuje uchwałę; text, page).\n\nCo ma umieć:\n- wyszukiwanie słowa lub frazy w treści fragmentów, z podświetleniem i liczbą trafień;\n- filtry: rok, rozstrzygnięcie (outcome), podatek;\n- karta uchwały: numer, data, rozstrzygnięcie, schemat, link do PDF na gov.pl i pasujące fragmenty ze stroną.\n\nZasady: pokazuj tylko to, co jest w danych; niczego nie oceniaj i nie streszczaj.\n\nŻyczenie z sali: ',
       kit: { steps: [], data: [] },
@@ -249,6 +249,7 @@
     renderAll();
     if (S.savedPlan) resumePlan(S.savedPlan);
     if (CFG.preload) await preloadCourseFiles();
+    if (CFG.phones) phonesButtons();
     track('open', { route: S.route.type, session: S.session, model: S.model, has_seat: !!S.seatCode, apps: S.versions.length,
       w: innerWidth, ua: /Firefox/.test(navigator.userAgent) ? 'firefox' : /Edg\//.test(navigator.userAgent) ? 'edge' : /Chrome/.test(navigator.userAgent) ? 'chrome' : /Safari/.test(navigator.userAgent) ? 'safari' : 'other' });
     Room.start();
@@ -3547,6 +3548,53 @@
     renderAttach(); renderNeeds(); renderShelf(); renderShelfState();
     if (!S.versions.length && !$('input').value && CFG.request) {   // the cursor waits after "Życzenie z sali:"
       const t = $('input'); t.value = CFG.request; fitInput(); t.focus(); t.setSelectionRange(t.value.length, t.value.length); t.scrollTop = t.scrollHeight; }
+  }
+
+  // Poznań: "Nowa rozmowa" (an empty chat and an empty stage; the data and the request come back by themselves) and
+  // "Na telefony (QR)": the app on the stage goes to the server's wall, and poznan.html shows the newest one on phones,
+  // behind one fixed QR code (data/poznan/qr.svg), with the same data files from data/poznan/
+  function phonesButtons() {
+    const at = document.querySelector('a.top-link[href="gallery/"]');
+    const mk = (label, title, fn) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'top-link'; b.textContent = label; b.title = title; b.onclick = fn;
+      at.before(b);
+    };
+    mk('Nowa rozmowa', 'Pusty czat i pusty podgląd; dane i polecenie wracają same', () => {
+      if (!confirm('Zacząć nową rozmowę? Obecny czat i aplikacja znikną z tej przeglądarki.')) return;
+      clearWork();
+      location.reload();
+    });
+    mk('Na telefony (QR)', 'Wyślij aplikację z podglądu na telefony i pokaż kod QR', sendToPhones);
+  }
+
+  async function sendToPhones() {
+    const v = currentVersion();
+    if (!v) { note('Najpierw zbuduj aplikację: wtedy trafi na telefony.'); return; }
+    const files = [...new Set(chainOf(v).flatMap((x) => x.files || []))];
+    const names = Object.fromEntries(files.filter((k) => S.own[k]).map((k) => [k, S.own[k].name]));
+    try {
+      const res = await fetch(S.route.base + '/gallery', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seat: S.seatCode, title: titleOf(v.html), model: v.model, prompt_id: v.promptId || null,
+          html: '<!-- poznan-files: ' + JSON.stringify(names) + ' -->\n' + v.html, files, course: 'poznan' }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { note(esc(j.error || 'Serwer nie przyjął aplikacji.')); return; }
+    } catch (e) { note('Serwer jest teraz nieosiągalny.'); return; }
+    track('phones', {});
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(10,14,24,.94);display:flex;flex-direction:column;align-items:center;' +
+      'justify-content:center;gap:16px;color:#fff;font:600 24px/1.3 system-ui,sans-serif;text-align:center;padding:20px;cursor:pointer';
+    d.innerHTML = '<img src="data/poznan/qr.svg" alt="Kod QR do aplikacji na telefon" style="width:min(62vh,80vw);height:min(62vh,80vw);background:#fff;padding:14px;border-radius:14px">' +
+      '<div>Aplikacja jest w Państwa telefonach</div>' +
+      '<div style="font:500 18px ui-monospace,Menlo,monospace;color:#ffd166">lszoszk.github.io/workshop-studio/poznan.html</div>' +
+      '<small style="font-weight:400;font-size:15px;color:#aab">Kliknij albo Esc, aby zamknąć</small>';
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    const close = () => { d.remove(); removeEventListener('keydown', onKey, true); };
+    d.onclick = close;
+    addEventListener('keydown', onKey, true);
+    document.body.append(d);
   }
 
   function removeOwn(key) {
