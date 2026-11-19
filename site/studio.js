@@ -101,6 +101,18 @@
       defaultModel: 'claude',   // Venice: no error in Claude's 136 builds, GLM's in about one of three; GLM stays a click away
       kit: { steps: [['Session 1', 'g1-verbatim', true], ['At home', 'g-home-hrc', true]], data: ['gc', 'hrc_all'] },
     },
+    // Forum Podatkowe UAM, Poznań, 19 November 2026 (?course=poznan): one live build on the GAAR Council's resolutions, in
+    // Polish, on Claude. The two data files go onto the shelf by themselves and are attached, the request waits in the chat
+    // box for the room's wish, and the seat is the event's own (no code to type; the server switches it off at 11:35).
+    poznan: {
+      sessions: ['P1'], promptKey: 'poznan', storeId: 'poznan', roomId: 'poznan', models: ['claude'], country: false,
+      advanced: false, wallWithoutAdvanced: true, ignoreLevel: true, ownSession: 'P1', askDirect: false, tour: false, pace: 20,
+      files: [], planBrief: false, event: 'event_poznan', feedbackHint: null, improveSwap: false, courseLink: false, look: false, progress: false, briefCard: false, insideFile: false,
+      keepModel: true, defaultModel: 'claude', seat: 'KM7KD4',
+      preload: [['data/poznan/uchwaly.json', 'uchwaly.json'], ['data/poznan/punkty.json', 'punkty.json']],
+      request: 'Zbuduj aplikację „Opinie Rady PUO”: przegląd i wyszukiwarkę uchwał Rady do Spraw Przeciwdziałania Unikaniu Opodatkowania (2019–2026). Cały interfejs po polsku.\n\nDane: dwa dołączone pliki. uchwaly.json to 74 uchwały (id, nr, date, outcome, scheme_type_name, tax, taxpayer_type, pdf_url…), punkty.json to 5613 fragmentów ich tekstu (doc_id wskazuje uchwałę; text, page).\n\nCo ma umieć:\n- wyszukiwanie słowa lub frazy w treści fragmentów, z podświetleniem i liczbą trafień;\n- filtry: rok, rozstrzygnięcie (outcome), podatek;\n- karta uchwały: numer, data, rozstrzygnięcie, schemat, link do PDF na gov.pl i pasujące fragmenty ze stroną.\n\nZasady: pokazuj tylko to, co jest w danych; niczego nie oceniaj i nie streszczaj.\n\nŻyczenie z sali: ',
+      kit: { steps: [], data: [] },
+    },
   };
   let CFG = COURSE.full;   // set again at boot, once the course is known
   // a request's session in this course (the course's field of prompts.json)
@@ -184,7 +196,7 @@
     // the course (?course=, remembered): venice, geneva (one session) or full (two sessions; also ?course=geneva-full).
     // ws:course2 is a new key on purpose: the old ws:course held 'geneva' for the two-session path, which now means G1.
     const asked = params.get('course');
-    S.course = asked ? ({ venice: 'venice', geneva: 'geneva', full: 'full', 'geneva-full': 'full' }[asked] || 'full')
+    S.course = asked ? ({ venice: 'venice', geneva: 'geneva', full: 'full', 'geneva-full': 'full', poznan: 'poznan' }[asked] || 'full')
       : (COURSE[localGet('ws:course2')] ? localGet('ws:course2') : 'full');
     localSet('ws:course2', S.course);
     CFG = COURSE[S.course];
@@ -207,7 +219,7 @@
     S.session = wanted || (list.includes(localGet('ws:session')) ? localGet('ws:session') : list[0]);
     renderSession();
 
-    const code = (hash.get('s') || localGet('ws:seat') || '').toUpperCase();
+    const code = (hash.get('s') || CFG.seat || localGet('ws:seat') || '').toUpperCase();
     S.seatCode = code || null;
     if (hash.has('s') || hash.has('k')) history.replaceState(null, '', location.pathname + location.search);
 
@@ -236,6 +248,7 @@
     renderFooter();
     renderAll();
     if (S.savedPlan) resumePlan(S.savedPlan);
+    if (CFG.preload) await preloadCourseFiles();
     track('open', { route: S.route.type, session: S.session, model: S.model, has_seat: !!S.seatCode, apps: S.versions.length,
       w: innerWidth, ua: /Firefox/.test(navigator.userAgent) ? 'firefox' : /Edg\//.test(navigator.userAgent) ? 'edge' : /Chrome/.test(navigator.userAgent) ? 'chrome' : /Safari/.test(navigator.userAgent) ? 'safari' : 'other' });
     Room.start();
@@ -3513,6 +3526,27 @@
     }
     renderShelf();
     if ($('drawerShelf')) renderShelf($('drawerShelf'));
+  }
+
+  // a course with its own data (Poznań): the files go onto the shelf by themselves, once per browser, with their first records
+  // sent to the model; before the first app they are attached and the course's request waits in the chat box
+  async function preloadCourseFiles() {
+    for (const [url, name] of CFG.preload) {
+      let e = Object.values(S.own).find((x) => x.name === name);
+      if (!e) {
+        try {
+          const blob = await (await fetch(url, { cache: 'no-store' })).blob();
+          e = await OwnFiles.read(new File([blob], name, { type: 'application/json' }), nextOwnKey());
+          e.samples = true;
+          S.own[e.key] = e;
+          await OwnFiles.put(e);
+        } catch (err) { note(esc(name + ': ' + (err.message || err))); continue; }
+      }
+      if (!S.versions.length) S.draft.add(e.key);
+    }
+    renderAttach(); renderNeeds(); renderShelf(); renderShelfState();
+    if (!S.versions.length && !$('input').value && CFG.request) {   // the cursor waits after "Życzenie z sali:"
+      const t = $('input'); t.value = CFG.request; fitInput(); t.focus(); t.setSelectionRange(t.value.length, t.value.length); t.scrollTop = t.scrollHeight; }
   }
 
   function removeOwn(key) {

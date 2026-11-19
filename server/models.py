@@ -50,8 +50,11 @@ MODELS: dict[str, Model] = {m.key: m for m in [
     # straight to Anthropic since 4.11.2026 (Łukasz's Console credit); its spend on the server stops at
     # STUDIO_ANTHROPIC_CAP, after which requests go to the fallback. No zero data retention on this route.
     # Medium effort: dashboards in 2.4-2.8 min instead of 4.7-5.3 at high, all checks passed (bake-off, 4.11.2026)
-    Model("claude", "claude-sonnet-5-5", "anthropic", "Claude Sonnet 5.5", "Anthropic", "US",
-          2.0, 10.0, fallback="mistral", reasoning="medium", api="anthropic", zdr=False, edit_reasoning="low",
+    # 19.11.2026: back on OpenRouter (Amazon Bedrock, US, zero data retention): the Anthropic Console key on the server
+    # answered 401, and a direct call through OpenRouter worked. To go straight to Anthropic again, restore
+    # Model("claude", "claude-sonnet-5-5", "anthropic", ..., api="anthropic", zdr=False, ...) with a valid key.
+    Model("claude", "anthropic/claude-sonnet-5.5", "amazon-bedrock/us-east-1", "Claude Sonnet 5.5", "Anthropic", "US",
+          2.0, 10.0, fallback="mistral", reasoning="medium", edit_reasoning="low",
           worker_id="anthropic/claude-sonnet-5.5", worker_host="amazon-bedrock/us-east-1", vision=True),
     Model("glm-cn", "z-ai/glm-5.3", "z-ai", "GLM-5.3 (developer's service)", "Z.AI", "CN",
           1.4, 4.4, fallback="glm-eu", reasoning="medium", edit_reasoning="low"),
