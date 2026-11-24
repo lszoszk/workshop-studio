@@ -649,6 +649,41 @@ def test_admin_disable_seat_kill_switch_and_default_model(env):
     assert env.seats.get("ABCDEF")["budget"] == 12
 
 
+def test_admin_recorded_mode_for_everyone(env):
+    """The facilitator's switch to recorded answers: health says so, the chat refuses with 'recorded_mode' (the seat checks
+    stay as they are), the wall still works, the admin page shows the state, and pause keeps working beside it."""
+    post = lambda **f: env.client.post("/studio-api/admin", data={"key": "admin-test", **f})
+    health = lambda: env.client.get("/studio-api/health").json()
+    assert health()["mode"] == "live" and health()["accepting"] is True
+    assert env.client.get("/studio-api/admin?key=admin-test&format=json").json()["mode"] == "live"
+    page = env.client.get("/studio-api/admin?key=admin-test").text
+    assert "Recorded answers for everyone" in page and "Live models" in page
+
+    assert "done" in post(action="recorded").text
+    assert health()["mode"] == "recorded" and health()["accepting"] is False
+    assert env.client.get("/studio-api/admin?key=admin-test&format=json").json()["mode"] == "recorded"
+    page = env.client.get("/studio-api/admin?key=admin-test").text
+    assert "Back to live models" in page and "RECORDED ANSWERS for everyone" in page
+    r = env.client.post("/studio-api/chat", json=body())
+    assert r.status_code == 503 and r.json() == {"error": "The facilitator has switched the studio to recorded answers.", "code": "recorded_mode"}
+    assert env.client.post("/studio-api/chat", json=body(seat="ZZZZZZ")).status_code == 403   # the seat check comes first
+    assert post_page(env, "<p>x</p>").status_code == 200   # the wall is not a model
+
+    post(action="live")
+    assert health()["mode"] == "live" and health()["accepting"] is True
+    assert env.client.post("/studio-api/chat", json=body()).status_code == 200
+
+    post(action="pause")   # the kill switch is independent of the mode
+    assert health()["mode"] == "live" and health()["accepting"] is False
+    assert env.client.post("/studio-api/chat", json=body()).json()["code"] == "paused"
+    post(action="recorded")
+    assert env.client.post("/studio-api/chat", json=body()).json()["code"] == "paused"
+    post(action="resume")
+    assert health()["accepting"] is False and health()["mode"] == "recorded"
+    post(action="live")
+    assert health()["accepting"] is True
+
+
 def test_admin_json_and_gallery_removal(env):
     gid = post_page(env, "<p>x</p>").json()["id"]
     r = env.client.post("/studio-api/admin", json={"key": "admin-test", "action": "remove_gallery", "value": gid})

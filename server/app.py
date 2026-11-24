@@ -362,16 +362,21 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
     def paused() -> bool:
         return seats.setting("paused", "0") == "1"
 
+    def recorded() -> bool:   # the facilitator has switched every browser to the recordings
+        return seats.setting("mode", "live") == "recorded"
+
     def default_model() -> str:
         k = seats.setting("default_model", models.DEFAULT)
         return k if k in models.MODELS else models.DEFAULT
 
-    def seat_or_refuse(code) -> dict:
+    def seat_or_refuse(code, model: bool = True) -> dict:
         s = seats.get(code)
         if not s or s["disabled"]:
             raise Refusal(403, "Unknown or disabled seat code", "seat")
         if paused():
             raise Refusal(503, "The studio is paused by the facilitator", "paused")
+        if model and recorded():   # recorded answers stop the models, not the wall
+            raise Refusal(503, "The facilitator has switched the studio to recorded answers.", "recorded_mode")
         return s
 
     def headers() -> dict:
@@ -613,7 +618,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
     async def gallery_post(request: Request):
         try:
             d = await read_json(request)
-            seat = seat_or_refuse(d.get("seat"))
+            seat = seat_or_refuse(d.get("seat"), model=False)
             page = d.get("html")
             if not isinstance(page, str) or not page.strip():
                 raise Refusal(400, "There is no page to send", "no_html")
@@ -848,7 +853,8 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
                 pass
         all_seats = seats.all()
         return {"ok": True, "version": VERSION, "route": "vm", "default_model": default_model(),
-                "models": list(models.MODELS), "accepting": not paused(),
+                "models": list(models.MODELS), "accepting": not paused() and not recorded(),
+                "mode": "recorded" if recorded() else "live",
                 # beyond the contract, for the facilitator:
                 "build": cfg.build, "balance_usd": balance["value"], "key_configured": bool(or_key()),
                 "seats": {"total": len(all_seats), "enabled": sum(1 for s in all_seats if not s["disabled"]),
@@ -859,7 +865,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         return bool(cfg.admin_key) and hmac.compare_digest((key or "").encode(), cfg.admin_key.encode())
 
     def admin_state() -> dict:
-        return {"paused": paused(), "default_model": default_model(), "spent_today": round(seats.spent_today(), 4),
+        return {"paused": paused(), "mode": "recorded" if recorded() else "live", "default_model": default_model(), "spent_today": round(seats.spent_today(), 4),
                 "daily_budget": cfg.daily_budget, "balance_usd": balance["value"], "seats": seats.all(),
                 "gallery": gallery_items(), "feedback": feedback_items()[:200], "keys": keys_state()}
 
@@ -931,6 +937,8 @@ td,th{{border-bottom:1px solid #ddd;padding:4px 8px;text-align:left}}form{{displ
 <p>Room chat: <a href="/studio-api/admin/room?key={k}&amp;course=venice">Venice</a> · <a href="/studio-api/admin/room?key={k}&amp;course=geneva">Geneva</a></p>
 <div class="bar"><span class="{'paused' if s['paused'] else ''}">{'PAUSED: every seat is refused' if s['paused'] else 'Running'}</span>
 {form('resume' if s['paused'] else 'pause', 'Resume all seats' if s['paused'] else 'Kill switch: pause all seats')}
+<span class="{'paused' if s['mode'] == 'recorded' else ''}">{'RECORDED ANSWERS for everyone: no model is called' if s['mode'] == 'recorded' else 'Live models'}</span>
+{form('live' if s['mode'] == 'recorded' else 'recorded', 'Back to live models' if s['mode'] == 'recorded' else 'Recorded answers for everyone')}
 <span>Spent today ${s['spent_today']:.2f} / ${s['daily_budget']:.0f} · OpenRouter balance {bal} · times in UTC</span>
 {form('default_model', 'Set default model', fields=f'<select name="value">{opts}</select>')}</div>
 <h2>Model keys</h2><p>A key pasted here is checked with one free call, then used instead of the key in the server's file.
@@ -1075,6 +1083,8 @@ It stays on the server and is never shown again, only its last four characters. 
                 ok = False
         elif action in ("pause", "resume"):
             seats.set_setting("paused", "1" if action == "pause" else "0")
+        elif action in ("recorded", "live"):
+            seats.set_setting("mode", action)
         elif action == "default_model":
             ok = value in models.MODELS
             if ok:

@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verbatim finder: the rights of the child</title>
+<style>
+:root{--paper:#fbfaf7;--ink:#111;--soft:#555;--rule:#d6d2c8;--hl:#ffe066;--focus:#9b2335}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:940px;margin:0 auto;padding:20px 16px 56px}
+.label,.hint,button,.meta,.how{font-family:ui-monospace,Menlo,Consolas,monospace}
+.label{font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.hint{font-size:12px;color:var(--soft)}
+h1,h2{font-family:"Arial Narrow","Roboto Condensed","Helvetica Neue",Arial,sans-serif;font-stretch:condensed;text-transform:uppercase;font-weight:800;letter-spacing:.02em;margin:0}
+h1{font-size:clamp(30px,6vw,52px);line-height:1.05;margin:6px 0 10px;padding-bottom:12px;border-bottom:8px solid #000}
+h2{font-size:18px;padding-bottom:4px;border-bottom:2px solid #000;margin:32px 0 12px}
+.src{margin:0 0 4px;color:var(--soft);font-size:14px}
+.intro{margin:14px 0 0;max-width:72ch;font-size:16px}
+.intro p{margin:0 0 6px}
+.intro ol{margin:0;padding-left:22px}
+.intro li{margin:2px 0}
+a{color:var(--ink)}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.topline{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+#q{width:100%;font:22px/1.3 Georgia,"Times New Roman",serif;padding:10px 12px;border:2px solid #000;background:#fff;color:var(--ink);border-radius:0;margin-top:6px}
+.ex{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 6px}
+button{font-size:13px;background:#fff;color:var(--ink);border:1.5px solid #000;padding:6px 10px;cursor:pointer;border-radius:0}
+button:hover:not(:disabled){background:var(--hl)}
+button:disabled{color:#777;border-color:#999;cursor:default}
+.nums{display:flex;gap:32px;flex-wrap:wrap;align-items:baseline;margin:18px 0 4px;padding-top:12px;border-top:1px solid var(--rule)}
+.big{font:700 clamp(36px,7vw,52px)/1 Georgia,"Times New Roman",serif}
+.num .label{margin-left:8px}
+.how{font-size:12px;color:var(--soft);margin:6px 0 0;max-width:80ch}
+.msg{border-left:6px solid #000;padding:8px 12px;margin:14px 0;background:#f1eee6}
+.res{border-top:1px solid #000;padding:14px 0 16px}
+.meta{font-size:12px;letter-spacing:.04em;text-transform:uppercase;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline}
+.meta .cm{background:#000;color:#fff;padding:1px 6px}
+.cite{font-weight:700;margin:4px 0 8px;font-size:17px}
+.txt{font:17.5px/1.55 Georgia,"Times New Roman",serif;margin:0 0 10px;max-width:72ch;white-space:pre-wrap}
+mark{background:var(--hl);color:#000;padding:0 1px}
+.fn{font:11px ui-monospace,Menlo,Consolas,monospace;color:var(--soft)}
+.act{display:flex;gap:8px;flex-wrap:wrap}
+.draftitem{border-top:1px solid var(--rule);padding:10px 0}
+.draftitem .txt{font-size:15.5px}
+ul.lim{margin:0;padding-left:20px;max-width:80ch}
+ul.lim li{margin:4px 0}
+.more{margin:16px 0}
+@media (max-width:600px){.nums{gap:12px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="topline">
+    <span class="label">WORKSHOP_DATA.gc · General Comments, paragraph by paragraph</span>
+    <a class="hint" id="draftlink" href="#draft">Draft: 0 paragraphs</a>
+  </div>
+  <h1>Verbatim finder: the rights of the child</h1>
+  <p class="src" id="src"></p>
+  <div class="intro">
+    <p>This search covers all the General Comments of every committee in the file, not only those on children. Three steps:</p>
+    <ol>
+      <li>Type a phrase, or put it in quotation marks.</li>
+      <li>Compare the highlighted paragraph with the original: click its symbol.</li>
+      <li>Copy the citation.</li>
+    </ol>
+  </div>
+</header>
+
+<main>
+  <section aria-label="Search">
+    <label class="label" for="q">Type words, or put a phrase in "quotation marks"</label>
+    <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder='for example: "best interests"'>
+    <div class="ex" id="ex"><span class="hint">TRY</span></div>
+    <div class="hint">all words, any order · "quotes" = these words together, exactly · child finds children · ’ and ' are the same</div>
+    <div class="nums">
+      <div class="num"><span class="big" id="searched">0</span><span class="label">paragraphs searched</span></div>
+      <div class="num"><span class="big" id="matches">–</span><span class="label">paragraphs match</span></div>
+    </div>
+    <p class="how" id="how">How this is computed: your code compares every paragraph in the file with what you typed. Nothing is estimated.</p>
+  </section>
+
+  <section id="out" aria-label="Results" aria-live="polite"></section>
+
+  <section id="draft" aria-label="Draft">
+    <h2>Draft list</h2>
+    <p class="hint" id="draftinfo">Paragraphs you add are kept here, word for word, with their citation. The list lives only in this page: download it before you close it.</p>
+    <div class="act">
+      <button type="button" id="copyall" disabled>Copy all</button>
+      <button type="button" id="dl" disabled>Download</button>
+    </div>
+    <div id="draftlist"></div>
+  </section>
+
+  <section aria-label="What this tool cannot do">
+    <h2>What this tool cannot do</h2>
+    <ul class="lim">
+      <li>It matches the words you type, not their meaning: no synonyms, no summaries, no translation. English only.</li>
+      <li>Only the General Comments and General Recommendations in the attached file: no concluding observations, no case law.</li>
+      <li>Case and apostrophe shape are ignored, nothing else. A hyphen or a different spelling is a different word, and a word in quotation marks must match whole.</li>
+      <li>Footnote marks such as [[fn:12]] are kept as the file stores them, and the text of the footnotes is not in the file.</li>
+      <li>A symbol is not always one document. When a symbol holds several titles (for example A/48/18), the title is added to the citation. A joint General Comment carries two symbols in one field, shown as stored.</li>
+      <li>It cannot confirm that the file's wording is the final published wording: open the linked document and compare.</li>
+      <li>Nothing leaves your browser: the page uses no network.</li>
+    </ul>
+  </section>
+</main>
+<div class="hint" id="live" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var D = window.WORKSHOP_DATA || {};
+var gc = D.gc || {};
+var recs = Array.isArray(gc.records) ? gc.records : [];
+var $ = function(id){ return document.getElementById(id); };
+var fmt = function(n){ return Number(n).toLocaleString('en'); };
+var FN_RE = /\[\[fn:[^\]]*\]\]/g;
+var EDGE = /^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu;
+var PAGE = 50;
+
+function el(tag, cls, txt){
+  var e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(txt !== undefined) e.textContent = txt;
+  return e;
+}
+function esc(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+/* same length as the original, so match positions fit the stored text */
+function norm(t){
+  var o = '';
+  for(var ch of t){
+    if(ch === '’' || ch === '‘' || ch === 'ʼ' || ch === '`'){ o += "'"; continue; }
+    var l = ch.toLowerCase();
+    o += (l.length === ch.length) ? l : ch;
+  }
+  return o.replace(FN_RE, function(m){ return ' '.repeat(m.length); });
+}
+
+var idx = recs.map(function(r){ return norm(String(r.text == null ? '' : r.text)); });
+
+var titlesBy = new Map();
+recs.forEach(function(r){
+  if(!titlesBy.has(r.symbol)) titlesBy.set(r.symbol, new Set());
+  titlesBy.get(r.symbol).add(r.short_title || r.title || '');
+});
+function shared(r){ var s = titlesBy.get(r.symbol); return s ? s.size : 1; }
+function joint(r){ return /[–—]/.test(String(r.symbol || '')); }
+function citation(r){
+  var c = r.symbol + (r.paragraph != null ? ', para. ' + r.paragraph : '');
+  if(shared(r) > 1 && r.short_title) c += ' (' + r.short_title + ')';
+  return c;
+}
+function rid(r){ return r.id || (r.symbol + '#' + r.paragraph); }
+
+/* header */
+(function(){
+  var years = recs.map(function(r){ return r.year; }).filter(Number.isFinite);
+  var docs = new Set(recs.map(function(r){ return r.symbol; })).size;
+  var coms = new Set(recs.map(function(r){ return r.committee; })).size;
+  var parts = [gc.source || 'General Comments', 'n = ' + fmt(recs.length) + ' paragraphs', fmt(docs) + ' symbols', coms + ' committees'];
+  if(years.length) parts.push(Math.min.apply(null, years) + '–' + Math.max.apply(null, years));
+  $('src').textContent = parts.join(' · ');
+  $('searched').textContent = fmt(recs.length);
+})();
+
+/* parse the query */
+function parse(q){
+  q = q.replace(/[“”„«»]/g, '"').replace(/[‘’ʼ`]/g, "'");
+  var terms = [], re = /"([^"]*)"|(\S+)/g, m;
+  while((m = re.exec(q))){
+    if(m[1] !== undefined){
+      var words = m[1].trim().split(/\s+/).filter(Boolean);
+      var p = words.join(' ').replace(EDGE, '');
+      if(p) terms.push({kind: 'phrase', text: p.toLowerCase()});
+    } else {
+      var w = m[2].replace(/"/g, '').replace(EDGE, '');
+      if(w) terms.push({kind: 'word', text: w.toLowerCase()});
+    }
+  }
+  return terms;
+}
+function compile(t){
+  var src = '(?<![\\p{L}\\p{N}])' + (t.kind === 'phrase'
+    ? t.text.split(' ').map(esc).join('\\s+') + '(?![\\p{L}\\p{N}])'
+    : esc(t.text));
+  t.test = new RegExp(src, 'u');
+  t.glob = new RegExp(src, 'gu');
+  return t;
+}
+function label(t){ return t.kind === 'phrase' ? '"' + t.text + '"' : t.text + '*'; }
+
+/* highlight: split the stored text at match and footnote-mark edges */
+function ranges(i, terms){
+  var out = [];
+  terms.forEach(function(t){
+    for(var m of idx[i].matchAll(t.glob)) out.push([m.index, m.index + m[0].length]);
+  });
+  out.sort(function(a, b){ return a[0] - b[0]; });
+  var merged = [];
+  out.forEach(function(r){
+    var last = merged[merged.length - 1];
+    if(last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1]); else merged.push([r[0], r[1]]);
+  });
+  return merged;
+}
+function paint(p, text, hl){
+  var fns = [];
+  for(var m of text.matchAll(FN_RE)) fns.push([m.index, m.index + m[0].length]);
+  var cuts = new Set([0, text.length]);
+  hl.concat(fns).forEach(function(r){ cuts.add(r[0]); cuts.add(r[1]); });
+  var pts = Array.from(cuts).sort(function(a, b){ return a - b; });
+  var inside = function(list, x){ return list.some(function(r){ return x >= r[0] && x < r[1]; }); };
+  for(var k = 0; k < pts.length - 1; k++){
+    var a = pts[k], b = pts[k + 1];
+    if(a === b) continue;
+    var isHl = inside(hl, a), isFn = inside(fns, a);
+    var node = el(isHl ? 'mark' : 'span', isFn ? 'fn' : '', text.slice(a, b));
+    p.appendChild(node);
+  }
+}
+
+/* copy and download */
+function flash(btn, msg){
+  var old = btn.getAttribute('data-label') || btn.textContent;
+  btn.setAttribute('data-label', old);
+  btn.textContent = msg;
+  $('live').textContent = msg;
+  setTimeout(function(){ btn.textContent = old; }, 1600);
+}
+function copy(str, btn){
+  var done = function(ok){ flash(btn, ok ? 'Copied' : 'Copy failed: select the text'); };
+  var fallback = function(){
+    var ok = false;
+    try{
+      var t = document.createElement('textarea');
+      t.value = str; t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      ok = document.execCommand('copy');
+      t.remove();
+    }catch(e){}
+    done(ok);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(str).then(function(){ done(true); }, fallback);
+  } else fallback();
+}
+
+/* draft */
+var draft = new Map();
+var addBtns = new Map();
+function setAdd(btn, on){ btn.textContent = on ? 'In draft: remove' : 'Add to draft'; btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+function draftText(){
+  var n = 0, parts = [];
+  draft.forEach(function(d){ n++; parts.push('[' + n + '] ' + d.cit + '\n' + d.text); });
+  return parts.join('\n\n') + (parts.length ? '\n' : '');
+}
+function renderDraft(){
+  var box = $('draftlist');
+  box.textContent = '';
+  draft.forEach(function(d){
+    var it = el('div', 'draftitem');
+    it.appendChild(el('div', 'cite', d.cit));
+    it.appendChild(el('p', 'txt', d.text));
+    var b = el('button', '', 'Remove');
+    b.type = 'button';
+    b.onclick = function(){ draft.delete(d.id); var ab = addBtns.get(d.id); if(ab) setAdd(ab, false); renderDraft(); };
+    it.appendChild(b);
+    box.appendChild(it);
+  });
+  var n = draft.size;
+  $('copyall').disabled = !n;
+  $('dl').disabled = !n;
+  $('draftlink').textContent = 'Draft: ' + n + ' paragraph' + (n === 1 ? '' : 's');
+}
+$('copyall').onclick = function(){ copy(draftText(), $('copyall')); };
+$('dl').onclick = function(){
+  var blob = new Blob([draftText()], {type: 'text/plain;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'draft-quotations.txt';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+};
+
+/* results */
+var hits = [], active = [], shown = 0;
+function resultNode(i){
+  var r = recs[i], text = String(r.text == null ? '' : r.text);
+  var art = el('article', 'res');
+  var meta = el('div', 'meta');
+  meta.appendChild(el('span', 'cm', r.committee || '?'));
+  meta.appendChild(el('span', '', r.short_title || r.title || ''));
+  if(r.year != null) meta.appendChild(el('span', '', String(r.year)));
+  art.appendChild(meta);
+
+  var cite = el('div', 'cite');
+  if(r.doc_url){
+    var a = el('a', '', r.symbol);
+    a.href = r.doc_url; a.target = '_blank'; a.rel = 'noopener';
+    cite.appendChild(a);
+  } else cite.appendChild(document.createTextNode(String(r.symbol)));
+  if(r.paragraph != null) cite.appendChild(document.createTextNode(', para. ' + r.paragraph));
+  art.appendChild(cite);
+
+  if(shared(r) > 1) art.appendChild(el('div', 'hint', 'This symbol holds ' + shared(r) + ' titles: the title is added to the citation.'));
+  if(joint(r)) art.appendChild(el('div', 'hint', 'Joint document: two symbols in one field, shown as stored.'));
+
+  var p = el('p', 'txt');
+  paint(p, text, ranges(i, active));
+  art.appendChild(p);
+
+  var act = el('div', 'act');
+  var c = el('button', '', 'Copy citation'); c.type = 'button';
+  c.onclick = function(){ copy(citation(r), c); };
+  var ad = el('button', '');
+  ad.type = 'button';
+  var id = rid(r);
+  addBtns.set(id, ad);
+  setAdd(ad, draft.has(id));
+  ad.onclick = function(){
+    if(draft.has(id)){ draft.delete(id); setAdd(ad, false); }
+    else { draft.set(id, {id: id, cit: citation(r), text: text}); setAdd(ad, true); }
+    renderDraft();
+  };
+  act.appendChild(c); act.appendChild(ad);
+  art.appendChild(act);
+  return art;
+}
+function showMore(){
+  var out = $('out');
+  var old = out.querySelector('.more');
+  if(old) old.remove();
+  var end = Math.min(hits.length, shown + PAGE);
+  for(var k = shown; k < end; k++) out.appendChild(resultNode(hits[k]));
+  shown = end;
+  if(shown < hits.length){
+    var w = el('div', 'more');
+    w.appendChild(el('p', 'hint', 'Showing ' + fmt(shown) + ' of ' + fmt(hits.length) + ' matching paragraphs, in the file’s order.'));
+    var b = el('button', '', 'Show ' + fmt(Math.min(PAGE, hits.length - shown)) + ' more'); b.type = 'button';
+    b.onclick = showMore;
+    w.appendChild(b);
+    out.appendChild(w);
+  }
+}
+function search(){
+  var out = $('out');
+  out.textContent = '';
+  addBtns.clear();
+  var terms = parse($('q').value);
+  if(!recs.length){
+    out.appendChild(el('div', 'msg', 'The file WORKSHOP_DATA.gc is empty or missing, so there is nothing to search. Attach "General Comments, paragraph by paragraph" and reload.'));
+    $('matches').textContent = '–';
+    return;
+  }
+  if(!terms.length){
+    $('matches').textContent = '–';
+    $('how').textContent = 'How this is computed: your code compares every paragraph in the file with what you typed. Nothing is estimated.';
+    out.appendChild(el('div', 'msg', 'Nothing searched yet. Type a phrase above, or try one of the examples.'));
+    return;
+  }
+  active = terms.map(compile);
+  hits = [];
+  for(var i = 0; i < recs.length; i++){
+    var ok = true;
+    for(var k = 0; k < active.length; k++){ if(!active[k].test.test(idx[i])){ ok = false; break; } }
+    if(ok) hits.push(i);
+  }
+  $('matches').textContent = fmt(hits.length);
+  $('how').textContent = 'How this is computed: a paragraph matches when it contains every term, in any order: ' + active.map(label).join(' + ') + '. Words match from their start (child* finds children); a quoted phrase matches whole words together. Case, apostrophe shape and footnote marks are ignored. Results keep the file’s order.';
+  if(!hits.length){
+    out.appendChild(el('div', 'msg', 'No paragraph contains all of: ' + active.map(label).join(' + ') + '. 0 of ' + fmt(recs.length) + ' paragraphs match. This tool matches words, not meanings: try fewer words, or no quotation marks.'));
+    return;
+  }
+  shown = 0;
+  showMore();
+}
+
+/* examples and input */
+[['"best interests"'], ['"evolving capacities"'], ['children violence']].forEach(function(e){
+  var b = el('button', '', e[0]); b.type = 'button';
+  b.onclick = function(){ $('q').value = e[0]; search(); };
+  $('ex').appendChild(b);
+});
+var timer;
+$('q').addEventListener('input', function(){ clearTimeout(timer); timer = setTimeout(search, 150); });
+renderDraft();
+search();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+[
+ {
+  "model": "claude",
+  "label": "applied",
+  "prompt": "g1-verbatim",
+  "passed": 6,
+  "total": 6,
+  "checks": {
+   "no_console_errors": true,
+   "no_network": true,
+   "uses_workshop_data": true,
+   "search_box": true,
+   "text_contains_after_search": true,
+   "button_matches": true
+  },
+  "errors": [],
+  "network": [],
+  "lines": 386,
+  "seconds": null,
+  "cost": 0
+ }
+]

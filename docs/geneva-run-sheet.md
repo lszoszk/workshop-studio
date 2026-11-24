@@ -45,15 +45,22 @@ Draft status: the times below are planned, not yet measured; measure them at the
 
 ## When something goes wrong
 
+The backup plan is **recorded mode**. When the model API fails for any reason, a participant or you switch the studio to the answers recorded beforehand with Claude Sonnet 5.5. In Geneva recorded mode covers the whole session: all seven steps, everything except the wall. Nothing is sent to a model, and the participant's work (versions, plan, progress, test card) stays.
+
 1. **An error as the app opens:** the studio sends it back to the model once by itself. Wait.
 2. **Still an error in red:** **Ask the model to fix it**; after two failed fixes, **Load a working version** (a Sonnet build of the default plan recorded before the day) and go on from there.
 3. **Stuck on a step:** every step of the progress bar has **Skip**, so nobody misses the wall.
-4. **The model is slow or failing for the whole room:** tell the room to switch the model menu (Sonnet ↔ GLM). The studio never switches a participant's model silently; it asks.
-5. **No server at all:** the studio plays the recorded session and the recorded app; editing the plan and building changes need the live model.
-6. **The teaser is not ready:** the last good version is always in `tools/teaser/out/latest.mp4` on your laptop; play it from there.
+4. **The model is slow or failing for one person:** the error box has three buttons: **Try again**, **Use the other model** and **Continue with recorded answers**. The studio never switches a participant's model silently; it asks.
+5. **The model is failing for the whole room:** open the admin page and press **Recorded answers for everyone** (next to the kill switch). Within about 20 seconds every open page switches by itself and says why; the badge shows **Recorded answers**. When the model is back, press **Back to the live model**: nobody is switched back automatically, each page offers **Back to the live model** in a note and in the badge.
+6. **A participant's own switch:** the route badge at the top ("Live model") is a button. It explains recorded answers and offers **Switch to recorded answers**; in recorded mode it offers **Back to the live model** (it needs the seat code).
+7. **The server is gone (Wi-Fi, the university server):** after two failed health checks in a row the page offers **Continue with recorded answers** in a note; it never switches by itself, because a Wi-Fi glitch should not cost anybody the live model. The recordings are loaded into the page at the start, so an open tab keeps playing them with no network at all.
+8. **What works in recorded mode:** the data card, the prompt and the plan, **Build from this plan** (it plays the app recorded beforehand from the recommended answers on the topic *the rights of the child*, in the plan's look), the test card, **Suggest three improvements** (three recorded ideas), **Build this** on any of them (the improvement recorded for that idea and look), the take-home kit. Not in recorded mode: changing the plan, editing an idea, three other ideas, your own idea (they need a live model; the studio says so), and the wall (**Send to wall** is off, "in recorded mode your app stays here").
+9. **Two independent providers:** paste a Claude key on the admin page (Model keys) so that Claude goes straight to Anthropic and GLM goes through OpenRouter. If one provider fails, the other model is still live.
+10. **The teaser is not ready:** the last good version is always in `tools/teaser/out/latest.mp4` on your laptop; play it from there.
+11. **The last resort:** the take-home kit (**Save & share**, or About) is one file that holds the requests, the data and five recorded apps ("Recorded app: Paper and ink", and four more looks). It opens with a double-click and shows working apps with no model and no internet.
 
 ## After the session
 
-- Pause the studio on the admin page and disable both keys (as after Venice).
+- Pause the studio on the admin page and disable both keys (as after Venice). If you had switched to recorded answers for everyone, press **Back to live models** first, so the next course starts live.
 - Clear the room chat for `geneva`.
 - `python3 tools/events_report.py` on the day's log, and `tools/room_scores.py --label Geneva --day 2026-12-04` for the jagged-frontier slide.

@@ -15,12 +15,6 @@
       "base": "https://150.254.115.204/studio-api"
     },
     {
-      "id": "worker",
-      "type": "server",
-      "label": "Backup server",
-      "base": "https://studio-api.lszoszk.workers.dev"
-    },
-    {
       "id": "direct",
       "type": "direct",
       "label": "Direct connection to the model service"

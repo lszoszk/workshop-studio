@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verbatim finder: the rights of the child</title>
+<style>
+:root{--bg:#1b1f24;--ink:#e8e6e1;--rule:#3a4048;--amber:#e0a33a;--mute:#a9a69f}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:24px 20px 72px}
+.mono{font:11.5px/1.5 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.09em;text-transform:uppercase}
+.hint{font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;color:var(--mute);margin:6px 0 0}
+.label{color:var(--amber)}
+header{border-bottom:1px solid var(--rule);padding-bottom:16px}
+h1{font:400 34px/1.15 Georgia,"Times New Roman",serif;margin:8px 0 6px}
+h2{font:400 22px/1.2 Georgia,"Times New Roman",serif;margin:0 0 8px}
+.src{color:var(--mute);margin:0;font-size:15px}
+section{padding:20px 0;border-bottom:1px solid var(--rule)}
+a{color:var(--amber)}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+input[type=search]{display:block;width:100%;margin-top:8px;padding:12px 14px;font:18px/1.3 system-ui,sans-serif;color:var(--ink);background:#14171b;border:1px solid var(--rule);border-radius:2px}
+input[type=search]::placeholder{color:var(--mute)}
+button{font:12px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em;background:transparent;color:var(--amber);border:1px solid var(--amber);padding:7px 11px;cursor:pointer;border-radius:2px}
+button:hover:not(:disabled){background:var(--amber);color:var(--bg)}
+button:disabled{color:var(--mute);border-color:var(--rule);cursor:default}
+.examples{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.sumrow{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+.big{font:400 52px/1 Georgia,"Times New Roman",serif;color:var(--amber)}
+.searched{color:var(--ink);margin:8px 0 0}
+ol.results,ol.draftlist{list-style:none;margin:0;padding:0}
+.res{border-top:1px solid var(--rule);padding:16px 0}
+.res:first-child{border-top:0}
+.meta{color:var(--mute)}
+.cite{font:15px/1.4 ui-monospace,Menlo,Consolas,monospace;margin:4px 0 8px}
+.txt{white-space:pre-wrap;margin:0 0 12px;max-width:72ch;font-size:17px;line-height:1.6}
+mark{background:var(--amber);color:var(--bg);padding:0 1px;border-radius:2px}
+.fn{color:var(--mute);font-size:.8em}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.more{margin-top:16px}
+.draftbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+ul.cannot{margin:8px 0 0;padding-left:20px;max-width:72ch}
+ul.cannot li{margin-bottom:6px}
+.jump{margin-left:auto}
+@media (max-width:560px){h1{font-size:28px}.big{font-size:44px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="mono label" id="datalabel">WORKSHOP_DATA.gc · General Comments, paragraph by paragraph</div>
+  <h1>Verbatim finder: the rights of the child</h1>
+  <p class="src" id="srcline"></p>
+</header>
+
+<section aria-label="Search">
+  <label class="mono label" for="q">01 SEARCH · all words, any order · "quotes" keep words together</label>
+  <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder='e.g. "best interests" or child participation'>
+  <div class="examples">
+    <span class="mono">TRY</span>
+    <button type="button" class="ex" data-q='"best interests"'>"best interests"</button>
+    <button type="button" class="ex" data-q='"right to be heard"'>"right to be heard"</button>
+    <button type="button" class="ex" data-q='"corporal punishment"'>"corporal punishment"</button>
+  </div>
+</section>
+
+<section aria-label="Results" id="resultsec">
+  <div aria-live="polite">
+    <div class="sumrow"><span class="big" id="nmatch">–</span><span id="matchlabel">Type a word or a phrase above.</span>
+      <a class="mono jump" id="jump" href="#draft">Draft (0) ↓</a></div>
+    <p class="mono searched" id="searched"></p>
+    <p class="hint" id="how"></p>
+  </div>
+  <ol class="results" id="list"></ol>
+  <button type="button" class="more" id="more" hidden>Show 50 more</button>
+</section>
+
+<section id="draft" aria-label="Draft">
+  <h2>Draft list</h2>
+  <p class="hint" id="draftnote">Nothing yet. Press "Add to draft" under a result.</p>
+  <div class="draftbar">
+    <button type="button" id="copyall" disabled>Copy all</button>
+    <button type="button" id="download" disabled>Download .txt</button>
+  </div>
+  <p class="hint" id="status" role="status"></p>
+  <ol class="draftlist" id="draftlist"></ol>
+</section>
+
+<section aria-label="Limits" style="border-bottom:0">
+  <h2>What this tool cannot do</h2>
+  <ul class="cannot">
+    <li>It finds only the words you type. No synonyms, no paraphrase, no summaries: "kids" will not find "children".</li>
+    <li>A word also finds longer words that begin with it (child finds children, childhood). It does not find words that change earlier, such as woman and women.</li>
+    <li>It searches only the attached General Comments and General Recommendations. No concluding observations, no case law, no other languages.</li>
+    <li>Footnote marks such as [[fn:12]] are shown as the file stores them and are not searched. The tool cannot check a paragraph against the UN original: use the symbol link to compare.</li>
+    <li id="jointnote"></li>
+  </ul>
+  <p class="hint" id="coverage"></p>
+</section>
+</div>
+
+<script>
+(function(){
+var D=(window.WORKSHOP_DATA||{}).gc||{};
+var recs=Array.isArray(D.records)?D.records:[];
+var N=recs.length;
+var PAGE=50;
+function fmt(n){return n.toLocaleString('en-GB');}
+function $(id){return document.getElementById(id);}
+function norm(s){
+  var t=String(s==null?'':s).replace(/[‘’ʼ‛]/g,"'").replace(/[“”]/g,'"');
+  var l=t.toLowerCase();
+  if(l.length===t.length)return l;
+  return Array.from(t,function(c){var x=c.toLowerCase();return x.length===c.length?x:c;}).join('');
+}
+function spaces(n){return new Array(n+1).join(' ');}
+var idx=recs.map(function(r){
+  return norm(String(r.text==null?'':r.text).replace(/\[\[fn:[^\]]*\]\]/g,function(m){return spaces(m.length);}));
+});
+
+/* symbols that hold more than one document title */
+var titles={};
+recs.forEach(function(r){var k=r.symbol||'';(titles[k]=titles[k]||{})[r.title||r.short_title||'']=1;});
+function multi(sym){return Object.keys(titles[sym||'']||{}).length>1||/[–—]/.test(sym||'');}
+function cite(r){
+  var c=(r.symbol||'')+(r.paragraph!=null?', para. '+r.paragraph:'');
+  if(multi(r.symbol)&&r.short_title)c+=' ('+r.short_title+')';
+  return c;
+}
+
+/* header, coverage */
+var years=recs.map(function(r){return r.year;}).filter(function(y){return typeof y==='number';});
+var y0=years.length?Math.min.apply(null,years):null,y1=years.length?Math.max.apply(null,years):null;
+$('srcline').textContent=(D.source?'Source: '+D.source+' · ':'')+'n = '+fmt(N)+' paragraphs'+(y0!==null?' · '+y0+'–'+y1:'');
+$('searched').textContent=fmt(N)+' paragraphs searched';
+var byC={};recs.forEach(function(r){var c=r.committee||'?';byC[c]=(byC[c]||0)+1;});
+var cs=Object.keys(byC).sort(function(a,b){return byC[b]-byC[a];});
+$('coverage').textContent=N?'In the file, by committee: '+cs.map(function(c){return c+' '+fmt(byC[c]);}).join(' · ')+'. The file is uneven, so a missing hit for a committee with few paragraphs says little.':'';
+var nm=Object.keys(titles).filter(function(k){return multi(k);}).length;
+$('jointnote').textContent=N?fmt(nm)+' symbols in the file hold more than one document (for example a General Recommendations volume, or a joint General Comment). For those, "Copy citation" adds the short title so the citation points to one document. The paragraph numbers are only as the file gives them.':'';
+
+/* parsing */
+function esc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+function parse(q){
+  var s=norm(q),units=[],re=/"([^"]*)"|(\S+)/g,m;
+  while((m=re.exec(s))){
+    var phrase=m[1]!=null;
+    var words=(phrase?m[1]:m[2]).replace(/"/g,' ').split(/\s+/).map(function(w){
+      return w.replace(/^[^\p{L}\p{N}]+/u,'').replace(/[^\p{L}\p{N}']+$/u,'');
+    }).filter(Boolean);
+    if(!words.length)continue;
+    var src='(?<![\\p{L}\\p{N}])'+words.map(esc).join('\\s+');
+    units.push({words:words,phrase:phrase&&words.length>1,test:new RegExp(src,'u'),hl:new RegExp(src,'gu')});
+  }
+  return units;
+}
+
+/* rendering a result */
+var list=$('list'),more=$('more'),matches=[],shown=0,units=[],draft=[];
+function renderText(el,i,hls){
+  var text=String(recs[i].text==null?'':recs[i].text),cls=new Uint8Array(text.length),m,j;
+  var masked=norm(text.replace(/\[\[fn:[^\]]*\]\]/g,function(x){return spaces(x.length);}));
+  hls.forEach(function(re){
+    re.lastIndex=0;
+    while((m=re.exec(masked))){cls.fill(1,m.index,m.index+m[0].length);if(m[0].length===0)re.lastIndex++;}
+  });
+  var fre=/\[\[fn:[^\]]*\]\]/g;
+  while((m=fre.exec(text))){cls.fill(2,m.index,m.index+m[0].length);}
+  j=0;
+  while(j<text.length){
+    var k=j;while(k<text.length&&cls[k]===cls[j])k++;
+    var piece=text.slice(j,k),node;
+    if(cls[j]===1){node=document.createElement('mark');node.textContent=piece;}
+    else if(cls[j]===2){node=document.createElement('span');node.className='fn';node.textContent=piece;}
+    else node=document.createTextNode(piece);
+    el.appendChild(node);j=k;
+  }
+}
+function card(i){
+  var r=recs[i],li=document.createElement('li'),d;
+  li.className='res';
+  d=document.createElement('div');d.className='mono meta';
+  d.textContent=(r.committee||'')+' · '+(r.short_title||r.title||'');
+  li.appendChild(d);
+  d=document.createElement('div');d.className='cite';
+  if(r.doc_url){var a=document.createElement('a');a.href=r.doc_url;a.target='_blank';a.rel='noopener';a.textContent=r.symbol||r.doc_url;d.appendChild(a);}
+  else d.appendChild(document.createTextNode(r.symbol||''));
+  d.appendChild(document.createTextNode(r.paragraph!=null?', para. '+r.paragraph:''));
+  li.appendChild(d);
+  var p=document.createElement('p');p.className='txt';
+  renderText(p,i,units.map(function(u){return new RegExp(u.hl.source,'gu');}));
+  li.appendChild(p);
+  var act=document.createElement('div');act.className='actions';
+  var b1=document.createElement('button');b1.type='button';b1.textContent='Copy citation';
+  b1.addEventListener('click',function(){copy(cite(r),'Copied: '+cite(r));});
+  var b2=document.createElement('button');b2.type='button';b2.className='add';b2.dataset.i=i;
+  b2.addEventListener('click',function(){if(draft.indexOf(i)<0){draft.push(i);renderDraft();}});
+  act.appendChild(b1);act.appendChild(b2);li.appendChild(act);
+  setAdd(b2);
+  return li;
+}
+function setAdd(b){
+  var inD=draft.indexOf(+b.dataset.i)>=0;
+  b.textContent=inD?'In draft':'Add to draft';b.disabled=inD;
+}
+function showMore(){
+  var end=Math.min(matches.length,shown+PAGE),f=document.createDocumentFragment();
+  for(var n=shown;n<end;n++)f.appendChild(card(matches[n]));
+  list.appendChild(f);shown=end;
+  more.hidden=shown>=matches.length;
+  more.textContent='Show '+Math.min(PAGE,matches.length-shown)+' more (showing '+fmt(shown)+' of '+fmt(matches.length)+')';
+}
+
+/* running a search */
+function run(){
+  var q=$('q').value;units=parse(q);
+  list.textContent='';shown=0;matches=[];more.hidden=true;
+  if(!N){$('nmatch').textContent='0';$('matchlabel').textContent='No General Comments file is attached. Drag it from "Your files" into the chat.';$('how').textContent='';return;}
+  if(!units.length){
+    $('nmatch').textContent='–';$('matchlabel').textContent='Type a word or a phrase above.';
+    $('how').textContent='HOW THIS IS COMPUTED: every word must appear in the paragraph, any order; words in quotation marks must appear together; case and apostrophe shape are ignored.';
+    return;
+  }
+  var tests=units.map(function(u){return u.test;});
+  for(var i=0;i<N;i++){
+    var ok=true;
+    for(var k=0;k<tests.length;k++){if(!tests[k].test(idx[i])){ok=false;break;}}
+    if(ok)matches.push(i);
+  }
+  $('nmatch').textContent=fmt(matches.length);
+  $('matchlabel').textContent=matches.length===0?'No paragraph contains these words. Try fewer words, or fewer quotation marks.':(matches.length===1?'paragraph contains your words':'paragraphs contain your words')+', in the file’s order';
+  $('how').textContent='HOW THIS IS COMPUTED: looking for '+units.map(function(u){return u.phrase?'“'+u.words.join(' ')+'” (together)':u.words[0];}).join(' AND ')+'. A word also matches longer words that begin with it. Case and apostrophe shape are ignored.';
+  showMore();
+}
+var timer;
+$('q').addEventListener('input',function(){clearTimeout(timer);timer=setTimeout(run,150);});
+Array.prototype.forEach.call(document.querySelectorAll('.ex'),function(b){
+  b.addEventListener('click',function(){$('q').value=b.dataset.q;run();});
+});
+more.addEventListener('click',showMore);
+
+/* copy, draft */
+function say(t){$('status').textContent=t;}
+function copy(text,msg){
+  function fallback(){
+    var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();var ok=false;
+    try{ok=document.execCommand('copy');}catch(e){}
+    document.body.removeChild(ta);say(ok?msg:'Copying was blocked by the browser. Select the text and copy it by hand.');
+  }
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){say(msg);},fallback);}
+  else fallback();
+}
+function draftText(){return draft.map(function(i){return recs[i].text+'\n— '+cite(recs[i]);}).join('\n\n');}
+function renderDraft(){
+  var dl=$('draftlist');dl.textContent='';
+  draft.forEach(function(i){
+    var r=recs[i],li=document.createElement('li');li.className='res';
+    var d=document.createElement('div');d.className='cite';d.textContent=cite(r);li.appendChild(d);
+    var p=document.createElement('p');p.className='txt';p.textContent=r.text;li.appendChild(p);
+    var b=document.createElement('button');b.type='button';b.textContent='Remove from draft';
+    b.addEventListener('click',function(){draft.splice(draft.indexOf(i),1);renderDraft();});
+    li.appendChild(b);dl.appendChild(li);
+  });
+  $('draftnote').hidden=draft.length>0;
+  $('copyall').disabled=$('download').disabled=!draft.length;
+  $('jump').textContent='Draft ('+draft.length+') ↓';
+  Array.prototype.forEach.call(document.querySelectorAll('button.add'),setAdd);
+}
+$('copyall').addEventListener('click',function(){copy(draftText(),'Copied '+draft.length+' paragraphs with their citations.');});
+$('download').addEventListener('click',function(){
+  var a=document.createElement('a'),u=URL.createObjectURL(new Blob([draftText()],{type:'text/plain;charset=utf-8'}));
+  a.href=u;a.download='draft-quotations.txt';document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(u);},1000);say('Downloaded draft-quotations.txt');
+});
+run();renderDraft();
+})();
+</script>
+</body>
+</html>

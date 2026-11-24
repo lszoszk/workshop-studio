@@ -8,10 +8,10 @@ CORS: allow `https://lszoszk.github.io`, `http://localhost:8766` and `http://127
 ## `GET /health`
 
 ```json
-{"ok": true, "version": "2026-11-01", "route": "vm", "default_model": "mistral", "models": ["mistral", "claude", "glm-cn", "glm-eu", "fast"], "accepting": true}
+{"ok": true, "version": "2026-11-01", "route": "vm", "default_model": "mistral", "models": ["mistral", "claude", "glm-cn", "glm-eu", "fast"], "accepting": true, "mode": "live"}
 ```
 
-`accepting: false` when the kill switch is on. The front calls this with a 3-second timeout to pick a route.
+`accepting: false` when the kill switch is on or the mode is `recorded`. `mode` is `"live"` or `"recorded"`: the facilitator's switch (admin actions `recorded` and `live`) that sends every browser to the recorded answers. The front calls this with a 3-second timeout to pick a route; in Geneva it also polls it every 20 s while it is on this route, and reads `mode` and `accepting` to switch to recorded answers and to offer the way back.
 
 ## `GET /seat/{code}`
 
@@ -63,7 +63,7 @@ event: done
 data: {}
 ```
 
-Errors before the stream starts are plain JSON with a status code: `400` bad request or model not on the menu, `403 {"error": "Unknown or disabled seat code"}`, `429 {"error": "This seat has used its budget"}` or `{"error": "Too many requests from this seat, wait a minute"}`, `503 {"error": "The studio is paused by the facilitator"}`. Errors after the stream started are sent as
+Errors before the stream starts are plain JSON with a status code: `400` bad request or model not on the menu, `403 {"error": "Unknown or disabled seat code"}`, `429 {"error": "This seat has used its budget"}` or `{"error": "Too many requests from this seat, wait a minute"}`, `503 {"error": "The studio is paused by the facilitator", "code": "paused"}`, `503 {"error": "The facilitator has switched the studio to recorded answers.", "code": "recorded_mode"}` (`/chat` only; the seat is checked first, and the wall still takes pages). Errors after the stream started are sent as
 
 ```
 event: error

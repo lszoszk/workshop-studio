@@ -64,25 +64,27 @@ Admin page: `https://150.254.115.204/studio-api/admin?key=<STUDIO_ADMIN_KEY>`. R
 
 - the seat table: spent / budget, requests, errors, last request, last error, with **Disable / Enable** and **Set budget** (a top-up)
 - the **kill switch**: every chat and gallery post gets 503 until you press **Resume**, and `/health` says `accepting: false`
+- **Recorded answers for everyone** (next to the kill switch; **Back to live models** undoes it): setting `mode`. While it is on, every `/chat` gets `503 {"code": "recorded_mode"}` (the seat checks come first), `/health` says `mode: "recorded"` and `accepting: false`, and the state is shown beside the button. The Geneva pages poll `/health` every 20 s, switch themselves to the recorded answers with a note, and when you switch back they offer **Back to the live model** (nobody is switched back automatically). The wall is not stopped. Use it when the model API fails for the whole room; the kill switch is for stopping everything. Both are logged as `admin` events.
 - **Set default model**: what a request with an empty `model` uses
 - the **Wall**: remove a page from the projector
 - links to the **room chat** (Venice, Geneva): `…/studio-api/admin/room?key=…&course=venice`, a live page for a laptop or a phone. What you write reaches every studio of the course within 15 seconds, as a strip at the top with clickable links (also in recorded mode); participants write back from **Messages** in the studio header, and only you see that. **take back** removes one of your messages; **Clear this course's chat** deletes everything after the class.
 
-The same actions as JSON: `POST /studio-api/admin` with `{"key", "action": disable|enable|budget|pause|resume|default_model|remove_gallery, "seat", "value"}`.
+The same actions as JSON: `POST /studio-api/admin` with `{"key", "action": disable|enable|budget|pause|resume|recorded|live|default_model|remove_gallery, "seat", "value"}`.
 
 Activity (`POST /studio-api/events`, from the page): one JSON line per event in `state/events/<day>.jsonl` with the seat, a random id per page visit and ids, codes and numbers only (whitelist in `app.py`: `EVENT_NAMES`, `EVENT_VALUE`). Download a day with `GET /studio-api/admin/events?key=…&day=2026-11-20` and summarise it with `python3 tools/events_report.py <file>`.
 
 CLI inside the container: `docker exec studio-api python seats.py list`, `… create 5 --country Kenya` (spare seats), `… import /state/seats.csv`. After a re-import, the admin page's top-ups are replaced by the file's budget: raise the budget in the file, or top up again.
 
-**Two routes, two sets of books.** Seat spending and the kill switch are kept separately on the VM and in the Worker's KV. If the front falls back to the Worker after a 503 (paused) or a 429 (budget), the seat starts fresh there. When you pause, pause both: use the admin page, then `npx wrangler kv key put --binding STUDIO cfg '{"paused":true}'`.
+**Two routes, two sets of books.** Seat spending and the kill switch are kept separately on the VM and in the Worker's KV. The front no longer lists the Worker as a route (it stopped answering and cost 3 s per check), so this matters only if it is added to `site/config.json` again: then, after a 503 (paused) or a 429 (budget), the seat starts fresh there. When you pause, pause both: use the admin page, then `npx wrangler kv key put --binding STUDIO cfg '{"paused":true}'`.
 
 ## Failure drills (do them at the rehearsal, ~20.11)
 
 | Drill | Expected |
 |---|---|
-| `docker stop studio-api` | nginx answers 502 at once (`max_fails`) and the front moves to the Worker; `docker start studio-api` brings route 1 back |
+| `docker stop studio-api` | nginx answers 502 at once (`max_fails`); Geneva pages offer **Continue with recorded answers** after two failed health checks, and the other courses fall back to the recordings; `docker start studio-api` brings the route back |
 | pin a model to a host that does not exist (edit `models.py`, deploy) | the fallback answers; the usage event has `fallback_from` |
 | kill switch on the admin page | chat and gallery → 503 "The studio is paused by the facilitator"; `/health` → `accepting: false` |
+| **Recorded answers for everyone** on the admin page | chat → 503 `recorded_mode` "The facilitator has switched the studio to recorded answers."; `/health` → `mode: "recorded"`, `accepting: false`; Geneva pages switch within 20 s |
 | a seat at its budget | 429 "This seat has used its budget"; **Set budget** reopens it |
 | after the workshop: kill switch, or disable every seat | every request is refused |
 

@@ -68,7 +68,9 @@
   // and offers Try again or the other model (the server is asked with fallback:false).  ideas: "Suggest three improvements"
   // (three cards, one request) instead of the five review lenses.  signWall: a name may sign what goes on the wall, which is
   // asked once at 100%.  dataFirst: the chat opens on a card about the data ("Look inside the file"); the brief card
-  // comes under it, and the bar starts with Data.
+  // comes under it, and the bar starts with Data.  backup: when the model or the server fails, the participant or the facilitator
+  // switches to recorded answers (the badge, the error boxes, the admin page's "Recorded answers for everyone"), and recorded mode
+  // plays the whole session: the app recorded beforehand for the plan's look, three recorded ideas, a recorded improvement.
   const COURSE = {
     full: {
       sessions: ['S7', 'S8'], promptKey: 'session', storeId: 'geneva', roomId: 'full', models: null, country: true,
@@ -98,6 +100,7 @@
       advanced: false, wallWithoutAdvanced: true, ignoreLevel: true, ownSession: null, askDirect: false, tour: true, pace: 25,
       files: ['gc'], planBrief: false, event: 'event_geneva', feedbackHint: null, improveSwap: false, courseLink: false, look: false, progress: true, briefCard: true, insideFile: true,
       keepModel: true, ideas: true, signWall: true, dataFirst: true, highlights: true, cheatsheet: true,
+      backup: true,   // the backup plan: recorded mode covers the whole session (see 'Recorded mode in Geneva')
       defaultModel: 'claude',   // Venice: no error in Claude's 136 builds, GLM's in about one of three; GLM stays a click away
       kit: { steps: [['Session 1', 'g1-verbatim', true], ['At home', 'g-home-hrc', true]], data: ['gc', 'hrc_all'] },
     },
@@ -163,7 +166,10 @@
 
   /* ---------- loading ---------- */
 
+  // Geneva's recordings and planning pack, kept in memory after boot (preloadRecorded): an open tab that loses the network still plays them
+  const PRELOADED = new Map();
   async function getText(url) {
+    if (PRELOADED.has(url)) return PRELOADED.get(url);
     const r = await fetch(url, { cache: 'no-cache' });
     if (!r.ok) throw new Error(`${url}: ${r.status}`);
     return r.text();
@@ -253,6 +259,10 @@
     track('open', { route: S.route.type, session: S.session, model: S.model, has_seat: !!S.seatCode, apps: S.versions.length,
       w: innerWidth, ua: /Firefox/.test(navigator.userAgent) ? 'firefox' : /Edg\//.test(navigator.userAgent) ? 'edge' : /Chrome/.test(navigator.userAgent) ? 'chrome' : /Safari/.test(navigator.userAgent) ? 'safari' : 'other' });
     Room.start();
+    if (CFG.backup) {
+      if (S.route.type === 'replay' && !params.get('via') && S.recBy == null) { S.recBy = 'auto'; S.watchBase = S.watchBase || Track.base(); }   // no server answered at boot: told when one does
+      badgeButton(); Watch.start(); preloadRecorded();
+    }
     if (params.get('from')) await fromGallery(params.get('from'));
     else if (CFG.tour) Tour.startOnce();   // the first visit in this browser
     if (!S.versions.length && !S.talk.length) {
@@ -337,12 +347,194 @@
   function setRoute(r, why) {
     if (S.route && S.route.id !== r.id) track('route', { from: S.route.id, to: r.id });
     S.route = r;
+    if (r.type === 'server') S.watchBase = r.base;   // where the facilitator's switch is watched, also while the route is the recordings
+    if (r.type !== 'replay') S.recBy = null;
     const b = $('routeBadge');
     b.textContent = r.type === 'replay' ? 'Recorded answers' : 'Live model';
-    b.className = 'route ' + (r.type === 'replay' ? 'warn' : 'ok');
-    b.title = r.label + (why ? '. ' + why : '');
+    b.className = 'route ' + (r.type === 'replay' ? 'warn' : 'ok') + (CFG.backup ? ' pick' : '');
+    b.title = r.label + (why ? '. ' + why : '') + (CFG.backup ? ' (click to change)' : '');
     renderTools();
+    if (CFG.backup && S.ready) { renderSuggest(); renderPlanTools(); }
     if (why) note(esc(why));
+  }
+
+  /* ---------- Recorded mode in Geneva: the backup plan ---------- */
+
+  // When the model or the server fails, a participant (the badge, an error box) or the facilitator (the admin page) switches to the
+  // answers recorded beforehand with Claude Sonnet 5.5: the first app for each look, three ideas, and an improvement for each.
+  // The work so far stays; setRoute is all that changes. S.recBy says who switched: 'you', 'facilitator' or 'paused'.
+  const replayRoute = () => S.config.routes.find((r) => r.type === 'replay');
+  const recordedNow = () => !!CFG.backup && !!S.route && S.route.type === 'replay';
+  const RECORDED_NOTE = 'Recorded mode builds the app recorded beforehand from the recommended answers, on the topic the rights of the child. Changes to the plan need a live model.';
+  const NEEDS_LIVE = 'This needs a live model, and in recorded mode no model is connected. Use the badge at the top (Back to the live model) when it is back.';
+
+  function useRecorded(why, by = 'you') {
+    S.recBy = by;
+    S.backNoted = false;
+    setRoute(replayRoute(), why);
+  }
+
+  async function backToLive() {
+    if (!CFG.backup || S.route.type !== 'replay') return false;
+    if (S.busy) { note('Wait until the studio has finished, then press <b>Back to the live model</b> again.'); return false; }
+    S.routesDown.clear();
+    const r = await pickRoute();
+    if (r.type === 'replay') {
+      note(S.recBy === 'facilitator' ? 'The facilitator still has recorded answers on for everyone, so the live model is not available yet. You are on recorded answers; your work stays.'
+        : S.recBy === 'paused' ? 'The studio is still paused by the facilitator. You are on recorded answers; your work stays.'
+          : 'The live model cannot be reached right now. You are on recorded answers; try again in a minute. Your work stays.');
+      return false;
+    }
+    setRoute(r);
+    if (r.type === 'server') await ensureSeat();   // the live model needs the seat code
+    if (S.route.type === 'replay') return false;   // no code typed: the dialog's "Continue without a model" put the recordings back
+    track('backup', { to: 'live' });
+    note('Back on the live model. Your work stays.');
+    return true;
+  }
+
+  // the badge's popover
+  const RoutePop = {
+    el: null,
+    close() { if (this.el) { this.el.remove(); this.el = null; $('routeBadge').setAttribute('aria-expanded', 'false'); } },
+    toggle() {
+      if (this.el) return this.close();
+      const recorded = S.route.type === 'replay', d = this.el = document.createElement('div');
+      d.id = 'routePop';
+      d.className = 'route-pop';
+      d.setAttribute('role', 'dialog');
+      d.setAttribute('aria-label', 'Recorded answers');
+      d.innerHTML = recorded
+        ? '<b>Recorded answers</b><p>The apps, ideas and improvements were recorded beforehand with Claude Sonnet 5.5. Nothing is sent to a model. Your work so far stays.</p>' +
+          '<button type="button" class="primary" data-a="live">Back to the live model</button>'
+        : '<b>Live model</b><p>The apps, ideas and improvements were recorded beforehand with Claude Sonnet 5.5. Nothing is sent to a model. Your work so far stays.</p>' +
+          '<button type="button" class="primary" data-a="rec">Switch to recorded answers</button>';
+      d.onclick = async (e) => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        this.close();
+        if (b.dataset.a === 'rec') {
+          track('backup', { to: 'recorded', by: 'badge' });
+          useRecorded('Switched to recorded answers. Your work stays; what you do now plays what was recorded beforehand.');
+        } else await backToLive();
+      };
+      const badge = $('routeBadge');
+      badge.setAttribute('aria-expanded', 'true');
+      document.body.append(d);
+      const r = badge.getBoundingClientRect();
+      d.style.top = Math.round(r.bottom + 8) + 'px';
+      d.style.right = Math.max(8, Math.round(innerWidth - r.right)) + 'px';
+      d.querySelector('button').focus();
+    },
+  };
+
+  // the badge becomes a button: a click opens the popover; a click elsewhere or Escape closes it
+  function badgeButton() {
+    const b = $('routeBadge');
+    b.setAttribute('role', 'button');
+    b.setAttribute('tabindex', '0');
+    b.setAttribute('aria-haspopup', 'dialog');
+    b.setAttribute('aria-expanded', 'false');
+    b.onclick = () => RoutePop.toggle();
+    b.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); RoutePop.toggle(); } };
+    document.addEventListener('click', (e) => { if (RoutePop.el && !RoutePop.el.contains(e.target) && !b.contains(e.target)) RoutePop.close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && RoutePop.el) { RoutePop.close(); b.focus(); } });
+  }
+
+  // an error box about the model or the server gets "Continue with recorded answers": it switches the route, takes the failed turn
+  // away (`gone`) and plays the same step again from the recordings (`resend`). `row` is the box's button row when it has one.
+  function backupButton(box, gone, resend, row) {
+    if (!row) {
+      row = document.createElement('div');
+      row.className = 'choice';
+      box.append(row);
+    }
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ghost';
+    b.dataset.c = 'recorded';
+    b.textContent = 'Continue with recorded answers';
+    b.onclick = () => {
+      if (S.busy) return;
+      track('backup', { to: 'recorded', by: 'error' });
+      useRecorded('The model did not answer, so the studio switched to recorded answers. Your work stays.');
+      gone.forEach((el) => el.remove());
+      resend();
+    };
+    row.append(b);
+    scrollLog();
+  }
+  // which errors get it: the model busy or failed, no connection, any 503 (paused, recorded_mode)
+  const backupFor = (e) => !!CFG.backup && e.name !== 'AbortError' && (TROUBLE.has(e.code) || e.failover === true || e.status === 503);
+
+  // the facilitator's switch and the server's health, every 20 s while there is a server to ask (?healthpoll=<seconds> in a test)
+  const Watch = {
+    fails: 0, offered: false, timer: 0,
+    start() {
+      if (!CFG.backup || this.timer) return;
+      const every = Math.max(0.2, Number(params.get('healthpoll')) || 20) * 1000;
+      this.timer = setInterval(() => { if (!document.hidden) this.poll(); }, every);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) this.poll(); });
+    },
+    async poll() {
+      // while on a server route; and on the recordings the facilitator or a pause put there: that server tells when to go back
+      const watching = S.route && (S.route.type === 'server' || (S.route.type === 'replay' && (S.recBy === 'facilitator' || S.recBy === 'paused' || S.recBy === 'auto')));
+      if (!watching || !S.watchBase || this.busy) return;
+      this.busy = true;
+      let j = null;
+      const c = new AbortController(), t = setTimeout(() => c.abort(), 3000);
+      try {
+        const res = await fetch(S.watchBase + '/health', { signal: c.signal, cache: 'no-store' });
+        if (res.ok) j = await res.json();
+      } catch (e) { /* counted below */ } finally { clearTimeout(t); this.busy = false; }
+      if (!j) return this.failed();
+      this.fails = 0;
+      this.offered = false;
+      const recorded = j.mode === 'recorded', paused = !recorded && j.accepting === false;
+      if ((recorded || paused) && S.route.type === 'server') {
+        track('backup', { to: 'recorded', by: recorded ? 'facilitator' : 'paused' });
+        useRecorded(recorded ? 'The facilitator has switched the studio to recorded answers. Your work stays; what you do now plays what was recorded beforehand.'
+          : 'The studio is paused by the facilitator, so it switched to recorded answers. Your work stays; what you do now plays what was recorded beforehand.', recorded ? 'facilitator' : 'paused');
+      } else if (!recorded && !paused && S.route.type === 'replay' && !S.backNoted) {
+        S.backNoted = true;
+        const n = note('The live model is back. You are still on recorded answers; switch when it suits you. Your work stays. ');
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ghost';
+        b.textContent = 'Back to the live model';
+        b.onclick = async () => { if (await backToLive()) n.remove(); };
+        n.append(b);
+        scrollLog();
+      scrollLog();
+      }
+    },
+    failed() {
+      this.fails++;
+      if (this.fails < 2 || this.offered || S.route.type !== 'server') return;
+      this.offered = true;   // once per outage; a Wi-Fi glitch must not switch anything by itself
+      const n = note('The studio cannot reach its server. If it stays like this, you can carry on with recorded answers. Your work stays. ');
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ghost';
+      b.textContent = 'Continue with recorded answers';
+      b.onclick = () => { if (S.route.type !== 'server') return; track('backup', { to: 'recorded', by: 'poll' }); useRecorded('Switched to recorded answers. Your work stays.', 'you'); n.remove(); };
+      n.append(b);
+      scrollLog();
+    },
+  };
+
+  // after boot, every recording and the planning pack go into memory: a tab that loses the network still plays them
+  async function preloadRecorded() {
+    const dir = S.config.replay.dir, plan = 'data/planning/g1-verbatim.json';
+    const grab = async (url) => { try { const r = await fetch(url, { cache: 'no-cache' }); if (r.ok) PRELOADED.set(url, await r.text()); } catch (e) { /* played from the network if it is still there */ } };
+    await grab(plan);
+    let looks = [];
+    try { looks = JSON.parse(PRELOADED.get(plan) || '{}').looks || []; } catch (e) { /* no looks, no preload of them */ }
+    const names = ['g1-verbatim.md', 'g1-improve.md', ...looks.map((l) => `g1-verbatim.${l.id}.md`),
+      ...[1, 2, 3].flatMap((n) => looks.map((l) => `g1-improve-${n}.${l.id}.md`))];
+    // the shelf the build looks at, and the data the app runs on (the data card has the parsed copy already)
+    await Promise.all([...names.map((n) => grab(dir + n)), grab('data/shelf.json'), ...CFG.files.map((k) => dataText(k).catch(() => {})), ...CFG.files.map((k) => dataParsed(k).catch(() => {}))]);
+    document.body.dataset.recorded = 'ready';
   }
 
   async function ensureSeat() {
@@ -467,6 +659,7 @@
         S.routesDown.add(r.id);
         const next = await pickRoute();
         if (!next || next.id === r.id) throw e;
+        if (CFG.backup && next.type === 'replay') throw e;   // Geneva: the recordings are the participant's choice (the error box offers them), not a silent switch
         setRoute(next, `${r.label} did not answer (${e.message}). Switched to: ${next.label}.`);
       }
     }
@@ -580,23 +773,31 @@
     return { text, thought, usage: usage || {} };
   }
 
+  // o.replay: the recording to play by its file name (Geneva: the app for a look, the ideas, an improvement), or a list of names of
+  // which the first that exists is played; without it the recording is the request's own, by o.promptId
   async function replayChat(o) {
     if (o.purpose !== 'build') {
       throw Object.assign(new Error('No model is connected (recorded mode), so this needs a live model.'), { failover: false });
     }
-    const id = o.promptId || nextPromptId();
+    const id = o.promptId || (o.replay ? '' : nextPromptId());
     // recorded for Kenya; the apps read the country from the data, the words around them do not
     const local = (s) => (S.country === 'Kenya' ? s : s.replace(/Kenya/g, S.country));
     // the workshop apps are recorded from the current plans; the extras only in the fallback recording
-    let rec = S.config.replay, text;
-    try {
+    let rec = S.config.replay, text = '';
+    if (o.replay) {
+      for (const name of [].concat(o.replay)) {
+        text = await getText(rec.dir + name).catch(() => '');
+        if (text) break;
+      }
+      if (!text) throw Object.assign(new Error('That recording is not available. It needs a live model.'), { failover: false });
+    } else try {
       text = local(await getText(rec.dir + id + '.md'));
     } catch (e) {
       rec = rec.fallback;
       text = rec && local(await getText(rec.dir + id + '.md').catch(() => ''));
       if (!text) throw Object.assign(new Error('Recorded mode can only play back the workshop requests. Pick one of the suggestions.'), { failover: false });
     }
-    const thought = local(await getText(rec.dir + id + '.thought.md').catch(() => ''));
+    const thought = o.replay ? '' : local(await getText(rec.dir + id + '.thought.md').catch(() => ''));
     const t0 = performance.now();
     // the recorded thinking first, sped up to at most about ten seconds, then the answer
     const step = Math.max(220, Math.ceil(thought.length / 250));
@@ -608,7 +809,7 @@
     for (let i = 0; i < text.length; i += 220) {
       if (o.signal && o.signal.aborted) throw new DOMException('stopped', 'AbortError');
       await new Promise((r) => setTimeout(r, 40));
-      o.onDelta(text.slice(0, i + 220));
+      if (o.onDelta) o.onDelta(text.slice(0, i + 220));
     }
     const m = S.config.models[rec.model];
     return { text, usage: { model: rec.model, model_label: m.label + ' (recorded)', host: m.host, zdr: true, recorded: true, cost: 0, seconds: (performance.now() - t0) / 1000 } };
@@ -789,7 +990,17 @@
       startPlanning(p, text, takeDraft());
       return true;
     }
-    if (S.route.type === 'replay' && (!p || text.trim() !== S.pendingText.trim())) {
+    // Geneva's recorded mode: a recorded idea's request plays the improvement recorded for it (g1-improve-<n>.<look>.md); a plan plays the app of its look
+    const idea = recordedNow() && !plan && S.ideaOf && S.ideaOf.get(text.trim());
+    const look = plan && plan.look ? plan.look : (currentVersion() && currentVersion().look) || '';
+    const recOpts = !recordedNow() ? {}
+      : plan ? { replay: plan.look ? [`g1-verbatim.${plan.look}.md`, 'g1-verbatim.md'] : undefined }
+        : idea ? { replay: `g1-improve-${idea}.${look || 'paper'}.md` } : {};
+    if (recordedNow() && !plan && !idea && (!p || text.trim() !== S.pendingText.trim())) {
+      note('In recorded mode the studio can only play what was recorded beforehand: the first app, the three ideas and the improvement for each. Anything else needs a live model: use the badge at the top (Back to the live model) when it is back.');
+      return;
+    }
+    if (!CFG.backup && S.route.type === 'replay' && (!p || text.trim() !== S.pendingText.trim())) {
       note('Without a seat code the studio plays back recorded answers, so it can only answer the workshop requests as they are written. ' +
         'Pick a suggestion, or ask a facilitator for a seat code to chat freely.');
       return;
@@ -802,11 +1013,11 @@
       const files = [...new Set([...plan.files, ...S.draft])];
       S.draft.clear();
       if ($('input').value === CHANGE) { $('input').value = ''; fitInput(); }
-      build(text, files, { images: takeImages(), model: reader || undefined });
+      build(text, files, { images: takeImages(), model: reader || undefined, ...recOpts, ...(CFG.backup && plan.look ? { look: plan.look } : {}) });
       return true;
     }
     const images = takeImages();
-    build(text, takeDraft(), { images, model: reader || undefined });
+    build(text, takeDraft(), { images, model: reader || undefined, ...recOpts });
     return true;
   }
 
@@ -904,7 +1115,7 @@
     S.ctrl = new AbortController();
     try {
       let { text, usage } = await chat({
-        purpose: 'build', model, messages, promptId, signal: S.ctrl.signal,
+        purpose: 'build', model, messages, promptId, signal: S.ctrl.signal, replay: opts.replay,
         onThought: (all) => view.think(all),
         onDelta: (all) => {
           view.update(all);
@@ -924,6 +1135,10 @@
         if (r.ok) {
           html = r.html;
           edit = { edits: edits.length, lines: r.lines };
+        } else if (usage.recorded) {   // a recorded change was written for the recorded app, not for this one
+          view.fail('', 'This recorded change was written for the recorded app, and your app is different, so it does not fit. It needs a live model: use the badge at the top (Back to the live model) when it is back.');
+          giveBack();
+          return;
         } else {
           addTrace({ purpose: 'build', usage, messages, userText: asTyped, parent, files, shelf: hits, images, planned });
           view.retry(`The changes did not fit your app's code (at "${r.failed}"). Asking the model for the whole app instead; this takes longer.`);
@@ -945,6 +1160,7 @@
         files: files.length, own: files.filter((k) => S.own[k]).length, images: images.length, parent: parent ? parent.n : null });
       const base = { user: userText, sent, files, model: usage.model || model, label: usage.model_label || S.config.models[model].label,
         seconds, cost: usage.cost, recorded: !!usage.recorded, promptId, created: Date.now(), ...view.thinking(),
+        ...(CFG.backup && (opts.look || (parent && parent.look)) ? { look: opts.look || parent.look } : {}),   // which look's recorded app an improvement is played for
         ...(hits.length ? { shelf: hits.map((h) => h.page.id) } : {}) };
       if (!html) {
         if (!text.trim()) {
@@ -1009,7 +1225,9 @@
       track('build_fail', { prompt: promptId, model, code: e.name === 'AbortError' ? 'stopped' : String(e.code || e.status || (e.failover ? 'no_route' : 'error')) });
       const box = view.fail('', friendly(e));
       giveBack();
-      if (CFG.keepModel && TROUBLE.has(e.code)) modelChoice(box, [userEl, box.parentElement], () => (plan ? buildFromPlan(plan) : submitBuild(userText)));
+      const again = () => (plan ? buildFromPlan(plan) : submitBuild(userText));
+      if (CFG.keepModel && TROUBLE.has(e.code)) modelChoice(box, [userEl, box.parentElement], again);
+      else if (backupFor(e)) backupButton(box, [userEl, box.parentElement], again);
     } finally {
       setBusy(false);
       if (S.pendingRepair) { const m = S.pendingRepair; S.pendingRepair = null; autoRepair(m); }
@@ -1759,6 +1977,13 @@
       });
       const leaves = work.flat().sort((a, b) => (a.v.created || 0) - (b.v.created || 0)).slice(-6);
       const apps = leaves.map(({ v, n }) => ({ title: titleOf(v.html), note: `Session ${n}, version ${v.n}, by ${v.label}`, html: v.html }));
+      if (CFG.backup) {   // Geneva: the five recorded apps after the participant's own, so the kit shows working apps with no model and no internet
+        const pack = await getJSON('data/planning/g1-verbatim.json');
+        for (const l of pack.looks) {
+          const html = extractHtml(await getText(`${S.config.replay.dir}g1-verbatim.${l.id}.md`).catch(() => ''));
+          if (html) apps.push({ title: `Recorded app: ${l.label}`, note: 'recorded beforehand with Claude Sonnet 5.5', html });
+        }
+      }
       // every file those apps read, the workshop's (hrc_all dragged into a Venice app) and the participant's own
       const used = [...new Set(leaves.flatMap(({ v, vs }) => chainOf(v, vs).flatMap((x) => x.files || [])).filter((k) => S.own[k] || S.index.datasets[k]))];
       const datasets = {};
@@ -1869,10 +2094,11 @@
     row.innerHTML = '<button type="button" class="primary" data-c="again">Try again</button>' +
       (other ? `<button type="button" class="ghost" data-c="other">Use ${esc(S.config.models[other].label)}</button>` : '');
     box.append(row);
+    if (CFG.backup) backupButton(box, gone, resend, row);   // the third button: the recordings
     scrollLog();
     row.onclick = (e) => {
       const b = e.target.closest('button');
-      if (!b || S.busy) return;
+      if (!b || S.busy || b.dataset.c === 'recorded') return;
       track('model_retry', { choice: b.dataset.c });
       if (b.dataset.c === 'other') {
         track('model', { from: S.model, to: other, by: 'busy' });
@@ -1967,10 +2193,12 @@
     return null;
   }
 
+  const REC_PERSPECTIVES = ['first_user', 'trust', 'citation'];   // the order the recorded ideas (g1-improve.md) were made in
   async function suggestIdeas(ids) {
     const v = currentVersion(), p = S.prompts.find((q) => q.id === 'g1-improve');
     if (!v || !p || S.busy || !S.ready) return;
-    ids = ids || pickLenses();
+    const rec = recordedNow();
+    ids = rec ? REC_PERSPECTIVES : ids || pickLenses();   // recorded: the three perspectives the recording was made for
     const content = p.prompt.replace('{perspectives}', ids.map((id) => { const l = LENSES.find((x) => x.id === id); return `- ${l.id}: ${l.ask}`; }).join('\n'));
     const model = S.model;
     setBusy(true);
@@ -1987,12 +2215,13 @@
     const tick = setInterval(say, 1000);
     S.ctrl = new AbortController();
     try {
-      const { text, usage } = await chat({ purpose: 'build', model, messages: buildMessages(v, content), promptId: p.id, signal: S.ctrl.signal });
+      const { text, usage } = await chat({ purpose: 'build', model, messages: buildMessages(v, content), promptId: p.id, signal: S.ctrl.signal,
+        replay: rec ? 'g1-improve.md' : undefined });
       if (usage.budget_left != null) setBudget(usage.budget_left);
       d.remove();
       const ideas = parseIdeas(text, ids);
-      track('ideas_shown', { n: ideas ? ideas.length : 0 });
-      if (ideas) showIdeas(ideas);
+      track('ideas_shown', { n: ideas ? ideas.length : 0, rec: !!usage.recorded });
+      if (ideas) showIdeas(ideas, !!usage.recorded);
       else {
         const t = document.createElement('div');
         t.className = 'msg assistant';
@@ -2008,13 +2237,16 @@
       box.textContent = e.name === 'AbortError' ? 'Stopped.' : TROUBLE.has(e.code) ? e.message : `The model could not finish (${e.message}). Try again.`;
       d.append(box);
       if (CFG.keepModel && TROUBLE.has(e.code)) modelChoice(box, [userEl, d], () => suggestIdeas(ids));
+      else if (backupFor(e)) backupButton(box, [userEl, d], () => suggestIdeas(ids));
     } finally {
       clearInterval(tick);
       setBusy(false);
     }
   }
 
-  function showIdeas(ideas) {
+  // recorded: these ideas come from the recording, and "Build this" plays the improvement recorded for each
+  function showIdeas(ideas, recorded) {
+    if (recorded) { S.ideaOf = new Map(ideas.map((x, i) => [x.request.trim(), i + 1])); }
     const label = (id) => (LENSES.find((l) => l.id === id) || { label: id }).label;
     $('log').querySelectorAll('.ideas:not(.old)').forEach((g) => { g.classList.add('old'); g.querySelector('.ihead').textContent = 'Earlier ideas, set aside.'; });
     const g = document.createElement('div');
@@ -2029,6 +2261,10 @@
       const b = e.target.closest('button[data-a]');
       if (!b || b.closest('.old')) return;
       const card = b.closest('.idea'), x = card && ideas[Number(card.dataset.i)];
+      if (recordedNow() && b.dataset.a !== 'no' && (b.dataset.a !== 'build' || !recorded)) {   // only the recorded ideas can be built, as they are
+        return note(b.dataset.a === 'build' ? 'These ideas came from a live model, and in recorded mode no model is connected. Ask for three improvements again in recorded mode, or go back to the live model with the badge at the top.'
+          : 'Changing an idea, asking for other ideas or writing your own needs a live model, and in recorded mode no model is connected. Build one of the three recorded ideas, or use the badge at the top (Back to the live model) when it is back.');
+      }
       if (b.dataset.a === 'build') {
         if (S.busy) return note('Wait until the model has finished, then press <b>Build this</b> again.');
         const keep = $('input').value;   // what was being written stays
@@ -2078,6 +2314,7 @@
     d.innerHTML = html;
     $('log').append(d);
     scrollLog();
+    return d;
   }
 
   function scrollLog() { $('log').scrollTop = $('log').scrollHeight; }
@@ -2669,7 +2906,7 @@
         `<p class="ask-q">${esc(planText(q.question))}</p><div class="ask-opts" role="group" aria-label="${esc(planText(q.question))}">` +
         q.options.map((o, k) => `<button type="button" class="ask-opt" data-k="${k}"><span class="ask-k">${k + 1}</span><span class="ask-body">` +
           `<b>${esc(o.label)}</b>${o.default ? '<span class="rec">Recommended</span>' : ''}<small>${esc(planText(o.description || ''))}</small></span></button>`).join('') +
-        '</div>' + (S.route.type === 'replay' ? '<p class="ask-note">Recorded mode builds only the recommended answers; the others show you their plan.</p>' : '');
+        '</div>' + (S.route.type === 'replay' ? `<p class="ask-note">${CFG.backup ? 'Recorded mode builds the app recorded beforehand from the recommended answers; the others show you their plan.' : 'Recorded mode builds only the recommended answers; the others show you their plan.'}</p>` : '');
       $('log').append(c);
       scrollLog();
       c.querySelector('.ask-opt').focus({ preventScroll: true });
@@ -2726,19 +2963,20 @@
     if (!free) return;
     const latest = !pl.history.length || shownH === pl.history[pl.history.length - 1];
     const ready = live && !S.busy && latest && pl.history.length > 0;
+    const lookReady = (live || CFG.backup) && !S.busy && latest && pl.history.length > 0;   // another look needs no model, and picks the recorded app in Geneva
     const sel = $('planLook');
     if (sel.dataset.pack !== pl.p.id) {
       sel.innerHTML = pl.pack.looks.map((l) => `<option value="${esc(l.id)}">${esc(l.label)}</option>`).join('');
       sel.dataset.pack = pl.p.id;
     }
     sel.value = pl.look;
-    sel.disabled = !ready || !!pl.editing;
+    sel.disabled = !lookReady || !!pl.editing;
     $('planEditBtn').hidden = !!pl.editing;
     $('planEditBtn').disabled = !ready;
     $('planDone').hidden = $('planCancel').hidden = !pl.editing;
     $('planDone').disabled = $('planCancel').disabled = S.busy;
     $('planNote').hidden = live;
-    $('planNote').textContent = live ? '' : NO_MODEL;
+    $('planNote').textContent = live ? '' : CFG.backup ? NO_MODEL + ' ' + RECORDED_NOTE : NO_MODEL;
     const hl = $('planHl');
     hl.hidden = !CFG.highlights;
     if (CFG.highlights) {
@@ -2863,11 +3101,12 @@
     if (!commitEdit(pl)) return;   // an edit in progress is saved first, and is what gets built
     const h = pl.history[pl.history.length - 1];
     track('plan_build', { prompt: pl.p.id, changed: pl.pack.questions.filter((q) => pl.answers[q.id] !== defaultOf(q)).length, plan_v: h.version, by: h.by, look: pl.look || null });
-    if (S.route.type === 'replay' && (h.version > 1 || pl.pack.questions.some((q) => pl.answers[q.id] !== defaultOf(q)))) {
+    if (!CFG.backup && S.route.type === 'replay' && (h.version > 1 || pl.pack.questions.some((q) => pl.answers[q.id] !== defaultOf(q)))) {
       note('Recorded mode can build only the plan with the recommended answers: that is the plan the recorded app was built from. ' +
         'Your plan stays on the right to read. To build it, ask a facilitator for a seat code, or start this app again and keep the recommended answers.');
       return;
     }
+    if (recordedNow()) note(RECORDED_NOTE);   // Geneva: it never refuses; the recorded app of the plan's look is played
     Progress.mark(4);
     pl.changing = false;
     const text = buildMessage(pl, h);
@@ -3265,7 +3504,7 @@
     // a step with no recorded answer (prompts.json "live_only") is offered only when a model is on the line
     const next = v ? S.prompts.filter((p) => mine(p) && p.builds_on && p.builds_on !== 'any' && !used.has(p.id) && used.has(p.builds_on) && (live || !p.live_only)).slice(0, 2) : [];
     // "Suggest improvements" (or, where the course has them, "Suggest three improvements": its request is Geneva's)
-    if (v && live) next.push(...S.prompts.filter((p) => p.builds_on === 'any' && !p.lens && !p.geneva === !CFG.ideas && p.id !== S.pendingPromptId && (S.advanced || p.level !== 'advanced')));
+    if (v && (live || CFG.backup)) next.push(...S.prompts.filter((p) => p.builds_on === 'any' && !p.lens && !p.geneva === !CFG.ideas && p.id !== S.pendingPromptId && (S.advanced || p.level !== 'advanced')));
     // Hick's law: Session 8 keeps its three apps in view (PDF, Verbatim finder, wiki); Session 7 has one
     let starters = S.prompts.filter((p) => mine(p) && !p.builds_on && !built.has(p.id) && (live || !p.live_only)).slice(0, !v || S.session !== 'S7' ? 3 : 1);
     // a course that has the participant write a brief shows its card in the chat, not the suggestion, before the first app
@@ -3309,9 +3548,16 @@
     $('toolbar').hidden = !has;
     $('ask3Btn').hidden = !s8 || !S.route || S.route.type === 'replay';
     $('countryChip').hidden = !countryUsed();
-    $('wallBtn').hidden = !(S.route && S.route.type === 'server');
+    const noWall = recordedNow();   // Geneva, recorded: the wall is the server's; the button stays, switched off, with the reason
+    $('wallBtn').hidden = !(S.route && S.route.type === 'server') && !noWall;
     $('traceSoFar').hidden = !S.trace.length;   // the count sits on the item it counts, not on the menu (it read as a to-do)
     ['downloadBtn', 'wallBtn', 'lookBtn'].forEach((id) => { $(id).disabled = !has; });
+    if (CFG.backup) {
+      const sub = $('wallBtn').querySelector('span');
+      if (!S.wallHint) S.wallHint = sub.textContent;
+      $('wallBtn').disabled = !has || noWall;
+      sub.textContent = noWall ? "The wall needs the studio's server; in recorded mode your app stays here." : S.wallHint;
+    }
   }
 
   function renderSession() {

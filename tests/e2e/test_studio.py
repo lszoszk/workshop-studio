@@ -86,6 +86,8 @@ FEEDBACK = []   # what the fake server received from the Feedback form
 EVENTS = []     # the activity records it received (POST /events)
 ROOM = []       # the facilitator's messages to the room that the fake server hands out (GET /room); empty by default
 ROOM_IN = []    # what participants wrote to the facilitator (POST /room)
+HEALTH = {"ok": True, "accepting": True, "mode": "live"}   # what the fake's /health reports; a test changes it (and puts it back)
+FAIL = {"model_failed": False}                              # True: every chat request fails with model_failed (502), as when the provider is down
 
 
 @pytest.fixture(scope="module")
@@ -109,7 +111,7 @@ def fake_api():
 
         def do_GET(self):
             if self.path.endswith("/health"):
-                body = {"ok": True, "accepting": True}
+                body = dict(HEALTH)
             elif self.path.endswith("/seat/TEST22"):
                 body = {"seat": "TEST22", "country": "Colombia", "budget_total": 8, "budget_left": 7.5, "disabled": False}
             elif "/room?" in self.path:
@@ -156,6 +158,12 @@ def fake_api():
                 return self.wfile.write(json.dumps({"ok": True, "id": "f1"}).encode())
             calls.append(req)
             last = req["messages"][-1]["content"]
+            if HEALTH["mode"] == "recorded":   # the facilitator's switch: the server refuses the chat
+                self.head(503, "application/json")
+                return self.wfile.write(json.dumps({"error": "The facilitator has switched the studio to recorded answers.", "code": "recorded_mode"}).encode())
+            if FAIL["model_failed"]:
+                self.head(502, "application/json")
+                return self.wfile.write(json.dumps({"error": "The model did not answer. Try again, or use the other model.", "code": "model_failed"}).encode())
             if req.get("fallback") is False and "busy please" in last:   # the 1st, 3rd... such request: the model is busy
                 busy_asks.append(1)
                 if len(busy_asks) % 2:
@@ -2171,7 +2179,7 @@ def test_a_plan_is_edited_by_hand_and_by_chat_and_built(base_url, browser, fake_
 
 
 def test_recorded_mode_refuses_an_edit_and_a_reload_keeps_the_plan(base_url, browser):
-    """Without a model the Edit button and the Look menu are off, with the note that changes are made live; a reload puts the
+    """Without a model the Edit button is off (the Look menu stays: it picks the recorded app), with the note that changes are made live; a reload puts the
     latest plan back on the stage with Build and no replay; Start over and ?reset=1 clear it."""
     ctx = browser.new_context(viewport={"width": 1366, "height": 800})
     page = ctx.new_page()
@@ -2180,7 +2188,7 @@ def test_recorded_mode_refuses_an_edit_and_a_reload_keeps_the_plan(base_url, bro
     page.goto(base_url + G1)
     g1_started(page)
     g1_plan(page, "freedom of expression online")
-    assert not page.is_enabled("#planEditBtn") and not page.is_enabled("#planLook")
+    assert not page.is_enabled("#planEditBtn") and page.is_enabled("#planLook")   # Geneva: a look needs no model, and picks the recorded app
     assert "Changes to a plan are made live by your model" in page.inner_text("#planNote")
     kicker = page.text_content("#planKicker")
     doc = page.inner_text("#planDoc")
@@ -2352,7 +2360,7 @@ def test_a_busy_model_is_never_swapped_silently(base_url, browser, fake_api):
     page.wait_for_selector(".msg.err .choice")
     err = page.inner_text(".msg.err")
     assert "The model is busy right now. Try again in a minute, or use the other model." in err
-    assert [b.inner_text() for b in page.locator(".msg.err .choice button").all()] == ["Try again", "Use GLM-5.3 (run in the EU)"]
+    assert [b.inner_text() for b in page.locator(".msg.err .choice button").all()] == ["Try again", "Use GLM-5.3 (run in the EU)", "Continue with recorded answers"]
     assert calls[-1]["fallback"] is False and calls[-1]["model"] == "claude"
     page.click(".msg.err .choice [data-c=other]")
     built(page, 2)
@@ -2466,4 +2474,245 @@ def test_the_geneva_wall_shows_names_and_each_seats_newest_app(base_url, browser
     page.goto(base_url + f"wall.html?api={api}")
     page.wait_for_function("() => document.querySelectorAll('.tile').length >= 5")
     assert "KENYA" in page.locator(".tile", has_text="Old app").locator(".cap span").first.inner_text().upper()
+    ctx.close()
+
+
+# ---- Geneva's backup plan: recorded mode for the whole session ----
+
+RDIR = SITE / "replay/claude"
+LOOK_IDS = [l["id"] for l in G1PACK["looks"]]
+LIVE_G1 = lambda api, extra="": f"?api={api}&course=geneva&planpace=1&reset=1{extra}#s=TEST22"
+BADGE = "#routeBadge"
+
+
+def rec_html(name):
+    """The app in a recording: what the studio takes from its first ```html block."""
+    return re.search(r"```html\n(.*?</html>)\s*```", (RDIR / name).read_text(), re.S).group(1).strip()
+
+
+def saved_versions(page, seat="guest"):
+    return json.loads(page.evaluate(f"localStorage.getItem('ws:work:{seat}:g1:G1')"))["versions"]
+
+
+def recordings_ready(page):
+    page.wait_for_selector("body[data-recorded=ready]", state="attached", timeout=60000)
+
+
+def recorded_first_app(page, topic="the rights of the child"):
+    g1_started(page)
+    g1_plan(page, topic)
+    build_plan(page)
+    built(page, 1)
+    page.wait_for_function("() => document.querySelectorAll('#progressSteps li.done').length === 5", timeout=20000)
+
+
+def test_geneva_model_failed_box_offers_the_recorded_app(base_url, browser, fake_api):
+    """In Geneva a model_failed box has a third button, Continue with recorded answers: the badge says Recorded answers, the
+    failed turn gives way, and Build plays the recorded app of the plan's look (here Night desk), with the note that says what
+    recorded mode builds. The version remembers its look."""
+    api, calls = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + LIVE_G1(api))
+    g1_started(page)
+    g1_plan(page, "freedom of expression")
+    page.select_option("#planLook", "night")
+    FAIL["model_failed"] = True
+    try:
+        build_plan(page)
+        page.wait_for_selector(".msg.err .choice")
+        assert [b.inner_text() for b in page.locator(".msg.err .choice button").all()] == ["Try again", "Use GLM-5.3 (run in the EU)", "Continue with recorded answers"]
+        assert page.inner_text(BADGE) == "Live model"
+        page.click(".msg.err .choice [data-c=recorded]")
+        built(page, 1)
+    finally:
+        FAIL["model_failed"] = False
+    assert page.inner_text(BADGE) == "Recorded answers" and page.locator(".msg.err").count() == 0
+    log = page.inner_text("#log")
+    assert "Recorded mode builds the app recorded beforehand from the recommended answers, on the topic the rights of the child. Changes to the plan need a live model." in log
+    v = saved_versions(page, "TEST22")
+    assert len(v) == 1 and v[0]["look"] == "night" and v[0]["recorded"] and v[0]["html"] == rec_html("g1-verbatim.night.md")
+    page.wait_for_selector(".test-card")   # the first finder brings the test card, recorded or not
+    ctx.close()
+
+
+def test_geneva_recorded_mode_from_the_server(base_url, browser, fake_api):
+    """The facilitator's mode on the server (503 recorded_mode) gives the box one button, and the badge toggle keeps the work."""
+    api, calls = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + LIVE_G1(api))
+    g1_started(page)
+    g1_plan(page)
+    HEALTH.update(mode="recorded", accepting=False)
+    try:
+        build_plan(page)
+        page.wait_for_selector(".msg.err")
+        assert "The facilitator has switched the studio to recorded answers." in page.inner_text(".msg.err")
+        assert [b.inner_text() for b in page.locator(".msg.err button").all()] == ["Continue with recorded answers"]
+        page.click(".msg.err [data-c=recorded]")
+        built(page, 1)
+    finally:
+        HEALTH.update(mode="live", accepting=True)
+    assert page.inner_text(BADGE) == "Recorded answers"
+    v = saved_versions(page, "TEST22")[0]
+    assert v["html"] == rec_html(f"g1-verbatim.{v['look']}.md")
+    ctx.close()
+
+
+def test_geneva_follows_the_facilitators_switch_and_the_server(base_url, browser, fake_api):
+    """While on the server route the page polls /health (?healthpoll=1 here). Mode recorded, or a pause, switches it to recorded
+    answers with a note naming the reason; when the server is live again a note offers Back to the live model and nothing
+    switches back by itself. Two failed polls in a row offer Continue with recorded answers and switch nothing."""
+    api, calls = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + LIVE_G1(api, "&healthpoll=1"))
+    g1_started(page)
+    assert page.inner_text(BADGE) == "Live model"
+    note = lambda: page.locator("#log .msg.note").all_inner_texts()
+    try:
+        HEALTH.update(mode="recorded", accepting=False)
+        page.wait_for_function("() => document.getElementById('routeBadge').textContent === 'Recorded answers'", timeout=15000)
+        assert any("The facilitator has switched the studio to recorded answers" in n for n in note())
+        assert page.locator("#log .msg.note button", has_text="Back to the live model").count() == 0
+        HEALTH.update(mode="live", accepting=True)
+        page.wait_for_selector("#log .msg.note button:has-text('Back to the live model')", timeout=15000)
+        assert page.inner_text(BADGE) == "Recorded answers"          # no automatic switch back
+        page.wait_for_timeout(2500)
+        assert page.inner_text(BADGE) == "Recorded answers" and page.locator("#log .msg.note button", has_text="Back to the live model").count() == 1
+        page.click("#log .msg.note button:has-text('Back to the live model')")
+        page.wait_for_function("() => document.getElementById('routeBadge').textContent === 'Live model'", timeout=15000)
+        # a pause names itself
+        HEALTH.update(mode="live", accepting=False)
+        page.wait_for_function("() => document.getElementById('routeBadge').textContent === 'Recorded answers'", timeout=15000)
+        assert any("paused by the facilitator" in n for n in note())
+    finally:
+        HEALTH.update(mode="live", accepting=True)
+    page.wait_for_selector("#log .msg.note button:has-text('Back to the live model')", timeout=15000)
+    # the server goes away: two failed polls, a note with a button, no switch of its own
+    page.click("#log .msg.note button:has-text('Back to the live model')")
+    page.wait_for_function("() => document.getElementById('routeBadge').textContent === 'Live model'", timeout=15000)
+    page.route("**/studio-api/health", lambda r: r.abort())
+    page.wait_for_selector("#log .msg.note button:has-text('Continue with recorded answers')", timeout=20000)
+    assert page.inner_text(BADGE) == "Live model"
+    page.click("#log .msg.note button:has-text('Continue with recorded answers')")
+    assert page.inner_text(BADGE) == "Recorded answers"
+    ctx.close()
+
+
+def test_geneva_badge_switches_to_recorded_answers_and_back(base_url, browser, fake_api):
+    """The route badge is a button: on the live route its popover explains recorded answers and offers the switch, which keeps
+    the versions; in recorded mode it offers Back to the live model (the seat is still there)."""
+    api, calls = fake_api
+    ctx, page = g1_app(browser, base_url, api)
+    assert page.get_attribute(BADGE, "role") == "button" and page.inner_text(BADGE) == "Live model"
+    page.click(BADGE)
+    pop = page.locator("#routePop")
+    assert "The apps, ideas and improvements were recorded beforehand with Claude Sonnet 5.5. Nothing is sent to a model. Your work so far stays." in pop.inner_text()
+    assert [b.inner_text() for b in pop.locator("button").all()] == ["Switch to recorded answers"]
+    pop.locator("button").click()
+    assert page.inner_text(BADGE) == "Recorded answers" and page.locator("#routePop").count() == 0
+    assert page.locator("#versions [data-v]").count() == 1 and page.locator(".test-card").count() == 1   # the work stays
+    assert page.locator("#wallBtn").is_disabled()
+    page.click(BADGE)
+    assert [b.inner_text() for b in page.locator("#routePop button").all()] == ["Back to the live model"]
+    page.keyboard.press("Escape")
+    assert page.locator("#routePop").count() == 0
+    page.click(BADGE)
+    page.click("#routePop button")
+    page.wait_for_function("() => document.getElementById('routeBadge').textContent === 'Live model'", timeout=15000)
+    assert "7.5" in page.inner_text("#budget") or page.is_visible("#budget")
+    assert not page.locator("#wallBtn").is_disabled()
+    ctx.close()
+
+
+def test_geneva_recorded_mode_covers_the_whole_session(base_url, browser):
+    """From the start in recorded mode: data, prompt, plan, the recorded app for the plan's look (with its note), the test card,
+    Suggest three improvements (three recorded cards), Build this (a recorded change to that app, v2): all seven steps are
+    done, no wall question, Send to wall is off; ideas that need a live model say so and the cards stay."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + G1)
+    recorded_first_app(page)
+    assert page.inner_text(BADGE) == "Recorded answers"
+    assert "Recorded mode builds the app recorded beforehand from the recommended answers" in page.inner_text("#log")
+    v1 = saved_versions(page)[0]
+    assert v1["look"] in LOOK_IDS and v1["html"] == rec_html(f"g1-verbatim.{v1['look']}.md") and v1["label"].endswith("(recorded)")
+    page.wait_for_selector(".test-card")
+    for i in range(3):
+        page.locator(".test-card .tline input").nth(i).check()
+    assert steps_done(page)[5] is True
+    page.locator("#suggest button", has_text="Suggest three improvements").click()
+    page.wait_for_selector(".msg.ideas .idea")
+    ideas = json.loads(re.search(r"```json\n(.*?)\n```", (RDIR / "g1-improve.md").read_text(), re.S).group(1))["ideas"]
+    assert page.locator(".msg.ideas .idea").count() == 3
+    assert page.locator(".msg.ideas .idea .ititle").all_inner_texts() == [x["title"] for x in ideas]
+    assert [t.lower() for t in page.locator(".msg.ideas .ipersp").all_inner_texts()] == ["a first-time user", "can i trust the results?", "a careful drafter"]
+    # what needs a live model says so, and the cards stay
+    for act, words in (("edit", "needs a live model"), ("own", "needs a live model"), ("more", "needs a live model")):
+        page.locator(f".msg.ideas:not(.old) [data-a={act}]").first.click()
+        assert words in page.locator("#log .msg.note").last.inner_text()
+    assert page.locator(".msg.ideas:not(.old) .idea").count() == 3 and page.locator(".msg.ideas.old").count() == 0
+    page.locator(".msg.ideas .idea").nth(1).locator("[data-a=build]").click()
+    built(page, 2)
+    page.wait_for_function("() => document.querySelectorAll('#progressSteps li.done').length === 7", timeout=30000)
+    v2 = saved_versions(page)[1]
+    assert v2["parent"] == 1 and v2["look"] == v1["look"] and v2["html"] != v1["html"] and "data checks" in v2["html"].lower() and v2["recorded"]
+    page.wait_for_timeout(1500)
+    assert page.locator("#wallDialog[open]").count() == 0
+    assert page.locator("#wallBtn").is_disabled() and "in recorded mode your app stays here" in page.locator("#wallBtn").inner_text()
+    assert not errors, errors
+    ctx.close()
+
+
+def test_geneva_recorded_mode_needs_no_network_once_preloaded(base_url, browser):
+    """After boot the recordings, the planning pack and the data are in memory: with every request aborted the page still builds
+    the recorded app, shows the recorded ideas and builds a recorded improvement."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + G1)
+    g1_started(page)
+    recordings_ready(page)
+    blocked = []
+    page.route("**/*", lambda r: (blocked.append(r.request.url), r.abort()))
+    g1_plan(page, "the rights of the child")
+    build_plan(page)
+    built(page, 1)
+    page.locator("#suggest button", has_text="Suggest three improvements").click()
+    page.wait_for_selector(".msg.ideas .idea")
+    page.locator(".msg.ideas .idea").nth(0).locator("[data-a=build]").click()
+    built(page, 2)
+    v = saved_versions(page)
+    assert len(v) == 2 and v[1]["html"] != v[0]["html"]
+    assert not [u for u in blocked if "replay/" in u or "data/planning" in u or "data/gc" in u or "shelf" in u], blocked
+    ctx.close()
+
+
+def test_geneva_kit_holds_the_five_recorded_apps(base_url, browser, tmp_path):
+    """The Geneva kit lists the participant's own app and then the five recorded apps (titled by look); each opens on the kit's
+    data with no network."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900}, accept_downloads=True)
+    page = ctx.new_page()
+    page.goto(base_url + G1)
+    recorded_first_app(page)
+    page.click("#takeHomeBtn")
+    with page.expect_download(timeout=60000) as dl:
+        page.click("#kitBtn")
+    kit = tmp_path / dl.value.suggested_filename
+    dl.value.save_as(kit)
+    p = ctx.new_page()
+    net = []
+    p.on("request", lambda r: net.append(r.url) if r.url.startswith("http") else None)
+    p.goto(kit.as_uri())
+    assert p.locator("[data-app]").count() == 6
+    rows = p.locator("#apps .row span").all_inner_texts()
+    for label in (l["label"] for l in G1PACK["looks"]):
+        assert any(r.startswith(f"Recorded app: {label}") and "recorded beforehand with Claude Sonnet 5.5" in r for r in rows), (label, rows)
+    p.click("[data-app='3']")
+    p.frame_locator(".stage iframe").locator("h1").first.wait_for(timeout=20000)
+    assert "Verbatim finder" in p.frame_locator(".stage iframe").locator("h1").first.inner_text()
+    assert not net, net
     ctx.close()
