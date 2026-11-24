@@ -95,9 +95,9 @@
     },
     geneva: {
       sessions: ['G1'], promptKey: 'geneva', storeId: 'g1', roomId: 'geneva', models: ['claude', 'glm-eu'], country: false,
-      advanced: false, wallWithoutAdvanced: true, ignoreLevel: true, ownSession: null, askDirect: false, tour: false, pace: 25,
-      files: ['gc'], planBrief: true, event: 'event_geneva', feedbackHint: null, improveSwap: false, courseLink: false, look: false, progress: true, briefCard: true, insideFile: true,
-      keepModel: true, ideas: true, signWall: true, dataFirst: true,
+      advanced: false, wallWithoutAdvanced: true, ignoreLevel: true, ownSession: null, askDirect: false, tour: true, pace: 25,
+      files: ['gc'], planBrief: false, event: 'event_geneva', feedbackHint: null, improveSwap: false, courseLink: false, look: false, progress: true, briefCard: true, insideFile: true,
+      keepModel: true, ideas: true, signWall: true, dataFirst: true, highlights: true, cheatsheet: true,
       defaultModel: 'claude',   // Venice: no error in Claude's 136 builds, GLM's in about one of three; GLM stays a click away
       kit: { steps: [['Session 1', 'g1-verbatim', true], ['At home', 'g-home-hrc', true]], data: ['gc', 'hrc_all'] },
     },
@@ -257,9 +257,9 @@
     else if (CFG.tour) Tour.startOnce();   // the first visit in this browser
     if (!S.versions.length && !S.talk.length) {
       if (CFG.briefCard && CFG.dataFirst) {
-        if (!S.savedPlan) note('Hello! Start with the data: look inside the file below. Then write your brief and send it. The planner looks at the data too and writes a plan; you read it, change it if you like, and build from it.');
+        if (!S.savedPlan) note('Hello! Start with the data: look inside the file below. Then write your prompt and send it. The planner looks at the data too and writes a plan; you read it, change it if you like, and build from it.');
         if (DataCard.el && DataCard.el.isConnected) $('log').append(DataCard.el);   // the card under the greeting
-      } else if (CFG.briefCard) { if (!S.savedPlan) note('Hello! Write your brief in the card below, then send it. The planner will look at your data and write a plan; you read it, change it if you like, and build from it.'); }
+      } else if (CFG.briefCard) { if (!S.savedPlan) note('Hello! Write your prompt in the card below, then send it. The planner will look at your data and write a plan; you read it, change it if you like, and build from it.'); }
       else note(`Hello! Ask me anything, or pick a suggestion below. To build an app, first drag a file from <b>Your files</b> into the chat` +
         (countryUsed() ? `: your country is <b>${esc(S.country)}</b>, with ${fmt(S.countryCount)} UN recommendations and observations.` : '.'));
     }
@@ -777,8 +777,8 @@
     if (!plan && plannable(p) && S.planMode) {
       if (freeBrief(p)) {   // the participant's own brief: any text of some length starts the recorded planning
         const t = text.trim();
-        if (t.length < BRIEF_MIN) { note(`A brief needs a few more words: at least ${BRIEF_MIN} characters, so the planner has something to work from.`); return; }
-        if (t.length > BRIEF_MAX) { note(`That brief is too long: up to ${fmt(BRIEF_MAX)} characters, and it is ${fmt(t.length)}. Shorten it, then send.`); return; }
+        if (t.length < BRIEF_MIN) { note(`A prompt needs a few more words: at least ${BRIEF_MIN} characters, so the planner has something to work from.`); return; }
+        if (t.length > BRIEF_MAX) { note(`That prompt is too long: up to ${fmt(BRIEF_MAX)} characters, and it is ${fmt(t.length)}. Shorten it, then send.`); return; }
         startPlanning(p, t, takeDraft());
         return true;
       }
@@ -1613,7 +1613,7 @@
     const sent = [], kept = [];
     if (purpose === 'build') {
       sent.push(`Your message (${fmt(userText.length)} characters)`);
-      if (planned) sent.push(`Your brief and the plan you approved (v${planned.version}, ${whoOf(planned)}, about ${fmt(words(planText(planned.plan)))} words), both inside your message`);
+      if (planned) sent.push(`Your prompt and the plan you approved (v${planned.version}, ${whoOf(planned)}, about ${fmt(words(planText(planned.plan)))} words), both inside your message`);
       if (plan) sent.push(`The plan you asked to change (v${plan.version}, about ${fmt(words(planText(plan.plan)))} words)`);
       if (shelf.length) sent.push(`${shelf.length === 1 ? 'An excerpt' : fmt(shelf.length) + ' excerpts'} from the workshop reference shelf, found by a search on your message: ${shelf.map((h) => h.page.title).join('; ')}`);
       if (images.length) sent.push(`Your ${images.length === 1 ? 'picture' : images.length + ' pictures'} (${images.map((im) => `${im.w}×${im.h}`).join(', ')}): ` +
@@ -1742,7 +1742,7 @@
         // shelf excerpts); before a build, the brief with the topic's default and the plan
         const mine = pack && pack.free_brief && [...S.versions].reverse().find((v) => v.promptId === id && (v.sent || '').startsWith(BRIEF_HEAD));
         const req = !pack ? promptText(p) : mine ? mine.sent.split('\n\nReference shelf excerpts (offline copies)\n')[0]
-          : pack.free_brief ? `${BRIEF_HEAD}\n\nMy brief:\n${pack.problem.replace(/\[my topic\]/g, () => topicDefault(pack))}\n\nThe plan:\n${plan}` : PLAN_HEAD + '\n\n' + plan;
+          : pack.free_brief ? `${BRIEF_HEAD}\n\nMy prompt:\n${pack.problem.replace(/\[my topic\]/g, () => topicDefault(pack))}\n\nThe plan:\n${plan}` : PLAN_HEAD + '\n\n' + plan;
         const fresh = first ? keys : keys.filter((k) => !had.includes(k));   // a follow-up describes only data the conversation lacks
         const text = [first ? sys : '', fresh.length ? Kit.data(S.schema, S.samples, fresh) : '',
           '# The request\n\n' + req + (p.dataset ? '\n\n' + attachLine(p.dataset) : '')].filter(Boolean).join('\n\n---\n\n');
@@ -2191,8 +2191,8 @@
   // enough Markdown for a chat answer or a plan: paragraphs, lists, headings, bold, italics, code,
   // fenced code and simple tables. A list item may run over several lines, and models often put a
   // blank line between items: consecutive items stay one list, numbered as written.
-  function md(text) {
-    const inline = (s) => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<i>$2</i>');
+  function md(text, links) {   // links: [text](https://…) become links (the cheatsheet); a model's reply never gets them
+    const inline = (s) => esc(s).replace(links ? /\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g : /$^/, '<a href="$2" target="_blank" rel="noopener">$1</a>').replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<i>$2</i>');
     const out = [];
     let list = null;   // {tag, items: [html]}
     const close = () => { if (list) { out.push(`<${list.tag}${list.start > 1 ? ` start="${list.start}"` : ''}>${list.items.map((i) => `<li>${i}</li>`).join('')}</${list.tag}>`); list = null; } };
@@ -2341,13 +2341,13 @@
   // goes on the stage. What follows is live: changes to the plan, and the build.
   const PLAN_HEAD = 'Build this app. Follow the plan below; where it says nothing, keep it simple.';
   // a free brief: the participant's own words come first, and the plan wins where the two differ
-  const BRIEF_HEAD = 'Build this app. Follow my brief and the plan; where they differ, the plan wins; where both are silent, keep it simple.';
+  const BRIEF_HEAD = 'Build this app. Follow my prompt and the plan; where they differ, the plan wins; where both are silent, keep it simple.';
   const BRIEF_MIN = 40, BRIEF_MAX = 4000;   // characters
   const CHANGE = 'Change the plan: ';
   const NO_MODEL = 'Changes to a plan are made live by your model, and in recorded mode no model is connected. Build the plan as it is, or ask a facilitator for a seat code.';
   const freeBrief = (p) => !!(p && S.freeBrief[p.id]);
   // what Build sends: for a free brief the brief and the plan, for the other requests the plan alone
-  const buildMessage = (pl, h) => freeBrief(pl.p) ? `${BRIEF_HEAD}\n\nMy brief:\n${pl.brief}\n\nThe plan:\n${planText(h.plan)}` : PLAN_HEAD + '\n\n' + planText(h.plan);
+  const buildMessage = (pl, h) => freeBrief(pl.p) ? `${BRIEF_HEAD}\n\nMy prompt:\n${pl.brief}\n\nThe plan:\n${planText(h.plan)}` : PLAN_HEAD + '\n\n' + planText(h.plan);
   // who made a plan version, in words
   const whoOf = (h) => h.by === 'you' ? 'edited by you' : h.by === 'model' ? `changed by ${h.label}` : 'the planner';
   const planPace = () => Math.max(0.2, Number(params.get('planpace')) || CFG.pace);   // seconds the notes take (120 felt slow, 3.11); ?planpace=20 for a rehearsal
@@ -2739,6 +2739,12 @@
     $('planDone').disabled = $('planCancel').disabled = S.busy;
     $('planNote').hidden = live;
     $('planNote').textContent = live ? '' : NO_MODEL;
+    const hl = $('planHl');
+    hl.hidden = !CFG.highlights;
+    if (CFG.highlights) {
+      hl.replaceChildren(...highlightRow(pl, false).childNodes);
+      hl.querySelectorAll('button').forEach((b) => { b.disabled = !ready || !!pl.editing; });
+    }
   }
 
   // Edit the plan: the rendered plan gives way to its Markdown in a box, for the participant's own words
@@ -2874,12 +2880,41 @@
     if (S.planning !== pl || S.busy) return;
     if (S.route.type === 'replay') {
       note(NO_MODEL);
+      if (CFG.highlights) { highlightRow(pl, true); scrollLog(); }   // the examples, switched off
       return;
     }
     if (!commitEdit(pl)) return;
     pl.changing = true;
     openComposer(CHANGE);
     $('input').setSelectionRange(CHANGE.length, CHANGE.length);
+    if (CFG.highlights) { highlightRow(pl, true); scrollLog(); }
+  }
+
+  // "What would you like to highlight?": three examples that put a change into the box, to be edited before it is sent
+  const HIGHLIGHTS = [
+    ['Languages', 'add a short note in French and Spanish explaining how to search, for colleagues who work in those languages (the paragraphs stay in English).'],
+    ['Accessibility (WCAG 2.2)', 'make the app fully usable with a keyboard, with strong contrast and larger text.'],
+    ['Something else', ''],
+  ];
+  // the row: a card in the chat (after Change something), or the line in the plan's tools (inline)
+  function highlightRow(pl, card) {
+    const live = !!S.route && S.route.type !== 'replay';
+    const row = document.createElement('div');
+    row.className = card ? 'msg hl-card' : 'plan-hl';
+    row.innerHTML = '<span class="hl-q">What would you like to highlight? For example:</span><span class="hl-btns">' +
+      HIGHLIGHTS.map(([l]) => `<button type="button" class="ghost hl-btn">${esc(l)}</button>`).join('') + '</span>';
+    row.querySelectorAll('button').forEach((b, i) => {
+      b.disabled = !live;
+      b.onclick = () => {
+        if (S.planning !== pl || S.busy || !commitEdit(pl)) return;
+        pl.changing = true;
+        const t = CHANGE + HIGHLIGHTS[i][1];
+        openComposer(t);
+        $('input').setSelectionRange(t.length, t.length);
+      };
+    });
+    if (card) { document.querySelectorAll('#log .hl-card').forEach((e) => e.remove()); $('log').append(row); }
+    return row;
   }
 
   // a model's plan, without what it may have written around it
@@ -2901,7 +2936,7 @@
     addUser(text);
     await shelfLoad();
     const hits = shelfSearch(text);
-    const mine = freeBrief(pl.p) ? `My brief:\n${pl.brief}\n\n` + (h.by === 'you' ? 'I edited this plan myself; keep my edits and change only what I ask.\n\n' : '') : '';
+    const mine = freeBrief(pl.p) ? `My prompt:\n${pl.brief}\n\n` + (h.by === 'you' ? 'I edited this plan myself; keep my edits and change only what I ask.\n\n' : '') : '';
     const content = `Here is the plan for an app I am about to build (version ${h.version}):\n\n${planText(h.plan)}\n\n${mine}${text}\n\n` +
       'Reply with the whole revised plan in Markdown, with the same headings, and nothing else: no code, no comment before or after it.' + shelfBlock(hits);
     const messages = [{ role: 'user', content }];
@@ -3002,7 +3037,7 @@
       '<p>One record per paragraph: the document symbol, the paragraph number, the committee, the year and the text, word for word. ' +
       'Look at a few records before you say what to build from them.</p>' +
       '<div class="row"><button type="button" class="primary" id="dataLook">Look inside the file</button>' +
-      '<button type="button" class="ghost" id="dataNext">Write your brief</button></div>';
+      '<button type="button" class="ghost" id="dataNext">Write your prompt</button></div>';
     $('log').append(el);
     lookFacts(p.dataset).then((f) => {
       if (f.count) el.querySelector('.dc-facts').innerHTML = `<b>${esc(f.count)} paragraphs</b> from ${esc(f.documents)} documents of ${esc(f.committees)} committees, ${esc(f.years)}.`;
@@ -3029,7 +3064,7 @@
       const el = Brief.el = document.createElement('details');
       el.className = 'msg brief-card';
       el.open = true;
-      el.innerHTML = '<summary><b>Write your brief</b><span class="bsum">Five short paragraphs. Change them, switch one off, name your topic.</span></summary>' +
+      el.innerHTML = '<summary><b>Write your prompt</b><span class="bsum">1. Name your topic. 2. Read the five paragraphs; change or switch off any. 3. Press Send.</span></summary>' +
         '<div class="brief-body"><label class="brief-topic"><span>My topic</span>' +
         `<input type="text" id="briefTopic" maxlength="120" autocomplete="off" placeholder="${esc(pack.topic_default || 'e.g. freedom of expression online')}"></label>` +
         pack.brief.map((b) => `<div class="brief-block" data-id="${esc(b.id)}"><label class="brief-lab"><input type="checkbox" checked><span>${esc(b.label)}</span></label>` +
@@ -3080,8 +3115,8 @@
     if (!Brief.el) return;
     Brief.el.classList.toggle('sent', on);
     Brief.el.querySelector('.brief-body').inert = on;
-    Brief.el.querySelector('.bsum').textContent = on ? 'Sent. Open it to read it again.' : 'Five short paragraphs. Change them, switch one off, name your topic.';
-    Brief.el.querySelector('summary b').textContent = on ? 'Your brief' : 'Write your brief';
+    Brief.el.querySelector('.bsum').textContent = on ? 'Sent. Open it to read it again.' : '1. Name your topic. 2. Read the five paragraphs; change or switch off any. 3. Press Send.';
+    Brief.el.querySelector('summary b').textContent = on ? 'Your prompt' : 'Write your prompt';
     Brief.el.open = !on;
   };
 
@@ -3762,6 +3797,25 @@
       ['text', 'the paragraph, word for word'], ['cited_articles', 'the treaty articles it cites (often empty)']],
   };
 
+  // "The same record, two ways": the first record as a spreadsheet row and as JSON, and the whole file's size in each,
+  // counted here from the file in this browser (the CSV is the one "Download as CSV" gives)
+  function twoWays(key, d) {
+    const r = d.records, rec = r[0], cols = ['symbol', 'paragraph', 'committee', 'year', 'text'];
+    const cut = (t) => { t = String(t == null ? '' : t); return t.length > 90 ? t.slice(0, 90).trimEnd() + '…' : t; };
+    const bytes = (t) => new Blob([t]).size, mb = (n) => (n / 1e6).toFixed(1) + ' MB';
+    const csv = bytes(csvOf(key, d)), json = bytes(JSON.stringify(d));
+    return '<h4>The same record, two ways</h4>' +
+      '<p>As a spreadsheet, the first record is one row under column headings:</p>' +
+      `<div class="sheet-wrap"><table class="sheet"><thead><tr><th></th>${cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead>` +
+      `<tbody><tr><th>1</th>${cols.map((c) => `<td>${esc(cut(rec[c]))}</td>`).join('')}</tr></tbody></table></div>` +
+      '<p>As JSON, the same record carries the name of every field:</p>' +
+      `<pre class="json-view">${jsonHtml(rec)}</pre>` +
+      `<table class="compare"><thead><tr><th></th><th>Spreadsheet (CSV)</th><th>JSON</th></tr></thead><tbody>` +
+      `<tr><th>Whole file</th><td>${mb(csv)}</td><td>${mb(json)}</td></tr>` +
+      `<tr><th>Holds</th><td>${fmt(r.length)} rows</td><td>${fmt(r.length)} records</td></tr></tbody></table>` +
+      '<p>The same content. A spreadsheet is for people: sort, filter, read. JSON is for programs: every value carries its field name, which is why the file is larger.</p>';
+  }
+
   async function openInside(key) {
     Progress.mark(1);
     const d = await dataParsed(key), r = d.records, f = fileMeta(key), facts = await lookFacts(key);
@@ -3771,6 +3825,7 @@
       `<p><b>${esc(facts.count)} paragraphs</b> from ${esc(facts.documents)} documents of ${esc(facts.committees)} committees, ${esc(facts.years)}.</p>` +
       `<p>The first three, as they are stored: one record per paragraph, one field per line. This is the whole file; your app reads all of it here in your browser.</p>` +
       `<pre class="json-view">${jsonHtml(r.slice(0, 3))}</pre>` +
+      twoWays(key, d) +
       `<h4>The fields</h4><dl class="fields">${FIELDS[key].map(([n, t]) => `<dt>${esc(n)}</dt><dd>${esc(t)}</dd>`).join('')}</dl>` +
       (f.from ? `<p class="from">Also published as data: ${f.from.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${l.icon ? `<span class="from-icon" aria-hidden="true">${esc(l.icon)}</span>` : ''}${esc(l.label)}</a>`).join(' · ')}</p>` : '') +
       `<div class="row"><button type="button" class="ghost" id="insideCsv">Download as CSV</button></div>`;
@@ -3815,8 +3870,20 @@
     const a = S.config.author;
     $('footWho').innerHTML = `Made by ${link(a.url, `<b>${esc(a.name)}</b>`)}, ${link(a.place_url, esc(a.place))}`;
     $('advBtn').hidden = !CFG.advanced;
+    $('cheatBtn').hidden = !CFG.cheatsheet;
     $('wallBtn').classList.toggle('adv', !CFG.wallWithoutAdvanced);   // with no Advanced the wall is for everyone
     renderTheme();
+  }
+
+  // Geneva's cheatsheet: Markdown in its own file, so the text can be replaced without touching the code
+  async function openCheatsheet() {
+    openDrawer('Prompting: best practices');
+    $('drawerBody').innerHTML = '<p>Loading…</p>';
+    try {
+      $('drawerBody').innerHTML = `<div class="cheatsheet answer-md">${md(await getText('data/cheatsheet.md'), true)}</div>`;
+    } catch (e) {
+      $('drawerBody').innerHTML = '<p>The cheatsheet could not be loaded. Try again in a moment.</p>';
+    }
   }
 
   function takeFurther() {
@@ -3932,8 +3999,8 @@
   // 5 App built: a build's preview opened without an app error.  7 Improved: such a build on top of an earlier app.
   // 6 Tested has no hook of its own yet: until the studio reports it, the step's Skip link is the way on.
   const Progress = {
-    LABELS: ['Data', 'Brief', 'Plan read', 'Plan approved', 'App built', 'Tested', 'Improved'],
-    HINTS: ['look inside the file', 'write your brief and send it', 'read the plan on the right', 'approve the plan to build it',
+    LABELS: ['Data', 'Prompt', 'Plan read', 'Plan approved', 'App built', 'Tested', 'Improved'],
+    HINTS: ['look inside the file', 'write your prompt and send it', 'read the plan on the right', 'approve the plan to build it',
       'let the model build the app', 'try the app and test what it says', 'ask for one improvement'],
     fresh: () => ({ done: Array(7).fill(false), skipped: Array(7).fill(false) }),
     // a saved value, checked: seven booleans each
@@ -4098,6 +4165,7 @@
   $('viewCode').onclick = () => setView('code');
   $('takeHomeBtn').onclick = takeFurther;
   $('tourBtn').onclick = () => Tour.start();
+  $('cheatBtn').onclick = openCheatsheet;
   $('feedbackBtn').onclick = openFeedback;
   $('themeBtn').onclick = toggleTheme;
   $('advBtn').onclick = () => setAdvanced(!S.advanced, true);

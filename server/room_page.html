@@ -62,7 +62,7 @@
   });
   const time = (iso) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   // the steps of the studio's route, in the order the front's progress events number them (1 to 7)
-  const STEPS = ['Data', 'Brief', 'Plan read', 'Plan approved', 'App built', 'Tested', 'Improved'];
+  const STEPS = ['Data', 'Prompt', 'Plan read', 'Plan approved', 'App built', 'Tested', 'Improved'];
   function renderProgress(p) {
     const row = $('prog');
     if (!p) { row.hidden = true; return; }

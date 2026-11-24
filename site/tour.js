@@ -24,6 +24,23 @@ window.Tour = (function () {
     { at: '.foot-end', title: 'The gallery, and this tour again',
       text: 'The Gallery at the top shows what different models built from the same plans. Tour, down here, starts this again.' },
   ];
+  // a course that opens on its data (Geneva): its own walk, in the order of the seven steps
+  const GENEVA = [
+    STEPS[0],
+    { at: '#progress', onlyIfShown: true, title: 'Your seven steps',
+      text: 'The bar shows where you are: Data, Prompt, Plan read, Plan approved, App built, Tested, Improved. Skip marks the step you are on as done without doing it, and "Next: …" says what to do now.' },
+    { at: '.data-card', onlyIfShown: true, scroll: true, title: 'Your data',
+      text: 'The file the app will search. Look inside it first: one record per paragraph, word for word, with its document symbol and paragraph number.' },
+    { at: ['.brief-card', '.data-card #dataNext'], onlyIfShown: true, scroll: true, title: 'Your prompt',
+      text: 'Name your topic and read the five paragraphs: change any of them, or switch one off. Then press Send. The model looks at the data and writes a plan first.' },
+    { at: '.model-pick', title: 'Your model',
+      text: 'Choose who builds your app: Claude Sonnet or GLM. The line beside it says where the model was made and where it runs: that is where your prompt goes.' },
+    { at: '.stage', title: 'The plan and the app',
+      text: 'On the right, the plan appears for you to read, edit or change, and then the app it builds. The model never builds before you approve the plan.' },
+    { at: '.foot-end', title: 'Along the edges',
+      text: 'Messages (from your facilitator) and Gallery are at the top. Down here: Feedback, Tour, which starts this again, About, and the Cheatsheet on prompting.' },
+  ];
+  const geneva = () => document.body.dataset.course === 'geneva';
   const venice = () => document.body.dataset.course === 'venice';
   let i = 0, root = null, onKey = null, steps = STEPS;   // steps: this run's, without a step whose element is not shown here
 
@@ -40,7 +57,9 @@ window.Tour = (function () {
   }
 
   function draw() {
-    const step = steps[i], r = target(step);
+    const step = steps[i];
+    if (step.scroll) [].concat(step.at).map((q) => document.querySelector(q)).filter(visible).slice(0, 1).forEach((e) => e.scrollIntoView({ block: 'center' }));
+    const r = target(step);
     const hole = root.querySelector('.tour-hole'), card = root.querySelector('.tour-card');
     card.querySelector('.tour-n').textContent = `${i + 1} of ${steps.length}`;
     card.querySelector('h3').textContent = step.title;
@@ -80,7 +99,7 @@ window.Tour = (function () {
   function start() {
     if (root) return;
     i = 0;
-    steps = STEPS.filter((s) => !s.onlyIfShown || target(s));
+    steps = (geneva() ? GENEVA : STEPS).filter((s) => !s.onlyIfShown || target(s));
     root = document.createElement('div');
     root.className = 'tour';
     root.setAttribute('role', 'dialog');

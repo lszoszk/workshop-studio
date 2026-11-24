@@ -60,7 +60,7 @@ footer { padding-top: 24px; padding-bottom: 48px; border-top: 1px solid var(--ru
     <span>The <span class="mark">orange frame</span> marks what to point at.</span>
     <span>The page shows small previews; Copy image and Download give the full picture (2880 × 1800 px).</span>
   </div>
-  <p class="arc">data → brief → plan → change the plan → build → test → improve → wall → film</p>
+  <p class="arc">data → prompt → plan → change the plan → build → test → improve → wall → film</p>
   <div class="why">
     <h2>Before the first step: why we build</h2>
     <p>Uploading a document to a chatbot gives you a paraphrase that you cannot cite and cannot check. A small tool built on clean data gives you the exact words with their source (the document symbol and the paragraph number), every time. In the session participants see both, and they leave with a tool of their own.</p>
@@ -83,7 +83,7 @@ footer { padding-top: 24px; padding-bottom: 48px; border-top: 1px solid var(--ru
     <li><b>Two apps give different numbers for the same search</b> (for instance 279 and 286). Each follows its own plan: whether "child" also finds "children", whether quotation marks keep a phrase together. Look at the line "How this is computed" and at the participant's answer to "What counts as a match".</li>
     <li><b>Marks such as [[fn:42]] in the text.</b> Not an error: the footnote numbers as the file stores them.</li>
     <li><b>Someone is stuck on a step.</b> Every step of the bar has Skip, and the recorded planning has Skip to the plan, so nobody misses the build or the wall. In Venice the first app took 6 to 12 minutes with a plan; the short plan should cut that.</li>
-    <li><b>The page was reloaded.</b> The brief, the plan and the progress come back in the same browser; another browser or device starts from the beginning.</li>
+    <li><b>The page was reloaded.</b> The prompt, the plan and the progress come back in the same browser; another browser or device starts from the beginning.</li>
     <li><b>Safari, or a small laptop screen.</b> Both work (in Venice three visits in four were in Safari, and two thirds of the screens were narrower than 1440 px). If the app is cramped, Close the plan or open the app in a New tab.</li>
   </ol>
   <div class="tools"><button type="button" id="copyTrouble">Copy the list</button></div>
@@ -103,8 +103,8 @@ footer { padding-top: 24px; padding-bottom: 48px; border-top: 1px solid var(--ru
     { img: '02-inside-the-file', title: 'Look inside the file',
       cap: 'The first records as they are stored, what each field means, and where the same data is published.',
       what: 'We read one record together (symbol, paragraph, committee, year, text). Moreover, I say what the file does not contain, for instance concluding observations or case law.' },
-    { img: '03-brief', title: 'Write the brief',
-      cap: 'A prompt as a brief: five labelled paragraphs (goal and why, before you build, limits, done looks like, check before you finish), each one switched on or off and rewritten, with the participant\'s own topic.',
+    { img: '03-brief', title: 'Write your prompt',
+      cap: 'A prompt in five labelled paragraphs (goal and why, before you build, limits, done looks like, check before you finish), each one switched on or off and rewritten, with the participant\'s own topic.',
       what: 'I explain what a prompt is, following Ethan Mollick\'s questions for delegating work (<a href="https://www.oneusefulthing.org/p/management-as-ai-superpower">Management as AI superpower</a>), and the one rule of the session (plan first). Thus, the model looks at the data and proposes a plan before it writes any code, which gives participants more say, a better result and no rabbit hole at the start.' },
     { img: '04-planner-and-decision', title: 'The planner looks, then asks',
       cap: 'A recorded planning session (Claude Fable 5.1) looks at the file and at a small reference shelf, then asks three decisions: what counts as a match, how a citation reads, what a result shows first.',
@@ -116,7 +116,7 @@ footer { padding-top: 24px; padding-bottom: 48px; border-top: 1px solid var(--ru
       cap: 'Two ways to change it: edit the plan directly (Edit the plan) or ask in the chat ("Change the plan: …"). Both lead to the build.',
       what: 'I show one change made by hand; participants make their own, or change the look of their app (five looks, one given to each seat at random).' },
     { img: '07-building', title: 'Build',
-      cap: 'The model writes the app from the brief and the plan, live. The menu offers Claude Sonnet 5.5 (the default) or GLM-5.3 run in the EU.',
+      cap: 'The model writes the app from the prompt and the plan, live. The menu offers Claude Sonnet 5.5 (the default) or GLM-5.3 run in the EU.',
       what: 'I describe the difference between the two models honestly (a US model with no zero data retention and an open-weights Chinese model run in the EU, which made more errors in our tests). At the same time, I use the waiting time for the <a href="https://doi.org/10.1287/orsc.2025.21838">jagged frontier</a> (no model is best at everything, so one has to test it on one\'s own task).' },
     { img: '08-the-app', title: 'The app',
       cap: 'Each participant gets their own Verbatim finder: type a phrase and see every paragraph that contains it, word for word, with its symbol, paragraph number and a Copy citation button.',
@@ -137,7 +137,7 @@ footer { padding-top: 24px; padding-bottom: 48px; border-top: 1px solid var(--ru
       cap: 'At the end, a 30-second film made from the room\'s apps while they worked (here a frame from a test version made from the Venice apps).',
       what: 'I play it full screen to close the session.' },
     { img: '14-take-home-kit', title: 'The take-home kit',
-      cap: 'One file to take home: the participant\'s brief, plan and app, the data, and "At home": a brief for a dashboard of Human Rights Council texts, 2006–2026, to build with one\'s own chatbot.',
+      cap: 'One file to take home: the participant\'s prompt, plan and app, the data, and "At home": a prompt for a dashboard of Human Rights Council texts, 2006–2026, to build with one\'s own chatbot.',
       what: 'Participants download it before they leave, since the studio is closed after the session.' },
   ];
   const $ = (id) => document.getElementById(id);

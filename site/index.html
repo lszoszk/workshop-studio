@@ -8,7 +8,7 @@
 <meta name="robots" content="noindex, nofollow">
 <script src="gate.js"></script>
 <script>try { const t = localStorage.getItem('ws:theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
-<link rel="stylesheet" href="studio.css?v=2026-11-17a"></head>
+<link rel="stylesheet" href="studio.css?v=2026-11-24a"></head>
 <body>
 <!-- a phone that scanned the badge's QR code gets this instead of the studio -->
 <div class="handoff" id="handoff" hidden>
@@ -141,6 +141,7 @@
           <button type="button" class="primary" id="planDone" hidden>Done</button>
           <button type="button" class="ghost" id="planCancel" hidden>Cancel</button>
           <span class="plan-note" id="planNote" hidden></span>
+          <div class="plan-hl" id="planHl" hidden></div>
         </div>
         <div class="plan-scroll" id="planScroll">
           <article class="plan-doc answer-md" id="planDoc" aria-label="The plan"></article>
@@ -168,6 +169,7 @@
   <span class="foot-end">
     <button type="button" class="linkish" id="feedbackBtn">Feedback</button>
     <button type="button" class="linkish" id="tourBtn">Tour</button>
+    <button type="button" class="linkish" id="cheatBtn" hidden>Cheatsheet</button>
     <button type="button" class="linkish" id="takeHomeBtn">About</button>
     <button type="button" class="linkish" id="advBtn" aria-pressed="false" title="Show more requests and tools: your own files, the wiki, Suggest improvements, Plan mode on or off, New tab, Send to wall">Advanced: off</button>
     <button type="button" class="linkish" id="themeBtn" aria-pressed="false">Dark mode</button>
@@ -217,11 +219,11 @@
   </form>
 </dialog>
 
-<script src="preview-doc.js?v=2026-11-17a"></script>
-<script src="pdf-view.js?v=2026-11-17a"></script>
-<script src="tour.js?v=2026-11-17a"></script>
-<script src="own-files.js?v=2026-11-17a"></script>
-<script src="kit.js?v=2026-11-17a"></script>
-<script src="studio.js?v=2026-11-17a"></script>
+<script src="preview-doc.js?v=2026-11-24a"></script>
+<script src="pdf-view.js?v=2026-11-24a"></script>
+<script src="tour.js?v=2026-11-24a"></script>
+<script src="own-files.js?v=2026-11-24a"></script>
+<script src="kit.js?v=2026-11-24a"></script>
+<script src="studio.js?v=2026-11-24a"></script>
 </body>
 </html>

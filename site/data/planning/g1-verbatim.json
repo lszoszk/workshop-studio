@@ -6,35 +6,35 @@
  "facilitator_brief": "A search tool over every General Comment paragraph of the treaty bodies, for one participant's topic: it retrieves, it never generates. A plan short enough to read and debate in pairs in three minutes.",
  "planner": "Claude Fable 5.1",
  "recorded": "2026-11-16",
- "notes": "Your brief asks for a retrieval tool, not a writing tool: the exact words of General Comments on your topic, with a citation a reader can check, and nothing leaving your browser. I take the facilitator's line as the rule: the tool retrieves, it never generates.\n\n The file holds 7,304 paragraphs, each with a symbol, paragraph number, committee, year, title, link and text; only `cited_articles` is often empty. There are 159 symbols but 188 titles, so some symbols hold more than one document.  Ten committees, very unevenly: CRC 2,091 paragraphs, CEDAW 1,306, CESCR 1,222, down to CED with 56. A topic outside the CRC's field will have fewer hits; that is the file, not the tool.  \"best interests\" gives 641 matches, and the lines show curly apostrophes (child’s): matching must treat ’ and ' alike, and the app must count paragraphs, not occurrences, so its number will be lower.  The list of symbols shows five joint General Comments with two symbols in one field (CMW/C/GC/7–CERD/C/GC/38) and annual reports such as A/48/18 that hold several General Recommendations. The citation must copy the symbol as stored and add the short title where a symbol is shared.   The Dag Hammarskjöld Library says no single citation style is prescribed; a good citation carries the symbol, the pinpoint, the title and the date. So the fields stay separate and I ask you which form to copy.\n\nI decided on one screen, no filters, three example searches and a draft list. I leave three things to you: what counts as a match, how the citation reads, and what a result shows first. Debate them; a wrong default costs you a quotation.",
+ "notes": "Your prompt asks for a retrieval tool, not a writing tool: the exact words of General Comments on your topic, with a citation a reader can check, and nothing leaving your browser. I take the facilitator's line as the rule: the tool retrieves, it never generates.\n\n The file holds 7,304 paragraphs, each with a symbol, paragraph number, committee, year, title, link and text; only `cited_articles` is often empty. There are 159 symbols but 188 titles, so some symbols hold more than one document.  Ten committees, very unevenly: CRC 2,091 paragraphs, CEDAW 1,306, CESCR 1,222, down to CED with 56. A topic outside the CRC's field will have fewer hits; that is the file, not the tool.  \"best interests\" gives 641 matches, and the lines show curly apostrophes (child’s): matching must treat ’ and ' alike, and the app must count paragraphs, not occurrences, so its number will be lower.  The list of symbols shows five joint General Comments with two symbols in one field (CMW/C/GC/7–CERD/C/GC/38) and annual reports such as A/48/18 that hold several General Recommendations. The citation must copy the symbol as stored and add the short title where a symbol is shared.   The Dag Hammarskjöld Library says no single citation style is prescribed; a good citation carries the symbol, the pinpoint, the title and the date. So the fields stay separate and I ask you which form to copy.\n\nI decided on one screen, no filters, three example searches and a draft list. I leave three things to you: what counts as a match, how the citation reads, and what a result shows first. Debate them; a wrong default costs you a quotation.",
  "steps": [
   {
-   "at": 263,
+   "at": 264,
    "kind": "look",
    "label": "Looked at the data: {count} paragraphs from {documents} documents of {committees} committees, {years}",
    "detail": "General Comments and General Recommendations, paragraph by paragraph",
    "live": "gc_overview"
   },
   {
-   "at": 495,
+   "at": 496,
    "kind": "look",
    "label": "Looked at the data: the values of committee in gc",
    "detail": "10 distinct values of committee"
   },
   {
-   "at": 682,
+   "at": 683,
    "kind": "look",
    "label": "Looked at the data: every match of /best interests/ in gc",
    "detail": "641 matches of /best interests/"
   },
   {
-   "at": 883,
+   "at": 884,
    "kind": "look",
    "label": "Looked at the data: the values of symbol in gc",
    "detail": "159 distinct values of symbol"
   },
   {
-   "at": 1166,
+   "at": 1167,
    "kind": "search",
    "label": "Searched the reference shelf: \"how to cite a UN document symbol and paragraph\"",
    "detail": "5 results",
@@ -47,7 +47,7 @@
    ]
   },
   {
-   "at": 1167,
+   "at": 1168,
    "kind": "read",
    "label": "Read: Dag Hammarskjöld Library, Ask DAG: how should I cite a UN document? (summary)",
    "detail": "https://ask.un.org/faq/401380",
@@ -57,12 +57,12 @@
  "questions": [
   {
    "id": "q1",
-   "header": "Matching",
-   "question": "What counts as a match for what you type?",
+   "header": "Search",
+   "question": "I need to know what counts as a match. Say you type: best interests child. Which paragraphs should the tool show?",
    "options": [
     {
      "label": "Exact phrase",
-     "description": "The whole box is one phrase, found word for word in that order; nothing else counts.",
+     "description": "Only paragraphs that contain \"best interests child\" with those three words next to each other, in this order.",
      "fragments": [
       {
        "section": "q1",
@@ -76,7 +76,7 @@
     },
     {
      "label": "Words and phrases",
-     "description": "Every word you type must appear somewhere; quotation marks keep a phrase together.",
+     "description": "Paragraphs that contain all three words, anywhere in the paragraph (put words in quotation marks to keep them together).",
      "default": true,
      "fragments": [
       {
@@ -91,7 +91,7 @@
     },
     {
      "label": "AND, OR, NOT",
-     "description": "Boolean search with operators, brackets and quoted phrases, for precise queries.",
+     "description": "You write the logic yourself with AND, OR, NOT, for example: \"best interests\" AND child NOT adult.",
      "fragments": [
       {
        "section": "q1",
@@ -108,11 +108,11 @@
   {
    "id": "q2",
    "header": "Citation",
-   "question": "What should \"Copy citation\" put on your clipboard?",
+   "question": "I need to know what the \"Copy citation\" button should copy. Say you click it on a result about the best interests of the child.",
    "options": [
     {
      "label": "Short",
-     "description": "Symbol and paragraph only, e.g. CCPR/C/GC/37, para. 12.",
+     "description": "Copies the document and paragraph only: CRC/C/GC/14, para. 1.",
      "default": true,
      "fragments": [
       {
@@ -127,7 +127,7 @@
     },
     {
      "label": "Full",
-     "description": "Committee name, title, year, paragraph and symbol, as in a formal footnote.",
+     "description": "Copies a full footnote: the committee, the title, the year, the paragraph and the symbol, as a formal footnote needs.",
      "fragments": [
       {
        "section": "q2",
@@ -141,7 +141,7 @@
     },
     {
      "label": "Quote + citation",
-     "description": "The paragraph in quotation marks followed by the short citation, ready to paste.",
+     "description": "Copies the paragraph itself in quotation marks, followed by the short citation, ready to paste into your text.",
      "fragments": [
       {
        "section": "q2",
@@ -157,12 +157,12 @@
   },
   {
    "id": "q3",
-   "header": "Results",
-   "question": "What should a result show first?",
+   "header": "Order of results",
+   "question": "I need to know how to order the results. Say the search best interests child finds a few hundred paragraphs. What do you see first?",
    "options": [
     {
      "label": "Paragraphs",
-     "description": "One list of matching paragraphs in the file's order, matches highlighted.",
+     "description": "One list of all of them in the order of the file, with the matching words highlighted.",
      "default": true,
      "fragments": [
       {
@@ -177,7 +177,7 @@
     },
     {
      "label": "By document",
-     "description": "Grouped under each General Comment, closed until clicked, with its number of hits.",
+     "description": "The paragraphs grouped under each General Comment, closed until you click one, with the number of hits on each.",
      "fragments": [
       {
        "section": "q3",
@@ -191,7 +191,7 @@
     },
     {
      "label": "Newest first",
-     "description": "Sorted by year, most recent General Comment first, the year shown on each result.",
+     "description": "One list sorted by year, so the most recent General Comment comes first and the year shows on every result.",
      "fragments": [
       {
        "section": "q3",

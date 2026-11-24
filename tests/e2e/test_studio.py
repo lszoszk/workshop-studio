@@ -294,12 +294,12 @@ def build_plan(page):
 # Geneva (?course=geneva): the participant writes a brief on a card instead of picking a suggestion
 G1 = "?course=geneva&via=replay&planpace=1&reset=1"
 G1PACK = json.loads((SITE / "data/planning/g1-verbatim.json").read_text())
-G1HEAD = "Build this app. Follow my brief and the plan; where they differ, the plan wins; where both are silent, keep it simple."
+G1HEAD = "Build this app. Follow my prompt and the plan; where they differ, the plan wins; where both are silent, keep it simple."
 
 
 def g1_started(page):
     """Geneva has no suggestion buttons: the studio is ready when the data card, a plan put back after a reload or an app
-    is up. From the data card, "Write your brief" brings the brief card."""
+    is up. From the data card, "Write your prompt" brings the prompt card."""
     page.wait_for_function("() => document.getElementById('countryCount').textContent !== '—' && (document.querySelector('.data-card, .brief-card, #versions [data-v]') || !document.getElementById('planView').hidden)", timeout=20000)
     if page.is_visible("#dataNext"):
         page.click("#dataNext")
@@ -314,7 +314,7 @@ def test_geneva_starts_with_the_data(base_url, browser):
     page.goto(base_url + G1)
     page.wait_for_selector(".data-card", timeout=20000)
     page.wait_for_function("() => /7,304 paragraphs/.test(document.querySelector('.data-card').textContent)", timeout=20000)
-    assert page.locator("#progressSteps li .pl").all_inner_texts()[:2] == ["Data", "Brief"]
+    assert page.locator("#progressSteps li .pl").all_inner_texts()[:2] == ["Data", "Prompt"]
     assert page.locator(".brief-card").count() == 0
     assert page.locator("#log .msg").nth(0).inner_text().startswith("Hello! Start with the data")   # the greeting, then the card
     page.click("#dataLook")
@@ -326,6 +326,114 @@ def test_geneva_starts_with_the_data(base_url, browser):
     page.click("#progressSteps .pskip")
     page.wait_for_selector(".brief-card", timeout=20000)
     assert page.locator("#progressSteps li.done").count() == 1
+    ctx.close()
+
+
+def test_geneva_file_drawer_shows_the_record_two_ways(base_url, browser):
+    """"What is in the file" shows the first record as a spreadsheet row and as JSON, and counts the whole file in each form
+    from the data in the browser: the JSON is the larger, and both hold one row or record per paragraph."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + G1)
+    page.wait_for_selector("#dataLook", timeout=20000)
+    page.click("#dataLook")
+    page.wait_for_selector("#drawerBody .sheet", timeout=20000)
+    gc = json.loads((SITE / "data/gc.json").read_text())["records"]
+    assert page.locator("#drawerBody h4").first.inner_text() == "The same record, two ways"
+    assert page.locator("#drawerBody .sheet thead th").all_inner_texts() == ["", "symbol", "paragraph", "committee", "year", "text"]
+    row = page.locator("#drawerBody .sheet tbody td").all_inner_texts()
+    assert row[:4] == [gc[0]["symbol"], str(gc[0]["paragraph"]), gc[0]["committee"], str(gc[0]["year"])] and row[4].startswith(gc[0]["text"][:40])
+    assert page.locator("#drawerBody pre.json-view").count() == 2 and '"symbol"' in page.locator("#drawerBody pre.json-view").nth(1).inner_text()
+    cells = page.locator("#drawerBody .compare tbody td").all_inner_texts()
+    mb = [float(c.split()[0]) for c in (cells[0], cells[1])]
+    assert all(re.fullmatch(r"\d+\.\d MB", c) for c in (cells[0], cells[1])) and mb[1] > mb[0] > 0, cells
+    assert cells[2:] == [f"{len(gc):,} rows", f"{len(gc):,} records"]
+    assert "every value carries its field name" in page.inner_text("#drawerBody")
+    ctx.close()
+
+
+def test_geneva_highlight_examples_fill_the_message_box(base_url, browser, fake_api):
+    """After Change something, and in the plan's tools, three examples put "Change the plan: ..." in the box to edit before
+    sending; in recorded mode they are switched off and the studio says why."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + G1)                                  # recorded
+    g1_started(page)
+    g1_plan(page, "freedom of expression online")
+    assert page.locator("#planHl button").all_inner_texts() == ["Languages", "Accessibility (WCAG 2.2)", "Something else"]
+    assert all(b.is_disabled() for b in page.locator("#planHl button").all())
+    page.locator(".approve button.ghost").last.click()
+    assert "no model is connected" in page.locator(".msg.note").last.inner_text()
+    assert "What would you like to highlight? For example:" in page.inner_text(".hl-card")
+    assert all(b.is_disabled() for b in page.locator(".hl-card button").all())
+    api, calls = fake_api
+    page.goto(base_url + f"?api={api}&course=geneva&planpace=1&reset=1#s=TEST22")   # live
+    g1_started(page)
+    g1_plan(page, "freedom of expression online")
+    assert all(b.is_enabled() for b in page.locator("#planHl button").all())
+    page.locator("#planHl button", has_text="Languages").click()
+    assert page.input_value("#input") == ("Change the plan: add a short note in French and Spanish explaining how to search, for colleagues "
+                                          "who work in those languages (the paragraphs stay in English).")
+    page.locator(".approve button.ghost").last.click()
+    assert page.input_value("#input") == "Change the plan: " and page.locator(".hl-card").count() == 1
+    page.locator(".hl-card button", has_text="Accessibility").click()
+    assert page.input_value("#input") == "Change the plan: make the app fully usable with a keyboard, with strong contrast and larger text."
+    page.locator(".hl-card button", has_text="Something else").click()
+    assert page.input_value("#input") == "Change the plan: "
+    assert page.evaluate("document.activeElement.id") == "input" and page.evaluate("document.getElementById('input').selectionStart") == len("Change the plan: ")
+    ctx.close()
+
+
+def test_the_cheatsheet_is_in_geneva_only(base_url, browser):
+    """Geneva's footer has Cheatsheet, which opens "Prompting: best practices" from data/cheatsheet.md, marked as a draft
+    and linking Mollick's two essays; the other courses do not show it."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + G1)
+    g1_started(page)
+    page.click("#cheatBtn")
+    assert page.inner_text("#drawerTitle") == "Prompting: best practices"
+    page.wait_for_selector("#drawerBody .cheatsheet h4", timeout=10000)
+    body = page.inner_text("#drawerBody")
+    assert body.startswith("Draft: to be replaced with Jennifer's slides") and "Plan first." in body and "Check before you finish." in body
+    hrefs = page.locator("#drawerBody a").evaluate_all("els => els.map(e => e.href)")
+    assert "https://www.oneusefulthing.org/p/management-as-ai-superpower" in hrefs and "https://www.oneusefulthing.org/p/agency-and-agents" in hrefs
+    page.goto(base_url + "?course=full&via=replay&planpace=1&country=Kenya")
+    started(page)
+    assert not page.is_visible("#cheatBtn")
+    ctx.close()
+
+
+def test_the_geneva_tour_starts_once_and_points_at_the_progress_bar(base_url, browser):
+    """On a first visit (a browser that is not automated, which the test pretends to be) Geneva's tour starts by itself,
+    lights the seven-step bar on its second step and the data card on its third, and does not come back after a reload;
+    the other courses' tour is unchanged."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    ctx.add_init_script("Object.defineProperty(navigator, 'webdriver', { get: () => false })")
+    page = ctx.new_page()
+    page.goto(base_url + G1)
+    page.wait_for_selector(".tour-card", timeout=20000)
+    titles = [page.locator(".tour-card h3").inner_text()]
+    assert titles[0] == "Welcome to Garage Research"
+    page.click(".tour-card [data-t=next]")
+    titles.append(page.locator(".tour-card h3").inner_text())
+    page.wait_for_timeout(800)                                # the lit area glides to its place
+    hole, bar = page.locator(".tour-hole").bounding_box(), page.locator("#progress").bounding_box()
+    assert titles[1] == "Your seven steps" and hole["x"] <= bar["x"] and hole["y"] <= bar["y"] and hole["x"] + hole["width"] >= bar["x"] + bar["width"]
+    for _ in range(10):
+        if page.locator(".tour-card [data-t=next]").inner_text() == "Start":
+            break
+        page.click(".tour-card [data-t=next]")
+        titles.append(page.locator(".tour-card h3").inner_text())
+    assert titles[2:] == ["Your data", "Your prompt", "Your model", "The plan and the app", "Along the edges"], titles
+    page.click(".tour-card [data-t=next]")
+    assert page.locator(".tour").count() == 0 and page.evaluate("localStorage.getItem('ws:toured')") == "1"
+    page.reload()
+    g1_started(page)
+    page.wait_for_timeout(500)
+    assert page.locator(".tour").count() == 0
+    page.click("#tourBtn")                                    # and from the footer
+    assert page.locator(".tour-card").count() == 1
     ctx.close()
 
 
@@ -1930,7 +2038,7 @@ def test_the_brief_card_fills_the_message_box_and_the_file_is_shown(base_url, br
     page.goto(base_url + G1)
     g1_started(page)
     card = page.locator(".brief-card")
-    assert "Write your brief" in card.inner_text() and card.locator(".brief-block").count() == 5
+    assert "Write your prompt" in card.inner_text() and card.locator(".brief-block").count() == 5
     assert card.locator(".brief-asks").all_inner_texts() == [b["asks"] for b in G1PACK["brief"]]
     assert page.input_value("#input") == g1_brief()                       # filled as soon as the card is up
     assert page.locator("#attach .filechip").count() == 1 and "General Comments" in page.inner_text("#attach")
@@ -1953,8 +2061,8 @@ def test_the_brief_card_fills_the_message_box_and_the_file_is_shown(base_url, br
     page.locator(".plan-msg .step-pages button", has_text="Look inside the file").click()
     assert page.inner_text("#drawerTitle") == "What is in the file"
     view = page.inner_text("#drawerBody")
-    assert f"{len(gc):,} paragraphs" in view and page.locator("#drawerBody pre.json-view").inner_text().count('"symbol"') == 3
-    assert page.locator("#drawerBody pre.json-view .tk-attr").count() >= 30 and page.locator("#drawerBody pre.json-view").inner_text().startswith("[\n  {")
+    assert f"{len(gc):,} paragraphs" in view and page.locator("#drawerBody pre.json-view").first.inner_text().count('"symbol"') == 3
+    assert page.locator("#drawerBody pre.json-view .tk-attr").count() >= 30 and page.locator("#drawerBody pre.json-view").first.inner_text().startswith("[\n  {")
     assert page.locator("#drawerBody dt").all_inner_texts() == ["id", "symbol", "paragraph", "committee", "year", "title", "short_title", "doc_url", "text", "cited_articles"]
     assert page.locator('#drawerBody a[href^="https://huggingface.co/datasets/"]').count() == 1 and page.is_visible("#insideCsv")
     page.click("#drawerClose")
@@ -2045,19 +2153,19 @@ def test_a_plan_is_edited_by_hand_and_by_chat_and_built(base_url, browser, fake_
     page.keyboard.press("Enter")
     page.wait_for_function("() => document.getElementById('planKicker').textContent.startsWith('v4 · changed by')", timeout=15000)
     asked = calls[-1]["messages"][0]["content"]
-    assert len(calls) == n + 1 and f"My brief:\n{brief}" in asked and "No tracking of any kind." in asked
+    assert len(calls) == n + 1 and f"My prompt:\n{brief}" in asked and "No tracking of any kind." in asked
     assert "I edited this plan myself; keep my edits and change only what I ask." in asked and "Change the plan: add a line chart" in asked
-    assert asked.index("No tracking") < asked.index("My brief:") < asked.index("I edited this plan myself")
+    assert asked.index("No tracking") < asked.index("My prompt:") < asked.index("I edited this plan myself")
     assert "changed by" in page.text_content("#planKicker") and "A line chart of the records per year." in page.inner_text("#planDoc")
     # Build
     build_plan(page)
     built(page, 1)
     sent = calls[-1]["messages"][-1]["content"]
     latest = "## Context\nThe same dashboard, revised.\n\n## The app, screen by screen\n1. A line chart of the records per year.\n2. The table of records."
-    assert sent.startswith(f"{G1HEAD}\n\nMy brief:\n{brief}\n\nThe plan:\n{latest}\n\n(Attached: General Comments"), sent[:200] + " … " + sent[-300:]
-    assert [sent.index(x) for x in (G1HEAD, "My brief:", brief, "The plan:", latest, "(Attached:")] == sorted(sent.index(x) for x in (G1HEAD, "My brief:", brief, "The plan:", latest, "(Attached:"))
+    assert sent.startswith(f"{G1HEAD}\n\nMy prompt:\n{brief}\n\nThe plan:\n{latest}\n\n(Attached: General Comments"), sent[:200] + " … " + sent[-300:]
+    assert [sent.index(x) for x in (G1HEAD, "My prompt:", brief, "The plan:", latest, "(Attached:")] == sorted(sent.index(x) for x in (G1HEAD, "My prompt:", brief, "The plan:", latest, "(Attached:"))
     work = page.evaluate("JSON.parse(localStorage.getItem('ws:work:TEST22:g1:G1'))")
-    assert any("Your brief and the plan you approved (v4, changed by" in line for line in work["trace"][-1]["sent"]) and work["planning"] is None
+    assert any("Your prompt and the plan you approved (v4, changed by" in line for line in work["trace"][-1]["sent"]) and work["planning"] is None
     assert not errors, errors
     ctx.close()
 

@@ -107,8 +107,8 @@ def check_pack(pack):
         out.append("duplicate question ids")
     base_slots = set(SLOT.findall(pack["plan_base"]))
     for q in qs:
-        if len(q.get("header", "")) > 12:
-            out.append(f"{q['id']}: header longer than 12 characters")
+        if len(q.get("header", "")) > 16:
+            out.append(f"{q['id']}: header longer than 16 characters")
         if not 2 <= len(q["options"]) <= 3:
             out.append(f"{q['id']}: {len(q['options'])} options (want 2–3)")
         if sum(1 for o in q["options"] if o.get("default")) != 1:
