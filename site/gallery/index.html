@@ -38,6 +38,7 @@
   .frontier .mono { color: var(--red); }
   .frontier:hover b { text-decoration: underline; text-decoration-color: var(--red); }
   nav.tabs { display: flex; flex-direction: column; margin: 30px 0 0; }
+  [hidden] { display: none !important; }
   .group { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--rule); }
   .group .mono { color: var(--muted); width: 110px; padding: 0 0 12px; }
   .tabs button { font: 12px/1.4 var(--mono); letter-spacing: .06em; text-transform: uppercase; background: none; border: 0;
@@ -108,8 +109,19 @@
     text_contains_after_search: 'the search finds the phrase', calls_studio_ask: 'calls the model from inside',
     batches_max: 'sends at most 25 records at a time',
   };
-  const g = await (await fetch('gallery.json', { cache: 'no-cache' })).json();
+  // ?course=geneva: the one-session course's own gallery (geneva.json): its one exercise, built by the two models it offers
+  const course = new URLSearchParams(location.search).get('course') === 'geneva' ? 'geneva' : null;
+  const keep = course ? '&course=' + course : '';
+  const g = await (await fetch(course ? 'geneva.json' : 'gallery.json', { cache: 'no-cache' })).json();
   document.getElementById('country').textContent = g.country;
+  if (course) {
+    document.querySelector('.hero h1').textContent = 'One exercise, two models';
+    document.querySelector('.hero p').textContent = "This session's Verbatim finder, built from the same prompt and the same plan by the two models of the studio: " +
+      'Claude Sonnet 5.5 and GLM-5.3, an open-weights model run in the EU. The Claude build is also the app the studio plays in recorded mode. ' +
+      'Both apps run here on the whole file of General Comments. The checks are automatic; how good an app is remains your call.';
+    document.querySelector('.hero .frontier').hidden = true;
+    document.querySelector('a.back').href = '../?course=' + course;
+  }
   let current = new URLSearchParams(location.search).get('prompt') || g.prompts[0].id;
 
   function render() {
@@ -118,7 +130,8 @@
     document.getElementById('tabs').innerHTML = sessions.map((s) => `<div class="group"><span class="mono">${esc(s.replace('S', 'Session '))}</span>` +
       g.prompts.filter((p) => p.session === s).map((p) =>
         `<button role="tab" aria-selected="${p.id === current}" data-id="${p.id}">${esc(p.title)}</button>`).join('') + '</div>').join('');
-    document.querySelectorAll('#tabs button').forEach((b) => { b.onclick = () => { current = b.dataset.id; history.replaceState(null, '', '?prompt=' + current); render(); }; });
+    document.querySelectorAll('#tabs button').forEach((b) => { b.onclick = () => { current = b.dataset.id; history.replaceState(null, '', '?prompt=' + current + keep); render(); }; });
+    document.getElementById('tabs').hidden = g.prompts.length < 2;
     const cur = g.prompts.find((p) => p.id === current);
     document.getElementById('askWho').textContent = cur.problem ? 'What the participant asks' : 'The request';
     document.getElementById('askText').textContent = cur.problem || cur.prompt;
@@ -126,7 +139,7 @@
     const rows = g.results.filter((r) => r.prompt === current);
     document.getElementById('cards').innerHTML = rows.map((r) => {
       const m = g.models[r.model] || { name: r.model };
-      const view = `view.html?app=${encodeURIComponent(r.model + '/' + r.prompt)}`;
+      const view = `view.html?app=${encodeURIComponent(r.model + '/' + r.prompt)}${keep}`;
       const name = m.name;
       const facts = [r.seconds != null && `<span><b>${Math.round(r.seconds)}</b> s to build</span>`,
         r.cost != null && `<span><b>$${r.cost.toFixed(3)}</b></span>`, r.lines && `<span><b>${r.lines}</b> lines</span>`].filter(Boolean).join('');
@@ -144,7 +157,7 @@
           <div class="actions">
             ${r.app ? `<a class="btn primary" href="${view}" target="_blank" rel="noopener">Open the app →</a>` : '<span class="checks"><span class="bad">No app returned</span></span>'}
             ${r.plan ? `<a class="btn" href="${r.plan}" target="_blank" rel="noopener">Read the plan</a>` : ''}
-            ${r.app ? `<a class="btn" href="../?from=${encodeURIComponent(r.model + '/' + r.prompt)}" title="The app comes into the studio as your first version: ask for changes in your own words">Improve it in the studio</a>` : ''}
+            ${r.app ? `<a class="btn" href="../?from=${encodeURIComponent(r.model + '/' + r.prompt)}${keep}" title="The app comes into the studio as your first version: ask for changes in your own words">Improve it in the studio</a>` : ''}
           </div>
         </div></article>`;
     }).join('');

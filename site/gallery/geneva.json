@@ -1,0 +1,64 @@
+{
+ "course": "geneva",
+ "country": "",
+ "built": "2026-11-17",
+ "models": {
+  "claude": {
+   "name": "Claude Sonnet 5.5",
+   "origin": "USA",
+   "host": "Claude Code (no API)",
+   "weights": "closed"
+  },
+  "glm-eu": {
+   "name": "GLM-5.3",
+   "origin": "China",
+   "host": "Mistral, in the EU",
+   "weights": "open"
+  }
+ },
+ "prompts": [
+  {
+   "id": "g1-verbatim",
+   "title": "Verbatim finder for General Comments",
+   "prompt": "Build this app. Follow my brief and the plan; where they differ, the plan wins; where both are silent, keep it simple.\n\nMy brief:\nGOAL AND WHY\nWhen I write a submission on the rights of the child, I need the exact words of UN treaty bodies' General Comments, with a correct citation. A chatbot's paraphrase is not enough: I have to quote.\n\nBEFORE YOU BUILD\nLook at the attached file and tell me what it contains and what it lacks. Then write a plan. Do not build anything until I approve the plan.\n\nLIMITS\nUse only the attached file. Never shorten or rewrite a paragraph. Nothing leaves my browser.\n\nDONE LOOKS LIKE\nI type a phrase and see every paragraph that contains it, word for word, each with its document symbol and paragraph number. I can copy a ready citation.\n\nCHECK BEFORE YOU FINISH\nShow how many paragraphs were searched. Say what the tool cannot do.\n\nThe plan:\n# Verbatim finder: the rights of the child\n\n## What you asked for\n\nYou need the exact words of General Comments on the rights of the child, with a citation a reader can check: from the attached file only, never summarised; nothing leaves your browser.\n\n## What I found in the file\n\n- About 7,300 paragraphs from ten committees, 1972–2026, every field filled.\n- Uneven: CRC about 2,100 paragraphs, CED about 60.\n- Trap: a `symbol` is not always one document: A/48/18 holds seven General Recommendations; five joint General Comments carry two symbols in one field (CMW/C/GC/7–CERD/C/GC/38).\n- `text` keeps curly apostrophes (child’s) and footnote marks like [[fn:12]]; \"best interests\" occurs 641 times.\n\n## What the tool will do\n\nOne screen: a search box, three example searches about the rights of the child as buttons, and \"N paragraphs searched\" always visible (count `records`).\n\nMatching: every word must appear in the paragraph, any order; quoted words together, word for word. Ignore case and apostrophe shape (’ or '); child finds children. Highlight matches.\n\nResults: one list in the file's order, the number of matching paragraphs above. Each result: `committee`, `short_title`, `symbol` linked to `doc_url`, para. `paragraph`, the full `text` as stored, and two buttons. \"Copy citation\" copies `symbol`, para. `paragraph`, e.g. CCPR/C/GC/37, para. 12, with the `short_title` added when the symbol holds several titles. \"Add to draft\" puts it in a draft list below (\"Copy all\", \"Download\"). No match: say so, show 0.\n\n## Your decisions\n\n- Matching. Words and phrases: all words anywhere, quoted phrases together.\n- Citation. Short: symbol and paragraph number.\n- Results. Paragraphs: one list in the file's order.\n\n## Look\n\nPaper and ink: warm off-white background #f4f0e8, near-black text #1d1b18, thin rules #d9d2c3, one deep red accent #9b2335, serif titles and big numbers.\n\n## What it will not do\n\n- No summaries, paraphrase or synonyms: only the words you typed.\n- No other sources: no concluding observations, no case law.\n- No translation: English only.\n\n## How you can check it\n\n1. Search, in quotation marks, a phrase you know: it appears in a result word for word, apostrophes included.\n2. Click a result's symbol (`doc_url`) and compare the paragraph with the original.\n3. Click \"Copy citation\", paste it into any document: symbol and paragraph number as the result showed them.\n\n(Attached: General Comments, paragraph by paragraph → WORKSHOP_DATA.gc)",
+   "session": "G1",
+   "problem": "When I write a submission on the rights of the child, I need the exact words of UN treaty bodies' General Comments, with a correct citation. A chatbot's paraphrase is not enough: I have to quote."
+  }
+ ],
+ "results": [
+  {
+   "model": "claude",
+   "prompt": "g1-verbatim",
+   "app": true,
+   "passed": 6,
+   "total": 6,
+   "failed": [],
+   "seconds": null,
+   "first_token": null,
+   "cost": null,
+   "completion_tokens": null,
+   "lines": 385,
+   "attempts": 1,
+   "returned": 1,
+   "full": 1,
+   "plan": "apps/claude/g1-verbatim.plan.html"
+  },
+  {
+   "model": "glm-eu",
+   "prompt": "g1-verbatim",
+   "app": true,
+   "passed": 6,
+   "total": 6,
+   "failed": [],
+   "seconds": 16.2,
+   "first_token": null,
+   "cost": 0.023162,
+   "completion_tokens": null,
+   "lines": 264,
+   "attempts": 1,
+   "returned": 1,
+   "full": 1,
+   "plan": "apps/glm-eu/g1-verbatim.plan.html"
+  }
+ ]
+}

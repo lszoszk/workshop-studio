@@ -59,14 +59,17 @@
       (files.length < (item.files || []).length ? ' · <i>built on the participant\'s own file, which stays on their computer: shown here without it</i>' : '');
     document.title = `${item.title} · the wall`;
   } else {
-    const g = await text('gallery.json').then(JSON.parse);
+    // ?course=geneva: an app of the one-session course's own gallery (geneva.json)
+    const course = params.get('course') === 'geneva' ? 'geneva' : null, keep = course ? '&course=' + course : '';
+    const g = await text(course ? 'geneva.json' : 'gallery.json').then(JSON.parse);
+    if (course) document.querySelector('.bar a').href = './?course=' + course;
     html = await text('apps/' + app + '.html');
     country = g.country;
     const [model, prompt] = app.split('/');
     const m = g.models[model] || { name: model };
     const p = g.prompts.find((x) => x.id === prompt) || { title: prompt };
-    what.innerHTML = `<b>${m.name}</b> · ${p.title} · ${country}`;
-    what.insertAdjacentHTML('afterend', `<a href="../?from=${encodeURIComponent(app)}" style="margin-left:auto">Improve it in the studio →</a>`);
+    what.innerHTML = `<b>${m.name}</b> · ${p.title}${country ? ' · ' + country : ''}`;
+    what.insertAdjacentHTML('afterend', `<a href="../?from=${encodeURIComponent(app)}${keep}" style="margin-left:auto">Improve it in the studio →</a>`);
     document.title = `${p.title} · ${m.name}`;
   }
   const file = (k) => k === 'uhri' ? (index.countries.find((c) => c.name === country) || index.countries[0]).file : index.datasets[k].file;

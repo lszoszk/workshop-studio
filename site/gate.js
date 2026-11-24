@@ -8,6 +8,7 @@
   var ok = false;
   try { ok = localStorage.getItem(KEY) === HASH; } catch (e) { /* no storage: ask every time */ }
   if (ok) return;
+  window.wsGated = true;   // the studio does not start behind the gate (no seat question over the password): it starts after the reload
   document.documentElement.style.visibility = 'hidden';
   async function sha(s) {
     var b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));

@@ -100,6 +100,7 @@
       advanced: false, wallWithoutAdvanced: true, ignoreLevel: true, ownSession: null, askDirect: false, tour: true, pace: 25,
       files: ['gc'], planBrief: false, event: 'event_geneva', feedbackHint: null, improveSwap: false, courseLink: false, look: false, progress: true, briefCard: true, insideFile: true,
       keepModel: true, ideas: true, signWall: true, dataFirst: true, highlights: true, cheatsheet: true,
+      gallery: 'geneva',   // the top bar's Gallery opens gallery/?course=geneva: this session's app, built by its two models
       eggs: true,      // the footer's "Geneva" switch and its five quiet extras (see 'Geneva's quiet extras')
       backup: true,   // the backup plan: recorded mode covers the whole session (see 'Recorded mode in Geneva')
       defaultModel: 'claude',   // Venice: no error in Claude's 136 builds, GLM's in about one of three; GLM stays a click away
@@ -192,6 +193,7 @@
   }
 
   async function boot() {
+    if (window.wsGated) return;   // behind the preview's password (gate.js): the page reloads once it is given
     if (matchMedia('(max-width: 760px)').matches) return handoff();
     if (params.get('wall') === '1') document.body.classList.add('wall');
     const [config, index, prompts, schema, samples, sysmd, chart, runtime] = await Promise.all([
@@ -210,6 +212,7 @@
     document.body.dataset.course = S.course;
     document.body.classList.toggle('venice', CFG === COURSE.venice);   // the stylesheet's hook
     $('courseLink').hidden = !CFG.courseLink;
+    if (CFG.gallery) document.querySelector('a.top-link[href="gallery/"]').href = 'gallery/?course=' + CFG.gallery;
     const event = config[CFG.event] || config.event;
     $('event').textContent = event;
     $('brand').title = event;
@@ -284,7 +287,7 @@
     track('gallery_in', { model, prompt: promptId });
     try {
       if (!/^[\w-]+\/[\w-]+$/.test(id)) throw new Error('not a gallery app');
-      const g = await getJSON('gallery/gallery.json');
+      const g = await getJSON(CFG.gallery ? `gallery/${CFG.gallery}.json` : 'gallery/gallery.json');
       const r = g.results.find((x) => x.model === model && x.prompt === promptId && x.app);
       const p = S.prompts.find((q) => q.id === promptId);
       if (!r || !p) throw new Error('not in the gallery');

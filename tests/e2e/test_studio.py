@@ -337,6 +337,27 @@ def test_geneva_starts_with_the_data(base_url, browser):
     ctx.close()
 
 
+def test_nothing_starts_behind_the_password_gate(base_url, browser, fake_api):
+    """On GitHub Pages gate.js asks for the preview's password first. The studio must not start behind it, or its seat question
+    (a modal dialog) covers the password. The gate is off on localhost, so the test sets the gate's flag itself."""
+    api, _ = fake_api
+    url = f"{base_url}?api={api}&course=geneva&reset=1"
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    page.goto(url)
+    page.wait_for_selector("#seatDialog[open]")               # no gate: the seat question, as before
+    ctx.close()
+    ctx = browser.new_context()
+    ctx.add_init_script("window.wsGated = true")
+    page = ctx.new_page()
+    asked = []
+    page.on("request", lambda r: asked.append(r.url) if "/health" in r.url or "/seat/" in r.url else None)
+    page.goto(url)
+    page.wait_for_timeout(1500)
+    assert not page.evaluate("document.getElementById('seatDialog').open") and asked == []
+    ctx.close()
+
+
 # Geneva's quiet extras (course flag eggs, the footer's switch): see "Geneva's quiet extras" in studio.js
 EGG_SEL = ".egg, .pk-walk, .v1991-note"
 
@@ -1506,6 +1527,34 @@ def test_a_gallery_app_comes_into_the_studio(base_url, browser):
     page.goto(base_url + "?via=replay&country=Kenya&from=nobody%2Fnothing")
     started(page)
     assert "could not be loaded" in page.inner_text("#log")
+    ctx.close()
+
+
+def test_geneva_gallery_is_its_app_by_its_two_models(base_url, browser):
+    """Geneva's Gallery (geneva.json) shows the session's Verbatim finder, built from the same prompt and plan by Sonnet 5.5 and
+    GLM-5.3, each app running on the whole file; the other courses keep the gallery of every exercise. Improve it in the studio
+    brings a Geneva build in as v1."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + G1)
+    page.wait_for_function("() => document.getElementById('footWho').textContent.length > 0", timeout=20000)
+    assert page.get_attribute("header a.top-link:has-text('Gallery')", "href") == "gallery/?course=geneva"
+    page.goto(base_url + "gallery/?course=geneva")
+    page.wait_for_selector(".card")
+    assert page.locator(".card h2").all_inner_texts() == ["Claude Sonnet 5.5", "GLM-5.3"]
+    assert all(t.startswith("6 of 6 checks") for t in page.locator(".card .checks").all_inner_texts())
+    assert not page.is_visible("#tabs") and not page.is_visible(".frontier") and page.inner_text(".hero h1") == "One exercise, two models"
+    assert page.inner_text("#askText").startswith("When I write a submission on the rights of the child")
+    assert all("course=geneva" in h for h in page.eval_on_selector_all(".card a.btn:not([href$='.plan.html'])", "as => as.map(a => a.getAttribute('href'))"))
+    page.goto(base_url + "gallery/view.html?app=glm-eu%2Fg1-verbatim&course=geneva")
+    assert page.inner_text("#what") == "GLM-5.3 · Verbatim finder for General Comments"
+    page.frame_locator("#frame").get_by_text(re.compile(r"7,?304")).first.wait_for(timeout=20000)   # the whole file, in the app
+    page.goto(base_url + "gallery/")                          # the other courses: every exercise, as before
+    page.wait_for_selector(".card")
+    assert page.is_visible("#tabs") and page.locator("#tabs button").count() == 4 and page.is_visible(".frontier")
+    page.goto(base_url + "?course=geneva&via=replay&reset=1&from=claude%2Fg1-verbatim")
+    built(page, 1)
+    assert "From the gallery: Verbatim finder for General Comments" in page.inner_text("#log")
     ctx.close()
 
 
