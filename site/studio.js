@@ -100,6 +100,7 @@
       advanced: false, wallWithoutAdvanced: true, ignoreLevel: true, ownSession: null, askDirect: false, tour: true, pace: 25,
       files: ['gc'], planBrief: false, event: 'event_geneva', feedbackHint: null, improveSwap: false, courseLink: false, look: false, progress: true, briefCard: true, insideFile: true,
       keepModel: true, ideas: true, signWall: true, dataFirst: true, highlights: true, cheatsheet: true,
+      eggs: true,      // the footer's "Geneva" switch and its five quiet extras (see 'Geneva's quiet extras')
       backup: true,   // the backup plan: recorded mode covers the whole session (see 'Recorded mode in Geneva')
       defaultModel: 'claude',   // Venice: no error in Claude's 136 builds, GLM's in about one of three; GLM stays a click away
       kit: { steps: [['Session 1', 'g1-verbatim', true], ['At home', 'g-home-hrc', true]], data: ['gc', 'hrc_all'] },
@@ -1398,6 +1399,7 @@
     },
     // a session without an app yet: no frame on the stage
     clear() {
+      if (CFG.eggs) Eggs.off1991(false);
       const run = () => this.frames.forEach((f) => { f.classList.add('back'); f.removeAttribute('srcdoc'); });
       this.queue = (this.queue || Promise.resolve()).then(run, run);
     },
@@ -1412,7 +1414,7 @@
     $('appError').hidden = true;
     renderContinuing();
     if (viewing === 'code') renderCode();
-    await Preview.show(await fullDoc(v));
+    await Preview.show(await (CFG.eggs ? Eggs.docFor(v) : fullDoc(v)));
   }
 
   /* ---------- messages from the preview ---------- */
@@ -1422,7 +1424,7 @@
   window.addEventListener('message', (e) => {
     const m = e.data || {};
     if (typeof m.type !== 'string' || !m.type.startsWith('studio:')) return;
-    if (m.type === 'studio:ready' && S.watch && S.watch.n === S.current && Preview.owns(e.source)) {   // the new version's scripts ran: any error came first
+    if (m.type === 'studio:ready' && S.watch && S.watch.n === S.current && Preview.owns(e.source) && !Eggs.v1991) {   // the new version's scripts ran: any error came first
       const w = S.watch;
       S.watch = null;
       if (!w.err) { const had5 = S.progress.done[4]; Progress.mark(5); if (w.improves && had5) Progress.mark(7); if (w.first) TestCard.open(); }
@@ -1434,7 +1436,7 @@
     if (m.type === 'studio:ask') handleAsk(e.source, m);
     else if (fromTab) return;   // a tab shows its own errors and PDFs
     else if (m.type === 'studio:open-source') openSource(m.symbol, m.page, m.quote);
-    else if (m.type === 'studio:error') showAppError(m);
+    else if (m.type === 'studio:error') { if (!Eggs.v1991) showAppError(m); }   // an error in the 1991 view is the view's, not the app's
   });
 
   function openTab() {
@@ -2330,6 +2332,8 @@
     const sum = d.querySelector('.summary'), pre = d.querySelector('pre'), stat = d.querySelector('.stat');
     const th = d.querySelector('.thought'), tt = th.querySelector('.tt'), thLabel = th.querySelector('summary');
     const t0 = performance.now();
+    const drv = CFG.eggs ? Eggs.drive() : null;   // Geneva's quiet extra: the wheel that turns in steps, while the model works
+    if (drv) stat.after(drv);
     let raf = 0, last = '', thought = '', thoughtEnd = null, folded = false;
     const secs = () => (performance.now() - t0) / 1000;
     const paint = () => {
@@ -2383,7 +2387,7 @@
     const where = whereOf(S.model);
     const schedule = () => { if (!raf) raf = requestAnimationFrame(paint); };
     const tick = setInterval(schedule, 1000);  // the clock keeps moving while nothing streams
-    const stop = () => { clearInterval(tick); if (raf) cancelAnimationFrame(raf); $('viewport').classList.remove('thinking'); };
+    const stop = () => { if (drv) drv.remove(); clearInterval(tick); if (raf) cancelAnimationFrame(raf); $('viewport').classList.remove('thinking'); };
     return {
       step(el) { d.querySelector('.who').after(el); scrollLog(); },   // e.g. the reference shelf searched before the model answers
       who(label) { d.querySelector('.who').textContent = label; },   // a recorded answer names the model that recorded it
@@ -2759,9 +2763,10 @@
         flow.append(th);
         const tt = th.querySelector('.tt'), lab = th.querySelector('summary'), t0 = performance.now();
         const secs = () => Math.max(1, Math.round((performance.now() - t0) / 1000));
+        const drv = CFG.eggs ? Eggs.drive() : null;   // Geneva's quiet extra, while the planner works
         return {
-          set(text) { tt.innerHTML = md(text); tt.scrollTop = tt.scrollHeight; lab.textContent = `${log ? "Planner's log" : 'Thinking'} · ${secs()} s`; scrollLog(); },
-          close() { if (th.open) { th.open = false; lab.textContent = log ? "Planner's log" : `Thought for ${secs()} s`; } },
+          set(text) { tt.innerHTML = md(text); tt.scrollTop = tt.scrollHeight; lab.textContent = `${log ? "Planner's log" : 'Thinking'} · ${secs()} s`; if (drv) lab.append(drv); scrollLog(); },
+          close() { if (drv) drv.remove(); if (th.open) { th.open = false; lab.textContent = log ? "Planner's log" : `Thought for ${secs()} s`; } },
         };
       },
       step(el) { flow.append(el); scrollLog(); },
@@ -3546,6 +3551,7 @@
     const has = S.versions.length > 0;
     const s8 = CFG.askDirect && S.session !== 'S7';   // the later sessions of the two courses that have them: Ask directly
     $('toolbar').hidden = !has;
+    if (CFG.eggs) Eggs.tools(has);
     $('ask3Btn').hidden = !s8 || !S.route || S.route.type === 'replay';
     $('countryChip').hidden = !countryUsed();
     const noWall = recordedNow();   // Geneva, recorded: the wall is the server's; the button stays, switched off, with the reason
@@ -4117,6 +4123,7 @@
     $('footWho').innerHTML = `Made by ${link(a.url, `<b>${esc(a.name)}</b>`)}, ${link(a.place_url, esc(a.place))}`;
     $('advBtn').hidden = !CFG.advanced;
     $('cheatBtn').hidden = !CFG.cheatsheet;
+    Eggs.boot();
     $('wallBtn').classList.toggle('adv', !CFG.wallWithoutAdvanced);   // with no Advanced the wall is for everyone
     renderTheme();
   }
@@ -4192,6 +4199,184 @@
     localSet('ws:theme', t);
     renderTheme();
   }
+
+  /* ---------- Geneva's quiet extras ---------- */
+
+  // Five small things for the workshop at ITU (course flag `eggs`), all off until the footer's "Geneva" switch is on: the Jet d'Eau
+  // on the progress bar, a Geneva drive while the model works, "View as 1991" for the app, a peacock at 7 of 7 and GENEVA in Morse.
+  // Inline SVG and CSS only; nothing reaches an app, the kit, the wall or the activity records. The switch is in localStorage
+  // (ws:geneva); the CSS shows the extras while <html data-geneva="on">. Each opens the same small bubble with one fact and its source.
+  const FACTS = {
+    jet: { text: "Geneva's Jet d'Eau throws 500 litres of water a second 140 metres into the air, at 200 km/h.",
+      links: [["SIG, Jet d'Eau", 'https://ww2.sig-ge.ch/en/node/94']] },
+    drive: { text: 'A Geneva drive turns steady rotation into single steps; film projectors used it to move the film one frame at a time. The name comes from mechanical watches, popularised in Geneva.',
+      links: [['Wikipedia, Geneva drive', 'https://en.wikipedia.org/wiki/Geneva_drive']] },
+    web: { text: 'The World Wide Web was invented at CERN, near Geneva. The first website, info.cern.ch, had no styles at all: only headings, text and links. This is your app the same way.',
+      links: [['CERN, A short history of the Web', 'https://home.cern/science/computing/the-birth-of-the-web/short-history-web/'], ['The first web page', 'https://info.cern.ch/hypertext/WWW/TheProject.html']] },
+    peacock: { text: "Peacocks roam freely in the Ariana Park around the Palais des Nations, home of the United Nations in Geneva. The park's gardeners feed and care for them.",
+      links: [['UN Geneva, Ariana Park', 'https://www.ungeneva.org/en/about/palais-des-nations/ariana-park']] },
+    morse: { text: 'GENEVA in Morse code. ITU, where you are today, was founded on 17 May 1865 to agree common rules for the telegraph.',
+      links: [['ITU, Born in 1865', 'https://www.itu.int/en/history/Pages/ITUBorn1865.aspx']] },
+  };
+  const EGG_LABEL = { jet: "Jet d'Eau", drive: 'Geneva drive', web: 'The first web page', peacock: 'Peacock in the Ariana Park', morse: 'GENEVA in Morse code' };
+
+  // the bubble: the route badge's popover (.route-pop), with a sentence and its source
+  const FactPop = {
+    el: null, by: null,
+    close(refocus) {
+      if (!this.el) return;
+      this.el.remove();
+      this.by.setAttribute('aria-expanded', 'false');
+      if (refocus && this.by.isConnected) this.by.focus();
+      this.el = this.by = null;
+    },
+    open(btn, key) {
+      const again = this.by === btn;
+      this.close();
+      if (again) return;
+      const f = FACTS[key], d = this.el = document.createElement('div');
+      this.by = btn;
+      d.className = 'route-pop fact-pop';
+      d.setAttribute('role', 'dialog');
+      d.setAttribute('aria-label', EGG_LABEL[key]);
+      d.tabIndex = -1;
+      d.innerHTML = `<p>${esc(f.text)}</p><p class="src">${f.links.length > 1 ? 'Sources' : 'Source'}: ` +
+        f.links.map(([t, u]) => `<a href="${u}" target="_blank" rel="noopener">${esc(t)}</a>`).join(' · ') + '</p>';
+      btn.setAttribute('aria-expanded', 'true');
+      document.body.append(d);
+      const r = btn.getBoundingClientRect(), w = d.offsetWidth, h = d.offsetHeight;
+      d.style.left = Math.max(8, Math.min(innerWidth - w - 8, Math.round(r.left + r.width / 2 - w / 2))) + 'px';
+      d.style.top = Math.max(8, r.bottom + 8 + h > innerHeight - 8 ? Math.round(r.top - h - 8) : Math.round(r.bottom + 8)) + 'px';
+      d.focus();
+    },
+    onClick(e) {
+      const b = e.target.closest('[data-egg]');
+      if (b) { e.preventDefault(); return this.open(b, b.dataset.egg); }
+      if (this.el && !this.el.contains(e.target)) this.close();
+    },
+  };
+
+  // the fountain: a jet rising from a basin; --jet (0 to 1) is the steps done out of seven
+  // at 7 of 7 the plume bends to one side, as the wind blows it (and never reads as a cross)
+  const JET_SVG = '<svg viewBox="0 0 20 24" width="20" height="24" aria-hidden="true" focusable="false"><path class="jet-line" d="M9 19V3.5"/>' +
+    '<g class="jet-spray">' + [[10.9, 2.5, 1], [12.9, 2.6, .95], [14.6, 3.6, .9], [15.8, 5.4, .8], [16.6, 7.6, .7], [17.1, 10, .6], [17.4, 12.4, .5]]
+    .map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('') + '</g><path class="jet-basin" d="M2 20.5h16M5 23h10"/></svg>';
+  // the Geneva drive: a driver disc with a pin turns steadily; the six-slot wheel moves 60 degrees each time the pin passes
+  const DRIVE_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><g class="drv-wheel"><circle cx="14" cy="9" r="7.5"/><circle cx="14" cy="9" r="1" class="dot"/>' +
+    '<path d="M14 1.5v3M14 16.5v-3M7.5 5.25l2.6 1.5M20.5 5.25l-2.6 1.5M7.5 12.75l2.6-1.5M20.5 12.75l-2.6-1.5"/></g>' +
+    '<g class="drv-driver"><circle cx="7" cy="17" r="4.5"/><circle cx="7" cy="13.5" r="1.1" class="dot"/></g></svg>';
+  // a side view, facing right; the tail is five feathers from one point, closed (--c) or fanned (--o)
+  const PEACOCK_SVG = '<svg viewBox="0 0 44 28" width="41" height="26" aria-hidden="true" focusable="false"><g transform="translate(20 18)">' +
+    [[0, 15], [3, 40], [6, 65], [9, 90], [12, 115]].map(([c, o]) => `<g class="pk-f" style="--c:${c}deg;--o:${o}deg"><ellipse cx="-9" cy="0" rx="9" ry="2.4"/><circle cx="-14" cy="0" r="1.3" class="eye"/></g>`).join('') +
+    '</g><g class="pk-body"><ellipse cx="26" cy="18" rx="7" ry="4.5"/><path d="M31 15 35 7" class="neck"/><circle cx="36" cy="6" r="2.3"/>' +
+    '<path d="M36 3.7v-2M37.6 4.2l1-1.8M34.6 4.2l-1-1.8M38.2 6l3 1" class="fine"/><path d="M24 22l-1 5M28 22l1 5" class="fine"/></g></svg>';
+  const WALK_MS = 3200;
+
+  const Eggs = {
+    v1991: null,   // the number of the version viewed as 1991 (a view only: the saved versions are never touched)
+    walking: false,
+    on: () => !!CFG.eggs && document.documentElement.dataset.geneva === 'on',
+    mk(tag, cls, html, attrs) {
+      const el = document.createElement(tag);
+      el.className = cls;
+      el.innerHTML = html;
+      Object.entries(attrs || {}).forEach(([k, v]) => el.setAttribute(k, v));
+      return el;
+    },
+    egg: (key, cls, html, extra) => Eggs.mk('button', 'egg ' + cls, html, Object.assign({ type: 'button', 'data-egg': key, 'aria-haspopup': 'dialog', 'aria-expanded': 'false' }, extra)),
+    // once per page, from the footer's render: the switch and the extras that live in the page
+    boot() {
+      const sw = $('genevaBtn');
+      sw.hidden = !CFG.eggs;
+      if (!CFG.eggs || this.booted) return;
+      this.booted = true;
+      sw.after(this.egg('morse', 'morse', '−−· · −· · ···− ·−', { 'aria-label': 'GENEVA in Morse code' }));
+      $('progress').after(this.egg('jet', 'jetbtn', JET_SVG, { 'aria-label': "Jet d'Eau: 0 of 7 steps", id: 'jetBtn' }));
+      $('footWho').before(this.egg('peacock', 'peacock-btn', PEACOCK_SVG.replace('width="41" height="26"', 'width="26" height="17"'), { 'aria-label': 'Peacock in the Ariana Park', id: 'peacockBtn', hidden: '' }));
+      const b = this.mk('button', 'tool egg', '1991', { type: 'button', id: 'v1991Btn', 'aria-pressed': 'false', hidden: '', title: 'See this app as the first web pages looked: no styles, only structure' });
+      b.onclick = () => this.toggle1991();
+      $('filesBtn').before(b);
+      const n = this.mk('div', 'v1991-note', 'Viewing as 1991: no styles, only structure <button type="button" class="linkish" data-egg="web">The first web page</button>', { id: 'v1991Note', hidden: '' });
+      $('toolbar').append(n);
+      this.apply(localGet('ws:geneva') === 'on');
+    },
+    toggle() { const on = !this.on(); localSet('ws:geneva', on ? 'on' : 'off'); this.apply(on); },
+    // like the theme toggle: the label, aria-pressed, and the attribute the stylesheet looks at
+    apply(on) {
+      if (on) document.documentElement.dataset.geneva = 'on'; else delete document.documentElement.dataset.geneva;
+      $('genevaBtn').textContent = 'Geneva: ' + (on ? 'on' : 'off');
+      $('genevaBtn').setAttribute('aria-pressed', String(on));
+      if (!on) { FactPop.close(); this.off1991(true); this.stopWalk(); }
+      this.peacockShow();
+    },
+    jet(count) {
+      const j = $('jetBtn');
+      if (!j) return;
+      j.style.setProperty('--jet', (count / 7).toFixed(3));
+      j.setAttribute('aria-label', `Jet d'Eau: ${count} of 7 steps`);
+      j.classList.toggle('full', count === 7);
+    },
+    drive: () => Eggs.egg('drive', 'drive', DRIVE_SVG, { 'aria-label': 'Geneva drive: a wheel that turns in steps' }),
+    /* the peacock: once, at 7 of 7, after the wall question; afterwards it stays at the left of the footer */
+    peacockShow() { const b = $('peacockBtn'); if (b) b.hidden = !localGet('ws:peacock') || this.walking; },
+    sevenOfSeven(wallAsks) {
+      if (localGet('ws:peacock')) return;
+      localSet('ws:peacock', '1');
+      if (!this.on()) return this.peacockShow();   // the switch comes later: just the still peacock
+      this.walking = true;
+      this.peacockShow();
+      const go = () => this.walk();
+      if (wallAsks) $('wallDialog').addEventListener('close', go, { once: true }); else go();   // never behind the modal
+    },
+    walk() {
+      if (!this.walking) return;
+      if (!this.on()) { this.walking = false; return this.peacockShow(); }
+      const w = this.walker = this.mk('div', 'pk-walk', PEACOCK_SVG, { 'aria-hidden': 'true' });
+      $('foot').append(w);
+      this.walkTimer = setTimeout(() => this.stopWalk(), WALK_MS);   // also where reduced motion keeps it still
+    },
+    stopWalk() {
+      clearTimeout(this.walkTimer);
+      if (this.walker) { this.walker.remove(); this.walker = null; }
+      this.walking = false;
+      this.peacockShow();
+    },
+    /* "View as 1991": the app's own HTML without its <style>, <link rel=stylesheet> and style="" */
+    async docFor(v) {
+      if (this.v1991 !== v.n) { this.off1991(false); return fullDoc(v); }
+      const d = new DOMParser().parseFromString(v.html, 'text/html');
+      d.querySelectorAll('style, link[rel~="stylesheet" i]').forEach((n) => n.remove());
+      d.querySelectorAll('[style]').forEach((n) => n.removeAttribute('style'));
+      return fullDoc(Object.assign({}, v, { html: '<!doctype html>\n' + d.documentElement.outerHTML }));
+    },
+    async toggle1991() {
+      const v = currentVersion();
+      if (!v) return;
+      this.v1991 = this.v1991 ? null : v.n;
+      this.sync1991();
+      await Preview.show(await this.docFor(v));
+    },
+    off1991(rerender) {
+      if (!this.v1991) return;
+      this.v1991 = null;
+      this.sync1991();
+      const v = currentVersion();
+      if (rerender && v) fullDoc(v).then((doc) => Preview.show(doc));
+    },
+    sync1991() {
+      const b = $('v1991Btn');
+      if (!b) return;
+      b.setAttribute('aria-pressed', String(!!this.v1991));
+      $('v1991Note').hidden = !this.v1991;
+    },
+    // the toolbar shows with the first app: so does "1991"; with no app on the stage it ends
+    tools(has) {
+      const b = $('v1991Btn');
+      if (!b) return;
+      b.hidden = !has;
+      if (!has) this.off1991(false);
+    },
+  };
 
   /* ---------- the divider between the conversation and the app ---------- */
 
@@ -4272,6 +4457,7 @@
     },
     // all seven, the first time: "Show it to the room?" (only where there is a wall to send to)
     allDone() {
+      if (CFG.eggs && S.progress.done.every(Boolean)) Eggs.sevenOfSeven(CFG.signWall && !S.wallAsked && !!S.route && S.route.type === 'server' && !!currentVersion());
       if (!CFG.signWall || S.wallAsked || !S.progress.done.every(Boolean) || !S.route || S.route.type !== 'server' || !currentVersion()) return;
       S.wallAsked = true;
       save();
@@ -4287,6 +4473,7 @@
       const bar = $('progress');
       bar.setAttribute('aria-valuenow', String(count));
       bar.setAttribute('aria-valuetext', `${count} of 7 steps done`);
+      if (CFG.eggs) Eggs.jet(count);
     },
   };
 
@@ -4414,6 +4601,9 @@
   $('cheatBtn').onclick = openCheatsheet;
   $('feedbackBtn').onclick = openFeedback;
   $('themeBtn').onclick = toggleTheme;
+  $('genevaBtn').onclick = () => Eggs.toggle();
+  document.addEventListener('click', (e) => FactPop.onClick(e));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && FactPop.el) FactPop.close(true); });
   $('advBtn').onclick = () => setAdvanced(!S.advanced, true);
   $('stopBtn').onclick = () => S.ctrl && S.ctrl.abort();
   $('countrySelect').onchange = (e) => changeCountry(e.target.value);

@@ -337,6 +337,236 @@ def test_geneva_starts_with_the_data(base_url, browser):
     ctx.close()
 
 
+# Geneva's quiet extras (course flag eggs, the footer's switch): see "Geneva's quiet extras" in studio.js
+EGG_SEL = ".egg, .pk-walk, .v1991-note"
+
+
+def eggs_page(browser, base_url, on=False, url=G1, reduced=False, width=1440):
+    """A Geneva page whose browser already has the switch on (or off, the default); returns (context, page)."""
+    ctx = browser.new_context(viewport={"width": width, "height": 900})
+    if on:
+        ctx.add_init_script("try { if (!localStorage.getItem('ws:geneva')) localStorage.setItem('ws:geneva', 'on'); } catch (e) {}")
+    page = ctx.new_page()
+    if reduced:
+        page.emulate_media(reduced_motion="reduce")
+    page.goto(base_url + url)
+    page.wait_for_function("() => document.getElementById('footWho').textContent.length > 0", timeout=20000)
+    return ctx, page
+
+
+def shown_eggs(page):
+    return page.eval_on_selector_all(EGG_SEL, "els => els.filter(e => e.getClientRects().length).map(e => e.id || e.className)")
+
+
+def recorded_seven(page):
+    """Recorded mode, the whole session: all seven steps done (no wall question: recorded mode has no wall)."""
+    recorded_first_app(page)
+    page.wait_for_selector(".test-card")
+    for i in range(3):
+        page.locator(".test-card .tline input").nth(i).check()
+    page.locator("#suggest button", has_text="Suggest three improvements").click()
+    page.wait_for_selector(".msg.ideas .idea")
+    page.locator(".msg.ideas .idea").nth(1).locator("[data-a=build]").click()
+    built(page, 2)
+    page.wait_for_function("() => document.querySelectorAll('#progressSteps li.done').length === 7", timeout=30000)
+
+
+def test_the_geneva_switch_is_for_geneva_only(base_url, browser):
+    """Full and Venice show no switch and carry none of the extras; in Geneva the switch is there, off, and nothing shows."""
+    for course in ("full", "venice"):
+        ctx, page = eggs_page(browser, base_url, url=f"?course={course}&via=replay&reset=1")
+        assert not page.is_visible("#genevaBtn") and page.locator(".egg, .pk-walk, .v1991-note").count() == 0
+        assert page.evaluate("document.documentElement.dataset.geneva") is None
+        ctx.close()
+    ctx, page = eggs_page(browser, base_url)
+    assert page.is_visible("#genevaBtn") and page.inner_text("#genevaBtn") == "Geneva: off" and page.get_attribute("#genevaBtn", "aria-pressed") == "false"
+    assert page.evaluate("document.documentElement.dataset.geneva") is None and shown_eggs(page) == []
+    ctx.close()
+
+
+def test_geneva_switch_shows_the_jet_and_the_morse_and_is_remembered(base_url, browser, fake_api):
+    """On: the Jet d'Eau stands at the end of the bar with --jet at the steps done out of seven, and the Morse button opens a bubble
+    with one sentence and the ITU source (Escape or a click elsewhere closes it). The switch survives a reload; off hides at once."""
+    api, _ = fake_api
+    ctx, page = eggs_page(browser, base_url)
+    page.click("#genevaBtn")
+    assert page.inner_text("#genevaBtn") == "Geneva: on" and page.get_attribute("#genevaBtn", "aria-pressed") == "true"
+    assert page.evaluate("document.documentElement.dataset.geneva") == "on"
+    assert page.is_visible("#jetBtn") and page.is_visible(".egg.morse") and page.evaluate("localStorage.getItem('ws:geneva')") == "on"
+    jet = lambda: float(page.eval_on_selector("#jetBtn", "e => getComputedStyle(e).getPropertyValue('--jet')"))
+    assert jet() == 0 and page.get_attribute("#jetBtn", "aria-label") == "Jet d'Eau: 0 of 7 steps"
+    assert page.inner_text(".egg.morse") == "−−· · −· · ···− ·−" and page.get_attribute(".egg.morse", "aria-label") == "GENEVA in Morse code"
+    page.click(".egg.morse")
+    pop = page.locator(".fact-pop")
+    assert "ITU, where you are today, was founded on 17 May 1865" in pop.inner_text()
+    link = pop.locator("a")
+    assert link.get_attribute("href") == "https://www.itu.int/en/history/Pages/ITUBorn1865.aspx" and link.get_attribute("target") == "_blank"
+    assert link.get_attribute("rel") == "noopener" and link.inner_text() == "ITU, Born in 1865"
+    page.keyboard.press("Escape")
+    assert page.locator(".fact-pop").count() == 0
+    page.click(".egg.morse")
+    page.click("#log")
+    assert page.locator(".fact-pop").count() == 0
+    page.click("#jetBtn")
+    assert "500 litres of water a second 140 metres into the air" in page.inner_text(".fact-pop") and page.locator(".fact-pop a").get_attribute("href") == "https://ww2.sig-ge.ch/en/node/94"
+    page.reload()
+    page.wait_for_function("() => document.getElementById('footWho').textContent.length > 0", timeout=20000)
+    assert page.inner_text("#genevaBtn") == "Geneva: on" and page.is_visible("#jetBtn")
+    page.click(".egg.morse")
+    page.click("#genevaBtn")                                  # off: the bubble and every extra go at once
+    assert page.inner_text("#genevaBtn") == "Geneva: off" and shown_eggs(page) == [] and page.locator(".fact-pop").count() == 0
+    assert page.evaluate("document.documentElement.dataset.geneva") is None
+    page.click("#genevaBtn")
+    assert page.is_visible("#jetBtn")
+    ctx.close()
+    # the jet follows the steps done
+    ctx, page = eggs_page(browser, base_url, on=True, url=f"?api={api}&course=geneva&planpace=1&reset=1#s=TEST22")
+    g1_started(page)
+    g1_plan(page)
+    build_plan(page)
+    built(page, 1)
+    page.wait_for_function("() => document.querySelectorAll('#progressSteps li.done').length === 5", timeout=20000)
+    assert abs(float(page.eval_on_selector("#jetBtn", "e => getComputedStyle(e).getPropertyValue('--jet')")) - 5 / 7) < 0.01
+    assert page.get_attribute("#jetBtn", "aria-label") == "Jet d'Eau: 5 of 7 steps" and "full" not in page.get_attribute("#jetBtn", "class")
+    ctx.close()
+
+
+def test_geneva_drive_turns_while_the_model_works(base_url, browser):
+    """While the planner works a small Geneva drive stands next to its label; a click opens its fact; it goes when the work ends."""
+    ctx, page = eggs_page(browser, base_url, on=True)
+    g1_started(page)
+    page.fill("#briefTopic", "freedom of expression online")
+    page.click("#sendBtn")
+    page.wait_for_selector(".msg .thought .egg.drive", timeout=20000)
+    page.locator(".msg .thought .egg.drive").first.click()
+    assert page.locator(".fact-pop a").get_attribute("href") == "https://en.wikipedia.org/wiki/Geneva_drive"
+    assert "turns steady rotation into single steps" in page.inner_text(".fact-pop")
+    page.keyboard.press("Escape")
+    plan_through(page)
+    page.wait_for_function("() => !document.querySelector('.msg .thought .egg.drive')", timeout=20000)
+    ctx.close()
+
+
+def test_view_as_1991_is_a_view_only(base_url, browser):
+    """"1991" shows the app with no <style>, no stylesheet link and no style="" and says so; off, the original is back. The
+    versions, the progress and the saved work are the same afterwards; a new version, or the switch, ends it."""
+    from playwright.sync_api import expect
+    ctx, page = eggs_page(browser, base_url, on=True)
+    assert not page.is_visible("#v1991Btn")                   # no app on the stage yet
+    recorded_first_app(page)
+    assert page.is_visible("#v1991Btn") and not page.is_visible(".v1991-note")
+    frame = app_frame(page)
+    expect(frame.locator("style")).not_to_have_count(0)
+    before = (saved_versions(page), steps_done(page), page.locator("#versions [data-v]").count(), page.inner_text("#versions"))
+    page.click("#v1991Btn")
+    expect(frame.locator("style")).to_have_count(0)
+    page.wait_for_selector(".viewport > iframe:not(.back)")
+    expect(app_frame(page).locator("style, link[rel=stylesheet], [style]")).to_have_count(0)
+    expect(app_frame(page).locator("body *").first).to_be_attached()
+    assert page.get_attribute("#v1991Btn", "aria-pressed") == "true"
+    assert page.inner_text(".v1991-note").startswith("Viewing as 1991: no styles, only structure")
+    page.click(".v1991-note [data-egg=web]")
+    assert "The first website, info.cern.ch, had no styles at all" in page.inner_text(".fact-pop")
+    assert [a.get_attribute("href") for a in page.locator(".fact-pop a").all()] == [
+        "https://home.cern/science/computing/the-birth-of-the-web/short-history-web/", "https://info.cern.ch/hypertext/WWW/TheProject.html"]
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(500)
+    assert (saved_versions(page), steps_done(page), page.locator("#versions [data-v]").count(), page.inner_text("#versions")) == before
+    page.click("#v1991Btn")
+    expect(app_frame(page).locator("style")).not_to_have_count(0)
+    assert not page.is_visible(".v1991-note") and page.get_attribute("#v1991Btn", "aria-pressed") == "false"
+    # the switch ends the view too
+    page.click("#v1991Btn")
+    expect(app_frame(page).locator("style")).to_have_count(0)
+    page.click("#genevaBtn")
+    expect(app_frame(page).locator("style")).not_to_have_count(0)
+    assert not page.is_visible("#v1991Btn") and saved_versions(page) == before[0]
+    ctx.close()
+
+
+def test_the_peacock_walks_once_at_seven_of_seven_when_the_switch_is_on(base_url, browser):
+    """At 7 of 7 with the switch on a peacock walks across the footer once, then stays at its left and opens its fact. With the
+    switch off nothing walks; switched on later it just stands there."""
+    ctx, page = eggs_page(browser, base_url, on=True)
+    assert not page.is_visible("#peacockBtn")
+    recorded_seven(page)
+    page.wait_for_selector(".pk-walk", state="attached")
+    assert page.locator(".pk-walk").count() == 1 and not page.is_visible("#peacockBtn")
+    page.wait_for_selector(".pk-walk", state="detached", timeout=8000)
+    assert page.is_visible("#peacockBtn") and page.evaluate("localStorage.getItem('ws:peacock')") == "1"
+    assert page.evaluate("document.getElementById('peacockBtn').nextElementSibling.id") == "footWho"
+    page.click("#peacockBtn")
+    assert page.locator(".fact-pop a").get_attribute("href") == "https://www.ungeneva.org/en/about/palais-des-nations/ariana-park"
+    assert "Peacocks roam freely in the Ariana Park" in page.inner_text(".fact-pop")
+    page.keyboard.press("Escape")
+    ctx.close()
+    ctx, page = eggs_page(browser, base_url)                  # switch off at 7 of 7
+    recorded_seven(page)
+    page.wait_for_timeout(800)
+    assert page.locator(".pk-walk").count() == 0 and not page.is_visible("#peacockBtn")
+    page.click("#genevaBtn")
+    assert page.is_visible("#peacockBtn") and page.locator(".pk-walk").count() == 0
+    ctx.close()
+
+
+def test_the_peacock_waits_for_the_wall_question(base_url, browser, fake_api):
+    """With a wall to send to, "Show it to the room?" opens first; the peacock walks after it is closed."""
+    api, _ = fake_api
+    ctx, page = eggs_page(browser, base_url, on=True, url=f"?api={api}&course=geneva&planpace=1&reset=1#s=TEST22")
+    g1_started(page)
+    g1_plan(page)
+    build_plan(page)
+    built(page, 1)
+    page.wait_for_selector(".test-card")
+    for i in range(3):
+        page.locator(".test-card .tline input").nth(i).check()
+    page.fill("#input", "Add a hint about speed.")
+    page.click("#sendBtn")
+    built(page, 2)
+    page.wait_for_selector("#wallDialog[open]")
+    page.wait_for_timeout(600)
+    assert page.locator(".pk-walk").count() == 0
+    page.click("#wallDialog button:has-text('Not now')")
+    page.wait_for_selector(".pk-walk", state="attached", timeout=3000)
+    ctx.close()
+
+
+def test_the_extras_stand_still_for_reduced_motion(base_url, browser):
+    """With prefers-reduced-motion: reduce no extra has a running animation or transition: the jet shows its height, the drive
+    stands still, the peacock stands in the footer for a few seconds instead of walking."""
+    running = """() => document.getAnimations().filter(a => a.playState === 'running' && a.effect && a.effect.target &&
+        a.effect.target.closest && a.effect.target.closest('.egg, .pk-walk, .progress-wrap')).map(a => a.animationName || a.transitionProperty)"""
+    ctx, page = eggs_page(browser, base_url, on=True, reduced=True)
+    g1_started(page)
+    page.fill("#briefTopic", "freedom of expression online")
+    page.click("#sendBtn")
+    page.wait_for_selector(".msg .thought .egg.drive", timeout=20000)
+    assert page.evaluate(running) == []
+    plan_through(page)
+    ctx.close()
+    ctx, page = eggs_page(browser, base_url, on=True, reduced=True)
+    recorded_seven(page)
+    assert "full" in page.get_attribute("#jetBtn", "class")
+    page.wait_for_selector(".pk-walk", state="attached")
+    assert page.evaluate(running) == []
+    box = page.locator(".pk-walk").bounding_box()
+    page.wait_for_timeout(500)
+    assert page.locator(".pk-walk").bounding_box() == box     # it stands where it is
+    page.wait_for_selector(".pk-walk", state="detached", timeout=8000)
+    assert page.is_visible("#peacockBtn") and page.evaluate(running) == []
+    ctx.close()
+
+
+def test_recorded_mode_works_with_the_extras_on(base_url, browser):
+    """The backup plan is untouched: with the switch on, the recorded session still goes through all seven steps with no page error."""
+    ctx, page = eggs_page(browser, base_url, on=True)
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    recorded_seven(page)
+    assert page.inner_text(BADGE) == "Recorded answers" and not errors, errors
+    ctx.close()
+
+
 def test_geneva_file_drawer_shows_the_record_two_ways(base_url, browser):
     """"What is in the file" shows the first record as a spreadsheet row and as JSON, and counts the whole file in each form
     from the data in the browser: the JSON is the larger, and both hold one row or record per paragraph."""
