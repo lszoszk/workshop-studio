@@ -588,26 +588,31 @@ def test_recorded_mode_works_with_the_extras_on(base_url, browser):
     ctx.close()
 
 
-def test_geneva_file_drawer_shows_the_record_two_ways(base_url, browser):
-    """"What is in the file" shows the first record as a spreadsheet row and as JSON, and counts the whole file in each form
-    from the data in the browser: the JSON is the larger, and both hold one row or record per paragraph."""
+def test_geneva_file_drawer_switches_json_and_excel(base_url, browser):
+    """"What is in the file" shows the first three records as JSON, as the file stores them; a switch shows the same three as
+    a spreadsheet, every field a column, and back. No file sizes."""
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
     page.goto(base_url + G1)
     page.wait_for_selector("#dataLook", timeout=20000)
     page.click("#dataLook")
-    page.wait_for_selector("#drawerBody .sheet", timeout=20000)
+    page.wait_for_selector("#drawerBody .inside-seg", timeout=20000)
     gc = json.loads((SITE / "data/gc.json").read_text())["records"]
-    assert page.locator("#drawerBody h4").first.inner_text() == "The same record, two ways"
-    assert page.locator("#drawerBody .sheet thead th").all_inner_texts() == ["", "symbol", "paragraph", "committee", "year", "text"]
-    row = page.locator("#drawerBody .sheet tbody td").all_inner_texts()
-    assert row[:4] == [gc[0]["symbol"], str(gc[0]["paragraph"]), gc[0]["committee"], str(gc[0]["year"])] and row[4].startswith(gc[0]["text"][:40])
-    assert page.locator("#drawerBody pre.json-view").count() == 2 and '"symbol"' in page.locator("#drawerBody pre.json-view").nth(1).inner_text()
-    cells = page.locator("#drawerBody .compare tbody td").all_inner_texts()
-    mb = [float(c.split()[0]) for c in (cells[0], cells[1])]
-    assert all(re.fullmatch(r"\d+\.\d MB", c) for c in (cells[0], cells[1])) and mb[1] > mb[0] > 0, cells
-    assert cells[2:] == [f"{len(gc):,} rows", f"{len(gc):,} records"]
-    assert "every value carries its field name" in page.inner_text("#drawerBody")
+    tab = lambda v: page.get_attribute(f"#drawerBody .inside-seg [data-v={v}]", "aria-selected")
+    assert page.locator("#drawerBody .inside-seg button").all_text_contents() == ["JSON", "Excel"] and tab("json") == "true"
+    assert page.is_visible("#drawerBody pre.json-view") and not page.is_visible("#drawerBody .sheet")
+    assert page.locator("#drawerBody pre.json-view").inner_text().count('"symbol"') == 3
+    assert " MB" not in page.inner_text("#drawerBody") and page.locator("#drawerBody .compare").count() == 0
+    page.click("#drawerBody .inside-seg [data-v=sheet]")
+    assert tab("sheet") == "true" and tab("json") == "false"
+    assert page.is_visible("#drawerBody .sheet") and not page.is_visible("#drawerBody pre.json-view")
+    assert page.locator("#drawerBody .sheet thead th").all_inner_texts() == [""] + list(gc[0])
+    assert page.locator("#drawerBody .sheet tbody tr").count() == 3
+    row = dict(zip(gc[0], page.locator("#drawerBody .sheet tbody tr").first.locator("td").all_inner_texts()))
+    assert [row["symbol"], row["paragraph"], row["committee"], row["year"]] == [gc[0]["symbol"], str(gc[0]["paragraph"]), gc[0]["committee"], str(gc[0]["year"])]
+    assert row["text"].startswith(gc[0]["text"][:30]) and row["text"].endswith("…")   # clipped, as Excel shows a long cell
+    page.click("#drawerBody .inside-seg [data-v=json]")
+    assert page.is_visible("#drawerBody pre.json-view") and not page.is_visible("#drawerBody .sheet")
     ctx.close()
 
 

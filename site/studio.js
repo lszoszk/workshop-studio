@@ -4054,21 +4054,19 @@
 
   // "The same record, two ways": the first record as a spreadsheet row and as JSON, and the whole file's size in each,
   // counted here from the file in this browser (the CSV is the one "Download as CSV" gives)
-  function twoWays(key, d) {
-    const r = d.records, rec = r[0], cols = ['symbol', 'paragraph', 'committee', 'year', 'text'];
-    const cut = (t) => { t = String(t == null ? '' : t); return t.length > 90 ? t.slice(0, 90).trimEnd() + '…' : t; };
-    const bytes = (t) => new Blob([t]).size, mb = (n) => (n / 1e6).toFixed(1) + ' MB';
-    const csv = bytes(csvOf(key, d)), json = bytes(JSON.stringify(d));
-    return '<h4>The same record, two ways</h4>' +
-      '<p>As a spreadsheet, the first record is one row under column headings:</p>' +
-      `<div class="sheet-wrap"><table class="sheet"><thead><tr><th></th>${cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead>` +
-      `<tbody><tr><th>1</th>${cols.map((c) => `<td>${esc(cut(rec[c]))}</td>`).join('')}</tr></tbody></table></div>` +
-      '<p>As JSON, the same record carries the name of every field:</p>' +
-      `<pre class="json-view">${jsonHtml(rec)}</pre>` +
-      `<table class="compare"><thead><tr><th></th><th>Spreadsheet (CSV)</th><th>JSON</th></tr></thead><tbody>` +
-      `<tr><th>Whole file</th><td>${mb(csv)}</td><td>${mb(json)}</td></tr>` +
-      `<tr><th>Holds</th><td>${fmt(r.length)} rows</td><td>${fmt(r.length)} records</td></tr></tbody></table>` +
-      '<p>The same content. A spreadsheet is for people: sort, filter, read. JSON is for programs: every value carries its field name, which is why the file is larger.</p>';
+  // the first records one way at a time, behind a switch: JSON, as the file stores them, or a spreadsheet, as Excel shows them
+  function insideViews(recs) {
+    const cols = Object.keys(recs[0]);
+    const cut = (t) => { t = Array.isArray(t) ? t.join('; ') : String(t == null ? '' : t); return t.length > 36 ? t.slice(0, 36).trimEnd() + '…' : t; };   // clipped, as Excel shows a long cell
+    return '<div class="seg inside-seg" role="tablist" aria-label="Show the records as">' +
+      '<button type="button" role="tab" data-v="json" aria-selected="true">JSON</button>' +
+      '<button type="button" role="tab" data-v="sheet" aria-selected="false">Excel</button></div>' +
+      '<div class="inside-view" data-v="json"><p>As the file stores them: one record per paragraph, each value with its field name.</p>' +
+      `<pre class="json-view">${jsonHtml(recs)}</pre></div>` +
+      '<div class="inside-view" data-v="sheet" hidden><p>As a spreadsheet: one row per paragraph, the field names once, as column headings.</p>' +
+      `<div class="sheet-wrap"><table class="sheet"><thead><tr><th></th>${cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>` +
+      recs.map((rec, i) => `<tr><th>${i + 1}</th>${cols.map((c) => `<td>${esc(cut(rec[c]))}</td>`).join('')}</tr>`).join('') +
+      '</tbody></table></div></div>';
   }
 
   async function openInside(key) {
@@ -4078,13 +4076,17 @@
     $('drawer').classList.add('inside');
     $('drawerBody').innerHTML =
       `<p><b>${esc(facts.count)} paragraphs</b> from ${esc(facts.documents)} documents of ${esc(facts.committees)} committees, ${esc(facts.years)}.</p>` +
-      `<p>The first three, as they are stored: one record per paragraph, one field per line. This is the whole file; your app reads all of it here in your browser.</p>` +
-      `<pre class="json-view">${jsonHtml(r.slice(0, 3))}</pre>` +
-      twoWays(key, d) +
+      `<p>The first three paragraphs. This is the whole file; your app reads all of it here in your browser.</p>` +
+      insideViews(r.slice(0, 3)) +
       `<h4>The fields</h4><dl class="fields">${FIELDS[key].map(([n, t]) => `<dt>${esc(n)}</dt><dd>${esc(t)}</dd>`).join('')}</dl>` +
       (f.from ? `<p class="from">Also published as data: ${f.from.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${l.icon ? `<span class="from-icon" aria-hidden="true">${esc(l.icon)}</span>` : ''}${esc(l.label)}</a>`).join(' · ')}</p>` : '') +
       `<div class="row"><button type="button" class="ghost" id="insideCsv">Download as CSV</button></div>`;
     $('insideCsv').onclick = () => downloadCsv(key);
+    const tabs = $('drawerBody').querySelectorAll('.inside-seg button');
+    tabs.forEach((b) => { b.onclick = () => {
+      tabs.forEach((t) => t.setAttribute('aria-selected', String(t === b)));
+      $('drawerBody').querySelectorAll('.inside-view').forEach((v) => { v.hidden = v.dataset.v !== b.dataset.v; });
+    }; });
   }
 
   /* ---------- the app, or the code behind it ---------- */

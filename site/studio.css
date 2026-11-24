@@ -344,15 +344,14 @@ code, kbd, samp, pre { font-family: var(--mono); }
 .drawer.inside .json-view { flex: none; max-height: 34vh; min-height: 8em; }   /* in a column of flex items it would shrink to a line */
 /* "The same record, two ways": a spreadsheet row and the size of the file in each form */
 .sheet-wrap { flex: none; margin: 0 0 12px; overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
-.sheet, .compare { border-collapse: collapse; font-size: 13px; }
+.sheet { border-collapse: collapse; font-size: 13px; }
 .sheet { width: 100%; min-width: 640px; }
-.sheet th, .sheet td, .compare th, .compare td { padding: 6px 10px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
-.sheet thead th, .compare thead th { background: var(--panel); font: 12.5px var(--mono); color: var(--accent); }
-.sheet tbody th, .compare tbody th { background: var(--panel); font-weight: 600; color: var(--muted); }
-.sheet td { min-width: 5em; }
-.sheet td:last-child { min-width: 16em; }
-.compare { flex: none; margin: 0 0 10px; }
-.compare td { font-variant-numeric: tabular-nums; }
+.sheet th, .sheet td { padding: 6px 10px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+.sheet thead th { background: var(--panel); font: 12.5px var(--mono); color: var(--accent); }
+.sheet tbody th { background: var(--panel); font-weight: 600; color: var(--muted); }
+.sheet td { white-space: nowrap; }   /* one line per cell, as in Excel: the table scrolls sideways */
+.inside-seg { margin: 2px 0 10px; }
+.inside-view { flex: none; }
 .fields { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0; font-size: 14px; }
 .fields dt { font: 13px var(--mono); color: var(--accent); }
 .fields dd { margin: 0; color: var(--muted); }
