@@ -1887,6 +1887,33 @@ def test_activity_is_recorded_without_content(base_url, browser, fake_api):
     ctx.close()
 
 
+def test_an_error_of_the_studio_page_is_recorded_without_its_message(base_url, browser, fake_api):
+    """studio_error: the error's name and where it was thrown (file:line), never its message; an error from a file that
+    is not one of the studio's own scripts (an extension) is ignored. The queue is not reachable from outside the page,
+    so the error events are dispatched on window and read where the page sends them."""
+    api, _ = fake_api
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + f"?api={api}&planpace=1#s=TEST22")
+    started(page)
+    n = len(EVENTS)
+    page.evaluate("""() => {
+      const fire = (filename, lineno, error) => window.dispatchEvent(new ErrorEvent('error', { filename, lineno, error, message: error.message }));
+      fire(location.origin + '/studio.js?v=9', 2213, new TypeError('secret words typed by a participant'));
+      fire('chrome-extension://abc/content.js', 5, new RangeError('not ours'));
+    }""")
+    page.goto("about:blank")
+    import time
+    for _ in range(50):
+        if len(EVENTS) > n:
+            break
+        time.sleep(0.1)
+    errs = [e for batch in EVENTS[n:] for e in batch["events"] if e["t"] == "studio_error"]
+    assert [(e["kind"], e["at"]) for e in errs] == [("TypeError", "studio.js:2213")], errs
+    assert "secret" not in json.dumps(EVENTS[n:])
+    ctx.close()
+
+
 def test_the_take_home_kit_works_offline(base_url, browser, tmp_path):
     """About → Download the take-home kit: one HTML file with every workshop request ready for any chatbot, the data
     and the participant's apps. Opened from disk, it runs an app of the participant's, an answer pasted from a
@@ -2999,4 +3026,90 @@ def test_geneva_kit_holds_the_five_recorded_apps(base_url, browser, tmp_path):
     p.frame_locator(".stage iframe").locator("h1").first.wait_for(timeout=20000)
     assert "Verbatim finder" in p.frame_locator(".stage iframe").locator("h1").first.inner_text()
     assert not net, net
+    ctx.close()
+
+
+def answer_again(page, choose):
+    """Answer the question cards of "Change my answers" one by one (option `choose[i]`, 0-based)."""
+    for k in choose:
+        card = page.locator(".msg.ask:not(.answered)")
+        card.wait_for(timeout=20000)
+        card.locator(".ask-opt").nth(k).click()
+
+
+def test_a_done_step_on_the_bar_takes_you_back(base_url, browser):
+    """Recorded mode, after the first app: Data opens the file; Plan read brings back the plan the app was built from, with
+    Change my answers (the answer given before is marked); new answers make the planner's next version, and building it is a
+    new app beside the first one. Prompt brings the prompt card back at the end of the chat with what was sent (a paragraph
+    switched off stays off); Cancel folds it up and gives the box back; after a reload the way back still works."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + G1)
+    g1_started(page)
+    page.locator(".brief-block").nth(3).locator("input[type=checkbox]").uncheck()   # "done" switched off
+    g1_plan(page, "the rights of older persons")
+    build_plan(page)
+    built(page, 1)
+    page.wait_for_function("() => document.querySelectorAll('#progressSteps li.done').length === 5", timeout=20000)
+    assert page.locator("#progressSteps [data-go]").count() == 5 and page.locator("#progressSteps li.current [data-go]").count() == 0
+    # Data
+    page.click("#progressSteps [data-go='1']")
+    page.wait_for_selector("#drawer .json-view", timeout=20000)
+    page.keyboard.press("Escape")
+    # Plan read: the plan comes back, live again
+    page.click("#progressSteps [data-go='3']")
+    page.wait_for_function("() => !document.getElementById('planView').hidden && /v1/.test(document.getElementById('planKicker').textContent)", timeout=20000)
+    assert page.is_visible("#planAnsBtn") and page.is_enabled("#planAnsBtn")
+    assert page.locator(".approve button.primary:not([disabled])").count() == 1
+    page.click("#planAnsBtn")
+    page.wait_for_selector(".msg.ask:not(.answered) .rec.mine", timeout=20000)
+    assert "Words and phrases" in page.locator(".msg.ask:not(.answered) .ask-opt:has(.rec.mine)").inner_text()
+    answer_again(page, (0, 0, 0))                                              # Exact phrase instead of Words and phrases
+    page.wait_for_function("() => /v2 · the planner/.test(document.getElementById('planKicker').textContent)", timeout=20000)
+    assert page.locator(".approve button.primary:not([disabled])").count() == 1
+    build_plan(page)
+    built(page, 2)
+    work = page.evaluate("JSON.parse(localStorage.getItem('ws:work:guest:g1:G1'))")
+    assert [v["parent"] for v in work["versions"]] == [None, None]             # a new app, not a change of the first
+    assert work["versions"][1]["planning"]["answers"]["q1"] == 0 and work["planning"] is None
+    # Prompt: the card again, with what was sent; Cancel
+    page.fill("#input", "half a thought")
+    page.click("#progressSteps [data-go='2']")
+    page.wait_for_selector(".brief-card .brief-again", timeout=20000)
+    assert page.locator("#log > .msg").last.evaluate("e => e.classList.contains('brief-card')")
+    assert page.input_value("#briefTopic") == "the rights of older persons"
+    assert "the rights of older persons" in page.input_value("#input")
+    page.click(".brief-again button")
+    assert page.locator(".brief-again").count() == 0 and page.input_value("#input") == "half a thought"
+    # after a reload: the card is made again from what was kept, the switched-off paragraph still off
+    page.reload()
+    g1_started(page)
+    page.click("#progressSteps [data-go='2']")
+    page.wait_for_selector(".brief-card .brief-again", timeout=20000)
+    assert page.input_value("#briefTopic") == "the rights of older persons"
+    assert page.locator(".brief-block").nth(3).evaluate("e => e.classList.contains('off')")
+    page.fill("#briefTopic", "the right to health")
+    page.click("#sendBtn")
+    plan_through(page)
+    assert "the right to health" in page.inner_text("#planDoc") and page.locator(".brief-again").count() == 0
+    assert not errors, errors
+    ctx.close()
+
+
+def test_a_skipped_step_can_be_undone(base_url, browser):
+    """A skipped step on the bar is a button too: it is no longer skipped, and doing it marks it done (✓, not –)."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    page = ctx.new_page()
+    page.goto(base_url + G1)
+    page.wait_for_selector("#dataNext", timeout=20000)
+    page.click("#progressSteps .pskip")
+    page.wait_for_selector("#progressSteps li.skipped [data-go='1']", timeout=20000)
+    assert page.get_attribute("#progressSteps [data-go='1']", "title").startswith("Skipped")
+    page.click("#progressSteps [data-go='1']")
+    page.wait_for_selector("#drawer .json-view", timeout=20000)
+    first = page.locator("#progressSteps li").first
+    assert "done" in first.get_attribute("class") and "skipped" not in first.get_attribute("class")
+    assert first.locator(".pn").inner_text() == "✓"
     ctx.close()

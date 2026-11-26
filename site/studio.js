@@ -161,6 +161,26 @@
     },
   };
   const track = (t, f) => Track.add(t, f);
+  // Errors of the studio page itself, to debug it after a session (the participant's app runs in an iframe and is
+  // app_error). Only its own scripts count, so an extension's errors are ignored. Name and place only, never the
+  // message: a value must fit the server's EVENT_VALUE (no spaces), and a message may quote the participant's text.
+  // At most 10 a page load, so a loop of errors cannot flood the queue.
+  const OWN_FRAME = /(studio|tour|gate)\.js(?:\?[^:\s)]*)?:(\d+)/;
+  let studioErrors = 0;
+  const studioError = (err, at) => {
+    if (studioErrors >= 10) return;
+    studioErrors++;
+    const kind = err && /^[A-Za-z0-9_]{1,40}$/.test(err.name) ? err.name : 'Error';
+    track('studio_error', at ? { kind, at } : { kind });
+  };
+  addEventListener('error', (e) => {
+    const m = /(?:^|\/)(studio|tour|gate)\.js(?:\?|$)/.exec(e.filename || '');
+    if (m) studioError(e.error, m[1] + '.js:' + (e.lineno | 0));
+  });
+  addEventListener('unhandledrejection', (e) => {
+    const m = OWN_FRAME.exec((e.reason && e.reason.stack) || '');
+    studioError(e.reason, m ? m[1] + '.js:' + m[2] : '');
+  });
   if (params.has('notrack')) localSet('ws:notrack', '1');
   setInterval(() => Track.flush(), 20000);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') Track.flush(true); });
@@ -1215,6 +1235,7 @@
       // steps 5 and 7, once its preview is up; first: the first Verbatim finder, which brings the test card
       S.watch = { n: v.n, err: false, improves: !!parent && !v.fix && !opts.auto, first: promptId === 'g1-verbatim' && !S.versions.slice(0, -1).some((x) => x.promptId === 'g1-verbatim') };
       track('build', Object.assign(buildFacts('app'), { ver: v.n, lines: html.split('\n').length, edit: !!edit, whole: asked !== messages, auto: !!opts.auto }));
+      if (plan && freeBrief(plan.p)) v.planning = planSnap(plan);   // the plan it was built from: the progress bar can bring it back
       if (plan) retirePlanning(`Built as v${v.n}.`);
       view.done(v);
       const p = S.prompts.find((q) => q.id === promptId);
@@ -2023,8 +2044,10 @@
           ...(CFG.signWall ? { course: CFG.roomId, ...(name ? { name } : {}) } : {}) }),
       });
       const j = await res.json().catch(() => ({}));
+      if (!res.ok) track('wall_fail', { code: j.code || 'http_' + res.status });
       return res.ok ? { ok: true } : { ok: false, code: j.code, error: j.error || 'The wall did not accept it.' };
     } catch (e) {
+      track('wall_fail', { code: 'network' });
       return { ok: false, error: 'The wall is not reachable right now.' };
     }
   }
@@ -2792,7 +2815,8 @@
     const pack = await loadPack(p);
     const free = freeBrief(p);
     const field = Brief.el && Brief.el.isConnected ? Brief.topic.trim() : '';
-    const pl0 = free ? { brief: text, topic: field || topicFrom(pack, text) || topicDefault(pack), look: defaultLook(pack) } : {};
+    const parts = free && Brief.el && Brief.el.isConnected ? { on: Object.assign({}, Brief.on), text: Object.assign({}, Brief.text) } : null;   // the card, paragraph by paragraph: "Write a new prompt" starts from it
+    const pl0 = free ? { brief: text, topic: field || topicFrom(pack, text) || topicDefault(pack), look: defaultLook(pack), parts } : {};
     track('plan_open', free ? { prompt: p.id, brief_w: words(text), topic_w: words(pl0.topic), blocks: Brief.el && Brief.el.isConnected ? briefIncluded() : pack.brief.length } : { prompt: p.id });
     retirePlanning('Replaced by a new plan.');
     const pl = S.planning = Object.assign({ p, pack, files, fresh: S.freshNext, answers: {}, history: [], cards: [] }, pl0);
@@ -2906,18 +2930,18 @@
   }
 
   // a question as a card, as chatbots ask them: a few fixed answers, the recommended one marked
-  function askCard(q, i, n, signal) {
+  function askCard(q, i, n, signal, mine) {
     return new Promise((resolve, reject) => {
       const c = document.createElement('div');
       c.className = 'msg ask';
       c.innerHTML = `<div class="ask-head"><span class="ask-chip">${esc(q.header)}</span><span class="ask-n">Question ${i + 1} of ${n}</span></div>` +
         `<p class="ask-q">${esc(planText(q.question))}</p><div class="ask-opts" role="group" aria-label="${esc(planText(q.question))}">` +
         q.options.map((o, k) => `<button type="button" class="ask-opt" data-k="${k}"><span class="ask-k">${k + 1}</span><span class="ask-body">` +
-          `<b>${esc(o.label)}</b>${o.default ? '<span class="rec">Recommended</span>' : ''}<small>${esc(planText(o.description || ''))}</small></span></button>`).join('') +
+          `<b>${esc(o.label)}</b>${o.default ? '<span class="rec">Recommended</span>' : ''}${k === mine ? '<span class="rec mine">Your answer</span>' : ''}<small>${esc(planText(o.description || ''))}</small></span></button>`).join('') +
         '</div>' + (S.route.type === 'replay' ? `<p class="ask-note">${CFG.backup ? 'Recorded mode builds the app recorded beforehand from the recommended answers; the others show you their plan.' : 'Recorded mode builds only the recommended answers; the others show you their plan.'}</p>` : '');
       $('log').append(c);
       scrollLog();
-      c.querySelector('.ask-opt').focus({ preventScroll: true });
+      c.querySelector(mine != null ? `.ask-opt[data-k="${mine}"]` : '.ask-opt').focus({ preventScroll: true });
       const stop = () => { c.remove(); reject(new DOMException('stopped', 'AbortError')); };
       signal.addEventListener('abort', stop, { once: true });
       c.querySelectorAll('.ask-opt').forEach((b) => {
@@ -2981,6 +3005,8 @@
     sel.disabled = !lookReady || !!pl.editing;
     $('planEditBtn').hidden = !!pl.editing;
     $('planEditBtn').disabled = !ready;
+    $('planAnsBtn').hidden = !!pl.editing || !(pl.pack.questions || []).length;
+    $('planAnsBtn').disabled = S.busy || !latest || S.planning !== pl || !pl.history.length;   // no model needed: the answers pick the planner's versions
     $('planDone').hidden = $('planCancel').hidden = !pl.editing;
     $('planDone').disabled = $('planCancel').disabled = S.busy;
     $('planNote').hidden = live;
@@ -3300,24 +3326,33 @@
   }
 
   // the card in the chat; created once, where a suggestion would have offered the request
-  function offerBrief(p) {
+  function offerBrief(p, again) {
     if (Brief.loading || (Brief.el && Brief.el.isConnected)) return;
     Brief.loading = true;
     loadPack(p).then((pack) => {
       Brief.loading = false;
-      if (!pack.free_brief || (Brief.el && Brief.el.isConnected) || S.planning || S.versions.length) { Brief.failed = !pack.free_brief; return; }
+      if (!pack.free_brief || (Brief.el && Brief.el.isConnected) || (!again && (S.planning || S.versions.length))) { Brief.failed = !pack.free_brief; return; }
       Object.assign(Brief, { pack, p, topic: '', attached: false, on: {}, text: {} });
       pack.brief.forEach((b) => { Brief.on[b.id] = true; Brief.text[b.id] = b.text; });
+      if (again) {   // what was sent last time, paragraph by paragraph, and its topic (left empty where it was the default)
+        Brief.topic = again.topic && again.topic !== topicDefault(pack) ? again.topic : '';
+        if (again.parts) pack.brief.forEach((b) => {
+          if (typeof again.parts.on[b.id] === 'boolean') Brief.on[b.id] = again.parts.on[b.id];
+          if (typeof again.parts.text[b.id] === 'string') Brief.text[b.id] = again.parts.text[b.id];
+        });
+      }
       const el = Brief.el = document.createElement('details');
       el.className = 'msg brief-card';
       el.open = true;
       el.innerHTML = '<summary><b>Write your prompt</b><span class="bsum">1. Name your topic. 2. Read the five paragraphs; change or switch off any. 3. Press Send.</span></summary>' +
         '<div class="brief-body"><label class="brief-topic"><span>My topic</span>' +
         `<input type="text" id="briefTopic" maxlength="120" autocomplete="off" placeholder="${esc(pack.topic_default || 'e.g. freedom of expression online')}"></label>` +
-        pack.brief.map((b) => `<div class="brief-block" data-id="${esc(b.id)}"><label class="brief-lab"><input type="checkbox" checked><span>${esc(b.label)}</span></label>` +
+        pack.brief.map((b) => `<div class="brief-block${Brief.on[b.id] ? '' : ' off'}" data-id="${esc(b.id)}"><label class="brief-lab"><input type="checkbox"${Brief.on[b.id] ? ' checked' : ''}><span>${esc(b.label)}</span></label>` +
           `<textarea rows="2" aria-label="${esc(b.label)}"></textarea><small class="brief-asks">${esc(b.asks || '')}</small></div>`).join('') +
         '<p class="brief-hint">What you write here appears in the message box below. Send it when it says what you want.</p></div>';
       el.querySelectorAll('textarea').forEach((t, i) => { t.value = Brief.text[pack.brief[i].id]; });
+      el.querySelector('#briefTopic').value = Brief.topic;
+      if (again) againRow(el);
       $('log').append(el);
       el.querySelectorAll('textarea').forEach(growBox);
       el.addEventListener('input', (e) => {
@@ -3345,10 +3380,10 @@
     S.planMode = true;
     $('input').value = text;
     fitInput(112);   // the card is where it is read; the box shows the first lines of what will be sent
-    Object.assign(S, { pendingPromptId: Brief.p.id, pendingText: text, freshNext: false });
+    Object.assign(S, { pendingPromptId: Brief.p.id, pendingText: text, freshNext: S.versions.length > 0 });   // a new prompt after an app: a new app
     if (!Brief.attached) {
       Brief.attached = true;
-      if (Brief.p.dataset) S.draft.add(Brief.p.dataset);
+      if (Brief.p.dataset && !S.draft.has(Brief.p.dataset)) { S.draft.add(Brief.p.dataset); if (Brief.again) Brief.again.added = true; }
       renderAttach();
       renderShelfState();
     }
@@ -3360,6 +3395,7 @@
   // once sent, the card folds up and stops taking changes (it scrolls away with the chat); if the plan fails, it opens again
   Brief.sent = (on) => {
     if (!Brief.el) return;
+    if (on) { const a = Brief.el.querySelector('.brief-again'); if (a) a.remove(); Brief.again = null; }
     Brief.el.classList.toggle('sent', on);
     Brief.el.querySelector('.brief-body').inert = on;
     Brief.el.querySelector('.bsum').textContent = on ? 'Sent. Open it to read it again.' : '1. Name your topic. 2. Read the five paragraphs; change or switch off any. 3. Press Send.';
@@ -3368,18 +3404,25 @@
   };
 
   // picking up a plan after a reload: its latest version goes back on the stage with Build and Edit (no replay)
-  async function resumePlan(d) {
+  // (back: the plan an app was built from, brought back from the progress bar; building from it makes a new app, and the
+  // apps built before stay in the versions)
+  async function resumePlan(d, back) {
     const p = S.prompts.find((q) => q.id === d.promptId);
     let pack;
     try { pack = p && await loadPack(p); } catch (e) { pack = null; }
-    if (!pack || !pack.free_brief || S.planning) { S.savedPlan = null; renderSuggest(); return; }   // nothing to put back: the card is offered
-    const pl = S.planning = { p, pack, files: d.files, fresh: false, answers: d.answers, history: d.history, cards: [], brief: d.brief, topic: d.topic, look: d.look };
+    if (!pack || !pack.free_brief || S.planning) { if (!back) { S.savedPlan = null; renderSuggest(); } return null; }   // nothing to put back: the card is offered
+    const pl = S.planning = { p, pack, files: d.files, fresh: (back || !!d.fresh) && S.versions.length > 0, answers: Object.assign({}, d.answers), history: d.history.slice(), cards: [],
+      brief: d.brief, topic: d.topic, look: d.look, parts: d.parts || null };
     S.savedPlan = null;
+    const h = d.history[d.history.length - 1];
     const m = planMsg(`${pack.planner || 'Claude Fable 5.1'} · Plan mode`);
-    m.body(md('Your plan is back on the right, as you left it. Read it, then build from it, edit it or ask for a change.'));
-    offerPlan(pl, m, d.history[d.history.length - 1]);
+    m.body(md(back ? `The plan your app was built from (v${h.version}) is back on the right. Change it if you like, then build from it again: that makes a new app, and your apps stay in the versions.`
+      : 'Your plan is back on the right, as you left it. Read it, then build from it, edit it or ask for a change.'));
+    offerPlan(pl, m, h);
     showPlan(pl);
     renderSuggest();
+    if (back) save();
+    return pl;
   }
 
   // a saved plan, checked: a free brief with its versions
@@ -3387,8 +3430,10 @@
     const ok = d && typeof d.promptId === 'string' && typeof d.brief === 'string' && typeof d.topic === 'string' && typeof d.look === 'string' &&
       Array.isArray(d.files) && d.files.every((k) => typeof k === 'string') && d.answers && typeof d.answers === 'object' &&
       Array.isArray(d.history) && d.history.length > 0 && d.history.every((h, i) => h && h.version === i + 1 && typeof h.plan === 'string' && ['planner', 'you', 'model'].includes(h.by));
-    return ok ? d : null;
+    return ok ? Object.assign({}, d, { parts: partsOk(d.parts) ? d.parts : null }) : null;
   }
+  const partsOk = (x) => !!x && typeof x === 'object' && !!x.on && typeof x.on === 'object' && !!x.text && typeof x.text === 'object' &&
+    Object.values(x.on).every((v) => typeof v === 'boolean') && Object.values(x.text).every((v) => typeof v === 'string');
 
   /* ---------- the reference shelf: offline copies of good-practice pages, searched on each message ---------- */
 
@@ -4472,7 +4517,10 @@
       if (!CFG.progress) return;
       const { done, skipped } = S.progress, count = done.filter(Boolean).length, cur = done.indexOf(false);
       $('progressSteps').innerHTML = this.LABELS.map((l, i) => `<li class="${done[i] ? 'done' : ''}${skipped[i] ? ' skipped' : ''}${i === cur ? ' current' : ''}"` +
-        `${i === cur ? ' aria-current="step"' : ''}><span class="pn" aria-hidden="true">${done[i] ? (skipped[i] ? '–' : '✓') : i + 1}</span><span class="pl">${esc(l)}</span>` +
+        `${i === cur ? ' aria-current="step"' : ''}>${(() => {
+          const inner = `<span class="pn" aria-hidden="true">${done[i] ? (skipped[i] ? '–' : '✓') : i + 1}</span><span class="pl">${esc(l)}</span>`;
+          return done[i] ? `<button type="button" class="pgo" data-go="${i + 1}" title="${skipped[i] ? 'Skipped: go back and do it' : 'Go back to this step'}">${inner}</button>` : inner;
+        })()}` +
         `${i === cur ? `<button type="button" class="linkish pskip" data-skip="${i + 1}" title="Mark this step as done without doing it">Skip</button>` : ''}</li>`).join('');
       $('progressNext').textContent = cur < 0 ? 'All seven steps are done' : `Next: ${this.HINTS[cur]}`;
       const bar = $('progress');
@@ -4481,6 +4529,136 @@
       if (CFG.eggs) Eggs.jet(count);
     },
   };
+
+  /* ---------- back to a step: a step done on the bar takes the participant back to it ---------- */
+
+  // For whoever ran ahead of the room. Nothing done is undone and every app stays in the versions: Data opens the file,
+  // Prompt brings the prompt card back to write a new one, Plan read and Plan approved bring back the plan (the one the last
+  // app was built from) with "Change my answers", App built and Improved put the first or the latest app on the stage,
+  // Tested shows the test card. A skipped step is no longer skipped: it is done again by doing it.
+  const lastPlan = () => [...S.versions].reverse().map((v) => v.planning && planFrom(v.planning)).find(Boolean) || null;
+  // the request of the prompt card (after a reload its pack may not be loaded yet: the plan kept with an app names it)
+  const briefPrompt = () => {
+    const d = lastPlan();
+    return (S.planning && S.planning.p) || Brief.p || (d && S.prompts.find((p) => p.id === d.promptId)) || S.prompts.find((p) => p.planning && !p.builds_on);
+  };
+
+  function goToStep(n) {
+    if (!CFG.progress || !S.progress.done[n - 1]) return;
+    if (S.busy && n !== 1) { note('The model is working. Go back to this step when it has finished.'); return; }
+    const skipped = S.progress.skipped[n - 1];
+    if (skipped) { S.progress.done[n - 1] = S.progress.skipped[n - 1] = false; save(); Progress.render(); }
+    track('step_back', { step: n, skipped });
+    const p = briefPrompt();
+    if (n === 1) { if (DataCard.el && DataCard.el.isConnected) DataCard.el.scrollIntoView({ block: 'nearest' }); openInside((p && p.dataset) || 'gc'); return; }
+    if (n === 2) { if (p) redoPrompt(p); return; }
+    if (n === 3 || n === 4) { backToPlan(); return; }
+    if (n === 6) {
+      if (!TestCard.el || !TestCard.el.isConnected) { TestCard.open(); return; }
+      TestCard.el.scrollIntoView({ block: 'center' });
+      if (S.test.checks.every(Boolean)) Progress.mark(6);   // ticked before it was skipped
+      return;
+    }
+    const v = n === 5 ? S.versions[0] : S.versions[S.versions.length - 1];
+    if (!v) { note('There is no app in this browser yet.'); return; }
+    $('planView').hidden = true;
+    goToVersion(v.n);
+  }
+
+  // Prompt: the card again, at the end of the chat, with what was sent; Send starts a new plan, Cancel folds it up again
+  function redoPrompt(p) {
+    if (S.planning) { if (S.planning.editing) cancelEdit(S.planning); S.planning.changing = false; }
+    if (Brief.again && Brief.el && Brief.el.isConnected) { Brief.el.scrollIntoView({ block: 'start' }); return; }   // already open
+    Brief.again = { prev: $('input').value, added: false };
+    if (Brief.el && Brief.el.isConnected && Brief.p === p) {   // the card of this visit: it opens again where the chat ends
+      Brief.attached = false;
+      Brief.sent(false);
+      againRow(Brief.el);
+      $('log').append(Brief.el);
+      briefFill();
+      Brief.el.scrollIntoView({ block: 'start' });
+      return;
+    }
+    if (Brief.el) Brief.el.remove();
+    offerBrief(p, (S.planning && planSnap(S.planning)) || S.savedPlan || lastPlan() || {});
+  }
+
+  function againRow(el) {
+    if (el.querySelector('.brief-again')) return;
+    const row = document.createElement('div');
+    row.className = 'brief-again';
+    row.innerHTML = '<span>Sending this prompt starts a new plan. Your apps stay in the versions.</span><button type="button" class="ghost">Cancel</button>';
+    row.querySelector('button').onclick = cancelAgain;
+    el.querySelector('.brief-body').append(row);
+  }
+
+  function cancelAgain() {
+    const a = Brief.again;
+    if (!a) return;
+    Brief.sent(true);
+    if (a.added && Brief.p.dataset) S.draft.delete(Brief.p.dataset);
+    $('input').value = a.prev;
+    fitInput();
+    Object.assign(S, { pendingPromptId: null, pendingText: '', freshNext: false });
+    renderAttach();
+    renderShelfState();
+    renderNeeds();
+    renderPlanMode();
+    renderContinuing();
+  }
+
+  // Plan read, Plan approved: the plan on the stage; after a build, the plan of the last app built from one comes back
+  async function backToPlan() {
+    const pl = S.planning;
+    if (pl) {
+      if (pl.building) return;
+      showPlan(pl);
+      const c = [...document.querySelectorAll('#log .plan-card')].pop();
+      if (c) c.scrollIntoView({ block: 'center' });
+      return;
+    }
+    const d = lastPlan();
+    if (!d) { note('There is no plan in this browser yet. Write your prompt and send it, and the planner writes one.'); return; }
+    await resumePlan(d, true);
+  }
+
+  // Change my answers: the plan's questions again, with the answers given before marked; the planner's version for the new
+  // answers is the next version of the plan (no model: the answers pick between versions it prepared)
+  async function changeAnswers(pl) {
+    const qs = pl.pack.questions || [];
+    if (S.planning !== pl || S.busy || pl.editing || !qs.length) return;
+    track('step_back', { step: 3, act: 'answers' });
+    const who = pl.pack.planner || 'Claude Fable 5.1';
+    const answers = Object.assign({}, pl.answers);
+    pl.changing = false;
+    setBusy(true);
+    $('building').hidden = true;
+    S.ctrl = new AbortController();
+    const signal = S.ctrl.signal;
+    try {
+      const m = planMsg(`${who} · Plan mode`);
+      m.body(md('The same questions again. Your answer from before is marked; pick it again or choose another.'));
+      for (let i = 0; i < qs.length; i++) {
+        answers[qs[i].id] = await askCard(qs[i], i, qs.length, signal, pl.answers[qs[i].id] != null ? pl.answers[qs[i].id] : defaultOf(qs[i]));
+        addUser(qs[i].options[answers[qs[i].id]].label);
+      }
+      const last = pl.history[pl.history.length - 1];
+      if (qs.every((q) => answers[q.id] === pl.answers[q.id])) { m.body(md(`The same answers: plan v${last.version} stays as it is.`)); showPlan(pl); return; }
+      pl.answers = answers;
+      const h = pushVersion(pl, composePlan(pl.pack, answers, { topic: pl.topic, look: pl.look }), 'planner');
+      const w = planMsg(`${who} · Plan mode`);
+      w.body(md(`Plan v${h.version} is on the right, written from your new answers.` +
+        (last.by !== 'planner' ? ` Your own changes to v${last.version} are not in it; v${last.version} is still there to open.` : '')));
+      offerPlan(pl, w, h);
+      showPlan(pl);
+    } catch (e) {
+      if (e.name !== 'AbortError') throw e;
+      note('Stopped. Your answers and your plan stay as they were.');
+    } finally {
+      setBusy(false);
+      scrollLog();
+    }
+  }
 
   /* ---------- persistence (per seat and country; survives a reload) ---------- */
 
@@ -4500,10 +4678,13 @@
   function planSaved() {
     const pl = S.planning;
     if (pl && freeBrief(pl.p)) {
-      return pl.history.length ? { promptId: pl.p.id, brief: pl.brief, topic: pl.topic, look: pl.look, answers: pl.answers, files: pl.files, history: pl.history } : S.savedPlan || null;
+      return pl.history.length ? planSnap(pl) : S.savedPlan || null;
     }
     return S.savedPlan || null;
   }
+  // a plan of a free brief as it is kept: in this browser while it waits, and with the app built from it (the bar's way back)
+  const planSnap = (pl) => ({ promptId: pl.p.id, brief: pl.brief, topic: pl.topic, look: pl.look, answers: pl.answers, files: pl.files, history: pl.history,
+    parts: pl.parts || null, fresh: !!pl.fresh });
 
   // the apps, the conversation and the trace in this browser, for every seat; the seat code, the settings and the
   // participant's own files stay
@@ -4540,6 +4721,8 @@
   Preview.init();
   wireSplitter();
   $('progressSteps').addEventListener('click', (e) => {
+    const g = e.target.closest('[data-go]');
+    if (g) { goToStep(Number(g.dataset.go)); return; }
     const b = e.target.closest('[data-skip]');
     if (!b) return;
     Progress.skip(Number(b.dataset.skip));
@@ -4547,6 +4730,7 @@
   });
   $('planClose').onclick = () => { $('planView').hidden = true; };
   $('planEditBtn').onclick = () => shownPlan && beginEdit(shownPlan);
+  $('planAnsBtn').onclick = () => shownPlan && changeAnswers(shownPlan);
   $('planDone').onclick = () => shownPlan && commitEdit(shownPlan);
   $('planCancel').onclick = () => shownPlan && cancelEdit(shownPlan);
   $('planLook').onchange = (e) => shownPlan && changeLook(shownPlan, e.target.value);

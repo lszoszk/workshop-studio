@@ -28,7 +28,7 @@ window.Tour = (function () {
   const GENEVA = [
     STEPS[0],
     { at: '#progress', onlyIfShown: true, title: 'Your seven steps',
-      text: 'The bar shows where you are: Data, Prompt, Plan read, Plan approved, App built, Tested, Improved. Skip marks the step you are on as done without doing it, and "Next: …" says what to do now.' },
+      text: 'The bar shows where you are: Data, Prompt, Plan read, Plan approved, App built, Tested, Improved. Skip marks the step you are on as done without doing it, "Next: …" says what to do now, and a step that is done takes you back to it.' },
     { at: '.data-card', onlyIfShown: true, scroll: true, title: 'Your data',
       text: 'The file the app will search. Look inside it first: one record per paragraph, word for word, with its document symbol and paragraph number.' },
     { at: ['.brief-card', '.data-card #dataNext'], onlyIfShown: true, scroll: true, title: 'Your prompt',
