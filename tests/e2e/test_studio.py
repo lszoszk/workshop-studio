@@ -3363,3 +3363,40 @@ def test_geneva_a_telegram_when_the_app_reaches_the_wall(base_url, browser, fake
     page.click(".telegram .tg-close")
     assert page.locator(".telegram").count() == 0
     ctx.close()
+
+
+def test_geneva_start_retries_the_server_then_says_why_it_plays_recordings(base_url, browser, fake_api):
+    """At the start Geneva tries its server three times in some five seconds: one missed check does not send anyone to the
+    recordings. When all three miss, the studio says so in the chat (not only on the badge), and offers the live model again
+    within seconds once the server answers."""
+    api, _ = fake_api
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    missed = {"n": 0}
+
+    def miss(times):
+        def handle(route):
+            if missed["n"] < times:
+                missed["n"] += 1
+                route.abort()
+            else:
+                route.continue_()
+        return handle
+
+    page.route("**/studio-api/health", miss(1))                       # one miss: still live
+    page.goto(base_url + LIVE_G1(api))
+    page.wait_for_function("() => document.getElementById('countryCount').textContent !== '—'", timeout=20000)
+    assert page.inner_text(BADGE) == "Live model" and missed["n"] == 1
+    assert page.locator(".msg.note", has_text="could not reach its server").count() == 0
+    ctx.close()
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    missed["n"] = 0
+    page.route("**/studio-api/health", miss(3))                       # three misses: recordings, said in the chat
+    page.goto(base_url + LIVE_G1(api))
+    page.wait_for_selector(".msg.note:has-text('could not reach its server')", timeout=20000)
+    assert page.inner_text(BADGE) == "Recorded answers"
+    page.wait_for_selector("#log .msg.note button:has-text('Back to the live model')", timeout=15000)   # the server answers again
+    page.click("#log .msg.note button:has-text('Back to the live model')")
+    page.wait_for_function("() => document.getElementById('routeBadge').textContent === 'Live model'", timeout=15000)
+    ctx.close()

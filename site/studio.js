@@ -260,7 +260,7 @@
     // where the course picks the requests there is no Advanced
     setAdvanced(CFG.advanced && (params.get('advanced') === '1' || (params.get('advanced') !== '0' && localGet('ws:advanced') === '1')));
 
-    setRoute(await pickRoute());
+    setRoute(await pickRoute(true));
     if (S.route.type === 'server') await ensureSeat();
     // a country the participant picked wins over the seat's, which wins over the default
     renderCountryMenu();
@@ -285,7 +285,12 @@
       w: innerWidth, ua: /Firefox/.test(navigator.userAgent) ? 'firefox' : /Edg\//.test(navigator.userAgent) ? 'edge' : /Chrome/.test(navigator.userAgent) ? 'chrome' : /Safari/.test(navigator.userAgent) ? 'safari' : 'other' });
     Room.start();
     if (CFG.backup) {
-      if (S.route.type === 'replay' && !params.get('via') && S.recBy == null) { S.recBy = 'auto'; S.watchBase = S.watchBase || Track.base(); }   // no server answered at boot: told when one does
+      if (S.route.type === 'replay' && !params.get('via') && S.recBy == null) {   // no server answered at boot: said at once, and told when one does
+        S.recBy = 'auto';
+        S.watchBase = S.watchBase || Track.base();
+        note('The studio could not reach its server just now, so it plays recorded answers for the moment. It will offer the live model as soon as the server answers; your work stays.');
+        setTimeout(() => Watch.poll(), 5000);   // the first check soon, not after the usual twenty seconds
+      }
       badgeButton(); Watch.start(); preloadRecorded();
     }
     if (params.get('from')) await fromGallery(params.get('from'));
@@ -334,6 +339,14 @@
 
   /* ---------- routes ---------- */
 
+  async function healthySoon(r) {
+    for (const ms of [700, 1500]) {
+      await new Promise((res) => setTimeout(res, ms));
+      if (await healthy(r)) return true;
+    }
+    return false;
+  }
+
   async function healthy(r) {
     const c = new AbortController();
     const t = setTimeout(() => c.abort(), 3000);
@@ -349,7 +362,9 @@
     }
   }
 
-  async function pickRoute() {
+  // (boot: Geneva tries its server three times in some five seconds before it plays the recordings; 27.11.2026, a persona's
+  // first try missed the server once and built a recorded app without a word)
+  async function pickRoute(boot) {
     // rehearsal on a laptop: ?api=http://127.0.0.1:8011/studio-api, honoured only on a local page for a local server
     const local = (h) => h === 'localhost' || h === '127.0.0.1';
     const api = params.get('api');
@@ -357,12 +372,12 @@
       let url = null;
       try { url = new URL(api); } catch (e) { /* ignored below */ }
       const r = url && local(url.hostname) && { id: 'local', type: 'server', label: 'Local test server', base: api.replace(/\/$/, '') };
-      if (r && (await healthy(r))) return r;
+      if (r && ((await healthy(r)) || (boot && CFG.backup && (await healthySoon(r))))) return r;
     }
     const forced = params.get('via');
     for (const r of S.config.routes) {
       if (S.routesDown.has(r.id) || (forced && r.id !== forced)) continue;
-      if (r.type === 'server' && (await healthy(r))) return r;
+      if (r.type === 'server' && ((await healthy(r)) || (boot && CFG.backup && (await healthySoon(r))))) return r;
       if (r.type === 'direct' && S.key) return r;
       if (r.type === 'replay') return r;
     }
