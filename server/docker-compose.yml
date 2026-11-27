@@ -13,12 +13,15 @@ services:
     user: "1000:1000"                     # amuvmuser, so the state directory stays editable over ssh
     volumes:
       - ./state:/state                     # studio.sqlite3, gallery/, seats.csv — the only writable path
-      - ../site/data:/data:ro              # system_prompt.md, schema.md, samples.json (read at start-up)
+      - ../site:/site:ro                   # the whole site (served at /studio-api/site/); site/data holds system_prompt.md,
+                                           # schema.md, samples.json (read at start-up)
     env_file:
       - path: ./.env                       # OPENROUTER_API_KEY, STUDIO_ADMIN_KEY — on the VM only, never in git
         required: true
     environment:
       - STUDIO_BUILD=${STUDIO_BUILD:-}
+      - STUDIO_DATA_DIR=/site/data
+      - STUDIO_SITE_DIR=/site
     read_only: true
     tmpfs: [/tmp]
     mem_limit: 384m

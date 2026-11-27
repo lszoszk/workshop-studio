@@ -1222,3 +1222,24 @@ def test_a_course_that_names_its_datasets_gets_only_their_instructions(env):
     env.client.post("/studio-api/chat", json=body(model="glm-eu", purpose="question", datasets=["gc"]))
     assert env.fake.requests[-1]["messages"][0]["role"] == "user"   # a question has no system text, datasets or not
     assert full == studio.build_system_prompt(ROOT / "site" / "data")   # without datasets: exactly as before
+
+
+def test_the_site_is_served_compressed_with_cors(tmp_path):
+    """The studio's second home (27.11.2026): with a site directory the server serves the site at /studio-api/site/,
+    gzipped, with CORS for GitHub Pages (a page there falls back to these files); a missing file is 404. Without one,
+    nothing is served there."""
+    def app_with(site):
+        (tmp_path / ("s" + str(bool(site)))).mkdir()
+        cfg = studio.Config(api_key="sk-test", admin_key="admin-test", state_dir=tmp_path / ("s" + str(bool(site))),
+                            data_dir=ROOT / "site" / "data", seats_csv=None, origins=studio.ORIGINS.split(","), site_dir=site)
+        return TestClient(studio.create_app(cfg, transport=httpx.MockTransport(FakeOpenRouter().handler)))
+    with app_with(ROOT / "site") as c:
+        r = c.get("/studio-api/site/", headers={"Accept-Encoding": "gzip"})
+        assert r.status_code == 200 and "<title>" in r.text and "studio.js" in r.text
+        r = c.get("/studio-api/site/data/gc.json", headers={"Accept-Encoding": "gzip", "Origin": "https://lszoszk.github.io"})
+        assert r.status_code == 200 and r.headers.get("content-encoding") == "gzip"
+        assert r.headers.get("access-control-allow-origin") == "https://lszoszk.github.io" and len(r.json()["records"]) == 7304
+        assert c.get("/studio-api/site/no-such-file.json").status_code == 404
+        assert c.get("/studio-api/health").status_code == 200                 # the API is untouched
+    with app_with(None) as c:
+        assert c.get("/studio-api/site/index.html").status_code == 404

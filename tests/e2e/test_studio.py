@@ -3400,3 +3400,62 @@ def test_geneva_start_retries_the_server_then_says_why_it_plays_recordings(base_
     page.click("#log .msg.note button:has-text('Back to the live model')")
     page.wait_for_function("() => document.getElementById('routeBadge').textContent === 'Live model'", timeout=15000)
     ctx.close()
+
+
+def test_geneva_the_file_comes_once_and_its_drawer_opens_at_once(base_url, browser):
+    """The General Comments file is fetched once however many parts of the page need it (the data card, the recordings'
+    preload, the drawer); Look inside the file opens its drawer at once, with a loading line, and says so if the file
+    cannot come (no Wi-Fi)."""
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    got = []
+    page.on("request", lambda r: got.append(r.url) if r.url.split("?")[0].endswith("/data/gc.json") else None)
+    page.goto(base_url + G1)
+    page.wait_for_function("() => document.querySelector('.data-card') && /7,304 paragraphs/.test(document.querySelector('.data-card').textContent)", timeout=30000)
+    page.click("#dataLook")
+    page.wait_for_selector("#drawer .json-view", timeout=20000)
+    page.wait_for_timeout(1500)
+    assert len(got) == 1, got
+    ctx.close()
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    page.route("**/data/gc.json", lambda r: r.abort())                   # the big file does not come: the overview is enough here
+    page.goto(base_url + G1)
+    page.wait_for_function("() => document.querySelector('.data-card') && /7,304 paragraphs/.test(document.querySelector('.data-card').textContent)", timeout=20000)
+    page.click("#dataLook")
+    page.wait_for_selector("#drawer .json-view", timeout=5000)
+    assert page.locator("#drawerBody pre.json-view").first.inner_text().count('"symbol"') == 3
+    ctx.close()
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    page.route("**/data/gc*.json", lambda r: r.abort())                  # no Wi-Fi at all for the data
+    page.goto(base_url + G1)
+    page.wait_for_selector("#dataLook", timeout=20000)
+    page.click("#dataLook")
+    assert page.is_visible("#drawer") and page.inner_text("#drawerTitle") == "What is in the file"
+    page.wait_for_selector("#drawerBody :text('could not be loaded')", timeout=15000)
+    ctx.close()
+
+
+def test_the_site_files_come_from_the_other_host_when_one_fails(base_url, browser):
+    """A file of the site that fails on its own host comes from the other one (GitHub Pages and the studio's server; here a
+    stand-in named by ?mirror=, honoured on a laptop only); a file that is not there is not looked for elsewhere."""
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    mirrored = []
+    def from_mirror(route):
+        path = route.request.url.split("https://mirror.test/", 1)[1].split("?")[0]
+        mirrored.append(path)
+        f = SITE / path
+        if f.is_file():
+            route.fulfill(path=str(f), headers={"Access-Control-Allow-Origin": "*"})
+        else:
+            route.fulfill(status=404, body="", headers={"Access-Control-Allow-Origin": "*"})
+    page.route("https://mirror.test/**", from_mirror)
+    page.route(base_url + "data/gc*.json", lambda r: r.abort())          # this host fails for the data
+    page.goto(base_url + G1 + "&mirror=https://mirror.test/")
+    page.wait_for_function("() => document.querySelector('.data-card') && /7,304 paragraphs/.test(document.querySelector('.data-card').textContent)", timeout=20000)
+    page.click("#dataLook")
+    page.wait_for_selector("#drawer .json-view", timeout=10000)
+    assert "data/gc-overview.json" in mirrored
+    ctx.close()

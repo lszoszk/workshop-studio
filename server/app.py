@@ -50,6 +50,8 @@ import anthropic
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response, StreamingResponse
 
 import models
@@ -160,6 +162,9 @@ class Config:
     admin_key: str = field(default_factory=lambda: os.environ.get("STUDIO_ADMIN_KEY", ""))
     state_dir: Path = field(default_factory=lambda: Path(os.environ.get("STUDIO_STATE_DIR", HERE / "state")))
     data_dir: Path = field(default_factory=lambda: Path(os.environ.get("STUDIO_DATA_DIR", HERE.parent / "site" / "data")))
+    # the whole site, served at /studio-api/site/ as the second home of the studio (27.11.2026: a backup for GitHub Pages,
+    # and a host the page falls back to for its files); None: not served
+    site_dir: Path | None = field(default_factory=lambda: Path(p) if (p := os.environ.get("STUDIO_SITE_DIR")) else None)
     seats_csv: Path | None = field(default_factory=lambda: Path(p) if (p := os.environ.get("STUDIO_SEATS_CSV")) else None)
     seat_budget: float = field(default_factory=lambda: float(os.environ.get("STUDIO_SEAT_BUDGET", "8")))
     daily_budget: float = field(default_factory=lambda: float(os.environ.get("STUDIO_DAILY_BUDGET", "200")))
@@ -390,6 +395,9 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
                        # a page on GitHub Pages reads the teaser's version (ETag, Last-Modified) to know when it changed
                        expose_headers=["ETag", "Last-Modified", "Content-Length", "Content-Range", "Accept-Ranges"], max_age=600)
     app.state.cfg, app.state.seats, app.state.systems = cfg, seats, systems
+    if cfg.site_dir and cfg.site_dir.is_dir():
+        # compressed (the General Comments are 7.9 MB as JSON, 1.6 MB gzipped); only here, never the chat's event stream
+        app.mount("/studio-api/site", GZipMiddleware(StaticFiles(directory=cfg.site_dir, html=True), minimum_size=1024, compresslevel=6), name="site")
 
     def paused() -> bool:
         return seats.setting("paused", "0") == "1"

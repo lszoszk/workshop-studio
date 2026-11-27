@@ -39,7 +39,12 @@ PROMPT_FILES=(site/data/system_prompt.md site/data/schema.md site/data/samples.j
 for f in "${PROMPT_FILES[@]}"; do
   [ -f "$f" ] || { echo "✗ $f missing: build the data pack first (tools/build_data.py)"; exit 1; }
 done
-run rsync -az "${PROMPT_FILES[@]}" "$VM_HOST:$VM_DIR/site/data/"
+# the whole site as committed (what GitHub Pages serves), the studio's second home at /studio-api/site/ (27.11.2026):
+# exported from git, so a change not committed never reaches the VM; the first sync is some 320 MB, later ones only changes
+SITE_TMP="$(mktemp -d)"
+trap 'rm -rf "$SITE_TMP"' EXIT
+git archive HEAD site | tar -x -C "$SITE_TMP"
+run rsync -az --delete "$SITE_TMP/site/" "$VM_HOST:$VM_DIR/site/"
 SEATS_CSV="${SEATS_CSV:-}"
 [ -z "$SEATS_CSV" ] && [ -f tools/out/seats.csv ] && SEATS_CSV=tools/out/seats.csv
 if [ -n "$SEATS_CSV" ]; then

@@ -190,11 +190,40 @@
 
   // Geneva's recordings and planning pack, kept in memory after boot (preloadRecorded): an open tab that loses the network still plays them
   const PRELOADED = new Map();
+  // The site is published twice (27.11.2026): on GitHub Pages and by the studio's server. A file of the site that does not
+  // start coming within six seconds, or fails, comes from the other one; a file that is not there (404) is not looked for
+  // elsewhere. A page on neither (a laptop) has no other host, unless ?mirror=<url> names one for a test.
+  const MIRRORS = ['https://lszoszk.github.io/workshop-studio/', 'https://150.254.115.204/studio-api/site/'];
+  function otherHosts() {
+    const here = location.origin + location.pathname.replace(/[^/]*$/, '');
+    if (MIRRORS.includes(here)) return MIRRORS.filter((m) => m !== here);
+    const m = params.get('mirror');
+    return m && /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? [m.replace(/\/?$/, '/')] : [];
+  }
+  async function fetchText(u, headerMs) {
+    const c = new AbortController();
+    const t = headerMs ? setTimeout(() => c.abort(), headerMs) : 0;
+    try {
+      const r = await fetch(u, { cache: 'no-cache', signal: c.signal });
+      clearTimeout(t);   // it has started: a slow Wi-Fi may take its time with the rest
+      if (!r.ok) throw Object.assign(new Error(`${u}: ${r.status}`), { final: r.status === 404 });
+      return await r.text();
+    } finally {
+      clearTimeout(t);
+    }
+  }
   async function getText(url) {
     if (PRELOADED.has(url)) return PRELOADED.get(url);
-    const r = await fetch(url, { cache: 'no-cache' });
-    if (!r.ok) throw new Error(`${url}: ${r.status}`);
-    return r.text();
+    const others = /^[a-z]+:/i.test(url) ? [] : otherHosts();
+    try {
+      return await fetchText(url, others.length ? 6000 : 0);
+    } catch (e) {
+      if (e.final || !others.length) throw e;
+      for (const b of others) {
+        try { return await fetchText(b + url, 0); } catch (e2) { if (e2.final) throw e2; }
+      }
+      throw e;
+    }
   }
   const getJSON = async (url) => JSON.parse(await getText(url));
 
@@ -1439,17 +1468,22 @@
   // the participant's own file is already in this browser; one that was removed gives an app no records
   const ownText = (k) => (S.own[k] ? S.own[k].text : JSON.stringify({ dataset: k, removed: true, count: 0, records: [] }));
 
+  // one download per file, shared (27.11.2026: in Geneva the data card, the recordings' preload and the app each fetched
+  // the same 1.6 MB at once, three times over a room's Wi-Fi); a failed one is tried again next time
+  const fileText = {};
+  const textOf = (f) => fileText[f] || (fileText[f] = getText('data/' + f).catch((e) => { delete fileText[f]; throw e; }));
+
   async function dataText(k) {
     if (k.startsWith('own_')) return PreviewDoc.escapeScript(ownText(k));
     const f = fileFor(k);
-    if (!S.dataText[f]) S.dataText[f] = PreviewDoc.escapeScript(await getText('data/' + f));
+    if (!S.dataText[f]) S.dataText[f] = PreviewDoc.escapeScript(await textOf(f));
     return S.dataText[f];
   }
 
   async function dataParsed(k) {
     if (k.startsWith('own_')) return JSON.parse(ownText(k));
     const f = fileFor(k);
-    if (!S.dataParsed[f]) S.dataParsed[f] = JSON.parse(await getText('data/' + f));
+    if (!S.dataParsed[f]) S.dataParsed[f] = JSON.parse(await textOf(f));
     return S.dataParsed[f];
   }
 
@@ -2777,9 +2811,22 @@
   // what the participant reads and the model receives: their country in place, no runs of empty lines
   const planText = (s) => s.replace(/\{country\}/g, S.country).replace(/\n{3,}/g, '\n\n').trim();
 
+  // the overview of a file (tools/overview.py: its counts and first three records, some 2 KB): the data card, "Look inside
+  // the file" and the planner's look at the data show it at once, while the whole file comes in the background
+  const OVERVIEW = { gc: 'gc-overview.json' };
+  const overviews = {};
+  const overviewOf = (k) => (OVERVIEW[k] ? overviews[k] || (overviews[k] = getJSON('data/' + OVERVIEW[k]).catch((e) => { delete overviews[k]; throw e; }))
+    : Promise.reject(new Error('no overview')));
+
   // a "Looked at the data" step marked live is recomputed from the participant's own file
   async function lookFacts(key) {
     const f = { country: S.country };
+    if (key === 'gc' && !S.dataParsed[fileFor(key)]) {   // the overview, until the file is here
+      try {
+        const o = await overviewOf(key);
+        return Object.assign(f, { count: fmt(o.count), documents: fmt(o.documents), committees: fmt(o.committees), years: `${o.years[0]}–${o.years[1]}` });
+      } catch (e) { /* the file itself, below */ }
+    }
     if (key === 'gc') {   // paragraphs, documents (a symbol can hold several), committees and years of the loaded file
       const r = (await dataParsed('gc')).records, years = r.map((x) => x.year).filter(Boolean);
       return Object.assign(f, {
@@ -4329,11 +4376,26 @@
       '</tbody></table></div></div>';
   }
 
+  // the drawer opens at once (27.11.2026: on a slow Wi-Fi the click seemed to do nothing while the whole file came);
+  // the records come when the file is here, unless the drawer was closed or replaced meanwhile
   async function openInside(key) {
     Progress.mark(1);
-    const d = await dataParsed(key), r = d.records, f = fileMeta(key), facts = await lookFacts(key);
     openDrawer('What is in the file');
     $('drawer').classList.add('inside');
+    const mine = () => !$('drawer').hidden && $('drawerTitle').textContent === 'What is in the file';
+    if (!key.startsWith('own_') && !S.dataParsed[fileFor(key)]) $('drawerBody').innerHTML = '<p class="inside-loading">Loading the file… It comes to your browser once, then stays here.</p>';
+    let d, facts;
+    try {
+      const ov = key in OVERVIEW && !S.dataParsed[fileFor(key)] ? await overviewOf(key).catch(() => null) : null;
+      d = ov || (await dataParsed(key));   // its first three records are all the drawer shows
+      facts = await lookFacts(key);
+    } catch (e) {
+      if (mine()) $('drawerBody').innerHTML = '<p class="inside-loading">The file could not be loaded. Check the Wi-Fi, then press Look inside the file again.</p>';
+      return;
+    }
+    if (!mine()) return;
+    $('drawer').classList.add('inside');
+    const r = d.records, f = fileMeta(key);
     $('drawerBody').innerHTML =
       `<p><b>${esc(facts.count)} paragraphs</b> from ${esc(facts.documents)} documents of ${esc(facts.committees)} committees, ${esc(facts.years)}.</p>` +
       `<p>The first three paragraphs. This is the whole file; your app reads all of it here in your browser.</p>` +

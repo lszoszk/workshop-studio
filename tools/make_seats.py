@@ -49,6 +49,7 @@ def main():
     ap.add_argument("--facilitators", type=int, default=6)
     ap.add_argument("--budget", type=float, default=8.0)
     ap.add_argument("--base-url", default=BASE_URL)
+    ap.add_argument("--backup-url", help="the studio's second home, printed under the link (e.g. https://150.254.115.204/studio-api/site/?course=geneva)")
     a = ap.parse_args()
 
     import json
@@ -89,7 +90,7 @@ def main():
     <div class="who">{html.escape(s['label'])}</div>
     <div class="c">{s['code']}</div>
     <div class="k">Your data: UN recommendations to <b>{html.escape(s['country'])}</b></div>
-    <div class="u">Scan, or open {html.escape(a.base_url.replace('https://', ''))} and type the code.</div>
+    <div class="u">Scan, or open {html.escape(a.base_url.replace('https://', ''))} and type the code.</div>{f'<div class="u">If that page does not open: {html.escape(a.backup_url.replace("https://", ""))}, and the same code.</div>' if a.backup_url else ''}
   </div>
 </div>""" for s in seats)
     (OUT / "seats_print.html").write_text(f"""<!doctype html><meta charset="utf-8"><title>Seat cards</title>
