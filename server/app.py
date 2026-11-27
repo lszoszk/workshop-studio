@@ -25,6 +25,7 @@ Endpoints (under /studio-api):
   GET  /teaser            the teaser video (state/teaser/latest.mp4), with byte ranges
   GET  /admin?key=        facilitator page; POST /admin does the actions (not part of the contract)
   GET  /admin/room?key=&course=   the facilitator's live room chat (JSON: /admin/room.json; POST /admin/room)
+  GET  /admin/dash?key=&course=   the facilitator's overview: seats, steps, spending, wall, chat (JSON: /admin/dash.json?day=)
 
 Configuration: environment variables, see Config below and RUNBOOK.md.
 Run: uvicorn --factory app:create_app --port 8011 --no-access-log   (from server/)
@@ -60,6 +61,8 @@ from seats import Seats, normalise
 VERSION = "2026-11-01"
 HERE = Path(__file__).resolve().parent
 ROOM_PAGE = (HERE / "room_page.html").read_text(encoding="utf-8")   # the facilitator's live room chat
+DASH_PAGE = (HERE / "dash_page.html").read_text(encoding="utf-8")   # the facilitator's overview of the room
+DASH_ACTIVE_S = 300          # a seat is "active" on the dashboard when it did something in the last five minutes
 OPENROUTER = "https://openrouter.ai/api/v1"
 ANTHROPIC_MODELS = "https://api.anthropic.com/v1/models"   # the free call that checks a pasted Claude key
 KEY_KINDS = {"openrouter": ("sk-or-", "OpenRouter"), "anthropic": ("sk-ant-", "Claude (Anthropic)")}   # prefix, name
@@ -1022,6 +1025,145 @@ It stays on the server and is never shown again, only its last four characters. 
         got = progress_cache["by_course"].get(course)
         return {"visits": len(got["visits"]) if got else 0,
                 "steps": {str(n): len(got["steps"][n]) if got else 0 for n in range(1, PROGRESS_STEPS + 1)}}
+
+    # ── the facilitator's dashboard (/admin/dash): who came in, where each seat is on the seven steps, what it spent, what
+    # reached the wall and the room chat. Read from the day's events (cached on the file's size and time, as above), the
+    # usage table, the wall and the chat; seat codes stay on the server (the page gets the first two characters). ──
+    dash_cache: dict = {"key": None, "people": {}}
+
+    def day_people(day: str) -> dict:
+        """Everyone in one day's events: a seat (all its page loads together) or, without one, a single page load."""
+        p = events_dir / f"{day}.jsonl"
+        try:
+            st = p.stat()
+        except OSError:
+            return {}
+        key = (str(p), st.st_size, st.st_mtime_ns)
+        if dash_cache["key"] == key:
+            return dash_cache["people"]
+        people: dict[str, dict] = {}
+        with p.open(encoding="utf-8") as fh:
+            for line in fh:
+                try:
+                    e = json.loads(line)
+                except ValueError:
+                    continue   # a line cut short by a write in progress
+                who = e.get("seat") or e.get("sid")
+                if not who or not isinstance(e.get("at"), str):
+                    continue
+                g = people.setdefault(who, {"seat": e.get("seat"), "course": None, "first": e["at"], "last": e["at"], "act": None,
+                                            "done": set(), "skipped": set(), "apps": 0, "fails": 0, "model": None})
+                t, step = e.get("t"), e.get("step")
+                g["last"], g["act"] = e["at"], t
+                g["course"] = e.get("course") if isinstance(e.get("course"), str) else g["course"]
+                n = int(step) if isinstance(step, (int, float)) and step == int(step) and 1 <= step <= PROGRESS_STEPS else None
+                if t == "progress" and n:
+                    g["done"].add(n)
+                    g["skipped"].discard(n)
+                elif t == "progress_skip" and n and n not in g["done"]:
+                    g["done"].add(n)
+                    g["skipped"].add(n)
+                elif t == "step_back" and n and e.get("skipped") is True:   # the studio undoes a skipped step it goes back to
+                    g["done"].discard(n)
+                    g["skipped"].discard(n)
+                elif t == "reset":                                           # Start a new conversation: the steps begin again
+                    g["done"].clear()
+                    g["skipped"].clear()
+                elif t == "build" and e.get("kind") == "app":
+                    g["apps"] += 1
+                elif t in ("build_fail", "app_error", "studio_error"):
+                    g["fails"] += 1
+                m = e.get("to") if t == "model" else e.get("model") if t in ("open", "build") else None
+                g["model"] = m if isinstance(m, str) and m in models.MODELS else g["model"]
+        dash_cache.update(key=key, people=people)
+        return people
+
+    def dash(course: str, day: str, prefix: str) -> dict:
+        now = dt.datetime.now()
+
+        def aware(at):   # the events' and the usage table's times are the server's local time, without a zone
+            try:
+                return dt.datetime.fromisoformat(at).astimezone().isoformat(timespec="seconds") if at else None
+            except ValueError:
+                return None
+
+        def ago(at):
+            try:
+                return max(0, int((now - dt.datetime.fromisoformat(at)).total_seconds())) if at else None
+            except ValueError:
+                return None
+
+        label_of = lambda key: models.MODELS[key].label if key in models.MODELS else key
+        people = [g for g in day_people(day).values() if g["course"] == course]
+        by_seat = {g["seat"]: g for g in people if g["seat"]}
+        guests = [g for g in people if not g["seat"]]
+        usage = seats.usage_on(day)
+        wall = [i for i in gallery_items() if i.get("course") == course and str(i.get("created", "")).startswith(day)]
+        chat = room(course)
+        rows = []
+        for s in seats.all():
+            g = by_seat.get(s["code"])
+            if not g and not (prefix and s["label"].startswith(prefix)):
+                continue
+            u = usage.get(s["code"], {})
+            rows.append({
+                "label": s["label"] or "(no label)", "hint": s["code"][:2] + "••••", "disabled": bool(s["disabled"]),
+                "budget": s["budget"], "spent": round(s["spent"], 4), "today": round(u.get("cost", 0.0), 4),
+                "requests": u.get("requests", 0), "errors": u.get("errors", 0), "error": (u.get("error") or "")[:160] or None,
+                "model": label_of(u.get("model") or (g and g["model"])) if (u.get("model") or (g and g["model"])) else None,
+                "first": aware(g and g["first"]), "last_ago": ago(g["last"]) if g else None, "act": g and g["act"],
+                "done": sorted(g["done"]) if g else [], "skipped": sorted(g["skipped"]) if g else [],
+                "apps": g["apps"] if g else 0, "fails": g["fails"] if g else 0,
+                "wall": [{"id": i["id"], "title": i.get("title"), "name": i.get("name"), "model": label_of(i.get("model"))}
+                         for i in wall if i.get("seat") == s["code"]],
+                "messages": sum(1 for i in chat if i["from"] == "guest" and i.get("seat") == s["code"])})
+        seen = [r for r in rows if r["first"]]
+        steps = {str(n): sum(1 for r in seen if n in r["done"]) + sum(1 for g in guests if n in g["done"])
+                 for n in range(1, PROGRESS_STEPS + 1)}
+        labels = {s["code"]: s["label"] for s in seats.all()}
+        return {
+            "course": course, "day": day, "today": day == dt.date.today().isoformat(), "at": now.astimezone().isoformat(timespec="seconds"),
+            "studio": {"paused": paused(), "mode": "recorded" if recorded() else "live", "default_model": label_of(default_model()),
+                       "spent_today": round(seats.spent_today(), 4), "daily_budget": cfg.daily_budget, "balance_usd": balance["value"]},
+            "totals": {"seats": len(rows), "in": len(seen), "active": sum(1 for r in seen if r["last_ago"] is not None and r["last_ago"] < DASH_ACTIVE_S),
+                       "guests": len(guests), "guests_active": sum(1 for g in guests if (ago(g["last"]) or 0) < DASH_ACTIVE_S),
+                       "spent": round(sum(r["today"] for r in rows), 4), "apps": sum(r["apps"] for r in rows) + sum(g["apps"] for g in guests),
+                       "wall": len(wall), "messages": sum(1 for i in chat if i["from"] == "guest")},
+            "steps": steps, "seats": rows,
+            "guests": [{"first": aware(g["first"]), "last_ago": ago(g["last"]), "act": g["act"], "done": sorted(g["done"]),
+                        "skipped": sorted(g["skipped"]), "apps": g["apps"], "fails": g["fails"]} for g in guests],
+            "chat": [{"id": i["id"], "from": i["from"], "at": i["at"], "text": i["text"],
+                      "who": (labels.get(i.get("seat")) or i.get("label") or "no seat") if i["from"] == "guest" else None}
+                     for i in chat[-60:]],
+        }
+
+    @app.get("/studio-api/admin/dash.json")
+    async def admin_dash_json(key: str = "", course: str = "geneva", day: str = "", seats_from: str = ""):
+        if not admin_ok(key):
+            return refuse(Refusal(403, "Wrong admin key", "admin"))
+        try:
+            c = room_course(course)
+            d = day or dt.date.today().isoformat()
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", d):
+                raise Refusal(400, "day is YYYY-MM-DD", "bad_day")
+        except Refusal as e:
+            return refuse(e)
+        if time.monotonic() - balance["at"] > 60 and (balance["task"] is None or balance["task"].done()):
+            balance["task"] = asyncio.create_task(refresh_balance())   # the OpenRouter balance, on the next refresh
+        # the course's seats are listed even before they come in: those whose label starts with the course's name
+        prefix = seats_from[:40] if seats_from else c.capitalize()
+        return JSONResponse(dash(c, d, prefix), headers={"Cache-Control": "no-store"})
+
+    @app.get("/studio-api/admin/dash")
+    async def admin_dash_page(key: str = "", course: str = "geneva"):
+        if not admin_ok(key):
+            return refuse(Refusal(403, "Wrong admin key", "admin"))
+        try:
+            c = room_course(course)
+        except Refusal as e:
+            return refuse(e)
+        return HTMLResponse(DASH_PAGE.replace("__COURSE__", htmlmod.escape(c)),
+                            headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
 
     # ── the teaser video: one file, put there by tools/teaser/teaser_watch.py --upload. FileResponse answers byte
     # ranges (206 with Content-Range), which Safari needs before it plays a video, and sets ETag and Last-Modified. ──

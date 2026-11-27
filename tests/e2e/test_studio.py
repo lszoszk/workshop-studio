@@ -1906,6 +1906,7 @@ def test_activity_is_recorded_without_content(base_url, browser, fake_api):
     evs = [e for batch in EVENTS[n:] for e in batch["events"]]
     names = [e["t"] for e in evs]
     assert "open" in names and "build" in names and "look" in names, names
+    assert next(e for e in evs if e["t"] == "open")["course"] == "full"   # the facilitator's dashboard counts a page load for its course
     b = next(e for e in evs if e["t"] == "build")
     assert b["kind"] == "app" and b["files"] == 1 and isinstance(b["s"], int)
     assert "secret" not in json.dumps(EVENTS[n:])

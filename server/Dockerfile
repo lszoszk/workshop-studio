@@ -3,7 +3,7 @@ LABEL app=studio-api
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY app.py models.py seats.py room_page.html ./
+COPY app.py models.py seats.py room_page.html dash_page.html ./
 ENV STUDIO_STATE_DIR=/state STUDIO_DATA_DIR=/data STUDIO_SEATS_CSV=/state/seats.csv PYTHONUNBUFFERED=1
 EXPOSE 8011
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

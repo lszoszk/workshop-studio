@@ -1117,6 +1117,83 @@ def test_a_progress_event_keeps_its_course_through_the_whitelist(env):
     assert env.client.get("/studio-api/admin/room.json?key=admin-test&course=geneva").json()["progress"]["steps"]["3"] == 1
 
 
+# ── the facilitator's dashboard (/admin/dash) ──
+def dash(env, **kw):
+    q = "&".join(f"{k}={v}" for k, v in {"key": "admin-test", "course": "geneva", **kw}.items())
+    return env.client.get(f"/studio-api/admin/dash.json?{q}")
+
+
+def test_dash_needs_the_admin_key(env):
+    assert env.client.get("/studio-api/admin/dash.json?key=wrong&course=geneva").status_code == 403
+    assert env.client.get("/studio-api/admin/dash?key=wrong").status_code == 403
+    page = env.client.get("/studio-api/admin/dash?key=admin-test&course=geneva")
+    assert page.status_code == 200 and "Studio overview" in page.text and "__COURSE__" not in page.text
+    assert page.headers["referrer-policy"] == "no-referrer"
+    assert dash(env, day="tomorrow").status_code == 400
+
+
+def test_dash_joins_seats_steps_spending_wall_and_chat(env):
+    import datetime as dt
+    env.seats.add("PQRSTU", "Switzerland", label="Geneva 01")
+    env.seats.add("VWXYZ2", "Switzerland", label="Geneva 02")        # never comes in: listed, not in yet
+    env.seats.add("CDEFGH", "Kenya", label="Venice 01")              # another course's seat
+    at = lambda m: (dt.datetime.now() - dt.timedelta(minutes=m)).isoformat(timespec="seconds")
+    ev = lambda who, sid, m, t, **kw: {"t": t, "sid": sid, "seat": who, "at": at(m), **kw}
+    write_events(env, [
+        ev("PQRSTU", "aaaaaaaa", 30, "open", course="geneva", model="glm-eu"),
+        ev("PQRSTU", "aaaaaaaa", 29, "progress", step=1, course="geneva"),
+        ev("PQRSTU", "aaaaaaaa", 28, "progress", step=2, course="geneva"),
+        ev("PQRSTU", "aaaaaaaa", 27, "progress_skip", step=3, course="geneva"),
+        ev("PQRSTU", "aaaaaaaa", 20, "build", kind="app", model="claude"),
+        ev("PQRSTU", "aaaaaaaa", 19, "app_error"),
+        ev("PQRSTU", "bbbbbbbb", 2, "progress", step=4, course="geneva"),   # the same seat after a reload
+        ev(None, "cccccccc", 10, "open", course="geneva"),                  # a visitor without a seat
+        ev(None, "cccccccc", 9, "progress", step=1, course="geneva"),
+        ev("CDEFGH", "dddddddd", 5, "progress", step=1, course="venice"),
+        ev("ABCDEF", "eeeeeeee", 5, "open", course="venice"),
+    ])
+    env.seats.record("PQRSTU", model="claude", host="x", purpose="build", cost=0.5)
+    env.seats.record("PQRSTU", model="claude", host="x", purpose="build", status="error", error="upstream timeout")
+    gid = "101010-abcd1234"
+    (env.cfg.state_dir / "gallery" / f"{gid}.json").write_text(json.dumps({
+        "id": gid, "seat": "PQRSTU", "course": "geneva", "title": "Verbatim finder", "name": "Ana", "model": "claude",
+        "created": dt.datetime.now().isoformat(timespec="seconds")}))
+    assert env.client.post("/studio-api/room", json={"course": "geneva", "seat": "PQRSTU", "text": "Is the wall on?"}).status_code == 200
+
+    r = dash(env)
+    d = r.json()
+    assert "PQRSTU" not in r.text and "VWXYZ2" not in r.text         # codes stay on the server
+    assert [x["label"] for x in d["seats"]] == ["Geneva 01", "Geneva 02"]
+    one, two = d["seats"]
+    assert one["hint"] == "PQ••••" and one["first"] and one["last_ago"] < 300
+    assert one["done"] == [1, 2, 3, 4] and one["skipped"] == [3]
+    assert (one["apps"], one["fails"], one["model"]) == (1, 1, "Claude Sonnet 5.5")
+    assert (one["today"], one["requests"], one["errors"], one["error"]) == (0.5, 2, 1, "upstream timeout")
+    assert one["wall"] == [{"id": gid, "title": "Verbatim finder", "name": "Ana", "model": "Claude Sonnet 5.5"}]
+    assert one["messages"] == 1 and one["act"] == "progress"
+    assert two["first"] is None and two["done"] == [] and two["last_ago"] is None
+    assert d["steps"]["1"] == 2 and d["steps"]["4"] == 1 and d["steps"]["5"] == 0
+    t = d["totals"]
+    assert (t["seats"], t["in"], t["active"], t["guests"], t["apps"], t["wall"], t["messages"]) == (2, 1, 1, 1, 1, 1, 1)
+    assert d["chat"][-1]["who"] == "Geneva 01" and d["chat"][-1]["text"] == "Is the wall on?"
+    assert d["studio"]["mode"] == "live" and d["studio"]["default_model"]
+
+    venice = dash(env, course="venice").json()
+    assert [x["label"] for x in venice["seats"]] == ["(no label)", "Venice 01"]   # seen in the course, or named after it
+    assert dash(env, seats_from="Nobody").json()["totals"]["seats"] == 1         # only Geneva 01, the seat that came in
+
+
+def test_dash_steps_follow_step_back_and_a_new_conversation(env):
+    import datetime as dt
+    env.seats.add("PQRSTU", "Switzerland", label="Geneva 01")
+    now = dt.datetime.now().isoformat(timespec="seconds")
+    ev = lambda t, **kw: {"t": t, "sid": "aaaaaaaa", "seat": "PQRSTU", "at": now, "course": "geneva", **kw}
+    write_events(env, [ev("progress", step=1), ev("progress_skip", step=2), ev("step_back", step=2, skipped=True)])
+    assert dash(env).json()["seats"][0]["done"] == [1]
+    write_events(env, [ev("progress", step=1), ev("progress", step=2), ev("reset"), ev("progress", step=1)])
+    assert dash(env).json()["seats"][0]["done"] == [1]
+
+
 # ── Geneva: the teaser ──
 VIDEO = bytes(range(256)) * 40
 

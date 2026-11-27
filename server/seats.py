@@ -177,6 +177,20 @@ class Seats:
         r = self.db.execute("SELECT COUNT(*) n FROM seats WHERE last_request >= ?", (since,))
         return int(r.fetchone()["n"])
 
+    def usage_on(self, day: str) -> dict[str, dict]:
+        """Each seat's requests of one day (the facilitator's dashboard): how many, their cost, the failed ones,
+        and the model and error of the latest."""
+        out: dict[str, dict] = {}
+        for r in self.db.execute("SELECT seat, model, cost, status, error, ts FROM usage WHERE day=? ORDER BY id", (day,)):
+            u = out.setdefault(r["seat"], {"requests": 0, "cost": 0.0, "errors": 0, "model": None, "error": None, "last": None})
+            u["requests"] += 1
+            u["cost"] += r["cost"] or 0.0
+            if r["status"] != "ok":
+                u["errors"] += 1
+                u["error"] = r["error"]
+            u["model"], u["last"] = r["model"] or u["model"], r["ts"]
+        return out
+
     # ── accounting ──
     def record(self, seat: str, *, model: str, host: str, purpose: str, prompt_tokens: int = 0,
                completion_tokens: int = 0, cost: float = 0.0, estimated: bool = False,
