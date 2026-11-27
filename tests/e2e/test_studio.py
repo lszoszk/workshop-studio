@@ -3190,6 +3190,12 @@ def test_geneva_box_is_a_chat_before_the_first_app(base_url, browser, fake_api):
     assert asked.startswith("Hi, how are you?") and "(Studio note: Geneva workshop." in asked and "There is no app yet" in asked and "write no app and no code" in asked
     assert "Never tell them to drag or attach a file" in asked and "The paragraphs stay in English" in asked
     assert "You are Claude Sonnet 5.5, by Anthropic, made in USA" in asked and "Their next step: look inside the file." in asked
+    assert calls[-1].get("datasets") == ["gc"] and "Reference shelf excerpts" not in asked   # only Geneva's file; no shelf in a chat
+    page.click("#takeHomeBtn")                                           # What left this laptop: this course's file, not another's
+    page.click("#aboutTraceBtn")
+    trace = page.inner_text("#drawerBody")
+    assert "7,304" in trace and "General Comments" in trace and "Kenya" not in trace and "Council votes" not in trace
+    page.click("#drawerClose")
     assert page.locator(".plan-msg, .msg.ask").count() == 0 and page.is_visible("#promptView")
     assert page.locator("#versions [data-v]").count() == 0
     g1_plan(page, "freedom of expression online")
@@ -3313,6 +3319,7 @@ def test_geneva_the_prompt_card_and_the_keyboard(base_url, browser):
     page.goto(base_url + G1)
     g1_started(page)
     assert page.evaluate("document.activeElement.id") == "briefTopic"
+    assert page.get_attribute("#promptUse", "title") == "Cmd/Ctrl+Enter" and page.is_visible(".kbd-hint")
     page.keyboard.press("Escape")
     assert not page.is_visible("#promptView") and page.is_visible("#promptBar")
     page.click("#promptOpen")

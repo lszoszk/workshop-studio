@@ -8,7 +8,7 @@
 <meta name="robots" content="noindex, nofollow">
 <script src="gate.js"></script>
 <script>try { const t = localStorage.getItem('ws:theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
-<link rel="stylesheet" href="studio.css?v=2026-11-27l"></head>
+<link rel="stylesheet" href="studio.css?v=2026-11-27m"></head>
 <body>
 <!-- a phone that scanned the badge's QR code gets this instead of the studio -->
 <div class="handoff" id="handoff" hidden>
@@ -79,7 +79,8 @@
       <div class="prompt-body"><div class="brief-card prompt-card" id="promptCard"></div></div>
       <div class="prompt-foot">
         <span class="prompt-note">It goes into the message box with the file attached; press Send there. The planner asks you three questions and writes a plan; nothing is built before you approve it.</span>
-        <button type="button" class="primary" id="promptUse" disabled title="Cmd/Ctrl+Enter">Put it in the message box ↓</button>
+        <span class="kbd-hint" aria-hidden="true">⌘/Ctrl+Enter</span>
+        <button type="button" class="primary" id="promptUse" disabled title="Cmd/Ctrl+Enter" aria-keyshortcuts="Control+Enter Meta+Enter">Put it in the message box ↓</button>
       </div>
     </div>
     <div class="prompt-bar" id="promptBar" hidden><span><b>Your prompt</b> · not sent yet</span><button type="button" class="linkish" id="promptOpen">Open</button></div>
@@ -237,9 +238,9 @@
 
 <script src="preview-doc.js?v=2026-11-24b"></script>
 <script src="pdf-view.js?v=2026-11-24b"></script>
-<script src="tour.js?v=2026-11-27l"></script>
+<script src="tour.js?v=2026-11-27m"></script>
 <script src="own-files.js?v=2026-11-24b"></script>
 <script src="kit.js?v=2026-11-24b"></script>
-<script src="studio.js?v=2026-11-27l"></script>
+<script src="studio.js?v=2026-11-27m"></script>
 </body>
 </html>

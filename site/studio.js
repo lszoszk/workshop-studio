@@ -666,8 +666,16 @@
 
   /* ---------- talking to a model ---------- */
 
-  function buildSystem() {
+  // a course that reads only some files (Geneva: gc) names them; the server then sends only their part of the
+  // instructions (server/app.py system_for, 27.11.2026: every dataset's description made a message some 30,000 tokens)
+  const courseData = () => (Array.isArray(CFG.files) && CFG.files.length ? CFG.files.filter((k) => S.samples && k in S.samples) : null);
+  function buildSystem(keep = courseData()) {
     const sp = S.sysmd.split('\n---\n')[1].trim();
+    if (keep && keep.length) {
+      const schema = S.schema.trim().split(/^(?=## )/m).filter((x) => { const m = /^## `WORKSHOP_DATA\.(\w+)`/.exec(x); return !m || keep.includes(m[1]); }).join('').trim();
+      const samples = Object.fromEntries(Object.entries(S.samples).filter(([k]) => keep.includes(k)));
+      return [sp, schema, '## Sample records of the data in this workshop (the real data is much larger)\n\n```json\n' + JSON.stringify(samples, null, 1) + '\n```'].join('\n\n');
+    }
     return [sp, S.schema.trim(),
       '## Sample records per dataset: five of the recommendations, a few of the others (the real data is much larger)\n\n```json\n' + JSON.stringify(S.samples, null, 1) + '\n```'].join('\n\n');
   }
@@ -696,7 +704,8 @@
       res = await fetch(r.base + '/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seat: S.seatCode, model: o.model, purpose: o.purpose, messages: o.messages, ...(CFG.keepModel ? { fallback: false } : {}) }),
+        body: JSON.stringify({ seat: S.seatCode, model: o.model, purpose: o.purpose, messages: o.messages, ...(CFG.keepModel ? { fallback: false } : {}),
+          ...(o.purpose === 'build' && courseData() ? { datasets: courseData() } : {}) }),
         signal: o.signal,
       });
     } catch (e) {
@@ -1160,7 +1169,7 @@
     setBusy(true);
     if (plan || !S.planning) $('planView').hidden = true;   // a chat message while a plan waits leaves the plan on the stage
     await shelfLoad();
-    const hits = shelfSearch(userText);
+    const hits = CFG.briefCard && !plan && !S.versions.length ? [] : shelfSearch(userText);   // a chat before the first app: no shelf
     const asTyped = userText + files.map((k) => '\n\n' + attachLine(k)).join('');
     const sent = asTyped + shelfBlock(hits) + chatNote(plan);
     const messages = buildMessages(parent, sent);
@@ -1917,18 +1926,20 @@
           (e.samples ? `, and its first ${Math.min(OwnFiles.SAMPLES, e.shape.count)} records, as you chose` : ', no values'));
         kept.push(`All ${fmt(e.shape.count)} records of "${e.name}" stay in this browser, where your app reads them.`);
       });
-      sent.push(`The studio's instructions, a description of the data and a few sample records per dataset (about ${fmt(words(sys))} words, added ${S.route.type === 'server' ? 'by the server' : 'by the studio'})`);
+      sent.push(`The studio's instructions, a description of the data and a few sample records ${courseData() ? 'of ' + courseData().map(fileLabel).join('; ') : 'per dataset'} (about ${fmt(words(sys))} words, added ${S.route.type === 'server' ? 'by the server' : 'by the studio'})`);
       if (parent) sent.push(`The code of your current app (v${parent.n}, ${fmt(parent.html.split('\n').length)} lines) and a short summary of earlier steps`);
-      kept.push(`All ${fmt(S.countryCount)} records addressed to ${S.country}, the General Comments, the Council votes and the PDFs: they stay in this browser, where your app reads them.`);
+      kept.push(courseData() ? `The whole file (${courseData().map(fileLabel).join('; ')}, ${fmt(keptCount())} records): it stays in this browser, where your app reads it.`
+        : `All ${fmt(S.countryCount)} records addressed to ${S.country}, the General Comments, the Council votes and the PDFs: they stay in this browser, where your app reads them.`);
     } else if (purpose === 'inapp') {
       sent.push(`A request written by your app (${fmt(userText.length)} characters)${ids ? `, containing ${fmt(ids)} records` : ''}`);
-      kept.push(ids ? `The other ${fmt(Math.max(0, S.countryCount - ids))} records stay in this browser.` : 'Everything not in the request stays in this browser.');
+      kept.push(ids ? `The other ${fmt(Math.max(0, keptCount() - ids))} records stay in this browser.` : 'Everything not in the request stays in this browser.');
     } else {
       sent.push(`Your question (${fmt(userText.length)} characters), and nothing else`);
       kept.push('No data at all: the model answers from what it learned in training.');
     }
+    const asked = (sys ? sys + '\n\n' : '') + messages.map((m) => m.content).join('\n\n');
     S.trace.push({
-      at: new Date(), purpose, sent, kept, records: ids,
+      at: new Date(), purpose, sent, kept, records: ids, w: words(asked),   // words as sent (JSON samples are many tokens per word)
       model: usage.model_label || (S.config.models[usage.model || S.model] || {}).label,
       host: usage.host, zdr: usage.zdr !== false, recorded: !!usage.recorded,
       tin: usage.prompt_tokens, tout: usage.completion_tokens, cost: usage.cost, seconds: usage.seconds,
@@ -1941,11 +1952,14 @@
   }
 
   const TRACE_TITLE = 'What left this laptop';
+  // the records this browser holds for the course: the country's recommendations, or the course's own files (Geneva: the General Comments)
+  const keptCount = () => (courseData() ? courseData().reduce((a, k) => a + ((S.index.datasets[k] || {}).count || 0), 0) : S.countryCount);
+  const sentWordsOf = (t) => (t.w != null ? t.w : wordsOf(t.tin));
   const PURPOSE = { build: 'Your message', inapp: 'Your app asked a model', question: 'Question asked directly' };
 
   function renderTrace() {
     const T = S.trace;
-    const sentWords = T.reduce((a, t) => a + wordsOf(t.tin), 0);
+    const sentWords = T.reduce((a, t) => a + sentWordsOf(t), 0);
     const cost = T.reduce((a, t) => a + (t.cost || 0), 0);
     const recs = T.reduce((a, t) => a + t.records, 0);
     $('drawerBody').innerHTML = `
@@ -1953,14 +1967,14 @@
         <div><b>${fmt(T.length)}</b><small>requests to a model</small></div>
         <div><b>≈ ${fmt(sentWords)}</b><small>words sent · $${cost.toFixed(3)}</small></div>
         <div><b>${fmt(recs)}</b><small>full records sent (only by your app's AI steps)</small></div>
-        <div class="kept"><b>${fmt(S.countryCount)}</b><small>records kept in this browser</small></div>
+        <div class="kept"><b>${fmt(keptCount())}</b><small>records kept in this browser</small></div>
       </div>
       ${T.length ? '' : '<p>Nothing has left this laptop yet.</p>'}
       ${T.slice().reverse().map((t) => `
         <div class="req">
           <h4>${PURPOSE[t.purpose]}<span>${t.at.toLocaleTimeString('en-GB')}</span></h4>
           <div class="meta">To <b>${esc(t.model || '')}</b>${t.host ? ' on ' + esc(t.host) : ''}${t.zdr ? ' <span class="zdr">zero data retention</span>' : ''}${t.recorded ? ' · recorded answer, nothing was sent' : ''}
-            · ≈ ${fmt(wordsOf(t.tin))} words in, ${fmt(wordsOf(t.tout))} out${t.cost != null ? ' · $' + Number(t.cost).toFixed(4) : ''}${t.seconds ? ' · ' + t.seconds.toFixed(1) + ' s' : ''}</div>
+            · ≈ ${fmt(sentWordsOf(t))} words in, ${fmt(wordsOf(t.tout))} out${t.cost != null ? ' · $' + Number(t.cost).toFixed(4) : ''}${t.seconds ? ' · ' + t.seconds.toFixed(1) + ' s' : ''}</div>
           <div class="lab">${t.recorded ? 'Would be sent to a live model' : 'Sent'}</div><ul class="out">${t.sent.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>
           <div class="lab">Not sent</div><ul class="kept">${t.kept.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>
           ${t.request ? `<details><summary>Show exactly what was sent</summary><pre>${esc(t.request)}</pre></details>` : ''}
@@ -3499,7 +3513,7 @@
       (line ? ` It adds to your prompt: <q>${esc(line)}</q>` : '');
     const n = briefText().trim().length;
     $('promptUse').disabled = n < BRIEF_MIN || n > BRIEF_MAX;
-    $('promptUse').title = n < BRIEF_MIN ? `A prompt needs at least ${BRIEF_MIN} characters` : n > BRIEF_MAX ? `A prompt has at most ${fmt(BRIEF_MAX)} characters` : '';
+    $('promptUse').title = n < BRIEF_MIN ? `A prompt needs at least ${BRIEF_MIN} characters` : n > BRIEF_MAX ? `A prompt has at most ${fmt(BRIEF_MAX)} characters` : 'Cmd/Ctrl+Enter';
   }
 
   // "Put it in the message box" (26.11.2026: closer to a chatbot than a button that sends): the prompt goes where any chatbot

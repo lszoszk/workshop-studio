@@ -177,21 +177,35 @@ def is_change(messages: list) -> bool:
     return any(x.get("role") == "assistant" for x in messages)
 
 
-def build_system_prompt(data_dir: Path) -> str:
+def build_system_prompt(data_dir: Path, keep: tuple | None = None) -> str:
     """Exactly tools/bakeoff.py:system_prompt(): the text of site/data/system_prompt.md below the first
-    `---` line, then schema.md, then the samples block from samples.json."""
+    `---` line, then schema.md, then the samples block from samples.json.
+    keep (27.11.2026): a course that reads only some files (Geneva: gc) gets only their sections of schema.md and their
+    samples; every dataset's description and samples made each message some 30,000 tokens."""
     try:
         sp = (data_dir / "system_prompt.md").read_text(encoding="utf-8").split("\n---\n", 1)[1].strip()
         samples = json.loads((data_dir / "samples.json").read_text(encoding="utf-8"))
         schema = (data_dir / "schema.md").read_text(encoding="utf-8").strip()
     except (OSError, IndexError, ValueError):
         return PLACEHOLDER_BUILD
+    if keep:
+        schema = schema_for(schema, keep)
+        return "\n\n".join([sp, schema, "## Sample records of the data in this workshop (the real data is much larger)\n\n```json\n"
+                             + json.dumps({k: v for k, v in samples.items() if k in keep}, ensure_ascii=False, indent=1) + "\n```"])
     return "\n\n".join([
         sp,
         schema,
         "## Sample records per dataset: five of the recommendations, a few of the others (the real data is much larger)\n\n```json\n"
         + json.dumps(samples, ensure_ascii=False, indent=1) + "\n```",
     ])
+
+
+def schema_for(schema: str, keep: tuple) -> str:
+    """schema.md without the sections of the datasets a course does not read (each begins "## `WORKSHOP_DATA.<key>`");
+    its opening and the rules for every app stay."""
+    parts = re.split(r"(?m)^(?=## )", schema)
+    out = [x for x in parts if not ((m := re.match(r"## `WORKSHOP_DATA\.(\w+)`", x)) and m.group(1) not in keep)]
+    return "".join(out).strip()
 
 
 class Refusal(Exception):
@@ -316,6 +330,22 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
     room_dir = cfg.state_dir / "room"
     room_dir.mkdir(parents=True, exist_ok=True)
     systems = {"build": build_system_prompt(cfg.data_dir), "inapp": INAPP_SYSTEM, "question": None}
+    try:   # the datasets a request may name (samples.json's keys); an unknown name is ignored
+        known_datasets = set(json.loads((cfg.data_dir / "samples.json").read_text(encoding="utf-8")))
+    except (OSError, ValueError):
+        known_datasets = set()
+    built_for: dict = {}
+
+    def system_for(purpose: str, datasets) -> str | None:
+        """The instructions for a request: a build that names its course's datasets gets only theirs (made once each)."""
+        if purpose != "build" or not isinstance(datasets, list):
+            return systems[purpose]
+        keep = tuple(sorted({k for k in datasets if isinstance(k, str) and k in known_datasets}))
+        if not keep:
+            return systems[purpose]
+        if keep not in built_for:
+            built_for[keep] = build_system_prompt(cfg.data_dir, keep)
+        return built_for[keep]
     # ── model keys pasted on the admin page. Each is checked with one free call before it is kept; it then wins over the
     # key in the server's .env. They live in state/keys.json (mode 600, never in git or the image) and are never sent
     # back: the page shows their last four characters. A pasted Claude key also sends Claude straight to Anthropic. ──
@@ -385,7 +415,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         return {"Authorization": f"Bearer {or_key()}", "HTTP-Referer": "https://lszoszk.github.io/workshop-studio/",
                 "X-Title": "Workshop Studio"}
 
-    async def open_anthropic(m: models.Model, messages: list, purpose: str):
+    async def open_anthropic(m: models.Model, messages: list, purpose: str, system: str | None):
         if not an_key():
             return None, "no_anthropic_key"
         if seats.spent_on(m.key, "anthropic") >= cfg.anthropic_cap:
@@ -401,8 +431,8 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
             msgs[last_answer]["content"] = [{"type": "text", "text": msgs[last_answer]["content"], "cache_control": {"type": "ephemeral"}}]
         params = {"model": m.id, "max_tokens": max_tokens, "messages": msgs,
                   "thinking": {"type": "adaptive", "display": "summarized"}, "output_config": {"effort": effort}}
-        if systems[purpose]:
-            params["system"] = [{"type": "text", "text": systems[purpose], "cache_control": {"type": "ephemeral"}}]
+        if system:
+            params["system"] = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
         manager = claude.with_options(api_key=an_key()).messages.stream(**params)
         try:
             stream = await manager.__aenter__()
@@ -412,11 +442,10 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
             return None, type(e).__name__
         return AnthropicLines(manager, stream, m), None
 
-    async def open_upstream(m: models.Model, messages: list, purpose: str):
+    async def open_upstream(m: models.Model, messages: list, purpose: str, system: str | None):
         if m.api == "anthropic":
-            return await open_anthropic(m, messages, purpose)
+            return await open_anthropic(m, messages, purpose, system)
         temperature, max_tokens = PURPOSES[purpose]
-        system = systems[purpose]
         payload = {"model": m.id, "stream": True, "usage": {"include": True}, "temperature": temperature,
                    "max_tokens": max_tokens, "provider": models.provider_block(m),
                    "messages": ([{"role": "system", "content": system}] if system else []) + with_images(messages, "openrouter")}
@@ -446,12 +475,12 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
     def is_transient(m: models.Model, err: str | None) -> bool:
         return err == BUSY or (m.api == "anthropic" and err in ANTHROPIC_BUSY)
 
-    async def open_with_retry(m: models.Model, messages: list, purpose: str):
+    async def open_with_retry(m: models.Model, messages: list, purpose: str, system: str | None):
         """open_upstream, retrying a transient refusal with backoff for up to cfg.busy_retry_s: OpenRouter's in-flight
         budget 402 (30 people pressing Build at once on a low balance) and Anthropic's 429 and 529."""
         deadline, delay = time.monotonic() + cfg.busy_retry_s, 0.5
         while True:
-            resp, err = await open_upstream(m, messages, purpose)
+            resp, err = await open_upstream(m, messages, purpose, system)
             remaining = deadline - time.monotonic()
             if not is_transient(m, err) or remaining <= 0:
                 return resp, err
@@ -545,6 +574,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
             if not m:
                 raise Refusal(400, "This model is not on the menu", "model")
             messages = clean_messages(d.get("messages"))
+            system = system_for(purpose, d.get("datasets"))
             if messages[-1].get("images") and not m.vision:
                 raise Refusal(400, f"{m.label} cannot read images. Switch to a model that can, or send the message without them", "no_vision")
             if seat["spent"] >= seat["budget"]:
@@ -564,7 +594,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
             return refuse(e)
 
         t0 = time.monotonic()
-        used, (resp, err) = m, await open_with_retry(m, messages, purpose)
+        used, (resp, err) = m, await open_with_retry(m, messages, purpose, system)
         first_error = err
         # fallback false (the Geneva course): the participant chose this model and gets it or an honest refusal, never
         # another model's answer under its name
@@ -572,7 +602,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
         # a busy account is busy for every model; a fallback that cannot read the images would answer without them
         if resp is None and swap and m.fallback and err != BUSY and (models.MODELS[m.fallback].vision or not messages[-1].get("images")):
             used = routed(models.MODELS[m.fallback])
-            resp, err = await open_with_retry(used, messages, purpose)
+            resp, err = await open_with_retry(used, messages, purpose, system)
         if resp is None:
             seconds = round(time.monotonic() - t0, 1)
             status = "busy" if is_transient(used, err) else "failed" if not swap else "credit" if err == "http_402" else "error"
@@ -593,7 +623,7 @@ def create_app(cfg: Config | None = None, transport: httpx.AsyncBaseTransport | 
                 return JSONResponse({"error": "The studio's account with the model service has run out of credit. Tell the "
                                               "facilitator; your apps and the recorded answers still work.", "code": "credit"}, 503)
             return JSONResponse({"error": "The model provider did not respond", "code": "upstream"}, 502)
-        prompt_chars = len(systems[purpose] or "") + sum(len(x["content"]) for x in messages)
+        prompt_chars = len(system or "") + sum(len(x["content"]) for x in messages)
         return StreamingResponse(relay(resp, used, m, seat, purpose, t0, prompt_chars, first_error),
                                  media_type="text/event-stream",
                                  headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})

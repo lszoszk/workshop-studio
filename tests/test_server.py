@@ -1204,3 +1204,21 @@ def test_a_pasted_key_survives_a_restart(env):
     again = studio.create_app(env.cfg, transport=httpx.MockTransport(env.fake.handler))
     TestClient(again).post("/studio-api/chat", json=body(model="glm-eu"))
     assert env.fake.keys_used[-1].endswith("LMNO")
+
+
+def test_a_course_that_names_its_datasets_gets_only_their_instructions(env):
+    """Geneva sends datasets ["gc"]: the build instructions keep the studio's text, the rules and the General Comments
+    section and samples only (every dataset's made each message some 30,000 tokens). No datasets, or only unknown names:
+    the whole instructions, as before. Other purposes are not touched."""
+    env.client.post("/studio-api/chat", json=body(model="glm-eu"))
+    full = env.fake.requests[-1]["messages"][0]["content"]
+    env.client.post("/studio-api/chat", json=body(model="glm-eu", datasets=["gc"]))
+    gc = env.fake.requests[-1]["messages"][0]["content"]
+    assert "## `WORKSHOP_DATA.gc`" in gc and "## `WORKSHOP_DATA.uhri`" not in gc and "## `WORKSHOP_DATA.hrc`" not in gc
+    assert "## Rules for every app" in gc and '"gc"' in gc and '"uhri"' not in gc
+    assert len(gc) < len(full) * 0.6, (len(gc), len(full))
+    env.client.post("/studio-api/chat", json=body(model="glm-eu", datasets=["no_such_file", 7]))
+    assert env.fake.requests[-1]["messages"][0]["content"] == full
+    env.client.post("/studio-api/chat", json=body(model="glm-eu", purpose="question", datasets=["gc"]))
+    assert env.fake.requests[-1]["messages"][0]["role"] == "user"   # a question has no system text, datasets or not
+    assert full == studio.build_system_prompt(ROOT / "site" / "data")   # without datasets: exactly as before
