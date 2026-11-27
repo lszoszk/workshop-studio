@@ -2772,7 +2772,7 @@ def test_at_100_percent_the_room_is_asked_once_and_a_name_signs_the_app(base_url
     page.wait_for_selector("#wallDialog[open]")
     assert steps_done(page) == [True] * 7
     d = page.inner_text("#wallDialog")
-    assert "Show it to the room?" in d and "Your app goes on the wall on the projector, and it may appear in the short film at the end of the session." in d
+    assert "Show it to the room?" in d and "Your app goes on the wall on the projector." in d and "film" not in d
     assert page.get_attribute("#wallName", "maxlength") == "40" and page.get_attribute("#wallName", "placeholder") == "Your name, or a name for your app"
     assert [b.inner_text() for b in page.locator("#wallDialog button").all()] == ["Send to wall", "Not now"]
     page.fill("#wallName", "Ana <b>")

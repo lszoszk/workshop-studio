@@ -45,13 +45,13 @@
       "maker": "Anthropic",
       "origin": "USA",
       "region": "USA",
-      "host": "Anthropic",
-      "host_note": "the developer's own service; it keeps requests for a limited time (no zero data retention)",
+      "host": "Amazon Bedrock",
+      "host_note": "Amazon's cloud in the US (us-east-1), reached through OpenRouter with zero data retention",
       "openrouter": "anthropic/claude-sonnet-5.5",
       "provider": "amazon-bedrock/us-east-1",
       "price": "$2 in / $10 out per million tokens",
       "reasoning": "medium",
-      "zdr": false,
+      "zdr": true,
       "vision": true
     },
     "glm-eu": {
