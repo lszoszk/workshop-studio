@@ -307,28 +307,30 @@ G1HEAD = "Build this app. Follow my prompt and the plan; where they differ, the 
 
 def g1_started(page):
     """Geneva has no suggestion buttons: the studio is ready when the data card, a plan put back after a reload or an app
-    is up. From the data card, "Write your prompt" brings the prompt card."""
-    page.wait_for_function("() => document.getElementById('countryCount').textContent !== '—' && (document.querySelector('.data-card, .brief-card, #versions [data-v]') || !document.getElementById('planView').hidden)", timeout=20000)
+    is up. From the data card, "Write your prompt" brings the prompt card (on the stage)."""
+    page.wait_for_function("() => document.getElementById('countryCount').textContent !== '—' && (document.querySelector('.data-card, #promptView:not([hidden]), #versions [data-v]') || !document.getElementById('planView').hidden)", timeout=20000)
     if page.is_visible("#dataNext"):
         page.click("#dataNext")
         page.wait_for_selector(".brief-card", timeout=20000)
 
 
 def test_geneva_starts_with_the_data(base_url, browser):
-    """Data before the brief: the chat opens on the file's counts with "Look inside the file", the bar starts with Data,
-    and the brief card waits. Looking inside marks Data and brings the brief card; so does skipping Data."""
+    """Data before the prompt: the chat opens on the file's counts with "Look inside the file", the bar starts with Data,
+    and the prompt card waits. Looking inside marks Data and opens the file alone (the prompt opens only when asked for);
+    skipping Data opens the prompt."""
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
     page.goto(base_url + G1)
     page.wait_for_selector(".data-card", timeout=20000)
     page.wait_for_function("() => /7,304 paragraphs/.test(document.querySelector('.data-card').textContent)", timeout=20000)
     assert page.locator("#progressSteps li .pl").all_inner_texts()[:2] == ["Data", "Prompt"]
-    assert page.locator(".brief-card").count() == 0
+    assert not page.is_visible("#promptView")
     assert page.locator("#log .msg").nth(0).inner_text().startswith("Hello! Start with the data")   # the greeting, then the card
     page.click("#dataLook")
     page.wait_for_selector("#drawer .json-view", timeout=20000)
-    page.wait_for_selector(".brief-card", timeout=20000)
-    assert page.locator("#progressSteps li.done").count() == 1 and not page.is_visible("#dataNext")
+    assert page.locator("#progressSteps li.done").count() == 1 and page.is_visible("#dataNext")
+    page.click("#drawerClose")
+    assert not page.is_visible("#promptView")
     page.goto(base_url + G1)                                 # a fresh start: skipping Data also brings the brief
     page.wait_for_selector("#dataNext", timeout=20000)
     page.click("#progressSteps .pskip")
@@ -416,7 +418,9 @@ def test_geneva_switch_shows_the_jet_and_the_morse_and_is_remembered(base_url, b
     assert page.is_visible("#jetBtn") and page.is_visible(".egg.morse") and page.evaluate("localStorage.getItem('ws:geneva')") == "on"
     jet = lambda: float(page.eval_on_selector("#jetBtn", "e => getComputedStyle(e).getPropertyValue('--jet')"))
     assert jet() == 0 and page.get_attribute("#jetBtn", "aria-label") == "Jet d'Eau: 0 of 7 steps"
-    assert page.inner_text(".egg.morse") == "−−· · −· · ···− ·−" and page.get_attribute(".egg.morse", "aria-label") == "GENEVA in Morse code"
+    assert page.locator(".egg.morse .mc b").all_inner_texts() == list("GENEVA")          # each letter over its code
+    assert page.eval_on_selector_all(".egg.morse .mc i", "els => els.map(e => e.dataset.code)") == ["−−·", "·", "−·", "·", "···−", "·−"]
+    assert page.get_attribute(".egg.morse", "aria-label") == "GENEVA in Morse code"
     page.click(".egg.morse")
     pop = page.locator(".fact-pop")
     assert "ITU, where you are today, was founded on 17 May 1865" in pop.inner_text()
@@ -457,7 +461,7 @@ def test_geneva_drive_turns_while_the_model_works(base_url, browser):
     ctx, page = eggs_page(browser, base_url, on=True)
     g1_started(page)
     page.fill("#briefTopic", "freedom of expression online")
-    page.click("#sendBtn")
+    send_prompt(page)
     page.wait_for_selector(".msg .thought .egg.drive", timeout=20000)
     page.locator(".msg .thought .egg.drive").first.click()
     assert page.locator(".fact-pop a").get_attribute("href") == "https://en.wikipedia.org/wiki/Geneva_drive"
@@ -560,7 +564,7 @@ def test_the_extras_stand_still_for_reduced_motion(base_url, browser):
     ctx, page = eggs_page(browser, base_url, on=True, reduced=True)
     g1_started(page)
     page.fill("#briefTopic", "freedom of expression online")
-    page.click("#sendBtn")
+    send_prompt(page)
     page.wait_for_selector(".msg .thought .egg.drive", timeout=20000)
     assert page.evaluate(running) == []
     plan_through(page)
@@ -617,29 +621,30 @@ def test_geneva_file_drawer_switches_json_and_excel(base_url, browser):
 
 
 def test_geneva_highlight_examples_fill_the_message_box(base_url, browser, fake_api):
-    """After Change something, and in the plan's tools, three examples put "Change the plan: ..." in the box to edit before
-    sending; in recorded mode they are switched off and the studio says why."""
+    """Change something asks how (four ways); Describe a change puts "Change the plan: " in the box with three examples to
+    edit before sending. In recorded mode the ways that need a model are switched off and say why; Change my answers and
+    Another look stay."""
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
     page.goto(base_url + G1)                                  # recorded
     g1_started(page)
     g1_plan(page, "freedom of expression online")
-    assert page.locator("#planHl button").all_inner_texts() == ["Languages", "Accessibility (WCAG 2.2)", "Something else"]
-    assert all(b.is_disabled() for b in page.locator("#planHl button").all())
-    page.locator(".approve button.ghost").last.click()
-    assert "no model is connected" in page.locator(".msg.note").last.inner_text()
-    assert "What would you like to highlight? For example:" in page.inner_text(".hl-card")
-    assert all(b.is_disabled() for b in page.locator(".hl-card button").all())
+    assert not page.is_visible("#planTools")                 # the plan on the stage is a document
+    page.locator(".approve button.ghost").last.click()       # Change something: how?
+    how = page.locator(".how-card")
+    assert how.locator("[data-how]").all_inner_texts()[0].startswith("Change my answers") and how.locator("select").is_enabled()
+    assert how.locator("[data-how=describe]").is_disabled() and how.locator("[data-how=edit]").is_disabled()
+    assert "no model is connected" in how.locator("[data-how=describe]").inner_text()
     api, calls = fake_api
     page.goto(base_url + f"?api={api}&course=geneva&planpace=1&reset=1#s=TEST22")   # live
     g1_started(page)
     g1_plan(page, "freedom of expression online")
-    assert all(b.is_enabled() for b in page.locator("#planHl button").all())
-    page.locator("#planHl button", has_text="Languages").click()
+    change_how(page, "describe")
+    assert page.input_value("#input") == "Change the plan: " and page.locator(".hl-card").count() == 1 and page.locator(".how-card").count() == 0
+    assert all(b.is_enabled() for b in page.locator(".hl-card button").all())
+    page.locator(".hl-card button", has_text="Languages").click()
     assert page.input_value("#input") == ("Change the plan: add a short note in French and Spanish explaining how to search, for colleagues "
                                           "who work in those languages (the paragraphs stay in English).")
-    page.locator(".approve button.ghost").last.click()
-    assert page.input_value("#input") == "Change the plan: " and page.locator(".hl-card").count() == 1
     page.locator(".hl-card button", has_text="Accessibility").click()
     assert page.input_value("#input") == "Change the plan: make the app fully usable with a keyboard, with strong contrast and larger text."
     page.locator(".hl-card button", has_text="Something else").click()
@@ -707,18 +712,39 @@ def saved_plan(page, key="guest"):
 
 
 def g1_brief(topic=None, off=(), edits=None):
-    """What the brief card puts in the message box: the included blocks as LABEL, newline, paragraph, with [my topic] filled."""
+    """The prompt the card sends: the field's line first (MY FIELD, only when filled), then the included blocks as LABEL,
+    newline, paragraph."""
     edits = edits or {}
-    text = "\n\n".join(f"{b['label']}\n{edits.get(b['id'], b['text'])}" for b in G1PACK["brief"] if b["id"] not in off)
-    return text.replace("[my topic]", topic or "[my topic]")
+    blocks = [f"{b['label']}\n{edits.get(b['id'], b['text'])}" for b in G1PACK["brief"] if b["id"] not in off]
+    if topic:
+        blocks.insert(0, "MY FIELD\n" + G1PACK["topic_line"].replace("[my topic]", topic))
+    return "\n\n".join(blocks)
+
+
+def send_prompt(page):
+    """Put the prompt card's text in the message box, then Send it from there, as to a chatbot."""
+    page.click("#promptUse")
+    page.click("#sendBtn")
+
+
+def change_how(page, way):
+    """Change something under the latest plan, then one of the How card's ways: answers, describe or edit."""
+    page.locator(".approve button.ghost").last.click()
+    page.locator(f".how-card [data-how={way}]").click()
+
+
+def pick_look(page, look):
+    """Change something under the latest plan, then Another look."""
+    page.locator(".approve button.ghost").last.click()
+    page.locator(".how-card select").select_option(look)
 
 
 def g1_plan(page, topic=None):
     """Name a topic on the brief card, send it and answer the planner's questions with the recommended answers."""
     if topic:
         page.fill("#briefTopic", topic)
-    brief = page.input_value("#input")
-    page.click("#sendBtn")
+    brief = page.evaluate("window.__studioTest.brief()")
+    send_prompt(page)
     plan_through(page)
     return brief
 
@@ -1357,7 +1383,7 @@ def test_plan_mode_in_recorded_mode(base_url, browser):
     # Build: recorded mode has only the app built from the recommended answers
     build_plan(page)
     assert "only the plan with the recommended answers" in page.locator(".msg.note").last.inner_text()
-    page.locator(".approve button.ghost").last.click()   # Change something
+    page.locator(".approve button.ghost:not(.ans)").last.click()   # Change something
     assert "no model is connected" in page.locator(".msg.note").last.inner_text()
     page.wait_for_timeout(300)
     assert page.locator("#versions [data-v]").count() == 0 and page.is_visible("#planView")
@@ -1395,7 +1421,7 @@ def test_a_plan_is_changed_live_and_built(base_url, browser, fake_api):
     page.click("#sendBtn")
     plan_through(page)
     n = len(calls)
-    page.locator(".approve button.ghost").last.click()   # Change something
+    page.locator(".approve button.ghost:not(.ans)").last.click()   # Change something
     assert page.input_value("#input") == "Change the plan: "
     page.keyboard.type("add a line chart of the records per year.")
     page.keyboard.press("Enter")
@@ -2111,8 +2137,8 @@ def test_the_tour_and_the_country_picker_follow_the_course(base_url, browser):
 
 
 def test_start_over_clears_the_work_and_keeps_the_settings(base_url, browser):
-    """About → Start over, and ?reset=1: the apps and the conversation in this browser go; the course, the
-    settings and the seat stay."""
+    """About → Start a new conversation (two steps: what goes, with Save my app first and Cancel; then Clear everything),
+    and ?reset=1: the apps and the conversation in this browser go; the course, the settings and the seat stay."""
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
     page.goto(base_url + "?course=venice&via=replay&planpace=1&country=Kenya")
@@ -2125,8 +2151,12 @@ def test_start_over_clears_the_work_and_keeps_the_settings(base_url, browser):
     assert page.locator("#sessionSwitch button").count() == 3                 # still the Venice course
     send(page, DASHBOARD, "uhri", 1)
     page.click("#takeHomeBtn")
-    page.once("dialog", lambda d: d.accept())
+    page.click("#startOverBtn")                                               # step 1 only says what goes, and offers to save
+    assert page.is_visible("#startOverAsk") and page.is_visible("#startOverSave") and page.locator("#versions [data-v]").count() == 1
+    page.click("#startOverNo")                                                # Cancel changes nothing
+    assert not page.is_visible("#startOverAsk") and page.is_visible("#startOverBtn")
     page.click("#startOverBtn")
+    page.click("#startOverYes")
     page.wait_for_load_state()
     started(page)
     assert page.locator("#versions [data-v]").count() == 0
@@ -2297,7 +2327,7 @@ def test_geneva_is_one_session(base_url, browser):
     page.goto(base_url + G1)
     g1_started(page)
     assert page.locator("#progressSteps li.done").count() == 0
-    page.click("#sendBtn")
+    send_prompt(page)
     plan_through(page)
     build_plan(page)
     built(page, 1)
@@ -2345,32 +2375,42 @@ def test_geneva_kit_has_my_brief_and_the_home_dashboard(base_url, browser, tmp_p
     ctx.close()
 
 
-def test_the_brief_card_fills_the_message_box_and_the_file_is_shown(base_url, browser):
-    """The card "Write your brief" puts the five paragraphs in the message box as they are edited (a block switched off, a
-    topic, a changed paragraph) and attaches the General Comments; a brief that is not the pack's text starts the recorded
-    planning; the planner's first step shows the live counts of the file, "Look inside the file" opens three records as pretty,
-    coloured text with the Hugging Face link, and Brief, Data and Plan read are marked."""
+def test_the_prompt_card_is_on_the_stage_and_the_box_is_a_chat(base_url, browser):
+    """The card "Write your prompt" opens above the message box, with its own Send; the message box stays empty, for questions. The
+    field is optional and adds its own line (MY FIELD) only when filled; a block switched off or a changed paragraph is
+    what is sent. Sending starts the recorded planning with the file, shows the prompt in the chat and puts the card away;
+    the planner's first step shows the live counts of the file, "Look inside the file" opens three records as pretty,
+    coloured text with the Hugging Face link, and Prompt, Data and Plan read are marked. The plan has one title for all the
+    General Comments; the field only names the example searches."""
     ctx = browser.new_context(viewport={"width": 1366, "height": 800})
     page = ctx.new_page()
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.goto(base_url + G1)
     g1_started(page)
-    card = page.locator(".brief-card")
-    assert "Write your prompt" in card.inner_text() and card.locator(".brief-block").count() == 5
+    assert page.is_visible("#promptView") and page.is_visible("#promptUse")
+    card = page.locator("#promptCard")
+    assert "Write your prompt" in page.inner_text("#promptView") and card.locator(".brief-block").count() == 5
     assert card.locator(".brief-asks").all_inner_texts() == [b["asks"] for b in G1PACK["brief"]]
-    assert page.input_value("#input") == g1_brief()                       # filled as soon as the card is up
-    assert page.locator("#attach .filechip").count() == 1 and "General Comments" in page.inner_text("#attach")
-    assert page.get_attribute("#briefTopic", "placeholder")
+    assert page.input_value("#input") == "" and page.locator("#attach .filechip").count() == 0   # the box is a chat
+    assert page.evaluate("window.__studioTest.brief()") == g1_brief()
+    assert "every paragraph of all ten committees" in page.inner_text("#briefTopicNote")
     card.locator('.brief-block[data-id="before"] input[type=checkbox]').uncheck()
-    assert page.input_value("#input") == g1_brief(off=("before",)) and "BEFORE YOU BUILD" not in page.input_value("#input")
+    assert page.evaluate("window.__studioTest.brief()") == g1_brief(off=("before",))
     page.fill("#briefTopic", "freedom of expression online")
+    assert "I work on freedom of expression online" in page.inner_text("#briefTopicNote")
     extra = G1PACK["brief"][2]["text"] + " Cite only General Comments from 2011 on."
     page.fill('.brief-block[data-id="limits"] textarea', extra)
+    assert page.evaluate("window.__studioTest.brief()") == g1_brief("freedom of expression online", off=("before",), edits={"limits": extra})
+    page.click("#promptUse")                                              # into the message box, marked, with the file attached
     assert page.input_value("#input") == g1_brief("freedom of expression online", off=("before",), edits={"limits": extra})
-    page.click("#sendBtn")                                                # a changed brief starts the planning
+    assert page.is_visible("#promptChip") and "General Comments" in page.inner_text("#attach") and not page.is_visible("#promptView")
+    page.click("#sendBtn")
     page.wait_for_selector(".msg.ask:not(.answered)", timeout=30000)
-    assert page.locator(".msg.user").first.evaluate("e => e.lastChild.textContent").startswith("GOAL AND WHY\nWhen I write a submission on freedom of expression online")
+    assert not page.is_visible("#promptView") and page.input_value("#input") == "" and not page.is_visible("#promptChip")
+    first = page.locator(".msg.user").first
+    assert first.evaluate("e => e.lastChild.textContent").startswith("MY FIELD\nI work on freedom of expression online: make the three example searches about it.\n\nGOAL AND WHY\nWhen I write a submission, I need")
+    assert "General Comments" in first.inner_text()                     # the file goes with it
     gc = json.loads((SITE / "data/gc.json").read_text())["records"]
     docs = len({(r["symbol"], r["title"]) for r in gc})
     years = [r["year"] for r in gc]
@@ -2386,15 +2426,27 @@ def test_the_brief_card_fills_the_message_box_and_the_file_is_shown(base_url, br
     assert page.locator('#drawerBody a[href^="https://huggingface.co/datasets/"]').count() == 1 and page.is_visible("#insideCsv")
     page.click("#drawerClose")
     plan_through(page)
-    assert "Verbatim finder: freedom of expression online" in page.inner_text("#planDoc")
+    assert "Verbatim finder for General Comments" in page.inner_text("#planDoc") and "three example searches about freedom of expression online" in page.inner_text("#planDoc")
     assert page.locator("#planDoc input, #planDoc select, #planDoc textarea, #planDoc [contenteditable]").count() == 0
     assert page.eval_on_selector_all("#progressSteps li", "els => els.map(e => e.classList.contains('done'))")[:4] == [True, True, True, False]
-    # a brief too short to plan from is turned back
+    # the box emptied, then the prompt pasted back: its labels still make it the prompt (not a chat the model answers in words)
     page.goto(base_url + G1)
     g1_started(page)
-    page.fill("#input", "Make me an app.")
+    page.click("#promptUse")
+    text = page.input_value("#input")
+    page.fill("#input", "")
+    page.locator("#input").dispatch_event("input")
+    assert not page.is_visible("#promptChip") and page.is_visible("#promptBar")
+    page.fill("#input", text)
     page.click("#sendBtn")
-    assert "a few more words" in page.locator(".msg.note").last.inner_text() and page.locator(".msg.ask").count() == 0
+    page.wait_for_selector(".msg.ask:not(.answered)", timeout=30000)
+    assert page.locator(".plan-msg").count() >= 1
+    # a prompt switched down to too little cannot be sent
+    page.goto(base_url + G1)
+    g1_started(page)
+    for k in range(5):
+        page.locator(".brief-block input[type=checkbox]").nth(k).uncheck()
+    assert not page.is_enabled("#promptUse") and page.locator(".msg.ask").count() == 0
     assert not errors, errors
     ctx.close()
 
@@ -2406,7 +2458,7 @@ def test_skip_to_the_plan_and_a_look_for_each_seat(base_url, browser):
     page = ctx.new_page()
     page.goto(base_url + G1.replace("planpace=1", "planpace=60"))
     g1_started(page)
-    page.click("#sendBtn")
+    send_prompt(page)
     page.wait_for_selector(".plan-msg .skip-plan")
     page.click(".plan-msg .skip-plan")
     page.wait_for_selector(".msg.ask:not(.answered)", timeout=8000)
@@ -2447,13 +2499,15 @@ def test_a_plan_is_edited_by_hand_and_by_chat_and_built(base_url, browser, fake_
     g1_started(page)
     brief = g1_plan(page, "freedom of expression online")
     first = page.evaluate("([p, k]) => window.__studioTest.defaultLook(p, k)", [G1PACK, "TEST22"])
-    assert page.input_value("#planLook") == first and "v1 · the planner" in page.text_content("#planKicker")
+    assert "v1 · the planner" in page.text_content("#planKicker") and not page.is_visible("#planTools")
+    page.locator(".approve button.ghost").last.click()
+    assert page.locator(".how-card select").input_value() == first      # Another look shows the seat's own
     # the look: only its line changes, and the plan is the one planning.py composes for that look
     other = next(x["id"] for x in G1PACK["looks"] if x["id"] != first)
-    page.select_option("#planLook", other)
-    assert "v2 · edited by you" in page.text_content("#planKicker")
-    page.click("#planEditBtn")
-    assert page.input_value("#planEdit") == plan_of(other) and not page.is_visible("#planDoc") and not page.is_enabled("#planLook")
+    page.locator(".how-card select").select_option(other)
+    assert "v2 · edited by you" in page.text_content("#planKicker") and page.locator(".how-card").count() == 0
+    change_how(page, "edit")
+    assert page.input_value("#planEdit") == plan_of(other) and not page.is_visible("#planDoc") and page.is_visible("#planDone")
     # an edit without a heading is not accepted; with one it is v3
     page.fill("#planEdit", "just a line")
     page.click("#planDone")
@@ -2462,12 +2516,12 @@ def test_a_plan_is_edited_by_hand_and_by_chat_and_built(base_url, browser, fake_
     page.click("#planDone")
     assert not page.is_visible("#planEdit") and "v3 · edited by you" in page.text_content("#planKicker")
     assert "No tracking of any kind." in page.inner_text("#planDoc")
-    page.click("#planEditBtn")
+    change_how(page, "edit")
     page.click("#planCancel")                                               # Cancel changes nothing
     assert "v3 · edited by you" in page.text_content("#planKicker") and page.locator(".approve button.primary:not([disabled])").count() == 1
     # a change by chat
     n = len(calls)
-    page.locator(".approve button.ghost").last.click()
+    change_how(page, "describe")
     page.keyboard.type("add a line chart of the records per year.")
     page.keyboard.press("Enter")
     page.wait_for_function("() => document.getElementById('planKicker').textContent.startsWith('v4 · changed by')", timeout=15000)
@@ -2499,16 +2553,17 @@ def test_recorded_mode_refuses_an_edit_and_a_reload_keeps_the_plan(base_url, bro
     page.goto(base_url + G1)
     g1_started(page)
     g1_plan(page, "freedom of expression online")
-    assert not page.is_enabled("#planEditBtn") and page.is_enabled("#planLook")   # Geneva: a look needs no model, and picks the recorded app
-    assert "Changes to a plan are made live by your model" in page.inner_text("#planNote")
+    page.locator(".approve button.ghost").last.click()                       # recorded: a look needs no model (it picks the recorded app); an edit does
+    assert page.locator(".how-card [data-how=edit]").is_disabled() and page.locator(".how-card select").is_enabled()
+    page.locator(".how-card").evaluate("e => e.remove()")
     kicker = page.text_content("#planKicker")
     doc = page.inner_text("#planDoc")
-    assert "Verbatim finder: freedom of expression online" in doc
+    assert "Verbatim finder for General Comments" in doc and "about freedom of expression online" in doc
     page.reload()
     g1_started(page)
     assert page.is_visible("#planView") and page.inner_text("#planDoc") == doc and page.text_content("#planKicker") == kicker
     assert page.locator(".approve button.primary:not([disabled])").count() == 1 and page.locator(".plan-msg .step").count() == 0
-    assert page.locator(".brief-card").count() == 0
+    assert not page.is_visible("#promptView")
     build_plan(page)
     built(page, 1)
     assert saved_plan(page) is None   # built: the plan is not kept
@@ -2519,7 +2574,7 @@ def test_recorded_mode_refuses_an_edit_and_a_reload_keeps_the_plan(base_url, bro
     assert saved_plan(page)["topic"] == "the rights of older persons"
     page.goto(base_url + G1)
     g1_started(page)
-    assert page.locator(".brief-card").count() == 1 and not page.is_visible("#planView")
+    assert page.is_visible("#promptView") and not page.is_visible("#planView")
     assert saved_plan(page) is None
     assert not errors, errors
     ctx.close()
@@ -2728,6 +2783,7 @@ def test_at_100_percent_the_room_is_asked_once_and_a_name_signs_the_app(base_url
     page.press("#wallName", "Enter")                  # Enter sends, as the first button of the form does
     page.wait_for_function("() => !document.getElementById('wallDialog').open")
     page.wait_for_function("() => /Sent to the wall/.test(document.getElementById('log').innerText)")
+    assert page.locator(".telegram").count() == 0                     # Geneva's extras are off: no telegram
     mine = json.loads(urllib.request.urlopen(api + "/gallery?course=geneva").read())
     assert mine[0]["name"] == "Ana M." and mine[0]["course"] == "geneva" and mine[0]["title"] == "Verbatim finder with hints"
     # once only: another change does not open it again
@@ -2827,7 +2883,7 @@ def test_geneva_model_failed_box_offers_the_recorded_app(base_url, browser, fake
     page.goto(base_url + LIVE_G1(api))
     g1_started(page)
     g1_plan(page, "freedom of expression")
-    page.select_option("#planLook", "night")
+    pick_look(page, "night")
     FAIL["model_failed"] = True
     try:
         build_plan(page)
@@ -2840,7 +2896,7 @@ def test_geneva_model_failed_box_offers_the_recorded_app(base_url, browser, fake
         FAIL["model_failed"] = False
     assert page.inner_text(BADGE) == "Recorded answers" and page.locator(".msg.err").count() == 0
     log = page.inner_text("#log")
-    assert "Recorded mode builds the app recorded beforehand from the recommended answers, on the topic the rights of the child. Changes to the plan need a live model." in log
+    assert "Recorded mode builds the app recorded beforehand from the recommended answers (its example searches are about the rights of the child). Changes to the plan need a live model." in log
     v = saved_versions(page, "TEST22")
     assert len(v) == 1 and v[0]["look"] == "night" and v[0]["recorded"] and v[0]["html"] == rec_html("g1-verbatim.night.md")
     page.wait_for_selector(".test-card")   # the first finder brings the test card, recorded or not
@@ -3040,8 +3096,8 @@ def answer_again(page, choose):
 def test_a_done_step_on_the_bar_takes_you_back(base_url, browser):
     """Recorded mode, after the first app: Data opens the file; Plan read brings back the plan the app was built from, with
     Change my answers (the answer given before is marked); new answers make the planner's next version, and building it is a
-    new app beside the first one. Prompt brings the prompt card back at the end of the chat with what was sent (a paragraph
-    switched off stays off); Cancel folds it up and gives the box back; after a reload the way back still works."""
+    new app beside the first one. Prompt brings the prompt card back on the stage with what was sent (a paragraph switched
+    off stays off) and leaves the message box alone; Cancel puts it away; after a reload the way back still works."""
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
     errors = []
@@ -3061,9 +3117,8 @@ def test_a_done_step_on_the_bar_takes_you_back(base_url, browser):
     # Plan read: the plan comes back, live again
     page.click("#progressSteps [data-go='3']")
     page.wait_for_function("() => !document.getElementById('planView').hidden && /v1/.test(document.getElementById('planKicker').textContent)", timeout=20000)
-    assert page.is_visible("#planAnsBtn") and page.is_enabled("#planAnsBtn")
     assert page.locator(".approve button.primary:not([disabled])").count() == 1
-    page.click("#planAnsBtn")
+    change_how(page, "answers")                                                # Change something → Change my answers
     page.wait_for_selector(".msg.ask:not(.answered) .rec.mine", timeout=20000)
     assert "Words and phrases" in page.locator(".msg.ask:not(.answered) .ask-opt:has(.rec.mine)").inner_text()
     answer_again(page, (0, 0, 0))                                              # Exact phrase instead of Words and phrases
@@ -3077,23 +3132,22 @@ def test_a_done_step_on_the_bar_takes_you_back(base_url, browser):
     # Prompt: the card again, with what was sent; Cancel
     page.fill("#input", "half a thought")
     page.click("#progressSteps [data-go='2']")
-    page.wait_for_selector(".brief-card .brief-again", timeout=20000)
-    assert page.locator("#log > .msg").last.evaluate("e => e.classList.contains('brief-card')")
+    page.wait_for_selector("#promptView:not([hidden])", timeout=20000)
     assert page.input_value("#briefTopic") == "the rights of older persons"
-    assert "the rights of older persons" in page.input_value("#input")
-    page.click(".brief-again button")
-    assert page.locator(".brief-again").count() == 0 and page.input_value("#input") == "half a thought"
+    assert page.input_value("#input") == "half a thought"                    # the box is left alone
+    page.click("#promptHide")                                                 # a new prompt put away: nothing waits in the bar
+    assert not page.is_visible("#promptView") and not page.is_visible("#promptBar") and page.input_value("#input") == "half a thought"
     # after a reload: the card is made again from what was kept, the switched-off paragraph still off
     page.reload()
     g1_started(page)
     page.click("#progressSteps [data-go='2']")
-    page.wait_for_selector(".brief-card .brief-again", timeout=20000)
+    page.wait_for_selector("#promptView:not([hidden])", timeout=20000)
     assert page.input_value("#briefTopic") == "the rights of older persons"
     assert page.locator(".brief-block").nth(3).evaluate("e => e.classList.contains('off')")
     page.fill("#briefTopic", "the right to health")
-    page.click("#sendBtn")
+    send_prompt(page)
     plan_through(page)
-    assert "the right to health" in page.inner_text("#planDoc") and page.locator(".brief-again").count() == 0
+    assert "about the right to health" in page.inner_text("#planDoc") and not page.is_visible("#promptView")
     assert not errors, errors
     ctx.close()
 
@@ -3112,4 +3166,193 @@ def test_a_skipped_step_can_be_undone(base_url, browser):
     first = page.locator("#progressSteps li").first
     assert "done" in first.get_attribute("class") and "skipped" not in first.get_attribute("class")
     assert first.locator(".pn").inner_text() == "✓"
+    ctx.close()
+
+
+def test_geneva_box_is_a_chat_before_the_first_app(base_url, browser, fake_api):
+    """Live: a question in the message box before the prompt is sent goes to the model as a chat, with the studio's note
+    that there is no app yet (an app comes only from the prompt and its plan); the answer is shown, no planning starts and
+    the prompt card stays on the stage. In recorded mode the same question gets a note that points to the prompt."""
+    api, calls = fake_api
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + f"?api={api}&course=geneva&planpace=1&reset=1#s=TEST22")
+    g1_started(page)
+    assert "Ask me anything" in page.get_attribute("#input", "placeholder")
+    n = len(calls)
+    page.fill("#input", "Hi, how are you? What can you do for me here, and where do I start?")
+    page.click("#sendBtn")
+    page.wait_for_function("() => /I'm well, thank you/.test(document.getElementById('log').textContent) && document.getElementById('building').hidden", timeout=20000)
+    asked = calls[-1]["messages"][-1]["content"]
+    assert len(calls) == n + 1 and calls[-1]["purpose"] == "build"
+    assert asked.startswith("Hi, how are you?") and "(Studio note: Geneva workshop." in asked and "There is no app yet" in asked and "write no app and no code" in asked
+    assert "Never tell them to drag or attach a file" in asked and "The paragraphs stay in English" in asked
+    assert "You are Claude Sonnet 5.5, by Anthropic, made in USA" in asked and "Their next step: look inside the file." in asked
+    assert page.locator(".plan-msg, .msg.ask").count() == 0 and page.is_visible("#promptView")
+    assert page.locator("#versions [data-v]").count() == 0
+    g1_plan(page, "freedom of expression online")
+    page.fill("#input", "And how are you now?")                          # a chat while the plan waits: the plan stays on the stage
+    page.click("#sendBtn")
+    page.wait_for_function("() => document.querySelectorAll('#log .msg.assistant').length >= 2 && document.getElementById('building').hidden", timeout=20000)
+    assert "Their plan is on the right" in calls[-1]["messages"][-1]["content"] and page.is_visible("#planView")
+    page.fill("#input", "Change the plan: add a line chart of the records per year.")   # a change typed as to a chatbot changes the plan
+    page.click("#sendBtn")
+    page.wait_for_function("() => document.getElementById('planKicker').textContent.startsWith('v2 · changed by')", timeout=15000)
+    assert "Change the plan: add a line chart" in calls[-1]["messages"][0]["content"]
+    assert not errors, errors
+    page.goto(base_url + G1)                                             # recorded mode: no model to chat with
+    g1_started(page)
+    page.fill("#input", "Hi, how are you? What can you do for me here, and where do I start?")
+    page.click("#sendBtn")
+    assert "To start the plan, press Write your prompt" in page.locator(".msg.note").last.inner_text()
+    assert page.locator(".plan-msg, .msg.ask").count() == 0 and page.is_visible("#promptView")
+    ctx.close()
+
+
+def test_the_prompt_opens_on_request_hides_and_keeps_its_draft(base_url, browser):
+    """The prompt opens only when asked for (Write your prompt, or Next on the bar); Hide puts it away and the line above the
+    message box opens it again as it was left; a draft not sent yet survives a reload and waits in that line."""
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + G1)
+    page.wait_for_selector("#dataLook", timeout=20000)
+    page.click("#dataLook")
+    page.wait_for_selector("#drawer .json-view", timeout=20000)
+    page.click("#drawerClose")
+    assert not page.is_visible("#promptView") and page.inner_text("#progressNext") == "Next: write your prompt and send it"
+    page.click("#progressNext")                                               # Next on the bar opens it
+    page.wait_for_selector("#promptView:not([hidden])", timeout=20000)
+    page.fill("#briefTopic", "detention")
+    page.click("#promptHide")
+    assert not page.is_visible("#promptView") and "not sent yet" in page.inner_text("#promptBar")
+    page.click("#promptOpen")
+    assert page.is_visible("#promptView") and page.input_value("#briefTopic") == "detention"
+    page.wait_for_timeout(500)                                                # the draft is written a moment after typing
+    page.reload()
+    page.wait_for_selector("#promptBar:not([hidden])", timeout=20000)
+    assert not page.is_visible("#promptView")
+    page.click("#promptOpen")
+    page.wait_for_selector("#promptView:not([hidden])", timeout=20000)
+    assert page.input_value("#briefTopic") == "detention"
+    send_prompt(page)                                                 # sent: the draft is gone
+    plan_through(page)
+    page.reload()
+    page.wait_for_function("() => !document.getElementById('planView').hidden", timeout=20000)
+    assert not page.is_visible("#promptBar") and not page.is_visible("#promptView")
+    assert not errors, errors
+    ctx.close()
+
+
+def test_geneva_a_request_for_a_tool_in_the_box_is_offered_as_the_prompt(base_url, browser, fake_api):
+    """Live, before any prompt: a request for a tool typed in the box (no card labels) is not sent at once; one card asks
+    whether it is the prompt. Just ask the model sends it as a chat (with the Geneva note); Use it as my prompt starts the
+    planner with that text and the file."""
+    api, calls = fake_api
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.goto(base_url + f"?api={api}&course=geneva&planpace=1&reset=1#s=TEST22")
+    g1_started(page)
+    ask = "How are you? Build me a tool that finds every paragraph on solitary confinement, with citations I can paste."
+    n = len(calls)
+    page.fill("#input", ask)
+    page.press("#input", "Enter")
+    page.wait_for_selector(".msg.as-prompt")
+    assert len(calls) == n and page.input_value("#input") == ask             # nothing sent yet
+    page.click(".msg.as-prompt [data-a=ask]")
+    page.wait_for_function("() => /I'm well, thank you/.test(document.getElementById('log').textContent) && document.getElementById('building').hidden", timeout=20000)
+    assert len(calls) == n + 1 and "(Studio note: Geneva workshop." in calls[-1]["messages"][-1]["content"] and page.locator(".msg.as-prompt").count() == 0
+    page.fill("#input", ask)
+    page.press("#input", "Enter")
+    page.click(".msg.as-prompt [data-a=prompt]")
+    page.wait_for_selector(".msg.ask:not(.answered)", timeout=30000)
+    first = page.locator(".msg.user").last
+    assert ask in first.inner_text() and "General Comments" in first.inner_text() and page.input_value("#input") == ""
+    assert not errors, errors
+    ctx.close()
+
+
+def test_geneva_a_reload_while_the_planner_works_puts_the_prompt_back(base_url, browser):
+    """A reload while the recorded planner works: the prompt that was sent goes back in the message box, marked, with the
+    file; the Prompt step is open again and a note says why; Send starts the planner again, with the field."""
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    page.goto(base_url + G1.replace("planpace=1", "planpace=60"))
+    g1_started(page)
+    page.fill("#briefTopic", "climate change")
+    sent = page.evaluate("window.__studioTest.brief()")
+    send_prompt(page)
+    page.wait_for_selector(".plan-msg", timeout=20000)
+    page.reload()
+    page.wait_for_function("() => /The planning stopped when the page was reloaded/.test(document.getElementById('log').textContent)", timeout=20000)
+    assert page.input_value("#input") == sent and page.is_visible("#promptChip") and "General Comments" in page.inner_text("#attach")
+    assert not page.is_visible("#promptBar")
+    assert not page.locator("#progressSteps li").nth(1).evaluate("e => e.classList.contains('done')")
+    page.goto(base_url + G1.replace("&reset=1", ""))                      # the default pace for the rest
+    page.wait_for_function("() => /The planning stopped/.test(document.getElementById('log').textContent)", timeout=20000)
+    page.click("#sendBtn")
+    plan_through(page)
+    assert "about climate change" in page.inner_text("#planDoc")
+    page.reload()                                                          # the plan exists: nothing comes back in the box
+    page.wait_for_function("() => !document.getElementById('planView').hidden", timeout=20000)
+    assert page.input_value("#input") == "" and page.locator(".msg.note", has_text="The planning stopped").count() == 0
+    ctx.close()
+
+
+def test_geneva_the_prompt_card_and_the_keyboard(base_url, browser):
+    """Opening the prompt puts the keyboard in its first field; Cmd/Ctrl+Enter puts it in the message box; Escape hides it
+    (the line opens it again). About shows What left this laptop before any app; Save & share offers a new conversation
+    (About, at its first of two steps)."""
+    ctx = browser.new_context(viewport={"width": 1366, "height": 800})
+    page = ctx.new_page()
+    page.goto(base_url + G1)
+    g1_started(page)
+    assert page.evaluate("document.activeElement.id") == "briefTopic"
+    page.keyboard.press("Escape")
+    assert not page.is_visible("#promptView") and page.is_visible("#promptBar")
+    page.click("#promptOpen")
+    page.keyboard.press("Control+Enter")
+    assert page.input_value("#input") == page.evaluate("window.__studioTest.brief()") and page.is_visible("#promptChip")
+    page.click("#takeHomeBtn")
+    page.click("#aboutTraceBtn")
+    assert page.inner_text("#drawerTitle") == "What left this laptop"
+    page.click("#drawerClose")
+    page.fill("#input", "")
+    page.locator("#input").dispatch_event("input")
+    recorded_first_app(page)
+    page.click("#keepBtn")
+    page.click("#newConvBtn")
+    assert page.is_visible("#startOverAsk") and page.locator("#versions [data-v]").count() == 1   # it asks first
+    ctx.close()
+
+
+def test_geneva_a_telegram_when_the_app_reaches_the_wall(base_url, browser, fake_api):
+    """With Geneva's extras on, an app sent to the wall brings a telegram: its tape spells the words in Morse, letter over code,
+    then YOUR APP IS ON THE WALL STOP, the ITU fact and its source; × closes it."""
+    api, _ = fake_api
+    ctx, page = eggs_page(browser, base_url, on=True, url=f"?api={api}&course=geneva&planpace=1&reset=1#s=TEST22")
+    g1_started(page)
+    g1_plan(page)
+    build_plan(page)
+    built(page, 1)
+    page.wait_for_selector(".test-card")
+    for i in range(3):
+        page.locator(".test-card .tline input").nth(i).check()
+    page.fill("#input", "Add a hint about speed.")
+    page.click("#sendBtn")
+    built(page, 2)
+    page.wait_for_selector("#wallDialog[open]")
+    page.click("#wallSend")
+    page.wait_for_selector(".telegram", timeout=8000)
+    tg = page.locator(".telegram")
+    assert "YOUR APP IS ON THE WALL STOP" in tg.inner_text() and "founded on 17 May 1865" in tg.inner_text()
+    assert tg.locator(".mc b").all_inner_texts()[:4] == ["Y", "O", "U", "R"] and tg.locator(".mc i").first.get_attribute("data-code") == "−·−−"
+    assert tg.locator("a").get_attribute("href") == "https://www.itu.int/en/history/Pages/ITUBorn1865.aspx"
+    page.click(".telegram .tg-close")
+    assert page.locator(".telegram").count() == 0
     ctx.close()

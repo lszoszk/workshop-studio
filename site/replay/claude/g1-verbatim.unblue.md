@@ -6,7 +6,7 @@ I built the verbatim finder on the attached General Comments: type words or a "q
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Verbatim finder: the rights of the child</title>
+<title>Verbatim finder for General Comments</title>
 <style>
 :root{--ink:#1a2a3a;--panel:#eef4f8;--blue:#009edb;--deep:#00598a;--rule:#cfdde8;--mute:#44566a}
 *{box-sizing:border-box}
@@ -58,7 +58,7 @@ mark{background:#b9e4f5;color:var(--ink);border-bottom:2px solid var(--blue);pad
 <div class="wrap">
 <header>
   <p class="mono" id="srcLabel">WORKSHOP_DATA.gc</p>
-  <h1>Verbatim finder: the rights of the child</h1>
+  <h1>Verbatim finder for General Comments</h1>
   <p class="sub" id="srcLine">Loading the file...</p>
 </header>
 

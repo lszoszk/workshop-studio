@@ -1,4 +1,4 @@
-I added a short intro under the title. It says the search covers every General Comment of every committee in the file, not only those on children, and lists the three steps.
+I added a short intro under the title. It says the search covers every General Comment of every committee in the file, and lists the three steps.
 
 ```edit
 <<<<<<< SEARCH

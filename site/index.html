@@ -8,7 +8,7 @@
 <meta name="robots" content="noindex, nofollow">
 <script src="gate.js"></script>
 <script>try { const t = localStorage.getItem('ws:theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
-<link rel="stylesheet" href="studio.css?v=2026-11-26a"></head>
+<link rel="stylesheet" href="studio.css?v=2026-11-27k"></head>
 <body>
 <!-- a phone that scanned the badge's QR code gets this instead of the studio -->
 <div class="handoff" id="handoff" hidden>
@@ -59,7 +59,7 @@
 <div class="progress-wrap">
 <div class="progress" id="progress" role="progressbar" aria-label="Your progress" aria-valuemin="0" aria-valuemax="7" aria-valuenow="0" aria-valuetext="0 of 7 steps done" hidden>
   <ol id="progressSteps"></ol>
-  <span class="pnext" id="progressNext"></span>
+  <button type="button" class="pnext" id="progressNext" title="Go there"></button>
 </div>
 </div>
 <div class="room-strip" id="roomStrip" role="status" hidden>
@@ -72,11 +72,23 @@
 <main class="work">
   <section class="chat" aria-label="Conversation">
     <div class="log" id="log"></div>
+    <div class="prompt-dock" id="promptView" hidden aria-label="Your prompt">
+      <div class="prompt-head"><div class="prompt-top"><span class="plan-kicker">Step 2 · Your prompt</span>
+        <button type="button" class="ghost prompt-hide" id="promptHide" title="Put it away; it stays as you left it">Hide</button></div><b>Write your prompt</b>
+        <span class="prompt-sub">Read the five paragraphs: change any of them, or switch one off. Then put it in the message box and send it from there.</span></div>
+      <div class="prompt-body"><div class="brief-card prompt-card" id="promptCard"></div></div>
+      <div class="prompt-foot">
+        <span class="prompt-note">It goes into the message box with the file attached; press Send there. The planner asks you three questions and writes a plan; nothing is built before you approve it.</span>
+        <button type="button" class="primary" id="promptUse" disabled title="Cmd/Ctrl+Enter">Put it in the message box ↓</button>
+      </div>
+    </div>
+    <div class="prompt-bar" id="promptBar" hidden><span><b>Your prompt</b> · not sent yet</span><button type="button" class="linkish" id="promptOpen">Open</button></div>
     <div class="suggest" id="suggest"></div>
     <form class="composer" id="composer">
       <div class="drop-hint" aria-hidden="true">Drop the file here</div>
       <div class="continuing" id="continuing" hidden></div>
       <div class="needs" id="needs" hidden></div>
+      <div class="prompt-chip" id="promptChip" hidden title="Send starts the plan. To write an ordinary message instead, empty the box.">Prompt for the planner</div>
       <div class="attach" id="attach" hidden></div>
       <button type="button" class="planmode adv" id="planModeBtn" aria-pressed="true" hidden title="Plan mode: the model looks at your data, asks you a few questions and writes a plan; you build from the plan">Plan mode</button>
       <textarea id="input" rows="1" placeholder="Ask anything, or describe a tool you want"></textarea>
@@ -106,6 +118,7 @@
             <button class="mi" role="menuitem" id="downloadBtn"><b>Save as file</b><span>The app and its data in one file; it opens with a double-click, even offline</span></button>
             <button class="mi adv" role="menuitem" id="wallBtn" hidden><b>Send to wall</b><span>Show your app on the room's screen</span></button>
             <button class="mi" role="menuitem" id="kitMenuBtn"><b>Take-home kit</b><span>Every workshop request, the data and your apps, in one file for your own chatbot</span></button>
+            <button class="mi" role="menuitem" id="newConvBtn"><b>Start a new conversation…</b><span>Clears your prompt, plan, apps and chat in this browser; it asks first</span></button>
           </div>
         </div>
         <div class="menu">
@@ -140,7 +153,6 @@
         <div class="plan-tools" id="planTools" hidden>
           <label class="plan-look"><span>Look</span><select id="planLook" aria-label="Look of the app"></select></label>
           <button type="button" class="ghost" id="planEditBtn">Edit the plan</button>
-          <button type="button" class="ghost" id="planAnsBtn" hidden>Change my answers</button>
           <button type="button" class="primary" id="planDone" hidden>Done</button>
           <button type="button" class="ghost" id="planCancel" hidden>Cancel</button>
           <span class="plan-note" id="planNote" hidden></span>
@@ -225,9 +237,9 @@
 
 <script src="preview-doc.js?v=2026-11-24b"></script>
 <script src="pdf-view.js?v=2026-11-24b"></script>
-<script src="tour.js?v=2026-11-26a"></script>
+<script src="tour.js?v=2026-11-27k"></script>
 <script src="own-files.js?v=2026-11-24b"></script>
 <script src="kit.js?v=2026-11-24b"></script>
-<script src="studio.js?v=2026-11-26a"></script>
+<script src="studio.js?v=2026-11-27k"></script>
 </body>
 </html>

@@ -6,7 +6,7 @@ I built a one-screen verbatim finder: type a phrase, see every General Comment p
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Verbatim finder: the rights of the child</title>
+<title>Verbatim finder for General Comments</title>
 <style>
 [hidden]{display:none!important}
 *{box-sizing:border-box}
@@ -56,7 +56,7 @@ h2{font-size:20px;margin:28px 0 6px}
 <div class="wrap">
   <header>
     <div class="label">WORKSHOP_DATA.gc &middot; general comments, paragraph by paragraph</div>
-    <h1>Verbatim finder: the rights of the child</h1>
+    <h1>Verbatim finder for General Comments</h1>
     <p class="source" id="source"></p>
   </header>
 

@@ -6,7 +6,7 @@ I built a one-screen finder over the General Comments file: type words or a "quo
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Verbatim finder: the rights of the child</title>
+<title>Verbatim finder for General Comments</title>
 <style>
 :root{--paper:#fbfaf7;--ink:#111;--soft:#555;--rule:#d6d2c8;--hl:#ffe066;--focus:#9b2335}
 *{box-sizing:border-box}
@@ -56,7 +56,7 @@ ul.lim li{margin:4px 0}
     <span class="label">WORKSHOP_DATA.gc · General Comments, paragraph by paragraph</span>
     <a class="hint" id="draftlink" href="#draft">Draft: 0 paragraphs</a>
   </div>
-  <h1>Verbatim finder: the rights of the child</h1>
+  <h1>Verbatim finder for General Comments</h1>
   <p class="src" id="src"></p>
 </header>
 

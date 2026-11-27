@@ -206,12 +206,12 @@
    ]
   }
  ],
- "plan_base": "# Verbatim finder: {topic}\n\n## What you asked for\n\nYou need the exact words of General Comments on {topic}, with a citation a reader can check: from the attached file only, never summarised; nothing leaves your browser.\n\n## What I found in the file\n\n- About 7,300 paragraphs from ten committees, 1972–2026, every field filled.\n- Uneven: CRC about 2,100 paragraphs, CED about 60.\n- Trap: a `symbol` is not always one document: A/48/18 holds seven General Recommendations; five joint General Comments carry two symbols in one field (CMW/C/GC/7–CERD/C/GC/38).\n- `text` keeps curly apostrophes (child’s) and footnote marks like [[fn:12]]; \"best interests\" occurs 641 times.\n\n## What the tool will do\n\nOne screen: a search box, three example searches about {topic} as buttons, and \"N paragraphs searched\" always visible (count `records`).\n\n{{q1}}\n\nResults: {{q3}} Each result: `committee`, `short_title`, `symbol` linked to `doc_url`, para. `paragraph`, the full `text` as stored, and two buttons. \"Copy citation\" {{q2}} \"Add to draft\" puts it in a draft list below (\"Copy all\", \"Download\"). No match: say so, show 0.\n\n## Your decisions\n\n- Matching. {{q1.decision}}\n- Citation. {{q2.decision}}\n- Results. {{q3.decision}}\n\n## Look\n\n{look}\n\n## What it will not do\n\n- No summaries, paraphrase or synonyms: only the words you typed.\n- No other sources: no concluding observations, no case law.\n- No translation: English only.\n\n## How you can check it\n\n1. Search, in quotation marks, a phrase you know: it appears in a result word for word, apostrophes included.\n2. Click a result's symbol (`doc_url`) and compare the paragraph with the original.\n3. Click \"Copy citation\", paste it into any document: symbol and paragraph number as the result showed them.",
+ "plan_base": "# Verbatim finder for General Comments\n\n## What you asked for\n\nYou need the exact words of the General Comments, all of them, with a citation a reader can check: from the attached file only, never summarised; nothing leaves your browser.\n\n## What I found in the file\n\n- About 7,300 paragraphs from ten committees, 1972–2026, every field filled.\n- Uneven: CRC about 2,100 paragraphs, CED about 60.\n- Trap: a `symbol` is not always one document: A/48/18 holds seven General Recommendations; five joint General Comments carry two symbols in one field (CMW/C/GC/7–CERD/C/GC/38).\n- `text` keeps curly apostrophes (child’s) and footnote marks like [[fn:12]]; \"best interests\" occurs 641 times.\n\n## What the tool will do\n\nOne screen: a search box, three example searches about {topic} as buttons, and \"N paragraphs searched\" always visible (count `records`).\n\n{{q1}}\n\nResults: {{q3}} Each result: `committee`, `short_title`, `symbol` linked to `doc_url`, para. `paragraph`, the full `text` as stored, and two buttons. \"Copy citation\" {{q2}} \"Add to draft\" puts it in a draft list below (\"Copy all\", \"Download\"). No match: say so, show 0.\n\n## Your decisions\n\n- Matching. {{q1.decision}}\n- Citation. {{q2.decision}}\n- Results. {{q3.decision}}\n\n## Look\n\n{look}\n\n## What it will not do\n\n- No summaries, paraphrase or synonyms: only the words you typed.\n- No other sources: no concluding observations, no case law.\n- No translation: English only.\n\n## How you can check it\n\n1. Search, in quotation marks, a phrase you know: it appears in a result word for word, apostrophes included.\n2. Click a result's symbol (`doc_url`) and compare the paragraph with the original.\n3. Click \"Copy citation\", paste it into any document: symbol and paragraph number as the result showed them.",
  "brief": [
   {
    "id": "goal",
    "label": "GOAL AND WHY",
-   "text": "When I write a submission on [my topic], I need the exact words of UN treaty bodies' General Comments, with a correct citation. A chatbot's paraphrase is not enough: I have to quote.",
+   "text": "When I write a submission, I need the exact words of the UN treaty bodies' General Comments, all of them, with a correct citation. A chatbot's paraphrase is not enough: I have to quote.",
    "asks": "What are we trying to accomplish, and why?"
   },
   {
@@ -267,5 +267,6 @@
   }
  ],
  "free_brief": true,
- "topic_default": "the rights of the child"
+ "topic_default": "the work of all ten committees",
+ "topic_line": "I work on [my topic]: make the three example searches about it."
 }

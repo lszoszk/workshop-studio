@@ -1,4 +1,4 @@
-I added a short plain-words intro under the title: it says the search covers all General Comments of every committee in the file, not only those on children, and lists the three steps. It uses the page's existing colours and type.
+I added a short plain-words intro under the title: it says the search covers all General Comments of every committee in the file, and lists the three steps. It uses the page's existing colours and type.
 
 ```edit
 <<<<<<< SEARCH

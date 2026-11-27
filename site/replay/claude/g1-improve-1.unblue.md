@@ -1,4 +1,4 @@
-I added a short intro under the title. It says the search covers every General Comment of every committee in the file, not only those on children, and lists the three steps.
+I added a short intro under the title. It says the search covers every General Comment of every committee in the file, and lists the three steps.
 
 ```edit
 <<<<<<< SEARCH
@@ -14,10 +14,10 @@ header .intro ol{margin:0;padding-left:22px}
 section{margin-top:26px}
 >>>>>>> REPLACE
 <<<<<<< SEARCH
-  <h1>Verbatim finder: the rights of the child</h1>
+  <h1>Verbatim finder for General Comments</h1>
   <p class="sub" id="srcLine">Loading the file...</p>
 =======
-  <h1>Verbatim finder: the rights of the child</h1>
+  <h1>Verbatim finder for General Comments</h1>
   <div class="intro">
     <p>This search covers all General Comments of every committee in the file, not only those on children. Three steps:</p>
     <ol>

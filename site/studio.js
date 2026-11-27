@@ -278,6 +278,7 @@
     renderFooter();
     renderAll();
     if (S.savedPlan) resumePlan(S.savedPlan);
+    else await resumeSent();
     if (CFG.preload) await preloadCourseFiles();
     if (CFG.phones) phonesButtons();
     track('open', { route: S.route.type, session: S.session, model: S.model, has_seat: !!S.seatCode, apps: S.versions.length,
@@ -291,7 +292,7 @@
     else if (CFG.tour) Tour.startOnce();   // the first visit in this browser
     if (!S.versions.length && !S.talk.length) {
       if (CFG.briefCard && CFG.dataFirst) {
-        if (!S.savedPlan) note('Hello! Start with the data: look inside the file below. Then write your prompt and send it. The planner looks at the data too and writes a plan; you read it, change it if you like, and build from it.');
+        if (!S.savedPlan) note('Hello! Start with the data: look inside the file below. Then press Write your prompt: it opens above the message box; put it in the box and send it. The planner looks at the data too and writes a plan; you read it, change it if you like, and build from it. You can ask me anything here at any time.');
         if (DataCard.el && DataCard.el.isConnected) $('log').append(DataCard.el);   // the card under the greeting
       } else if (CFG.briefCard) { if (!S.savedPlan) note('Hello! Write your prompt in the card below, then send it. The planner will look at your data and write a plan; you read it, change it if you like, and build from it.'); }
       else note(`Hello! Ask me anything, or pick a suggestion below. To build an app, first drag a file from <b>Your files</b> into the chat` +
@@ -389,7 +390,7 @@
   // The work so far stays; setRoute is all that changes. S.recBy says who switched: 'you', 'facilitator' or 'paused'.
   const replayRoute = () => S.config.routes.find((r) => r.type === 'replay');
   const recordedNow = () => !!CFG.backup && !!S.route && S.route.type === 'replay';
-  const RECORDED_NOTE = 'Recorded mode builds the app recorded beforehand from the recommended answers, on the topic the rights of the child. Changes to the plan need a live model.';
+  const RECORDED_NOTE = 'Recorded mode builds the app recorded beforehand from the recommended answers (its example searches are about the rights of the child). Changes to the plan need a live model.';
   const NEEDS_LIVE = 'This needs a live model, and in recorded mode no model is connected. Use the badge at the top (Back to the live model) when it is back.';
 
   function useRecorded(why, by = 'you') {
@@ -969,6 +970,7 @@
 
   // a workshop request names the file it needs; until that file is in the chat, the box says so
   function renderNeeds() {
+    if (CFG.briefCard) renderPromptChip();
     const p = S.prompts.find((q) => q.id === S.pendingPromptId);
     // a file that comes with the needed one (the library with the wiki) stands for it: swap it in
     const part = p && p.dataset && !S.draft.has(p.dataset) && [...S.draft].find((k) => (fileMeta(p.dataset).also || []).includes(k));
@@ -987,9 +989,27 @@
 
   // every message goes through here, so a request is never lost or silently changed;
   // `plan` is set when the message is a plan on its way to being built
-  function submitBuild(text, plan) {
+  function submitBuild(text, plan, asChat) {
     if (!S.ready || S.busy || !text.trim() || text.trim() === CHANGE_APP.trim()) return;   // the prefix of "My own idea", with nothing after it
-    if (!plan && S.planning && S.planning.changing) {
+    // Geneva (27.11.2026): the prompt is known by its own labels (GOAL AND WHY, LIMITS…), even when the box lost its "Prompt for
+    // the planner" mark (emptied, then pasted or typed again); sent as a chat, the model wrote the plan in words instead
+    if (!plan && CFG.briefCard && !S.planning && !S.versions.length && !S.pendingPromptId && looksLikeBrief(text)) {
+      const bp = briefPrompt();
+      if (bp && freeBrief(bp)) {
+        Object.assign(S, { planMode: true, pendingPromptId: bp.id, pendingText: text.trim() });
+        if (bp.dataset && !new Set([...attachedBefore(), ...S.draft]).has(bp.dataset)) { S.draft.add(bp.dataset); renderAttach(); }
+      }
+    }
+    // Geneva (27.11.2026): a request for a tool typed in the box before any prompt, without the card's labels: one choice, as a
+    // chatbot asks back (sent as a chat, the model wrote a plan in words and sent them to the card, to type it all again)
+    if (!plan && !asChat && CFG.briefCard && !S.planning && !S.versions.length && !S.pendingPromptId && asksForTool(text)) {
+      offerAsPrompt(text);
+      return;
+    }
+    // a change to a plan waiting on the stage: after Change something, or typed as "Change the plan: …" (as to a chatbot)
+    const typedChange = !plan && S.planning && !S.planning.building && /^\s*change the plan\s*:/i.test(text);
+    if (!plan && S.planning && (S.planning.changing || typedChange)) {
+      if (S.route.type === 'replay') { note(NO_MODEL); return; }
       if (!commitEdit(S.planning)) return;   // a plan being edited by hand is saved first, so the change starts from it
       return revisePlan(S.planning, text);
     }
@@ -1021,7 +1041,9 @@
       : plan ? { replay: plan.look ? [`g1-verbatim.${plan.look}.md`, 'g1-verbatim.md'] : undefined }
         : idea ? { replay: `g1-improve-${idea}.${look || 'paper'}.md` } : {};
     if (recordedNow() && !plan && !idea && (!p || text.trim() !== S.pendingText.trim())) {
-      note('In recorded mode the studio can only play what was recorded beforehand: the first app, the three ideas and the improvement for each. Anything else needs a live model: use the badge at the top (Back to the live model) when it is back.');
+      if (CFG.briefCard && !S.versions.length) note(S.planning ? 'In recorded mode no model is connected to chat with. Your plan is on the right: build from it, or change your answers.'
+        : 'In recorded mode no model is connected to chat with. To start the plan, press Write your prompt (or Next on the bar), put it in the message box and send it.');
+      else note('In recorded mode the studio can only play what was recorded beforehand: the first app, the three ideas and the improvement for each. Anything else needs a live model: use the badge at the top (Back to the live model) when it is back.');
       return;
     }
     if (!CFG.backup && S.route.type === 'replay' && (!p || text.trim() !== S.pendingText.trim())) {
@@ -1101,6 +1123,31 @@
     return `The model could not finish (${m}). Your message is back in the box: send it again.`;
   }
 
+  // Geneva (26.11.2026): the message box is a chat from the start. Before the first app, an app comes only from the prompt
+  // card and its plan, so a message is answered in words; the model decides as everywhere else once there is an app.
+  function chatNote(plan) {
+    if (!CFG.briefCard || plan) return '';
+    const facts = modelFacts();
+    if (S.versions.length) return `\n\n(Studio note, Geneva workshop: ${facts} If asked where their words go, answer from these facts.)`;
+    const d = (S.index && S.index.datasets && S.index.datasets.gc) || {};
+    const cur = S.progress.done.indexOf(false);
+    const base = `Geneva workshop. The participant has one file, already in the studio: the UN treaty bodies' General Comments, paragraph by paragraph (${d.count ? fmt(d.count) + ' paragraphs, ' : ''}ten committees, in English). ` +
+      'The paragraphs stay in English, word for word; only labels, notes and help text can be in another language. ' +
+      'The steps: look inside the file, write the prompt (the button "Write your prompt"), answer three questions and approve the plan, build, test, improve. ' +
+      (cur >= 0 ? `Their next step: ${Progress.HINTS[cur]}. ` : '') +
+      'Never tell them to drag or attach a file, or to use other data (no recommendations to a country, no votes): their file is already there. ' + facts;
+    return S.planning
+      ? `\n\n(Studio note: ${base} Their plan is on the right, waiting for their approval. Answer in words, briefly; write no app and no code. To change the plan they press "Change something" under it, or write "Change the plan: …"; to build, "Build from this plan".)`
+      : `\n\n(Studio note: ${base} There is no app yet: an app is built only from their prompt (the button "Write your prompt" opens it; they put it in the message box and send it) and the plan made from it. Answer in words, briefly; write no app and no code. If they ask for a tool, tell them to press "Write your prompt" and describe it there.)`;
+  }
+
+  // the facts of the model in the menu, as the badge says them: who made it, where it runs, what the host keeps
+  function modelFacts() {
+    const m = S.config.models[S.model] || {};
+    return `You are ${m.label}, by ${m.maker}, made in ${m.origin}; you run on ${m.host}'s service in ${m.host_region}${m.host_note ? ' (' + m.host_note + ')' : ''}; ` +
+      (m.zdr === false ? 'no zero data retention: the host keeps requests for a limited time.' : 'zero data retention: the host may not keep what is sent.');
+  }
+
   async function build(userText, files = [], opts = {}) {
     if (S.busy || !userText.trim()) return;
     const model = opts.model || S.model;   // a message with a picture may go to another model than the menu's
@@ -1111,11 +1158,11 @@
     S.freshNext = false;
     S.pendingPromptId = null;
     setBusy(true);
-    $('planView').hidden = true;
+    if (plan || !S.planning) $('planView').hidden = true;   // a chat message while a plan waits leaves the plan on the stage
     await shelfLoad();
     const hits = shelfSearch(userText);
     const asTyped = userText + files.map((k) => '\n\n' + attachLine(k)).join('');
-    const sent = asTyped + shelfBlock(hits);
+    const sent = asTyped + shelfBlock(hits) + chatNote(plan);
     const messages = buildMessages(parent, sent);
     const images = opts.images || [];   // only this message carries them; later requests send the words alone
     if (images.length) messages[messages.length - 1].images = images.map(({ media_type, data }) => ({ media_type, data }));
@@ -2063,6 +2110,7 @@
       if (r.code === 'bad_name') { err = r.error; continue; }   // the same question again, with the server's words
       if (r.ok && name) localSet('ws:wallname', name);
       note(r.ok ? 'Sent to the wall.' : esc(r.error));
+      if (r.ok) Eggs.telegram('YOUR APP IS ON THE WALL');
       return;
     }
   }
@@ -2110,6 +2158,7 @@
     if (name) localSet('ws:wallname', name);
     $('wallDialog').close('sent');
     note('Sent to the wall. Look at the projector.');
+    Eggs.telegram('YOUR APP IS ON THE WALL');
   };
 
   // A model that is busy or that fails is never swapped for another without saying so: the server's own words, then
@@ -2695,7 +2744,7 @@
     return pack.looks[h % pack.looks.length].id;
   }
   const lookText = (pack, id) => { const l = pack.looks.find((x) => x.id === id) || pack.looks[0]; return `${l.label}: ${l.text}`; };
-  window.__studioTest = { composePlan: (pack, answers, opts) => PLAN_HEAD + '\n\n' + planText(composePlan(pack, answers, opts)), defaultLook };   // for tests/e2e
+  window.__studioTest = { composePlan: (pack, answers, opts) => PLAN_HEAD + '\n\n' + planText(composePlan(pack, answers, opts)), defaultLook, brief: () => briefText() };   // for tests/e2e
   // what the participant reads and the model receives: their country in place, no runs of empty lines
   const planText = (s) => s.replace(/\{country\}/g, S.country).replace(/\n{3,}/g, '\n\n').trim();
 
@@ -2816,12 +2865,13 @@
     const free = freeBrief(p);
     const field = Brief.el && Brief.el.isConnected ? Brief.topic.trim() : '';
     const parts = free && Brief.el && Brief.el.isConnected ? { on: Object.assign({}, Brief.on), text: Object.assign({}, Brief.text) } : null;   // the card, paragraph by paragraph: "Write a new prompt" starts from it
-    const pl0 = free ? { brief: text, topic: field || topicFrom(pack, text) || topicDefault(pack), look: defaultLook(pack), parts } : {};
+    const pl0 = free ? { brief: text, topic: topicFrom(pack, text) || field || topicDefault(pack), look: defaultLook(pack), parts } : {};
     track('plan_open', free ? { prompt: p.id, brief_w: words(text), topic_w: words(pl0.topic), blocks: Brief.el && Brief.el.isConnected ? briefIncluded() : pack.brief.length } : { prompt: p.id });
     retirePlanning('Replaced by a new plan.');
     const pl = S.planning = Object.assign({ p, pack, files, fresh: S.freshNext, answers: {}, history: [], cards: [] }, pl0);
-    if (free) Brief.sent(true);
+    if (free) { Brief.sent(true); localSet(sentKey(), text); if ($('input').value.trim() === text.trim()) { $('input').value = ''; fitInput(); } }
     Object.assign(S, { pendingPromptId: null, pendingText: '', freshNext: false });
+    if (free) renderNeeds();   // the box's "Prompt for the planner" mark goes with the prompt
     setBusy(true);
     $('building').hidden = true;
     setView('app');
@@ -2908,6 +2958,7 @@
       }
       w.status('');
       offerPlan(pl, w, pushVersion(pl, first, 'planner'));
+      if (free) { draftClear(); try { localStorage.removeItem(sentKey()); } catch (e) { /* private mode */ } }   // the plan exists: nothing to bring back
       showPlan(pl);
       Progress.mark(3);
       w.body(md('The plan is on the right, written from your answers. Read it, then build from it or ask for a change.'));
@@ -2915,14 +2966,17 @@
       mindHide();
       $('planView').hidden = true;
       if (S.planning === pl) S.planning = null;
-      m.fail(e.name === 'AbortError' ? 'Stopped. Your message is back in the box.' : `The plan could not be shown (${e.message}). Your message is back in the box.`);
+      const back = free && Brief.el ? 'Your prompt is back above the message box.' : 'Your message is back in the box.';
+      m.fail(e.name === 'AbortError' ? `Stopped. ${back}` : `The plan could not be shown (${e.message}). ${back}`);
       if (skip) skip.remove();
-      if (free) Brief.sent(false);
-      openComposer(text);
-      Object.assign(S, { pendingPromptId: p.id, pendingText: text, freshNext: pl.fresh });
-      files.forEach((k) => S.draft.add(k));
-      renderAttach();
-      renderContinuing();
+      if (free && Brief.el) Brief.sent(false);   // the prompt card again, as it was
+      else {
+        openComposer(text);
+        Object.assign(S, { pendingPromptId: p.id, pendingText: text, freshNext: pl.fresh });
+        files.forEach((k) => S.draft.add(k));
+        renderAttach();
+        renderContinuing();
+      }
     } finally {
       setBusy(false);
       scrollLog();
@@ -2989,35 +3043,20 @@
   }
 
   // the look and edit controls under the plan's title: only for a free brief, and only on the latest version, with a live model
+  // (26.11.2026) the plan on the stage is a document, as a chatbot's artifact: it is changed from the chat (Change something).
+  // Only an edit by hand keeps its Done and Cancel here.
   function renderPlanTools() {
-    const pl = shownPlan, free = !!pl && freeBrief(pl.p), live = !!S.route && S.route.type !== 'replay';
-    $('planTools').hidden = !free;
+    const pl = shownPlan, free = !!pl && freeBrief(pl.p);
+    $('planTools').hidden = !free || !pl.editing;
     if (!free) return;
-    const latest = !pl.history.length || shownH === pl.history[pl.history.length - 1];
-    const ready = live && !S.busy && latest && pl.history.length > 0;
-    const lookReady = (live || CFG.backup) && !S.busy && latest && pl.history.length > 0;   // another look needs no model, and picks the recorded app in Geneva
-    const sel = $('planLook');
-    if (sel.dataset.pack !== pl.p.id) {
-      sel.innerHTML = pl.pack.looks.map((l) => `<option value="${esc(l.id)}">${esc(l.label)}</option>`).join('');
-      sel.dataset.pack = pl.p.id;
-    }
-    sel.value = pl.look;
-    sel.disabled = !lookReady || !!pl.editing;
-    $('planEditBtn').hidden = !!pl.editing;
-    $('planEditBtn').disabled = !ready;
-    $('planAnsBtn').hidden = !!pl.editing || !(pl.pack.questions || []).length;
-    $('planAnsBtn').disabled = S.busy || !latest || S.planning !== pl || !pl.history.length;   // no model needed: the answers pick the planner's versions
+    $('planLook').closest('.plan-look').hidden = true;
+    $('planEditBtn').hidden = true;
+    $('planNote').hidden = true;
+    $('planHl').hidden = true;
     $('planDone').hidden = $('planCancel').hidden = !pl.editing;
     $('planDone').disabled = $('planCancel').disabled = S.busy;
-    $('planNote').hidden = live;
-    $('planNote').textContent = live ? '' : CFG.backup ? NO_MODEL + ' ' + RECORDED_NOTE : NO_MODEL;
-    const hl = $('planHl');
-    hl.hidden = !CFG.highlights;
-    if (CFG.highlights) {
-      hl.replaceChildren(...highlightRow(pl, false).childNodes);
-      hl.querySelectorAll('button').forEach((b) => { b.disabled = !ready || !!pl.editing; });
-    }
   }
+
 
   // Edit the plan: the rendered plan gives way to its Markdown in a box, for the participant's own words
   function beginEdit(pl) {
@@ -3149,18 +3188,57 @@
     if (!submitBuild(text, pl)) pl.building = false;
   }
 
+  // Change something (26.11.2026, Hick's law: two choices under a plan, the ways of changing it one step further): a card asks
+  // how. A free brief has four ways; any other plan goes straight to a change in words, as before.
   function changePlan(pl) {
     if (S.planning !== pl || S.busy) return;
+    if (!commitEdit(pl)) return;
+    if (freeBrief(pl.p)) { howCard(pl); return; }
+    describeChange(pl);
+  }
+
+  // a change in words: "Change the plan: " in the box, for the participant's model, with the examples under it (Geneva)
+  function describeChange(pl) {
     if (S.route.type === 'replay') {
       note(NO_MODEL);
       if (CFG.highlights) { highlightRow(pl, true); scrollLog(); }   // the examples, switched off
       return;
     }
-    if (!commitEdit(pl)) return;
     pl.changing = true;
     openComposer(CHANGE);
     $('input').setSelectionRange(CHANGE.length, CHANGE.length);
     if (CFG.highlights) { highlightRow(pl, true); scrollLog(); }
+  }
+
+  function howCard(pl) {
+    document.querySelectorAll('#log .how-card, #log .hl-card').forEach((e) => e.remove());
+    const live = !!S.route && S.route.type !== 'replay';
+    const asks = (pl.pack.questions || []).length > 0, looks = (pl.pack.looks || []).length > 1;
+    const off = (why) => ` disabled title="${esc(why)}"`;
+    const c = document.createElement('div');
+    c.className = 'msg how-card';
+    c.innerHTML = '<b>How would you like to change it?</b>' +
+      (asks ? '<button type="button" class="how-opt" data-how="answers"><b>Change my answers</b><small>The three questions again. No model needed.</small></button>' : '') +
+      `<button type="button" class="how-opt" data-how="describe"${live ? '' : off(NO_MODEL)}><b>Describe a change</b>` +
+        `<small>${live ? 'In your own words, in the message box; your model rewrites the plan.' : 'Needs a live model: in recorded mode no model is connected.'}</small></button>` +
+      `<button type="button" class="how-opt" data-how="edit"${live ? '' : off(NO_MODEL)}><b>Edit the text myself</b>` +
+        `<small>${live ? 'The plan opens as text on the right.' : 'Needs a live model: in recorded mode no model is connected.'}</small></button>` +
+      (looks ? `<label class="how-opt how-look"><b>Another look</b><small>The app's colours and type. No model needed.</small>` +
+        `<select aria-label="Look of the app">${pl.pack.looks.map((l) => `<option value="${esc(l.id)}"${l.id === pl.look ? ' selected' : ''}>${esc(l.label)}</option>`).join('')}</select></label>` : '');
+    const gone = () => c.remove();
+    c.querySelectorAll('[data-how]').forEach((b) => {
+      b.onclick = () => {
+        if (S.planning !== pl || S.busy) return;
+        gone();
+        if (b.dataset.how === 'answers') changeAnswers(pl);
+        else if (b.dataset.how === 'describe') describeChange(pl);
+        else beginEdit(pl);
+      };
+    });
+    const sel = c.querySelector('.how-look select');
+    if (sel) sel.onchange = () => { gone(); changeLook(pl, sel.value); };
+    $('log').append(c);
+    scrollLog();
   }
 
   // "What would you like to highlight?": three examples that put a change into the box, to be edited before it is sent
@@ -3280,7 +3358,9 @@
   };
   const briefIncluded = () => Brief.pack.brief.filter((b) => Brief.on[b.id]).length;
   // "[my topic]" is the participant's topic, or stays as it is while the topic is empty
-  const briefText = () => Brief.pack.brief.filter((b) => Brief.on[b.id]).map((b) => `${b.label}\n${Brief.text[b.id].trim()}`).join('\n\n')
+  // the field (Geneva, 26.11.2026: a topic read as if the file were only about it) adds its own line, first, only when filled
+  const topicLine = () => (Brief.topic.trim() && Brief.pack.topic_line ? Brief.pack.topic_line.replace(/\[my topic\]/g, () => Brief.topic.trim()) : '');
+  const briefText = () => (topicLine() ? [`MY FIELD\n${topicLine()}`] : []).concat(Brief.pack.brief.filter((b) => Brief.on[b.id]).map((b) => `${b.label}\n${Brief.text[b.id].trim()}`)).join('\n\n')
     .replace(/\[my topic\]/g, () => Brief.topic.trim() || '[my topic]');
   const growBox = (t) => { t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; };
   // the pack names a default topic, or the plan says "my topic"
@@ -3289,7 +3369,7 @@
 
   // the topic the participant wrote in place of "[my topic]", read back from the brief when its field is empty
   function topicFrom(pack, text) {
-    for (const b of pack.brief) {
+    for (const b of [{ text: pack.topic_line || '' }, ...pack.brief]) {
       const [a, c] = b.text.split('[my topic]');
       if (c === undefined) continue;
       const m = new RegExp(escRe(a.slice(-24)) + '([^\\n]{2,120}?)' + escRe(c.slice(0, 24))).exec(text);
@@ -3300,9 +3380,10 @@
 
   // a course that looks at the data first: a card on the request's file, before the brief. "Look inside the file" opens
   // the records; it, "Write your brief" or the Data step done or skipped brings the brief card under it.
-  const DataCard = { el: null, next: null };
+  const DataCard = { el: null, next: null, p: null };
   function offerData(p) {
     if (DataCard.el && DataCard.el.isConnected) return;
+    DataCard.p = p;
     const el = DataCard.el = document.createElement('div');
     el.className = 'msg data-card';
     el.innerHTML = '<b>First, your data</b>' + `<span class="bsum">${esc(fileLabel(p.dataset))}</span>` +
@@ -3315,93 +3396,197 @@
     lookFacts(p.dataset).then((f) => {
       if (f.count) el.querySelector('.dc-facts').innerHTML = `<b>${esc(f.count)} paragraphs</b> from ${esc(f.documents)} documents of ${esc(f.committees)} committees, ${esc(f.years)}.`;
     }, () => { el.querySelector('.dc-facts').textContent = ''; });
-    DataCard.next = () => {
-      if (!el.isConnected) return;
-      el.querySelector('#dataNext').hidden = true;
-      offerBrief(p);
-    };
-    el.querySelector('#dataLook').onclick = () => { openInside(p.dataset); DataCard.next(); };
+    // (26.11.2026) the prompt opens only when asked for: this button, Next on the bar, or Skip on the Data step; looking inside
+    // the file opens the file alone
+    DataCard.next = () => { if (el.isConnected) writePrompt(p); };
+    if (draftLoad() && !Brief.el) { Brief.p = p; Brief.state = 'hidden'; $('promptBar').hidden = false; }   // a draft from before a reload waits in the bar
+    el.querySelector('#dataLook').onclick = () => openInside(p.dataset);
     el.querySelector('#dataNext').onclick = () => DataCard.next();
-    if (S.progress.done[0]) DataCard.next();   // back after a reload, with the data already looked at
   }
 
-  // the card in the chat; created once, where a suggestion would have offered the request
+  // Write your prompt: the card as it was left (a sent one: a new prompt, as from the bar's Prompt)
+  function writePrompt(p) {
+    if (Brief.el && Brief.p === p && Brief.state === 'sent') redoPrompt(p);
+    else offerBrief(p);
+  }
+
+  // the prompt in the chat column, pinned above the message box until it is sent (Geneva, 26.11.2026: as a message in the chat it
+  // scrolled away as soon as someone chatted, and the message box held a copy of it; on the stage it felt unlike a chatbot). Its own button sends it; the message box below stays a chat. Made once;
+  // the bar's way back ("Write a new prompt") shows it again with what was sent, and with Cancel.
   function offerBrief(p, again) {
-    if (Brief.loading || (Brief.el && Brief.el.isConnected)) return;
+    if (Brief.loading) return;
+    if (Brief.el && Brief.p === p) { if (again || Brief.state !== 'sent') Brief.sent(false); return; }
     Brief.loading = true;
     loadPack(p).then((pack) => {
       Brief.loading = false;
-      if (!pack.free_brief || (Brief.el && Brief.el.isConnected) || (!again && (S.planning || S.versions.length))) { Brief.failed = !pack.free_brief; return; }
-      Object.assign(Brief, { pack, p, topic: '', attached: false, on: {}, text: {} });
+      if (!pack.free_brief || (!again && (S.planning || S.versions.length))) { Brief.failed = !pack.free_brief; return; }
+      Object.assign(Brief, { pack, p, topic: '', on: {}, text: {} });
       pack.brief.forEach((b) => { Brief.on[b.id] = true; Brief.text[b.id] = b.text; });
-      if (again) {   // what was sent last time, paragraph by paragraph, and its topic (left empty where it was the default)
-        Brief.topic = again.topic && again.topic !== topicDefault(pack) ? again.topic : '';
-        if (again.parts) pack.brief.forEach((b) => {
-          if (typeof again.parts.on[b.id] === 'boolean') Brief.on[b.id] = again.parts.on[b.id];
-          if (typeof again.parts.text[b.id] === 'string') Brief.text[b.id] = again.parts.text[b.id];
+      const pre = again || draftLoad();
+      if (pre) {   // what was sent last time, or the draft left before a reload: paragraph by paragraph, and the field (empty where it was the default)
+        Brief.topic = pre.topic && pre.topic !== topicDefault(pack) ? pre.topic : '';
+        if (pre.parts) pack.brief.forEach((b) => {
+          if (typeof pre.parts.on[b.id] === 'boolean') Brief.on[b.id] = pre.parts.on[b.id];
+          if (typeof pre.parts.text[b.id] === 'string') Brief.text[b.id] = pre.parts.text[b.id];
         });
       }
-      const el = Brief.el = document.createElement('details');
-      el.className = 'msg brief-card';
-      el.open = true;
-      el.innerHTML = '<summary><b>Write your prompt</b><span class="bsum">1. Name your topic. 2. Read the five paragraphs; change or switch off any. 3. Press Send.</span></summary>' +
-        '<div class="brief-body"><label class="brief-topic"><span>My topic</span>' +
-        `<input type="text" id="briefTopic" maxlength="120" autocomplete="off" placeholder="${esc(pack.topic_default || 'e.g. freedom of expression online')}"></label>` +
+      const el = Brief.el = $('promptCard');
+      el.innerHTML = '<label class="brief-topic"><span>My field <i>(optional)</i></span>' +
+        '<input type="text" id="briefTopic" maxlength="120" autocomplete="off" placeholder="e.g. detention, migrant workers, climate change"></label>' +
+        '<p class="brief-topic-note" id="briefTopicNote"></p>' +
         pack.brief.map((b) => `<div class="brief-block${Brief.on[b.id] ? '' : ' off'}" data-id="${esc(b.id)}"><label class="brief-lab"><input type="checkbox"${Brief.on[b.id] ? ' checked' : ''}><span>${esc(b.label)}</span></label>` +
-          `<textarea rows="2" aria-label="${esc(b.label)}"></textarea><small class="brief-asks">${esc(b.asks || '')}</small></div>`).join('') +
-        '<p class="brief-hint">What you write here appears in the message box below. Send it when it says what you want.</p></div>';
+          `<textarea rows="2" aria-label="${esc(b.label)}"></textarea><small class="brief-asks">${esc(b.asks || '')}</small></div>`).join('');
       el.querySelectorAll('textarea').forEach((t, i) => { t.value = Brief.text[pack.brief[i].id]; });
       el.querySelector('#briefTopic').value = Brief.topic;
-      if (again) againRow(el);
-      $('log').append(el);
-      el.querySelectorAll('textarea').forEach(growBox);
-      el.addEventListener('input', (e) => {
+      el.oninput = (e) => {
         const blk = e.target.closest('.brief-block');
         if (e.target.id === 'briefTopic') Brief.topic = e.target.value;
         else if (blk && e.target.tagName === 'TEXTAREA') { Brief.text[blk.dataset.id] = e.target.value; growBox(e.target); }
         else return;
-        briefFill();
-      });
-      el.addEventListener('change', (e) => {
+        briefChanged();
+      };
+      el.onchange = (e) => {
         const blk = e.target.closest('.brief-block');
         if (!blk || e.target.type !== 'checkbox') return;
         Brief.on[blk.dataset.id] = e.target.checked;
         blk.classList.toggle('off', !e.target.checked);
-        briefFill();
-      });
-      briefFill();
-      el.scrollIntoView({ block: 'start' });   // from its first line, not its last
+        briefChanged();
+      };
+      Brief.sent(false);
+      el.querySelectorAll('textarea').forEach(growBox);   // once it is on screen: a hidden box has no height
+      briefChanged();
     }, () => { Brief.loading = false; Brief.failed = true; renderSuggest(); });   // no pack: the suggestion is offered as before
   }
 
-  // the brief goes into the message box, and the box is the request that sending will plan; the file it names comes along once
-  function briefFill() {
-    const text = briefText();
-    S.planMode = true;
+  const draftKey = () => `ws:work:brief:${S.seatCode || 'guest'}:${CFG.storeId}`;
+  const sentKey = () => `ws:work:sent:${S.seatCode || 'guest'}:${CFG.storeId}`;   // a prompt sent, until its plan exists
+
+  // after a reload: a prompt sent whose plan never came (the page reloaded while the planner worked) goes back in the box,
+  // ready to send, and the Prompt step is open again
+  async function resumeSent() {
+    const text = localGet(sentKey());
+    if (!CFG.briefCard || !text || S.planning || S.savedPlan || S.versions.length) return;
+    const bp = briefPrompt();
+    try { if (!bp || !(await loadPack(bp)).free_brief) return; } catch (e) { return; }
+    S.progress.done[1] = S.progress.skipped[1] = false;
+    save();
+    Progress.render();
     $('input').value = text;
-    fitInput(112);   // the card is where it is read; the box shows the first lines of what will be sent
-    Object.assign(S, { pendingPromptId: Brief.p.id, pendingText: text, freshNext: S.versions.length > 0 });   // a new prompt after an app: a new app
-    if (!Brief.attached) {
-      Brief.attached = true;
-      if (Brief.p.dataset && !S.draft.has(Brief.p.dataset)) { S.draft.add(Brief.p.dataset); if (Brief.again) Brief.again.added = true; }
-      renderAttach();
-      renderShelfState();
-    }
+    Object.assign(S, { planMode: true, pendingPromptId: bp.id, pendingText: text, freshNext: false });
+    if (bp.dataset && !S.draft.has(bp.dataset)) S.draft.add(bp.dataset);
+    $('promptBar').hidden = true;   // the prompt is in the box: not also in the line above it
+    renderAttach();
+    renderNeeds();
+    fitInput(window.innerHeight * 0.45);
+    note('The planning stopped when the page was reloaded. Your prompt is back in the message box: press Send to start it again.');
+  }
+  let draftTimer = null;
+  function draftSave(now) {
+    clearTimeout(draftTimer);
+    const write = () => { if (Brief.el && Brief.state !== 'sent' && !Brief.again) localSet(draftKey(), JSON.stringify({ topic: Brief.topic, parts: { on: Brief.on, text: Brief.text } })); };
+    if (now) write(); else draftTimer = setTimeout(write, 300);
+  }
+  function draftClear() { clearTimeout(draftTimer); try { localStorage.removeItem(draftKey()); } catch (e) { /* private mode */ } }
+  function draftLoad() {
+    try { const d = JSON.parse(localGet(draftKey()) || 'null'); return d && typeof d.topic === 'string' && partsOk(d.parts) ? d : null; } catch (e) { return null; }
+  }
+
+  // what the field adds to the prompt, and whether there is enough to send
+  function briefChanged() {
+    draftSave();
+    const line = topicLine();
+    $('briefTopicNote').innerHTML = 'The tool always searches every paragraph of all ten committees; your field only picks its three example searches.' +
+      (line ? ` It adds to your prompt: <q>${esc(line)}</q>` : '');
+    const n = briefText().trim().length;
+    $('promptUse').disabled = n < BRIEF_MIN || n > BRIEF_MAX;
+    $('promptUse').title = n < BRIEF_MIN ? `A prompt needs at least ${BRIEF_MIN} characters` : n > BRIEF_MAX ? `A prompt has at most ${fmt(BRIEF_MAX)} characters` : '';
+  }
+
+  // "Put it in the message box" (26.11.2026: closer to a chatbot than a button that sends): the prompt goes where any chatbot
+  // takes one, with its file attached and marked "Prompt for the planner"; Send there starts the planning. Emptying the box, or
+  // the mark's ×, makes the box an ordinary chat again (the card keeps the prompt, in the line above the box).
+  function insertBrief() {
+    if (!Brief.el || !S.ready || S.busy) return;
+    const t = briefText().trim();
+    if (t.length < BRIEF_MIN || t.length > BRIEF_MAX) return;
+    if (S.planning) { if (S.planning.editing) cancelEdit(S.planning); S.planning.changing = false; }
+    $('input').value = t;
+    Object.assign(S, { planMode: true, pendingPromptId: Brief.p.id, pendingText: t, freshNext: S.versions.length > 0 });   // after an app: a new app
+    if (Brief.p.dataset && !S.draft.has(Brief.p.dataset)) S.draft.add(Brief.p.dataset);
+    Brief.state = 'inserted';
+    showDock(false);
+    renderAttach();
+    renderShelfState();
     renderNeeds();
     renderPlanMode();
     renderContinuing();
+    fitInput(window.innerHeight * 0.45);
+    $('input').focus();
+    $('input').setSelectionRange(0, 0);
+    $('input').scrollTop = 0;
   }
 
-  // once sent, the card folds up and stops taking changes (it scrolls away with the chat); if the plan fails, it opens again
+  const asksForTool = (text) => text.trim().length >= 60 &&
+    /\b(tool|app|application|dashboard|finder|build|create|make|search(es|ing)?|find(s|ing)?|list|table|filter)\b/i.test(text);
+  function offerAsPrompt(text) {
+    document.querySelectorAll('#log .as-prompt').forEach((e) => e.remove());
+    const c = document.createElement('div');
+    c.className = 'msg as-prompt';
+    c.innerHTML = '<b>Is this your prompt?</b><p>It reads like a request for a tool. As your prompt it goes to the planner with the file: ' +
+      'three questions, then a plan for you to approve before anything is built.</p><div class="row">' +
+      '<button type="button" class="primary" data-a="prompt">Use it as my prompt</button><button type="button" class="ghost" data-a="ask">Just ask the model</button></div>';
+    c.querySelector('[data-a=prompt]').onclick = () => { c.remove(); usePromptText(text); };
+    c.querySelector('[data-a=ask]').onclick = () => { c.remove(); submitBuild(text, null, true); };
+    $('log').append(c);
+    scrollLog();
+  }
+  async function usePromptText(text) {
+    const bp = briefPrompt();
+    if (!bp || S.busy) return;
+    try { await loadPack(bp); } catch (e) { return; }
+    if (!freeBrief(bp)) return;
+    Object.assign(S, { planMode: true, pendingPromptId: bp.id, pendingText: text.trim() });
+    if (bp.dataset && !new Set([...attachedBefore(), ...S.draft]).has(bp.dataset)) { S.draft.add(bp.dataset); renderAttach(); }
+    submitBuild(text);
+  }
+
+  // two of the prompt card's labels, each on a line of its own
+  const looksLikeBrief = (text) => !!Brief.pack && Brief.pack.brief.filter((b) => new RegExp('^' + escRe(b.label) + '\\s*$', 'm').test(text)).length >= 2;
+
+  // the mark over the box while it holds the prompt; when the box no longer does, the card's line comes back
+  function renderPromptChip() {
+    const p = S.prompts.find((q) => q.id === S.pendingPromptId);
+    const on = !!CFG.briefCard && !!p && freeBrief(p) && !!S.planMode;
+    $('promptChip').hidden = !on;
+    if (!on && Brief.el && Brief.state === 'inserted') {
+      Brief.state = Brief.again ? 'sent' : 'hidden';   // a new prompt taken out of the box is put away, as Hide does
+      Brief.again = null;
+      showDock(false);
+    }
+  }
+
+  // open while it is written; Hide puts it away and the line above the message box opens it again; gone once sent (the chat
+  // keeps it as the participant's message); open again if the plan fails
   Brief.sent = (on) => {
     if (!Brief.el) return;
-    if (on) { const a = Brief.el.querySelector('.brief-again'); if (a) a.remove(); Brief.again = null; }
-    Brief.el.classList.toggle('sent', on);
-    Brief.el.querySelector('.brief-body').inert = on;
-    Brief.el.querySelector('.bsum').textContent = on ? 'Sent. Open it to read it again.' : '1. Name your topic. 2. Read the five paragraphs; change or switch off any. 3. Press Send.';
-    Brief.el.querySelector('summary b').textContent = on ? 'Your prompt' : 'Write your prompt';
-    Brief.el.open = !on;
+    if (on) Brief.again = null;   // the draft stays until the plan exists: a reload while the planner works brings it back
+    Brief.state = on ? 'sent' : 'open';
+    showDock(!on);
+    if (!on) { Brief.el.querySelectorAll('textarea').forEach(growBox); briefChanged(); $('briefTopic').focus({ preventScroll: true }); }   // the keyboard starts in the card
   };
+  function showDock(show) {
+    $('promptView').hidden = !show;
+    $('promptBar').hidden = show || Brief.state !== 'hidden';
+    document.body.classList.toggle('prompting', show);
+  }
+  // Hide: a first prompt waits in the bar; a new one ("Write a new prompt", after a plan or an app) is put away, as Cancel did
+  function hideBrief() {
+    if (!Brief.el) return;
+    draftSave(true);
+    Brief.state = Brief.again ? 'sent' : 'hidden';
+    Brief.again = null;
+    showDock(false);
+  }
 
   // picking up a plan after a reload: its latest version goes back on the stage with Build and Edit (no replay)
   // (back: the plan an app was built from, brought back from the progress bar; building from it makes a new app, and the
@@ -3587,6 +3772,7 @@
   }
 
   function renderContinuing() {
+    if (CFG.briefCard) $('input').placeholder = S.versions.length ? 'Ask anything, or describe a change to your app' : 'Ask me anything here.';
     const el = $('continuing');
     const v = currentVersion();
     if (S.freshNext && v) { el.hidden = false; el.textContent = 'Starts a new app. Your versions stay in the version menu above the preview.'; return; }
@@ -4206,9 +4392,18 @@
       <div class="prompt-box"><textarea id="tfPrompt" readonly></textarea></div>
       <div class="row"><button type="button" class="primary" id="tfCopy">Copy the prompt</button></div>
       <p class="caution">These assistants send the files they read to the company that runs the model. That is fine for public code like this; never point them at confidential documents.</p>
-      <h4>Start over</h4>
-      <p>Clear your apps and your conversation in this browser, to begin again from the first request. Your seat code, your settings and your own files stay. Save an app as a file first if you want to keep it.</p>
-      <div class="row"><button type="button" class="ghost" id="startOverBtn">Start over</button></div>
+      <h4>Start a new conversation</h4>
+      <p>Clear your prompt, your plan, your apps and the chat in this browser, and begin again from the start. Your seat code, your settings, your own files and anything you sent to the wall stay.</p>
+      <div class="row"><button type="button" class="ghost" id="startOverBtn">Start a new conversation…</button></div>
+      <div class="start-over-ask" id="startOverAsk" hidden>
+        <p><b>This cannot be undone.</b> Your apps will be gone from this browser. To keep one, save it as a file first.</p>
+        <div class="row"><button type="button" class="ghost" id="startOverSave">Save my app first</button>
+          <button type="button" class="danger" id="startOverYes">Clear everything and start again</button>
+          <button type="button" class="ghost" id="startOverNo">Cancel</button></div>
+      </div>
+      <h4>What left this laptop</h4>
+      <p>Every request sent to a model so far, word for word, and what stayed here.</p>
+      <div class="row"><button type="button" class="ghost" id="aboutTraceBtn">What left this laptop</button></div>
       <h4>What this studio records</h4>
       <p class="caution">To improve the workshop, the studio records what you do: which steps you pick, which model answers, how long it takes and what fails. It never records your messages, your files, your apps or anything from the data. Add <code>?notrack=1</code> to the address to switch it off in this browser.</p>
       <p>${esc(a.name)} · ${link(a.url, 'website')} · ${link(a.orcid, 'ORCID')} · ${link(a.github, 'GitHub')}</p>`;
@@ -4223,8 +4418,17 @@
     fill();
     $('tfRepo').onchange = fill;
     $('kitBtn').onclick = (e) => downloadKit(e.currentTarget);
+    // two deliberate steps (26.11.2026): the button opens what will be lost and a way to save the app; only the second clears
     $('startOverBtn').onclick = () => {
-      if (!confirm('Clear your apps and your conversation in this browser? This cannot be undone.')) return;
+      $('startOverAsk').hidden = false;
+      $('startOverBtn').hidden = true;
+      $('startOverSave').hidden = !currentVersion();
+      $('startOverAsk').scrollIntoView({ block: 'nearest' });
+    };
+    $('startOverNo').onclick = () => { $('startOverAsk').hidden = true; $('startOverBtn').hidden = false; };
+    $('aboutTraceBtn').onclick = () => { openDrawer(TRACE_TITLE); renderTrace(); };
+    $('startOverSave').onclick = () => download();
+    $('startOverYes').onclick = () => {
       track('reset', {});
       Track.flush(true);
       clearWork();
@@ -4268,6 +4472,12 @@
     morse: { text: 'GENEVA in Morse code. ITU, where you are today, was founded on 17 May 1865 to agree common rules for the telegraph.',
       links: [['ITU, Born in 1865', 'https://www.itu.int/en/history/Pages/ITUBorn1865.aspx']] },
   };
+  const MORSE = { A: '·−', B: '−···', C: '−·−·', D: '−··', E: '·', F: '··−·', G: '−−·', H: '····', I: '··', J: '·−−−', K: '−·−', L: '·−··', M: '−−',
+    N: '−·', O: '−−−', P: '·−−·', Q: '−−·−', R: '·−·', S: '···', T: '−', U: '··−', V: '···−', W: '·−−', X: '−··−', Y: '−·−−', Z: '−−··' };
+  // B (27.11.2026: the dots and dashes alone read as noise): each letter stands over its code, as on telegraph tape
+  // the dots and dashes are drawn (the font's minus sat on the baseline, like an underscore); each code keeps its text in data-code
+  const morseTape = (word) => [...word].map((c, k) => c === ' ' ? '<span class="mc gap" aria-hidden="true"></span>'
+    : `<span class="mc" aria-hidden="true" style="--k:${k}"><b>${c}</b><i data-code="${MORSE[c] || ''}">${[...(MORSE[c] || '')].map((x) => `<s class="${x === '·' ? 'dot' : 'dash'}"></s>`).join('')}</i></span>`).join('');
   const EGG_LABEL = { jet: "Jet d'Eau", drive: 'Geneva drive', web: 'The first web page', peacock: 'Peacock in the Ariana Park', morse: 'GENEVA in Morse code' };
 
   // the bubble: the route badge's popover (.route-pop), with a sentence and its source
@@ -4340,7 +4550,7 @@
       sw.hidden = !CFG.eggs;
       if (!CFG.eggs || this.booted) return;
       this.booted = true;
-      sw.after(this.egg('morse', 'morse', '−−· · −· · ···− ·−', { 'aria-label': 'GENEVA in Morse code' }));
+      sw.after(this.egg('morse', 'morse', morseTape('GENEVA'), { 'aria-label': 'GENEVA in Morse code', title: 'GENEVA in Morse code' }));
       $('progress').after(this.egg('jet', 'jetbtn', JET_SVG, { 'aria-label': "Jet d'Eau: 0 of 7 steps", id: 'jetBtn' }));
       $('footWho').before(this.egg('peacock', 'peacock-btn', PEACOCK_SVG.replace('width="41" height="26"', 'width="26" height="17"'), { 'aria-label': 'Peacock in the Ariana Park', id: 'peacockBtn', hidden: '' }));
       const b = this.mk('button', 'tool egg', '1991', { type: 'button', id: 'v1991Btn', 'aria-pressed': 'false', hidden: '', title: 'See this app as the first web pages looked: no styles, only structure' });
@@ -4351,6 +4561,21 @@
       this.apply(localGet('ws:geneva') === 'on');
     },
     toggle() { const on = !this.on(); localSet('ws:geneva', on ? 'on' : 'off'); this.apply(on); },
+    // C (27.11.2026): the Morse in a moment that explains itself. A telegram for some ten seconds, its tape running over
+    // the words; the ITU fact under it, with its source. Nothing moves for those who asked their system for less motion.
+    telegram(words) {
+      if (!this.on()) return;
+      document.querySelectorAll('.telegram').forEach((e) => e.remove());
+      const f = FACTS.morse;
+      const t = this.mk('div', 'telegram', '<div class="tg-head">TELEGRAM · GENEVA</div>' +
+        `<div class="tg-tape"><div class="tg-run">${morseTape(words)}</div></div><div class="tg-words">${esc(words)} STOP</div>` +
+        `<p class="tg-fact">ITU, where you are today, was founded on 17 May 1865 to agree common rules for the telegraph. ` +
+        `<a href="${f.links[0][1]}" target="_blank" rel="noopener">${esc(f.links[0][0])}</a></p>` +
+        '<button type="button" class="tg-close" aria-label="Close the telegram">×</button>', { role: 'status' });
+      t.querySelector('.tg-close').onclick = () => t.remove();
+      document.body.append(t);
+      setTimeout(() => t.remove(), 12000);
+    },
     // like the theme toggle: the label, aria-pressed, and the attribute the stylesheet looks at
     apply(on) {
       if (on) document.documentElement.dataset.geneva = 'on'; else delete document.documentElement.dataset.geneva;
@@ -4540,7 +4765,7 @@
   // the request of the prompt card (after a reload its pack may not be loaded yet: the plan kept with an app names it)
   const briefPrompt = () => {
     const d = lastPlan();
-    return (S.planning && S.planning.p) || Brief.p || (d && S.prompts.find((p) => p.id === d.promptId)) || S.prompts.find((p) => p.planning && !p.builds_on);
+    return (S.planning && S.planning.p) || Brief.p || DataCard.p || (d && S.prompts.find((p) => p.id === d.promptId)) || S.prompts.find((p) => p.planning && !p.builds_on);
   };
 
   function goToStep(n) {
@@ -4565,46 +4790,29 @@
     goToVersion(v.n);
   }
 
-  // Prompt: the card again, at the end of the chat, with what was sent; Send starts a new plan, Cancel folds it up again
-  function redoPrompt(p) {
-    if (S.planning) { if (S.planning.editing) cancelEdit(S.planning); S.planning.changing = false; }
-    if (Brief.again && Brief.el && Brief.el.isConnected) { Brief.el.scrollIntoView({ block: 'start' }); return; }   // already open
-    Brief.again = { prev: $('input').value, added: false };
-    if (Brief.el && Brief.el.isConnected && Brief.p === p) {   // the card of this visit: it opens again where the chat ends
-      Brief.attached = false;
-      Brief.sent(false);
-      againRow(Brief.el);
-      $('log').append(Brief.el);
-      briefFill();
-      Brief.el.scrollIntoView({ block: 'start' });
+  // "Next: …" on the bar, clicked: the file, the prompt, the plan, the test card or the improvements
+  function goNext() {
+    const cur = S.progress.done.indexOf(false), p = briefPrompt();
+    if (cur < 0 || S.busy) return;
+    if (cur === 0) { if (p) openInside(p.dataset || 'gc'); return; }
+    if (cur === 1) { if (p) writePrompt(p); return; }
+    if ((cur === 2 || cur === 3) && !S.planning) { if (p) writePrompt(p); return; }   // no plan to read: the prompt
+    if ((cur === 2 || cur === 3) && S.planning) {
+      showPlan(S.planning);
+      const a = [...document.querySelectorAll('#log .approve')].pop();
+      if (a) a.scrollIntoView({ block: 'center' });
       return;
     }
-    if (Brief.el) Brief.el.remove();
-    offerBrief(p, (S.planning && planSnap(S.planning)) || S.savedPlan || lastPlan() || {});
+    if (cur === 5 && TestCard.el && TestCard.el.isConnected) { TestCard.el.scrollIntoView({ block: 'center' }); return; }
+    if (cur === 6) { const b = $('suggest').querySelector('button'); if (b) b.scrollIntoView({ block: 'nearest' }); }
   }
 
-  function againRow(el) {
-    if (el.querySelector('.brief-again')) return;
-    const row = document.createElement('div');
-    row.className = 'brief-again';
-    row.innerHTML = '<span>Sending this prompt starts a new plan. Your apps stay in the versions.</span><button type="button" class="ghost">Cancel</button>';
-    row.querySelector('button').onclick = cancelAgain;
-    el.querySelector('.brief-body').append(row);
-  }
-
-  function cancelAgain() {
-    const a = Brief.again;
-    if (!a) return;
-    Brief.sent(true);
-    if (a.added && Brief.p.dataset) S.draft.delete(Brief.p.dataset);
-    $('input').value = a.prev;
-    fitInput();
-    Object.assign(S, { pendingPromptId: null, pendingText: '', freshNext: false });
-    renderAttach();
-    renderShelfState();
-    renderNeeds();
-    renderPlanMode();
-    renderContinuing();
+  // Prompt: the card above the message box again, with what was sent; Send starts a new plan, Cancel puts it away
+  function redoPrompt(p) {
+    if (S.planning) { if (S.planning.editing) cancelEdit(S.planning); S.planning.changing = false; }
+    Brief.again = {};
+    if (Brief.el && Brief.p === p) { Brief.sent(false); return; }   // this visit's card, as it was sent
+    offerBrief(p, (S.planning && planSnap(S.planning)) || lastPlan() || {});
   }
 
   // Plan read, Plan approved: the plan on the stage; after a build, the plan of the last app built from one comes back
@@ -4630,7 +4838,6 @@
     track('step_back', { step: 3, act: 'answers' });
     const who = pl.pack.planner || 'Claude Fable 5.1';
     const answers = Object.assign({}, pl.answers);
-    pl.changing = false;
     setBusy(true);
     $('building').hidden = true;
     S.ctrl = new AbortController();
@@ -4730,7 +4937,15 @@
   });
   $('planClose').onclick = () => { $('planView').hidden = true; };
   $('planEditBtn').onclick = () => shownPlan && beginEdit(shownPlan);
-  $('planAnsBtn').onclick = () => shownPlan && changeAnswers(shownPlan);
+  $('promptUse').onclick = insertBrief;
+  $('promptHide').onclick = hideBrief;
+  $('promptView').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); insertBrief(); }   // Cmd/Ctrl+Enter: into the message box
+    else if (e.key === 'Escape') { e.preventDefault(); hideBrief(); }
+  });
+  window.addEventListener('pagehide', () => { if (Brief.el && Brief.state !== 'sent') draftSave(true); });
+  $('promptOpen').onclick = () => Brief.p && offerBrief(Brief.p);
+  $('progressNext').onclick = goNext;
   $('planDone').onclick = () => shownPlan && commitEdit(shownPlan);
   $('planCancel').onclick = () => shownPlan && cancelEdit(shownPlan);
   $('planLook').onchange = (e) => shownPlan && changeLook(shownPlan, e.target.value);
@@ -4814,6 +5029,7 @@
   $('downloadBtn').onclick = () => { closeMenu(); download(); };
   $('wallBtn').onclick = () => { closeMenu(); sendToWall(); };
   $('kitMenuBtn').onclick = (e) => { downloadKit(e.currentTarget.querySelector('b')).then(closeMenu); };
+  $('newConvBtn').onclick = () => { closeMenu(); takeFurther(); $('startOverBtn').click(); };   // About, at its first of two steps
   $('drawerClose').onclick = () => { $('drawer').hidden = true; };
   $('roomBtn').onclick = () => Room.open();
   $('roomOpen').onclick = () => Room.open();
